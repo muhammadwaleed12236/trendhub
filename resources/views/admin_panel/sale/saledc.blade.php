@@ -225,7 +225,7 @@
     <div class="invoice-container">
         <!-- Company Header -->
         <div class="company-info">
-            <div class="company-name">Yasir Pipe Store</div>
+            <div class="company-name">  </div>
             <div style="font-size: 12px;">Gulshan-e-Ilahi, Hyderabad.</div>
         </div>
 
@@ -249,12 +249,10 @@
                 </div>
             </div>
 
-            <!-- Middle Box: Sales Person / Meta -->
+            <!-- Middle Box: Details -->
             <div class="col-4">
                 <div class="info-box">
                     <div class="info-box-header">Details</div>
-                    <div><span class="info-label">Maker:</span> {{ auth()->user()->name ?? 'Admin' }}</div>
-                    <div><span class="info-label">Person:</span> {{ auth()->user()->name ?? 'Admin' }}</div>
                     <div><span class="info-label">Type:</span> {{ $sale->sale_status ?? 'Delivery' }}</div>
                 </div>
             </div>

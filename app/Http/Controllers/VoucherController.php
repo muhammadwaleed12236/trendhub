@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\AccountHead;
+use App\Models\ExpenseCategory;
 use App\Models\Customer;
 use App\Models\CustomerLedger;
 use App\Models\ExpenseVoucher;
@@ -195,13 +196,24 @@ class VoucherController extends Controller
 
             $rows = [];
             foreach ($voucherV2->details as $detail) {
+                // Receipt Voucher: Only show DEBIT rows (Cash/Bank received into)
+                // Skip Credit rows (Accounts Receivable / AR) — they are the accounting offset, not useful for print
+                if ($voucherV2->voucher_type === 'receipt' && $detail->credit > 0) {
+                    continue; // Skip Cr side (AR)
+                }
+
+                $accTitle  = $detail->account->title ?? '-';
+                $accCode   = $detail->account->account_code ?? '-';
+                $headName  = $detail->account->accountHead->name ?? '-';
+
+                // Clean label: "Hand Cash" not "Hand Cash (Receipt) [Code: ACC-0004]"
                 $rows[] = [
-                    'narration' => $detail->narration,
-                    'reference' => '-',
-                    'account_head' => $detail->account->account_head_id ?? '-',
-                    'account_name' => $detail->account->title ?? '-',
-                    'account_code' => $detail->account->account_code ?? '-',
-                    'amount' => $detail->credit > 0 ? $detail->credit : $detail->debit,
+                    'narration'    => $detail->narration,
+                    'reference'    => '-',
+                    'account_head' => $headName,
+                    'account_name' => $accTitle,
+                    'account_code' => $accCode,
+                    'amount'       => $detail->debit > 0 ? $detail->debit : $detail->credit,
                 ];
             }
 
@@ -486,6 +498,23 @@ class VoucherController extends Controller
                         ], $v2Lines, auth()->id());
 
                         \Log::info('V2 Voucher Created Successfully.');
+
+                        // ✅ Also update CustomerLedger for correct balance display on form
+                        if (($vType == 'customer' || $vType == 'walkin') && $totalAmt > 0) {
+                            $latestLedger = CustomerLedger::where('customer_id', $request->vendor_id)->latest()->first();
+                            $prevBal = $latestLedger ? $latestLedger->closing_balance : (
+                                \App\Models\Customer::find($request->vendor_id)->opening_balance ?? 0
+                            );
+                            CustomerLedger::create([
+                                'customer_id'      => $request->vendor_id,
+                                'admin_or_user_id' => auth()->id(),
+                                'previous_balance' => $prevBal,
+                                'opening_balance'  => 0,
+                                'closing_balance'  => $prevBal - $totalAmt, // Payment received → balance reduces
+                                'description'      => 'Receipt Voucher '.$rvid,
+                            ]);
+                        }
+
                     } else {
                         \Log::warning('V2 Lines Empty. Total Amt: '.$totalAmt);
                     }
@@ -741,22 +770,23 @@ class VoucherController extends Controller
 
             $rows = [];
             foreach ($voucherV2->details as $detail) {
-                // Determine account name/code/head
-                $headName = $detail->account->accountHead->name ?? '-';
-                $accName = $detail->account->title ?? '-';
-                $accCode = $detail->account->account_code ?? '-';
+                // Payment Voucher: Only show CREDIT rows (which account money left from - Cash/Bank)
+                // Skip Debit rows (AP/Payable offset) — not useful for print
+                if ($voucherV2->voucher_type === 'payment' && $detail->debit > 0) {
+                    continue; // Skip Dr side (AP)
+                }
 
-                // For Payment: Logic is typically Debit the party/expense?
-                // But here rows show where money went?
-                // Legacy view shows "account_head", "account_name".
+                $headName = $detail->account->accountHead->name ?? '-';
+                $accName  = $detail->account->title ?? '-';
+                $accCode  = $detail->account->account_code ?? '-';
 
                 $rows[] = [
-                    'narration' => $detail->narration,
-                    'reference' => '-',
+                    'narration'    => $detail->narration,
+                    'reference'    => '-',
                     'account_head' => $headName,
                     'account_name' => $accName,
                     'account_code' => $accCode,
-                    'amount' => $detail->debit > 0 ? $detail->debit : $detail->credit,
+                    'amount'       => $detail->credit > 0 ? $detail->credit : $detail->debit,
                 ];
             }
 
@@ -932,6 +962,7 @@ class VoucherController extends Controller
     {
         $narrations = \App\Models\Narration::where('expense_head', 'Expense voucher')
             ->pluck('narration', 'id');
+        $expenseCategories = \App\Models\ExpenseCategory::orderBy('name')->get();
         $AccountHeads = AccountHead::get();
 
         // Last RVID nikalna
@@ -941,7 +972,7 @@ class VoucherController extends Controller
         $nextId = $lastVoucher ? $lastVoucher->id + 1 : 1;
         $nextRvid = 'EVID-'.str_pad($nextId, 3, '0', STR_PAD_LEFT);
 
-        return view('admin_panel.vochers.expense_vochers.expense_vouchers', compact('narrations', 'AccountHeads', 'nextRvid'));
+        return view('admin_panel.vochers.expense_vochers.expense_vouchers', compact('narrations', 'expenseCategories', 'AccountHeads', 'nextRvid'));
     }
 
     public function store_expense_vochers(Request $request)
@@ -981,7 +1012,7 @@ class VoucherController extends Controller
                 'remarks' => $request->remarks,
                 'reference_no' => $request->ref_no_header,
                 'narration_id' => json_encode($narrationIds),
-                'row_account_head' => json_encode($request->row_account_head),
+                'row_account_head' => json_encode($request->row_account_head ?? array_fill(0, count($request->row_account_id ?? []), "0")),
                 'row_account_id' => json_encode($request->row_account_id),
                 'amount' => json_encode($request->amount),
                 'total_amount' => $request->total_amount,
@@ -997,25 +1028,40 @@ class VoucherController extends Controller
             /**
              * STEP 1: Expense Accounts (row side) → PLUS (Debit)
              */
+            // Find or create "Expense" Account Head
+            $expenseHead = AccountHead::firstOrCreate(
+                ['name' => 'Expense'],
+                ['opening_balance' => 0]
+            );
+
+            // Find or create "General Expense" Account
+            $generalExpenseAccount = Account::firstOrCreate(
+                ['account_code' => 'GEN-EXP'],
+                [
+                    'head_id' => $expenseHead->id,
+                    'title' => 'General Expense',
+                    'opening_balance' => 0,
+                    'current_balance' => 0,
+                    'type' => 'Debit',
+                    'status' => 1
+                ]
+            );
+
             if ($request->row_account_id && $request->amount) {
                 foreach ($request->row_account_id as $index => $accId) {
                     $rowAmount = isset($request->amount[$index]) ? (float) $request->amount[$index] : 0;
 
                     if ($rowAmount > 0) {
-                        $rowAccount = Account::find($accId);
-                        if ($rowAccount) {
-                            $rowAccount->current_balance = $rowAccount->current_balance + $rowAmount; // PLUS
-                            $rowAccount->save();
-
-                            $journalService->recordEntry(
-                                $expense,
-                                $accId,
-                                $rowAmount, // Debit Expense
-                                0, // Credit
-                                "Expense Voucher #$evid",
-                                $request->entry_date ?? date('Y-m-d')
-                            );
-                        }
+                        $categoryName = DB::table('expense_categories')->where('id', $accId)->value('name') ?? 'General Expense';
+                        
+                        $journalService->recordEntry(
+                            $expense,
+                            $generalExpenseAccount->id,
+                            $rowAmount, // Debit Expense
+                            0, // Credit
+                            "Expense Voucher #$evid ($categoryName)",
+                            $request->entry_date ?? date('Y-m-d')
+                        );
                     }
                 }
             }
@@ -1064,12 +1110,30 @@ class VoucherController extends Controller
                         'closing_balance' => -$amount,
                     ]);
                 }
+
+                // Credit Customer Receivable Side
+                $journalService->recordEntry(
+                    $expense,
+                    $balanceService->getAccountsReceivableId(),
+                    0, // Debit
+                    $amount, // Credit Accounts Receivable
+                    "Expense Voucher #$evid",
+                    $request->entry_date ?? date('Y-m-d'),
+                    \App\Models\Customer::find($request->vendor_id)
+                );
             } else {
                 // yahan vendor_type numeric (1,2,3) hai → matlab Account ID
                 $account = Account::find($request->vendor_id);
                 if ($account) {
-                    $account->current_balance = $account->current_balance - $amount; // MINUS
-                    $account->save();
+                    // Credit Cash/Bank Side
+                    $journalService->recordEntry(
+                        $expense,
+                        $account->id,
+                        0, // Debit
+                        $amount, // Credit Cash/Bank
+                        "Expense Voucher #$evid",
+                        $request->entry_date ?? date('Y-m-d')
+                    );
                 }
             }
 
@@ -1139,16 +1203,29 @@ class VoucherController extends Controller
         foreach ($narrations as $index => $narrId) {
             $narration = DB::table('narrations')->where('id', $narrId)->value('narration');
             $ref = $references[$index] ?? null;
-            $accountHead = DB::table('account_heads')->where('id', $accountHeads[$index] ?? null)->value('name');
-            $account = DB::table('accounts')->where('id', $accounts[$index] ?? null)->first();
+
+            // Check if it is a new custom category or a legacy account
+            $accId = $accounts[$index] ?? null;
+            $expenseCategory = DB::table('expense_categories')->where('id', $accId)->first();
+            if ($expenseCategory) {
+                $accountHead = 'Expense Category';
+                $accountName = $expenseCategory->name;
+                $accountCode = $expenseCategory->code;
+            } else {
+                $accountHead = DB::table('account_heads')->where('id', $accountHeads[$index] ?? null)->value('name');
+                $account = DB::table('accounts')->where('id', $accId)->first();
+                $accountName = $account->title ?? null;
+                $accountCode = $account->account_code ?? null;
+            }
+
             $amount = (float) ($amounts[$index] ?? 0);
 
             $rows[] = [
                 'narration' => $narration,
                 'reference' => $ref,
                 'account_head' => $accountHead,
-                'account_name' => $account->title ?? null,
-                'account_code' => $account->account_code ?? null,
+                'account_name' => $accountName,
+                'account_code' => $accountCode,
                 'amount' => $amount,
             ];
         }

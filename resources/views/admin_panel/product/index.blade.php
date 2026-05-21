@@ -14,24 +14,260 @@
                 <h5 class="mb-0 fw-bold">📦 Product List</h5>
                 <small class="text-muted">Manage all products here</small>
             </div>
-            <div class="d-flex justify-content-between align-items-end gap-1">
-                <!-- @if (auth()->user()->can('discount.products.view') || auth()->user()->email === 'admin@admin.com')
-                    <a href="{{ route('discount.index') }}" class="btn btn-success btn-sm">
-                        View Discount
-                    </a>
-                @endif -->
+            <div class="d-flex justify-content-between align-items-end gap-2 flex-wrap">
+
+                {{-- Import / Export Buttons --}}
+                <a href="{{ route('products.template') }}"
+                   class="btn btn-outline-secondary btn-sm"
+                   title="Download blank CSV template">
+                    <i class="las la-file-csv"></i> Template
+                </a>
+
+                <a href="{{ route('products.export') }}"
+                   class="btn btn-success btn-sm"
+                   title="Export all products to CSV">
+                    <i class="las la-file-download"></i> Export CSV
+                </a>
+
                 @if (auth()->user()->can('products.create') || auth()->user()->email === 'admin@admin.com')
-                    <a href="create_prodcut" class="btn btn-primary"> Add product</a>
+                    <button type="button" class="btn btn-warning btn-sm" id="openImportModalBtn"
+                            title="Import products from CSV">
+                        <i class="las la-file-upload"></i> Import CSV
+                    </button>
+                    <a href="create_prodcut" class="btn btn-primary btn-sm">
+                        <i class="las la-plus"></i> Add Product
+                    </a>
                 @endif
 
-                <!-- @if (auth()->user()->can('discount.products.create') || auth()->user()->email === 'admin@admin.com')
-                    <button id="createDiscountBtn" class="btn btn-success btn-sm">
-                        ➡ Create Discount
-                    </button>
-                @endif -->
             </div>
-
         </div>
+
+    {{-- ══════════════════════════════════════════════════════════
+         IMPORT MODAL  (Bootstrap 4 compatible)
+    ══════════════════════════════════════════════════════════ --}}
+    <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px; overflow:hidden;">
+
+                {{-- Header --}}
+                <div class="modal-header" style="background: linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff;">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="importModalLabel">
+                            <i class="las la-file-upload me-2"></i>Import Products from CSV
+                        </h5>
+                        <small class="opacity-75">New products will be created. Existing ones (matched by Barcode or Item Code) will be updated.</small>
+                    </div>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity:1; font-size:1.5rem; background:none; border:none;">&times;</button>
+                </div>
+
+                {{-- Body --}}
+                <div class="modal-body p-4">
+
+                    {{-- Instructions --}}
+                    <div class="alert alert-info d-flex gap-2 align-items-start mb-4" style="font-size:0.85rem;">
+                        <i class="las la-info-circle fs-5 mt-1 flex-shrink-0"></i>
+                        <div>
+                            <strong>How to use:</strong><br>
+                            1. Download the <a href="{{ route('products.template') }}" class="alert-link">CSV Template</a> first.<br>
+                            2. Fill in your data in Excel and save as <strong>CSV</strong>.<br>
+                            3. Upload here — existing products (matched by Barcode or Item Code) will be <strong>updated</strong>; new rows will be <strong>created</strong>.<br>
+                            4. Stock differences will be automatically adjusted and logged.
+                        </div>
+                    </div>
+
+                    {{-- File Drop Zone --}}
+                    <div id="dropZone" class="border border-2 border-dashed rounded-3 text-center p-5 mb-3"
+                         style="border-color:#c7d2fe !important; background:#f5f3ff; cursor:pointer; transition: all 0.2s;"
+                         onclick="document.getElementById('csvFileInput').click()"
+                         ondragover="event.preventDefault(); this.style.background='#ede9fe';"
+                         ondragleave="this.style.background='#f5f3ff';"
+                         ondrop="handleDrop(event)">
+                        <i class="las la-cloud-upload-alt" style="font-size:3rem; color:#7c3aed;"></i>
+                        <div class="fw-bold mt-2 text-primary" style="font-size:1rem;">Click to browse or drag & drop CSV file here</div>
+                        <div class="text-muted mt-1" id="fileNameDisplay" style="font-size:0.82rem;">No file selected — Max 5 MB</div>
+                    </div>
+                    <input type="file" id="csvFileInput" class="d-none" accept=".csv,.txt">
+
+                    {{-- Progress --}}
+                    <div id="importProgress" class="d-none mb-3">
+                        <div class="d-flex align-items-center gap-2 text-primary fw-bold mb-1">
+                            <div class="spinner-border spinner-border-sm"></div>
+                            Processing your file, please wait...
+                        </div>
+                        <div class="progress" style="height:6px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:100%"></div>
+                        </div>
+                    </div>
+
+                    {{-- Results --}}
+                    <div id="importResults" class="d-none">
+                        <hr>
+                        <h6 class="fw-bold mb-3">📊 Import Results</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-4">
+                                <div class="text-center p-3 rounded-3" style="background:#d1fae5;">
+                                    <div style="font-size:2rem; font-weight:800; color:#065f46;" id="resultCreated">0</div>
+                                    <div class="text-success fw-bold" style="font-size:0.8rem;">CREATED</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-center p-3 rounded-3" style="background:#dbeafe;">
+                                    <div style="font-size:2rem; font-weight:800; color:#1e40af;" id="resultUpdated">0</div>
+                                    <div class="text-primary fw-bold" style="font-size:0.8rem;">UPDATED</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-center p-3 rounded-3" style="background:#fef3c7;">
+                                    <div style="font-size:2rem; font-weight:800; color:#92400e;" id="resultSkipped">0</div>
+                                    <div class="text-warning fw-bold" style="font-size:0.8rem;">SKIPPED</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="importErrorsList" class="d-none">
+                            <div class="alert alert-warning p-2" style="font-size:0.82rem; max-height:150px; overflow-y:auto;">
+                                <strong>⚠ Skipped Rows:</strong>
+                                <ul class="mb-0 mt-1" id="errorItemsList"></ul>
+                            </div>
+                        </div>
+                        <div id="importSuccessMsg" class="alert alert-success d-none" style="font-size:0.85rem;">
+                            ✅ Import completed successfully! <a href="{{ route('product') }}" class="alert-link">Refresh product list</a>
+                        </div>
+                    </div>
+
+                </div>
+
+                {{-- Footer --}}
+                <div class="modal-footer bg-light gap-2">
+                    <a href="{{ route('products.template') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="las la-download me-1"></i>Download Template
+                    </a>
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-warning fw-bold px-4" id="startImportBtn" disabled
+                            style="min-width:130px;">
+                        <i class="las la-file-upload me-1"></i> Start Import
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    {{-- Import JS --}}
+    <script>
+    $(document).ready(function () {
+
+        var selectedFile = null;
+
+        var fileInput   = document.getElementById('csvFileInput');
+        var dropZone    = document.getElementById('dropZone');
+        var fileDisplay = document.getElementById('fileNameDisplay');
+        var startBtn    = document.getElementById('startImportBtn');
+        var progressEl  = document.getElementById('importProgress');
+        var resultsEl   = document.getElementById('importResults');
+
+        // ── Open modal via jQuery (Bootstrap 4) ──
+        $('#openImportModalBtn').on('click', function () {
+            $('#importModal').modal('show');
+        });
+
+        // ── File selection ──
+        function setFile(file) {
+            if (!file || !file.name.match(/\.(csv|txt)$/i)) {
+                Swal.fire('Invalid File', 'Please select a valid CSV file.', 'warning');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire('File Too Large', 'File size exceeds 5 MB limit.', 'warning');
+                return;
+            }
+            selectedFile = file;
+            fileDisplay.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+            fileDisplay.style.color = '#4f46e5';
+            startBtn.disabled = false;
+            resultsEl.classList.add('d-none');
+        }
+
+        $(fileInput).on('change', function () {
+            if (this.files[0]) setFile(this.files[0]);
+        });
+
+        window.handleDrop = function (e) {
+            e.preventDefault();
+            dropZone.style.background = '#f5f3ff';
+            if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+        };
+
+        // ── Start Import ──
+        $('#startImportBtn').on('click', function () {
+            if (!selectedFile) return;
+
+            var formData = new FormData();
+            formData.append('csv_file', selectedFile);
+            formData.append('_token', '{{ csrf_token() }}');
+
+            startBtn.disabled = true;
+            progressEl.classList.remove('d-none');
+            resultsEl.classList.add('d-none');
+
+            fetch('{{ route("products.import") }}', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                body: formData
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                progressEl.classList.add('d-none');
+                resultsEl.classList.remove('d-none');
+
+                if (!data.success && !data.created && !data.updated) {
+                    Swal.fire('Error', data.message || 'Import failed.', 'error');
+                    startBtn.disabled = false;
+                    return;
+                }
+
+                document.getElementById('resultCreated').textContent = data.created  || 0;
+                document.getElementById('resultUpdated').textContent = data.updated  || 0;
+                document.getElementById('resultSkipped').textContent = data.skipped  || 0;
+
+                var errList  = document.getElementById('errorItemsList');
+                var errBlock = document.getElementById('importErrorsList');
+                var sucMsg   = document.getElementById('importSuccessMsg');
+
+                errList.innerHTML = '';
+                if (data.errors && data.errors.length > 0) {
+                    data.errors.forEach(function(msg) {
+                        var li = document.createElement('li');
+                        li.textContent = msg;
+                        errList.appendChild(li);
+                    });
+                    errBlock.classList.remove('d-none');
+                } else {
+                    errBlock.classList.add('d-none');
+                }
+
+                sucMsg.classList.remove('d-none');
+                startBtn.disabled = false;
+            })
+            .catch(function () {
+                progressEl.classList.add('d-none');
+                Swal.fire('Server Error', 'Something went wrong. Please try again.', 'error');
+                startBtn.disabled = false;
+            });
+        });
+
+        // ── Reset on modal close ──
+        $('#importModal').on('hidden.bs.modal', function () {
+            selectedFile = null;
+            fileDisplay.textContent = 'No file selected — Max 5 MB';
+            fileDisplay.style.color = '';
+            startBtn.disabled = true;
+            progressEl.classList.add('d-none');
+            resultsEl.classList.add('d-none');
+            fileInput.value = '';
+        });
+
+    });
+    </script>
 
         <div class="card-body">
             @if (session()->has('success'))
@@ -41,12 +277,66 @@
                 </div>
             @endif
 
+            {{-- ── FILTER BAR ── --}}
+            <form method="GET" action="{{ route('product') }}" id="filterForm" class="mb-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold mb-1" style="font-size:0.78rem;">🔍 Search</label>
+                        <input type="text" name="search" value="{{ request('search') }}"
+                            class="form-control form-control-sm"
+                            placeholder="Item name or code...">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold mb-1" style="font-size:0.78rem;">📂 Category</label>
+                        <select name="category_id" class="form-select form-select-sm">
+                            <option value="">All Categories</option>
+                            @foreach ($categories as $cat)
+                                <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
+                                    {{ $cat->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold mb-1" style="font-size:0.78rem;">🏷 Brand</label>
+                        <select name="brand_id" class="form-select form-select-sm">
+                            <option value="">All Brands</option>
+                            @foreach ($brands as $brand)
+                                <option value="{{ $brand->id }}" {{ request('brand_id') == $brand->id ? 'selected' : '' }}>
+                                    {{ $brand->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold mb-1" style="font-size:0.78rem;">⚡ Status</label>
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="">All Status</option>
+                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-funnel"></i> Filter
+                        </button>
+                        <a href="{{ route('product') }}" class="btn btn-outline-secondary btn-sm w-100">
+                            ✕ Clear
+                        </a>
+                    </div>
+                </div>
+                @if(request()->hasAny(['search','category_id','brand_id','status']))
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            Showing <strong>{{ $products->total() }}</strong> result(s)
+                            @if(request('search')) for "<strong>{{ request('search') }}</strong>" @endif
+                        </small>
+                    </div>
+                @endif
+            </form>
+
             <div class="table-responsive">
                 <table id="productTable" class="table table-striped table-bordered align-middle nowrap" style="width:100%">
-                    <div class="mb-3">
-                        <input type="text" id="search_all" class="form-control"
-                            placeholder="Search Item Name, Code, Category, Brand">
-                    </div>
 
                     <thead class="table-light">
                         <tr>
@@ -60,12 +350,13 @@
                             <th>Trade Price</th>
                             <th>Retail Price</th>
                             <th>Brand</th>
+                            <th>Status</th>
                             <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($products as $key => $product)
-                            <tr>
+                            <tr id="product-row-{{ $product->id }}" class="{{ $product->is_active ? '' : 'table-secondary opacity-75' }}">
                                 <td><input type="checkbox" class="selectProduct" value="{{ $product->id }}"></td>
                                 <td>{{ $key + 1 }}</td>
                                 <td class="fw-bold">{{ $product->item_code }}</td>
@@ -113,11 +404,17 @@
                                 <td>Rs. {{ number_format($retailPrice, 2) }} <small class="text-muted">/pc</small></td>
                                 <td>{{ $product->brand->name ?? '-' }}</td>
                                 <td class="text-center">
+                                    @if($product->is_active)
+                                        <span class="badge bg-success" id="status-badge-{{ $product->id }}">Active</span>
+                                    @else
+                                        <span class="badge bg-danger" id="status-badge-{{ $product->id }}">Inactive</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-warning viewProductBtn"
                                         data-id="{{ $product->id }}">
                                         View
                                     </button>
-
 
                                     @if (auth()->user()->can('products.edit') || auth()->user()->email === 'admin@admin.com')
                                         <a href="{{ route('products.edit', $product->id) }}"
@@ -131,7 +428,16 @@
                                         🏷 Barcode
                                     </a>
 
-
+                                    @if (auth()->user()->can('products.edit') || auth()->user()->email === 'admin@admin.com')
+                                        <button type="button"
+                                            class="btn btn-sm {{ $product->is_active ? 'btn-outline-danger' : 'btn-outline-success' }} toggle-active-btn"
+                                            data-id="{{ $product->id }}"
+                                            data-active="{{ $product->is_active ? '1' : '0' }}"
+                                            data-name="{{ $product->item_name }}"
+                                            title="{{ $product->is_active ? 'Deactivate Product' : 'Activate Product' }}">
+                                            {{ $product->is_active ? '🔴 Deactivate' : '🟢 Activate' }}
+                                        </button>
+                                    @endif
 
                                 </td>
                             </tr>
@@ -139,7 +445,8 @@
                     </tbody>
                 </table>
             </div>
-            <div class="mt-3 d-flex justify-content-end">
+            <div class="mt-3 d-flex justify-content-between align-items-center">
+                <small class="text-muted">Showing {{ $products->firstItem() }}–{{ $products->lastItem() }} of {{ $products->total() }} products</small>
                 {{ $products->links() }}
             </div>
         </div>
@@ -305,10 +612,15 @@
 
                                     <!-- Total Stock -->
                                     <div class="mt-auto pt-3 border-top">
-                                        <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
                                             <small class="text-muted font-weight-bold">TOTAL PCS</small>
                                             <span class="h4 mb-0 font-weight-bold text-success"
                                                 id="view_total_stock_qty">0</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-danger font-weight-bold">ALERT QUANTITY</small>
+                                            <span class="h6 mb-0 font-weight-bold text-danger"
+                                                id="view_alert_quantity">-</span>
                                         </div>
                                     </div>
 
@@ -381,6 +693,71 @@
 
     <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    {{-- Toggle Active JS --}}
+    <script>
+        $(document).on('click', '.toggle-active-btn', function () {
+            const btn = $(this);
+            const productId = btn.data('id');
+            const isActive = btn.data('active') == '1';
+            const productName = btn.data('name');
+            const actionText = isActive ? 'Deactivate' : 'Activate';
+            const actionIcon = isActive ? 'warning' : 'success';
+
+            Swal.fire({
+                title: actionText + ' Product?',
+                html: `<b>${productName}</b><br><small class="text-muted">${isActive ? 'Product will be hidden from Sale/Purchase forms.' : 'Product will be visible in Sale/Purchase forms.'}</small>`,
+                icon: actionIcon,
+                showCancelButton: true,
+                confirmButtonText: 'Yes, ' + actionText,
+                confirmButtonColor: isActive ? '#dc3545' : '#28a745',
+                cancelButtonText: 'Cancel',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/product/${productId}/toggle-active`,
+                        type: 'POST',
+                        data: { _token: '{{ csrf_token() }}' },
+                        success: function (res) {
+                            if (res.success) {
+                                const row = $(`#product-row-${productId}`);
+                                const badge = $(`#status-badge-${productId}`);
+
+                                if (res.is_active) {
+                                    // Activated
+                                    row.removeClass('table-secondary opacity-75');
+                                    badge.removeClass('bg-danger').addClass('bg-success').text('Active');
+                                    btn.removeClass('btn-outline-success').addClass('btn-outline-danger')
+                                       .text('🔴 Deactivate').data('active', '1')
+                                       .attr('title', 'Deactivate Product');
+                                } else {
+                                    // Deactivated
+                                    row.addClass('table-secondary opacity-75');
+                                    badge.removeClass('bg-success').addClass('bg-danger').text('Inactive');
+                                    btn.removeClass('btn-outline-danger').addClass('btn-outline-success')
+                                       .text('🟢 Activate').data('active', '0')
+                                       .attr('title', 'Activate Product');
+                                }
+
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'top-end',
+                                    icon: 'success',
+                                    title: res.message,
+                                    showConfirmButton: false,
+                                    timer: 2500,
+                                    timerProgressBar: true,
+                                });
+                            }
+                        },
+                        error: function () {
+                            Swal.fire('Error', 'Could not update product status.', 'error');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 
     {{-- product model --}}
     <script>
@@ -535,6 +912,8 @@
                             maximumFractionDigits: 2
                         }));
 
+                    $('#view_alert_quantity').text(product.alert_quantity !== null && product.alert_quantity !== undefined ? product.alert_quantity + ' Pcs' : 'Not Set');
+
                     $('#productViewModal').modal('show');
                 },
                 error: function() {
@@ -589,28 +968,20 @@
                 }
             }
 
+            // DataTable: no built-in search (we use server-side filter bar)
             let table = $('#productTable').DataTable({
                 responsive: true,
                 paging: false,
                 ordering: true,
                 info: false,
-                order: [
-                    [1, 'asc']
-                ],
-                dom: '<"top"f>rt<"bottom"><"clear">',
-                language: {
-                    search: "",
-                    searchPlaceholder: "Search by code, name, category, brand..."
-                },
+                order: [[1, 'asc']],
+                dom: 'rt',  // only table rows, no search/filter UI
                 columnDefs: [{
                     targets: [0, 11],
+                    orderable: false,
                     searchable: false
-                }, ]
-            }); // Optional: fast typing experience 
-            $('.dataTables_filter input').off().on('keyup', function() {
-                table.search(this.value).draw();
+                }]
             });
-            // ===== Initialize Products DataTable =====
 
         });
     </script>

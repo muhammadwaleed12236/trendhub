@@ -81,12 +81,10 @@ class SystemNotification extends Model
      */
     public static function createSaleReturnNotification($saleReturn, $sale): void
     {
-        // Get all super admin users
-        $superAdmins = \App\Models\User::whereHas('roles', function ($query) {
-            $query->where('name', 'Super Admin');
-        })->pluck('id')->toArray();
+        // Get all users
+        $targetUsers = \App\Models\User::pluck('id')->toArray();
 
-        if (empty($superAdmins)) {
+        if (empty($targetUsers)) {
             return;
         }
 
@@ -103,6 +101,42 @@ class SystemNotification extends Model
             'is_read' => false,
         ];
 
-        self::createForUsers($superAdmins, $data);
+        self::createForUsers($targetUsers, $data);
+    }
+
+    /**
+     * Create stock alert notification for all users
+     */
+    public static function createStockAlertNotification($product, $currentStock): void
+    {
+        // Get all users
+        $targetUsers = \App\Models\User::pluck('id')->toArray();
+
+        if (empty($targetUsers)) {
+            return;
+        }
+
+        // Check if there is already a similar unread notification for this product to avoid duplicates
+        $exists = self::whereIn('user_id', $targetUsers)
+            ->where('source_type', 'App\Models\Product')
+            ->where('source_id', $product->id)
+            ->where('is_read', false)
+            ->exists();
+
+        if ($exists) {
+            return;
+        }
+
+        $data = [
+            'title' => '⚠️ Stock Alert: Low Stock',
+            'message' => "Product '{$product->item_name}' (SKU: {$product->item_code}) is low on stock. Current quantity: {$currentStock} pieces, Alert threshold: {$product->alert_quantity} pieces.",
+            'type' => 'critical',
+            'source_id' => $product->id,
+            'source_type' => 'App\Models\Product',
+            'action_url' => '/product',
+            'is_read' => false,
+        ];
+
+        self::createForUsers($targetUsers, $data);
     }
 }

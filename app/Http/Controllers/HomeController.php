@@ -202,6 +202,31 @@ class HomeController extends Controller
                     ->get();
             }
 
+            $cashAndBankAccounts = \App\Models\Account::whereHas('head', function ($query) {
+                $query->whereIn('name', ['Cash', 'Bank']);
+            })->where('status', 1)->get();
+
+            $totalCashAndBankBalance = $cashAndBankAccounts->sum('current_balance');
+
+            // ===== LOW STOCK PRODUCTS =====
+            $lowStockProducts = collect();
+            if (Auth::user()->can('products.view')) {
+                $lowStockProducts = \App\Models\Product::withSum('warehouseStocks', 'total_pieces')
+                    ->whereNotNull('alert_quantity')
+                    ->where('is_active', 1)
+                    ->get()
+                    ->filter(function ($p) {
+                        $stock = (float) ($p->warehouse_stocks_sum_total_pieces ?? 0);
+                        return $stock <= $p->alert_quantity;
+                    })
+                    ->sortBy(function ($p) {
+                        $stock = (float) ($p->warehouse_stocks_sum_total_pieces ?? 0);
+                        return $stock - $p->alert_quantity; // most critical (most negative) first
+                    })
+                    ->take(15)
+                    ->values();
+            }
+
             return view('admin_panel.dashboard', compact(
                 'categoryCount',
                 'subcategoryCount',
@@ -219,7 +244,10 @@ class HomeController extends Controller
                 'paymentOutMonth',
                 'paymentOutOverall',
                 'topProducts',
-                'topCustomers'
+                'topCustomers',
+                'cashAndBankAccounts',
+                'totalCashAndBankBalance',
+                'lowStockProducts'
             ));
         } else {
             return redirect()->back()->with('error', 'Unauthorized access');

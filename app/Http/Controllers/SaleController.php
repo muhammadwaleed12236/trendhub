@@ -50,6 +50,7 @@ class SaleController extends Controller
                 $join->on('products.id', '=', 'warehouse_stocks.product_id')
                     ->where('warehouse_stocks.warehouse_id', $warehouseId);
             })
+            ->where('products.is_active', true) /* Only active products */
             ->where(function ($query) use ($q) {
                 $query->where('products.item_name', 'like', "%{$q}%")
                     ->orWhere('products.item_code', 'like', "%{$q}%")
@@ -65,6 +66,7 @@ class SaleController extends Controller
             ->map(function ($product) {
                 return $product;
             });
+
 
         return response()->json($products);
     }
@@ -812,6 +814,10 @@ class SaleController extends Controller
         // Eager load warehouseStocks to display stock in edit view
         $sale = Sale::with(['items.product.warehouseStocks', 'customer_relation'])->findOrFail($id);
 
+        if (in_array($sale->sale_status, ['cancelled', 'returned'])) {
+            return redirect()->route('sale.index')->with('error', 'Cannot edit a '.$sale->sale_status.' sale.');
+        }
+
         // 2. Data for Dropdowns (Same as addsale)
         $customer = Customer::all();
         $warehouse = Warehouse::all();
@@ -828,7 +834,7 @@ class SaleController extends Controller
     public function updatesale(Request $request, $id)
     {
         $sale = Sale::findOrFail($id);
-        if (in_array($sale->sale_status, ['posted', 'cancelled', 'returned'])) {
+        if (in_array($sale->sale_status, ['cancelled', 'returned'])) {
             return redirect()->back()->with('error', 'Cannot edit a '.$sale->sale_status.' sale.');
         }
 
@@ -901,10 +907,6 @@ class SaleController extends Controller
 
         if ($request->booking_id) {
             $sale = Sale::findOrFail($request->booking_id);
-            if ($sale->sale_status === 'posted') {
-                return response()->json(['ok' => true, 'msg' => 'Already Posted', 'invoice_url' => route('sales.invoice', $sale->id)]);
-            }
-
             return $this->processSale($request, $sale);
         }
 
@@ -931,6 +933,11 @@ class SaleController extends Controller
 
         // Concurrency Safe Transaction
         return DB::transaction(function () use ($request, $sale, $status) {
+
+            // If this is an update to a previously posted sale, rollback its impact first
+            if ($sale->exists && $sale->sale_status === 'posted') {
+                $this->rollbackPostedSale($sale);
+            }
 
             // 2. Prepare Header Data
             $isNew = ! $sale->exists;
@@ -1367,5 +1374,49 @@ class SaleController extends Controller
 
         // Fallback: use timestamp-based unique number
         return 'INV-'.date('YmdHis');
+    }
+
+    private function rollbackPostedSale(Sale $sale)
+    {
+        // 1. Restore Stock
+        $this->handleStockImpact($sale, 'in');
+
+        // Delete stock movements for this sale
+        DB::table('stock_movements')->where('ref_type', 'sale')->where('ref_id', $sale->id)->delete();
+
+        // 2. Reverse and delete Vouchers & Journal Entries
+        $journalService = app(\App\Services\JournalEntryService::class);
+
+        // Find all VoucherMaster records related to this sale (JV and RV)
+        $vouchers = \App\Models\VoucherMaster::where('remarks', 'like', "%#{$sale->invoice_no}%")->get();
+        foreach ($vouchers as $voucher) {
+            // Reverse account balances and delete journal entries
+            $journalService->reverseEntriesForSource($voucher);
+
+            // Delete details
+            \App\Models\VoucherDetail::where('voucher_master_id', $voucher->id)->delete();
+
+            // Delete master
+            $voucher->delete();
+        }
+
+        // 3. Rollback Legacy Customer Ledger & Customer Master Balance
+        $ledgerEntries = \App\Models\CustomerLedger::where('customer_id', $sale->customer_id)
+            ->where('description', 'like', "%#{$sale->invoice_no}%")
+            ->get();
+
+        $totalNetImpact = 0;
+        foreach ($ledgerEntries as $entry) {
+            $totalNetImpact += ($entry->closing_balance - $entry->previous_balance);
+            $entry->delete();
+        }
+
+        if ($totalNetImpact != 0) {
+            $cust = \App\Models\Customer::find($sale->customer_id);
+            if ($cust) {
+                $cust->previous_balance -= $totalNetImpact;
+                $cust->save();
+            }
+        }
     }
 }

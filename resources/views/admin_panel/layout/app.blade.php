@@ -609,6 +609,8 @@
                                         @can('expense.voucher.view')
                                             <li><a href="{{ route('all_expense_vochers') }}"><i
                                                         class="fa-solid fa-money-bill-wave"></i> Expense Voucher</a></li>
+                                            <li><a href="{{ route('expense_categories.index') }}"><i
+                                                        class="fa-solid fa-list-check"></i> Expense Categories</a></li>
                                         @endcan
                                         @can('receipts.voucher.view')
                                             <li><a href="{{ route('all_recepit_vochers') }}"><i
@@ -816,7 +818,7 @@
 
         <footer>
             <div class="footer-area">
-                <p>&copy; Copyright 2025. All right reserved.Yasir Pipe Store</p>
+                <p>&copy; Copyright 2025. All right reserved.  </p>
             </div>
         </footer>
     </div>
@@ -959,8 +961,37 @@
                     clearStuckOverlays();
                 }
             }, 30000);
+
+            // Fix for Navigation links with href="#" causing page jumps and potential layout freezes
+            document.querySelectorAll('.nav-link[href="#"]').forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault(); // Prevent URL hash and page jump
+                });
+            });
+
+            // Prevent clicks inside the submenu from bubbling up and instantly closing the menu (Touch/Mobile fix)
+            document.querySelectorAll('.submenu').forEach(function(submenu) {
+                submenu.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+            
+            // Failsafe: Remove any rogue overlay class on body immediately
+            document.body.classList.remove('modal-open', 'sidebar_collapsed');
         })();
     </script>
+    
+    {{-- CSS Failsafe to ensure no invisible layer blocks the screen --}}
+    <style>
+        body.modal-open { padding-right: 0 !important; overflow: auto !important; }
+        .modal-backdrop.fade:not(.show) { display: none !important; pointer-events: none; }
+        /* FIX: Do NOT disable pointer-events on swal2-container — it blocks button clicks */
+        /* Only hide container when truly not visible (swal2-hide means it's animating out) */
+        .swal2-container.swal2-hide { pointer-events: none !important; }
+        /* Ensure SweetAlert2 is always on top */
+        .swal2-container { z-index: 99999 !important; }
+    </style>
+
 </body>
 
 </html>

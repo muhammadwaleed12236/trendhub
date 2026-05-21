@@ -231,7 +231,7 @@
       <style>
           /* ===== Sales Table UI Fix ===== */
           .sales-table {
-              min-width: 1500px;
+              min-width: 1440px;
               /* Ensure enough space for all columns */
           }
 
@@ -246,6 +246,7 @@
 
           /* Column Widths */
           .col-product {
+              width: 220px;
               min-width: 220px;
           }
 

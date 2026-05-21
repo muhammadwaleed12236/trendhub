@@ -71,4 +71,16 @@ class Product extends Model
     {
         return $q->withSum('movements as available_qty', 'qty'); // sum of ledger
     }
+
+    protected static function booted()
+    {
+        static::saved(function ($product) {
+            if (!is_null($product->alert_quantity)) {
+                $totalPieces = \App\Models\WarehouseStock::where('product_id', $product->id)->sum('total_pieces');
+                if ($totalPieces < $product->alert_quantity) {
+                    \App\Models\SystemNotification::createStockAlertNotification($product, $totalPieces);
+                }
+            }
+        });
+    }
 }

@@ -84,6 +84,7 @@ class ProductController extends Controller
         $query = Product::query()
             ->select('id', 'item_name', 'item_code', 'barcode_path', 'size_mode', 'height', 'width', 'pieces_per_box', 'purchase_price_per_m2', 'purchase_price_per_piece', 'pieces_per_m2', 'purchase_discount_percent', 'sale_discount_percent')
             ->withSum('warehouseStocks', 'total_pieces') /* Sum PIECES, not boxes */
+            ->where('is_active', true) /* Only active products */
             ->where(function ($q) use ($term) {
                 $q->where('item_name', 'like', "%{$term}%")
                     ->orWhere('item_code', 'like', "%{$term}%")
@@ -142,6 +143,7 @@ class ProductController extends Controller
 
         $products = Product::with('category_relation', 'sub_category_relation', 'brand')
             ->withSum('warehouseStocks', 'total_pieces')
+            ->where('is_active', true) /* Only active products */
             ->when($term, function ($query) use ($term) {
                 $query->where('item_name', 'like', "%{$term}%")
                     ->orWhere('item_code', 'like', "%{$term}%")
@@ -187,21 +189,41 @@ class ProductController extends Controller
     }
 
     // ===== List page =====
-    public function product()
+    public function product(Request $request)
     {
-        $products = Product::with([
+        $query = Product::with([
             'category_relation',
             'sub_category_relation',
             'unit',
             'brand',
-        ])
-            ->withSum('warehouseStocks', 'total_pieces')
-            ->latest()
-            ->paginate(10);
+        ])->withSum('warehouseStocks', 'total_pieces');
 
-        $categories = Category::get();
+        // ── Filters ──
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('item_name', 'like', "%$s%")
+                  ->orWhere('item_code', 'like', "%$s%");
+            });
+        }
 
-        return view('admin_panel.product.index', compact('products', 'categories'));
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('brand_id')) {
+            $query->where('brand_id', $request->brand_id);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active' ? 1 : 0);
+        }
+
+        $products   = $query->latest()->paginate(20)->withQueryString();
+        $categories = Category::orderBy('name')->get();
+        $brands     = Brand::orderBy('name')->get();
+
+        return view('admin_panel.product.index', compact('products', 'categories', 'brands'));
     }
 
     public function productview($id)
@@ -420,6 +442,7 @@ class ProductController extends Controller
                 'color' => $request->color ? json_encode($request->color) : null,
                 'purchase_discount_percent' => $request->purchase_discount_percent ?? 0,
                 'sale_discount_percent' => $request->sale_discount_percent ?? 0,
+                'alert_quantity' => $request->alert_quantity,
 
                 // New Fields
                 'size_mode' => $mode,
@@ -639,6 +662,7 @@ class ProductController extends Controller
                 'image' => $imagePath,
                 'purchase_discount_percent' => $request->purchase_discount_percent ?? 0,
                 'sale_discount_percent' => $request->sale_discount_percent ?? 0,
+                'alert_quantity' => $request->alert_quantity,
 
                 // New Fields
                 'size_mode' => $mode,
@@ -765,6 +789,7 @@ class ProductController extends Controller
             'size_mode' => 'required|in:by_size,by_cartons,by_pieces',
             'purchase_discount_percent' => 'nullable|numeric|min:0|max:100',
             'sale_discount_percent' => 'nullable|numeric|min:0|max:100',
+            'alert_quantity' => 'nullable|integer|min:0',
         ];
 
         // Conditional rules logic
@@ -808,5 +833,19 @@ class ProductController extends Controller
         }
 
         return response()->json(['status' => 'success', 'message' => 'Valid']);
+    }
+
+    // ===== Toggle Product Active/Inactive =====
+    public function toggleActive($id)
+    {
+        $product = Product::findOrFail($id);
+        $product->is_active = !$product->is_active;
+        $product->save();
+
+        return response()->json([
+            'success'   => true,
+            'is_active' => $product->is_active,
+            'message'   => $product->is_active ? 'Product activated successfully.' : 'Product deactivated successfully.',
+        ]);
     }
 }

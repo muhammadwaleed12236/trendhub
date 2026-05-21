@@ -5,6 +5,7 @@ use App\Http\Controllers\AccountsHeadController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\HomeController;
@@ -73,6 +74,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/category/delete/{id}', [CategoryController::class, 'delete'])->middleware('permission:categories.delete')->name('delete.category');
     route::post('/category/store', [CategoryController::class, 'store'])->middleware('permission:categories.create|categories.edit')->name('store.category');
 
+    Route::get('/expense-categories', [ExpenseCategoryController::class, 'index'])->middleware('permission:expense.voucher.view')->name('expense_categories.index');
+    Route::post('/expense-categories/store', [ExpenseCategoryController::class, 'store'])->middleware('permission:expense.voucher.create')->name('expense_categories.store');
+    Route::get('/expense-categories/delete/{id}', [ExpenseCategoryController::class, 'delete'])->middleware('permission:expense.voucher.create')->name('expense_categories.delete');
+
     route::get('/Brand', [BrandController::class, 'index'])->middleware('permission:brands.view')->name('Brand.home');
     Route::get('/Brand/delete/{id}', [BrandController::class, 'delete'])->middleware('permission:brands.delete')->name('delete.Brand');
     route::post('/Brand/store', [BrandController::class, 'store'])->middleware('permission:brands.create|brands.edit')->name('store.Brand');
@@ -99,9 +104,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/create_prodcut', [ProductController::class, 'view_store'])->middleware('permission:products.create')->name('store');
     Route::post('/store-product', [ProductController::class, 'store_product'])->middleware('permission:products.create|products.edit')->name('store-product');
     Route::put('/product/update/{id}', [ProductController::class, 'update'])->middleware('permission:products.edit')->name('product.update');
+    Route::post('/product/{id}/toggle-active', [ProductController::class, 'toggleActive'])->middleware('permission:products.edit')->name('product.toggle.active');
+
     Route::post('/product/validate-form', [ProductController::class, 'validateForm'])->name('product.validate');
     Route::get('/products/{id}/edit', [ProductController::class, 'edit'])->middleware('permission:products.edit')->name('products.edit');
     Route::get('/generate-barcode-image', [ProductController::class, 'generateBarcode'])->name('generate-barcode-image');
+
+    // ── Product Import / Export ──
+    Route::get('/products/export',   [App\Http\Controllers\ProductImportExportController::class, 'export'])
+        ->middleware('permission:products.view')->name('products.export');
+    Route::get('/products/template', [App\Http\Controllers\ProductImportExportController::class, 'template'])
+        ->middleware('permission:products.view')->name('products.template');
+    Route::post('/products/import',  [App\Http\Controllers\ProductImportExportController::class, 'import'])
+        ->middleware('permission:products.create')->name('products.import');
 
     // Route::get('/barcode/{id}', [ProductController::class, 'barcode'])->name('product.barcode');
     // Searches

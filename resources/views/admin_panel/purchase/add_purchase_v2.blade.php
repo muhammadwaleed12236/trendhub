@@ -320,10 +320,10 @@
                                     <thead>
                                         <tr>
                                             <th class="col-product">Product</th>
-                                            <th class="col-qty">Qty</th> <!-- Was Total Pcs -->
+                                            <th class="col-qty">Cartons</th>
+                                            <th class="col-qty">Loose Pcs</th>
                                             <th class="col-stock">Pack Size</th>
-                                            <!-- Loose Column Removed -->
-                                            <th class="col-pieces">Pieces</th> <!-- Was Boxes -->
+                                            <th class="col-pieces">Total Pcs</th>
                                             <th class="col-price">Purchase Price</th>
                                             <th class="col-disc">Disc %</th>
                                             <th class="col-disc-amt">Disc Amt</th>
@@ -336,7 +336,7 @@
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colspan="7" class="text-end fw-bold text-muted">Total Amount:</td>
+                                            <td colspan="8" class="text-end fw-bold text-muted">Total Amount:</td>
                                             <td class="text-end fw-bold fs-6 text-dark"><span id="totalAmount">0.00</span>
                                             </td>
                                             <td></td>
@@ -535,10 +535,7 @@
             });
 
             // Inputs -> Calc
-            $('#purchaseTableBody').on('input', '.box-qty, .price, .item-disc-percent, .item-disc-amt', function() {
-                if ($(this).hasClass('box-qty')) {
-                    normalizeQtyInput($(this), $(this).closest('tr'));
-                }
+            $('#purchaseTableBody').on('input', '.carton-qty, .loose-qty, .price, .item-disc-percent', function() {
                 recalcRow($(this).closest('tr'));
                 recalcAll();
             });
@@ -736,46 +733,7 @@
             });
 
 
-            function normalizeQtyInput($input, $row) {
-                const val = $input.val();
-                const ppb = parseFloat($row.find('.pack-size').val()) || 1;
-                const sizeMode = $row.data('sizemode');
-
-                // If size_mode is strictly 'by_pieces', force integer
-                if (sizeMode === 'by_pieces' || sizeMode === 'by_piece') {
-                    if (val.includes('.')) {
-                        // Remove everything after dot
-                        $input.val(val.split('.')[0]);
-                        return;
-                    }
-                }
-
-                // Since this is Purchase, we assume box input logic applies whenever PPB > 1
-                // logic similar to shared_logic.blade.php
-
-                if (ppb > 1 && val.includes('.')) {
-                    const parts = val.split('.');
-                    const boxes = parseInt(parts[0]) || 0;
-                    const looseStr = parts[1];
-
-                    if (looseStr && looseStr !== '') {
-                        const loose = parseInt(looseStr);
-                        // If loose pieces >= pack size, convert to boxes
-                        if (loose >= ppb) {
-                            const extraBoxes = Math.floor(loose / ppb);
-                            const newLoose = loose % ppb;
-                            const newBoxes = boxes + extraBoxes;
-
-                            let newVal = newBoxes.toString();
-                            if (newLoose > 0) {
-                                newVal += '.' + newLoose;
-                            }
-                            // Update input value
-                            $input.val(newVal);
-                        }
-                    }
-                }
-            }
+            // normalizeQtyInput removed — using separate carton/loose fields now
 
             function addBlankRow() {
                 const rowCount = $('#purchaseTableBody tr').length;
@@ -790,9 +748,9 @@
                         <input type="hidden" name="length[]" class="hidden-length" value="">
                         <input type="hidden" name="width[]" class="hidden-width" value="">
                     </td>
-                    <td><input type="text" class="form-control box-qty" name="boxes_qty[]" value="" placeholder="qty"></td>
+                    <td><input type="number" class="form-control carton-qty" name="boxes_qty[]" value="0" placeholder="Cartons" min="0"></td>
+                    <td><input type="number" class="form-control loose-qty" name="loose_qty[]" value="0" placeholder="Loose Pcs" min="0"></td>
                     <td><input type="number" class="form-control input-readonly pack-size" name="pieces_per_box_display[]" value="1" readonly></td>
-                    <!-- Loose Column Removed -->
                     <td><input type="number" name="qty[]" class="form-control input-readonly qty-pcs" value="0" readonly></td>
                     <td><input type="number" name="price[]" class="form-control price" value="0"></td>
                     <td><input type="number" name="item_discount[]" class="form-control item-disc-percent" value="0"></td>
@@ -929,65 +887,49 @@
             }
 
             function recalcRow($row) {
-                // Read BOX input
-                let boxesStr = $row.find('.box-qty').val();
-                if (boxesStr === null || boxesStr === undefined) boxesStr = "0";
-                boxesStr = boxesStr.toString();
                 const ppb = parseFloat($row.find('.pack-size').val()) || 1;
                 const pieces_per_m2 = $row.data('pieces_per_m2');
                 const sizeMode = $row.data().sizemode;
-                const p_price_piece = $row.data().p_price_piece;
-                let totalPieces = 0;
-                let boxes = 0;
-                let loose = 0;
 
-                // Box.Loose Logic (Similar to shared_logic)
-                if (ppb > 1 && boxesStr.includes('.')) {
-                    const parts = boxesStr.split('.');
-                    boxes = parseInt(parts[0]) || 0;
-                    loose = parts[1] ? parseInt(parts[1]) : 0;
+                // Read separate Carton + Loose inputs
+                const cartons = parseInt($row.find('.carton-qty').val()) || 0;
+                let loose = parseInt($row.find('.loose-qty').val()) || 0;
 
-                    totalPieces = (boxes * ppb) + loose;
-                } else {
-                    // Whole boxes
-                    boxes = parseFloat(boxesStr) || 0;
-                    totalPieces = boxes * ppb;
+                // Auto-convert excess loose into cartons
+                if (loose >= ppb && ppb > 1) {
+                    const extraCartons = Math.floor(loose / ppb);
+                    loose = loose % ppb;
+                    $row.find('.carton-qty').val(cartons + extraCartons);
+                    $row.find('.loose-qty').val(loose);
                 }
 
-                // Update the hidden/readonly Piece Input (which is sent as qty[])
+                const totalPieces = (cartons * ppb) + loose;
+
+                // Update the readonly Pieces field (sent as qty[])
                 $row.find('.qty-pcs').val(totalPieces);
 
                 const price = parseFloat($row.find('.price').val()) || 0;
-                // Discount
                 const discPct = parseFloat($row.find('.item-disc-percent').val()) || 0;
                 let total = 0;
 
-                // Total Amount calculation
+                // Total Amount calculation based on size mode
                 if (sizeMode == 'by_size') {
-                    // price is per m2
-                    total = pieces_per_m2 * totalPieces * price;
+                    total = (pieces_per_m2 || 0) * totalPieces * price;
                 } else if (sizeMode == 'by_cartons' || sizeMode == 'by_carton') {
-                    // price is per carton
-                    if (ppb > 0) {
-                        total = (totalPieces / ppb) * price;
-                    } else {
-                        total = totalPieces * price;
-                    }
+                    // price is per carton box
+                    total = ppb > 0 ? (totalPieces / ppb) * price : totalPieces * price;
                 } else {
                     // price is per piece
                     total = totalPieces * price;
                 }
 
-                // Discount Amount
+                // Discount
                 const discAmt = total * (discPct / 100);
                 $row.find('.item-disc-amt').val(discAmt.toFixed(2));
-
                 total = total - discAmt;
 
                 $row.data('total-pieces', totalPieces);
-
                 $row.find('.row-total').val(total.toFixed(2));
-                // Update hidden cost factor if needed (optional, depends on backend requirements)
             }
 
             function recalcAll() {

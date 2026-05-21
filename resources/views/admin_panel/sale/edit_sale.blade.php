@@ -241,7 +241,7 @@
     <style>
         /* ===== Sales Table UI Fix ===== */
         .sales-table {
-            min-width: 1500px;
+            min-width: 1150px;
             /* Ensure enough space for all columns */
         }
 
@@ -256,6 +256,7 @@
 
         /* Column Widths */
         .col-product {
+            width: 220px;
             min-width: 220px;
         }
 
@@ -392,15 +393,12 @@
                         <!-- CUSTOMER SELECT -->
                         <div class="mb-2">
                             <label class="form-label fw-bold mb-1">Select Customer</label>
-                            <select class="form-select" id="customerSelect" name="customer">
-                                <option value="" disabled {{ !isset($sale) ? 'selected' : '' }}>Select Customer
-                                </option>
-                                @foreach ($customer as $c)
-                                    <option value="{{ $c->id }}"
-                                        {{ isset($sale) && $sale->customer_id == $c->id ? 'selected' : '' }}>
-                                        {{ $c->customer_name }}
+                            <select class="form-select" id="customerSelect" name="customer" style="width:100%">
+                                @if (isset($sale) && $sale->customer_relation)
+                                    <option value="{{ $sale->customer_id }}" selected>
+                                        {{ $sale->customer_relation->customer_id }} — {{ $sale->customer_relation->customer_name }}
                                     </option>
-                                @endforeach
+                                @endif
                             </select>
                             <small class="text-muted" id="customerCountHint"></small>
                         </div>
@@ -448,13 +446,11 @@
                                 <thead>
                                     <tr>
                                         <th class="col-product">Product</th>
-                                        <th style="width: 140px;">Size (H x W)</th>
-                                        <th style="width: 100px;">Mode</th>
-                                        <th class="col-warehouse">Warehouse</th>
                                         <th class="col-stock">Stock</th>
-                                        <th class="col-qty qty-header">Total Boxes</th>
-                                        <th class="col-qty pack-size-col">Pack Size</th>
-                                        <th class="col-pieces boxes-col">Pieces</th>
+                                        <th style="width:80px;min-width:80px;">Carton</th>
+                                        <th style="width:80px;min-width:80px;">Loose Pcs</th>
+                                        <th class="col-qty pack-size-col" title="Pieces per Carton">Pcs/Ctn</th>
+                                        <th class="col-pieces boxes-col">Total Pcs</th>
                                         <th class="col-price-p price-pc-header">Retail Price</th>
                                         <th class="col-disc">Disc %</th>
                                         <th class="col-disc-amt">Disc Amt</th>
@@ -467,8 +463,6 @@
                                         @foreach ($sale->items as $item)
                                             @php
                                                 $prod = $item->product;
-                                                // Identify Pack Size - Robust Check
-                                                // Prioritize Item Snapshot for Mode & PPB
                                                 $sizeMode = $item->size_mode ?? ($prod->size_mode ?? 'std');
 
                                                 $ppb = 1;
@@ -478,17 +472,13 @@
                                                     $ppb = $prod->pieces_per_box;
                                                 }
 
-                                                $loose = $item->loose_pieces ?? 0;
-
-                                                // Prepare Main Qty Display
-                                                $qtyDisplay = $item->total_pieces;
-
-                                                // Standard calculation for Box.Loose format if applicable
-                                                if (in_array($sizeMode, ['by_cartons', 'by_size']) && $ppb > 0) {
-                                                    // Strictly recalculate from Total Pieces
-                                                    $boxes = floor($item->total_pieces / $ppb);
-                                                    $calcLoose = $item->total_pieces % $ppb;
-                                                    $qtyDisplay = $calcLoose > 0 ? "$boxes.$calcLoose" : $boxes;
+                                                $cartons = 0;
+                                                $loose = 0;
+                                                if ($ppb > 0) {
+                                                    $cartons = floor($item->total_pieces / $ppb);
+                                                    $loose = $item->total_pieces % $ppb;
+                                                } else {
+                                                    $loose = $item->total_pieces;
                                                 }
 
                                                 // Calculate Warehouse Stock Display for the SELECTED warehouse
@@ -527,82 +517,40 @@
                                                                 {{ $prod->item_name }}</option>
                                                         @endif
                                                     </select>
+                                                    <input type="hidden" class="item-code-display" value="{{ $prod->item_code ?? '' }}">
+                                                    <input type="hidden" class="size-h" value="{{ $prod->height ?? '-' }}">
+                                                    <input type="hidden" class="size-w" value="{{ $prod->width ?? '-' }}">
+                                                    <input type="hidden" class="size-mode-text" value="{{ $sizeMode }}">
                                                 </td>
 
-                                                <!-- Size Info -->
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-1 justify-content-center">
-                                                        <input type="text"
-                                                            class="form-control text-center px-0 size-h input-readonly"
-                                                            readonly value="{{ $prod->height }}"
-                                                            style="font-size: 0.8rem; width: 45px;" tabindex="-1">
-                                                        <span class="text-muted small">x</span>
-                                                        <input type="text"
-                                                            class="form-control text-center px-0 size-w input-readonly"
-                                                            readonly value="{{ $prod->width }}"
-                                                            style="font-size: 0.8rem; width: 45px;" tabindex="-1">
-                                                    </div>
-                                                </td>
-
-                                                <!-- Size Mode -->
-                                                <td>
+                                                <!-- Stock & Warehouse -->
+                                                <td class="col-stock">
                                                     <input type="text"
-                                                        class="form-control text-center px-1 size-mode-text input-readonly"
-                                                        readonly value="{{ $sizeMode }}" tabindex="-1"
-                                                        style="font-size: 0.8rem; background-color: #f8f9fa;">
-                                                </td>
-
-                                                <!-- Warehouse -->
-                                                <td class="col-warehouse">
-                                                    <select class="form-select warehouse" name="warehouse_id[]">
-                                                        <option value="">Select Warehouse</option>
+                                                        class="form-control stock text-center input-readonly" readonly
+                                                        value="{{ $selStockDisp }}" tabindex="-1">
+                                                    <select class="warehouse d-none" name="warehouse_id[]">
                                                         @foreach ($warehouse as $w)
-                                                            @php
-                                                                $wStk = 0;
-                                                                $ws = $prod->warehouseStocks
-                                                                    ->where('warehouse_id', $w->id)
-                                                                    ->where('product_id', $prod->id)
-                                                                    ->first();
-                                                                if ($ws) {
-                                                                    $wStk = (float) $ws->total_pieces;
-                                                                    if ($wStk <= 0 && $ws->quantity > 0) {
-                                                                        $wStk = $ws->quantity * $ppb;
-                                                                    }
-                                                                }
-                                                                $wDisp = $wStk;
-                                                                if (
-                                                                    in_array($sizeMode, ['by_cartons', 'by_size']) &&
-                                                                    $ppb > 0
-                                                                ) {
-                                                                    $wb = floor($wStk / $ppb);
-                                                                    $wl = $wStk % $ppb;
-                                                                    $wDisp = $wl > 0 ? "$wb.$wl" : $wb;
-                                                                }
-                                                            @endphp
                                                             <option value="{{ $w->id }}"
-                                                                data-stock="{{ $wStk }}"
                                                                 {{ $item->warehouse_id == $w->id ? 'selected' : '' }}>
-                                                                {{ $w->warehouse_name }} (Stock: {{ $wDisp }})
+                                                                {{ $w->warehouse_name }}
                                                             </option>
                                                         @endforeach
                                                     </select>
                                                 </td>
 
-                                                <!-- Stock -->
-                                                <td class="col-stock">
-                                                    <input type="text"
-                                                        class="form-control stock text-center input-readonly" readonly
-                                                        value="{{ $selStockDisp }}" tabindex="-1">
+                                                <!-- Carton -->
+                                                <td style="width:80px;min-width:80px;">
+                                                    <input type="number" class="form-control carton-qty text-end"
+                                                        name="carton_qty[]" value="{{ $cartons }}" placeholder="0" min="0">
                                                 </td>
 
-                                                <!-- Qty Input -->
-                                                <td class="col-qty">
-                                                    <input type="text" class="form-control sales-qty text-end"
-                                                        name="qty[]" id="sales-qty" value="{{ $qtyDisplay }}"
-                                                        placeholder="Pcs">
+                                                <!-- Loose Pcs -->
+                                                <td style="width:80px;min-width:80px;">
+                                                    <input type="number" class="form-control loose-pcs-input text-end"
+                                                        name="loose_qty[]" value="{{ $loose }}" placeholder="0" min="0">
                                                 </td>
 
-                                                <!-- Pack Size -->
+                                                <!-- Pack Size (Pcs/Ctn) -->
                                                 <td class="col-qty">
                                                     <input type="text"
                                                         class="form-control pack-qty text-end input-readonly"
@@ -610,27 +558,28 @@
                                                         tabindex="-1">
                                                 </td>
 
-
-                                                <!-- Total -->
+                                                <!-- Total Pieces -->
                                                 <td class="col-pieces">
                                                     <input type="text"
                                                         class="form-control total-pieces text-end input-readonly"
                                                         name="total_pieces[]" readonly value="{{ $item->total_pieces }}"
                                                         tabindex="-1">
+                                                    <!-- Hidden qty field for backend compatibility -->
+                                                    <input type="hidden" class="sales-qty" name="qty[]" value="{{ $cartons . ($loose > 0 ? '.' . $loose : '') }}">
                                                 </td>
 
-                                                <!-- Price -->
+                                                <!-- Retail Price -->
                                                 <td class="col-price-p">
                                                     <input type="text"
-                                                        class="form-control visible-price text-end input-readonly"
-                                                        name="visible_price[]" readonly
-                                                        value="{{ $item->product->sale_price_per_box ?? 0 }}"
-                                                        tabindex="-1">
+                                                        class="form-control visible-price text-end"
+                                                        name="visible_price[]"
+                                                        value="{{ $item->price }}"
+                                                        placeholder="0.00">
                                                     <input type="hidden" class="price-per-piece"
                                                         name="price_per_piece[]"
-                                                        value="{{ $item->product->sale_price_per_box ?? 0 }}">
+                                                        value="{{ $item->price }}">
                                                     <input type="hidden" class="retail-price"
-                                                        value="{{ $item->product->retail_price ?? 0 }}">
+                                                        value="{{ $prod->retail_price ?? $item->price }}">
                                                 </td>
 
                                                 <!-- Discount -->
@@ -638,6 +587,7 @@
                                                     <div class="discount-wrapper">
                                                         <input type="number" class="form-control discount-value text-end"
                                                             name="item_disc[]" value="{{ $item->discount_percent }}">
+                                                        <input type="hidden" class="discount-type-hidden" name="discount_type[]" value="percent">
                                                         <button type="button"
                                                             class="btn btn-outline-secondary discount-toggle"
                                                             data-type="percent" tabindex="-1">%</button>
@@ -646,15 +596,16 @@
 
                                                 <!-- Disc Amt -->
                                                 <td class="col-disc-amt">
-                                                    <input type="text" class="form-control discount-amount text-end">
+                                                    <input type="text" class="form-control discount-amount text-end" readonly value="{{ $item->discount_amount }}">
                                                 </td>
 
-                                                <!-- Amount -->
+                                                <!-- Net Amount -->
                                                 <td class="col-amount">
                                                     <input type="text"
                                                         class="form-control sales-amount text-end input-readonly"
                                                         name="total[]" value="{{ $item->total }}" readonly
                                                         tabindex="-1">
+                                                    <input type="hidden" class="gross-amount" value="{{ $item->total + $item->discount_amount }}">
                                                 </td>
 
                                                 <!-- Action -->
@@ -668,7 +619,7 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="11" class="text-end fw-bold">Total:</td>
+                                        <td colspan="9" class="text-end fw-bold">Total:</td>
                                         <td class="text-end fw-bold"><span id="totalAmount">0.00</span></td>
                                         <td></td>
                                     </tr>
@@ -683,19 +634,47 @@
                     <div class="col-lg-7">
                         <div class="section-title mb-2">Receipt Vouchers</div>
                         <div id="rvWrapper" class="border rounded-3 p-2">
+                            @php
+                                $receiptVoucher = \App\Models\VoucherMaster::with('details')
+                                    ->where('voucher_type', \App\Models\VoucherMaster::TYPE_RECEIPT)
+                                    ->where('remarks', 'like', "%#{$sale->invoice_no}%")
+                                    ->first();
+                                $receiptLines = collect();
+                                if ($receiptVoucher) {
+                                    $receiptLines = $receiptVoucher->details->where('debit', '>', 0);
+                                }
+                                $firstLine = $receiptLines->first();
+                                $otherLines = $receiptLines->skip(1);
+                            @endphp
                             <div class="d-flex gap-2 align-items-center mb-2 rv-row">
                                 <select class="form-select rv-account" name="receipt_account_id[]"
                                     style="max-width: 320px">
-                                    <option value="" selected disabled>Select account</option>
+                                    <option value="" {{ !$firstLine ? 'selected' : '' }} disabled>Select account</option>
                                     @foreach ($accounts as $acc)
-                                        <option value="{{ $acc->id }}">{{ $acc->title }}</option>
+                                        <option value="{{ $acc->id }}" {{ $firstLine && $firstLine->account_id == $acc->id ? 'selected' : '' }}>{{ $acc->title }}</option>
                                     @endforeach
                                 </select>
                                 <input type="text" class="form-control text-end rv-amount" name="receipt_amount[]"
+                                    value="{{ $firstLine ? number_format($firstLine->debit, 2, '.', '') : '' }}"
                                     placeholder="0.00" style="max-width:160px">
                                 <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddRV">Add
                                     more</button>
                             </div>
+                            @foreach ($otherLines as $line)
+                                <div class="d-flex gap-2 align-items-center mb-2 rv-row">
+                                    <select class="form-select rv-account" name="receipt_account_id[]"
+                                        style="max-width: 320px">
+                                        <option value="" disabled>Select account</option>
+                                        @foreach ($accounts as $acc)
+                                            <option value="{{ $acc->id }}" {{ $line->account_id == $acc->id ? 'selected' : '' }}>{{ $acc->title }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="text" class="form-control text-end rv-amount" name="receipt_amount[]"
+                                        value="{{ number_format($line->debit, 2, '.', '') }}"
+                                        placeholder="0.00" style="max-width:160px">
+                                    <button type="button" class="btn btn-outline-danger btn-sm btnRemRV">&times;</button>
+                                </div>
+                            @endforeach
                             <div class="text-end">
                                 <span class="me-2">Receipts Total:</span>
                                 <span class="fw-bold" id="receiptsTotal">0.00</span>
@@ -785,73 +764,115 @@
             @section('js')
                 @include('admin_panel.sale.scripts.shared_logic')
                 <script>
-                    // --- Customer Logic (Ported from shared_logic/add_sale) ---
-                    $(document).on('change', 'input[name="partyType"]', function() {
-                        $('#customerSelect').val('').trigger('change');
-                        loadCustomersByType(this.value);
-                    });
+                    $(document).ready(function() {
+                        // ============================================================
+                        // CUSTOMER SELECT2 AJAX SEARCH (Name or Code)
+                        // ============================================================
+                        function getPartyType() {
+                            return $('input[name="partyType"]:checked').val() || 'Main Customer';
+                        }
 
-                    function loadCustomersByType(type) {
-                        $('#customerSelect').prop('disabled', true).html('<option selected disabled>Loading…</option>');
-                        $.get('{{ route('salecustomers.index') }}', {
-                            type: type
-                        }, function(data) {
-                            let html = '<option value="">-- Select --</option>';
-                            if (data && data.length > 0) {
-                                data.forEach(row => {
-                                    html +=
-                                        `<option value="${row.id}">${row.customer_id} -- ${row.customer_name}</option>`;
-                                });
-                                $('#customerCountHint').text(data.length + ' record(s) found');
-                            } else {
-                                html += '<option disabled>No record found</option>';
-                                $('#customerCountHint').text('No record found');
+                        $('#customerSelect').select2({
+                            placeholder: 'Search by Name or Code...',
+                            allowClear: true,
+                            width: '100%',
+                            minimumInputLength: 0,
+                            ajax: {
+                                url: '{{ route('salecustomers.index') }}',
+                                dataType: 'json',
+                                delay: 250,
+                                data: function(params) {
+                                    return {
+                                        type: getPartyType(),
+                                        search: params.term || ''
+                                    };
+                                },
+                                processResults: function(data) {
+                                    return {
+                                        results: data.map(function(c) {
+                                            return {
+                                                id: c.id,
+                                                text: (c.customer_id || '') + ' — ' + c.customer_name,
+                                                customer: c
+                                            };
+                                        })
+                                    };
+                                },
+                                cache: false
+                            },
+                            templateResult: function(item) {
+                                if (item.loading) return item.text;
+                                if (!item.customer) return item.text;
+                                const c = item.customer;
+                                return $(`<div>
+                                    <strong>${c.customer_name}</strong>
+                                    <small class="text-muted ms-2">${c.customer_id || ''}</small>
+                                    ${c.mobile ? '<br><small class="text-muted">' + c.mobile + '</small>' : ''}
+                                </div>`);
+                            },
+                            templateSelection: function(item) {
+                                if (!item.customer) return item.text;
+                                return item.customer.customer_id + ' — ' + item.customer.customer_name;
                             }
-                            $('#customerSelect').html(html).prop('disabled', false);
-                        }).fail(function() {
-                            $('#customerSelect').html('<option disabled>Error loading</option>');
                         });
-                    }
 
-                    $(document).on('change', '#customerSelect', function() {
-                        const id = $(this).val();
-                        if (!id) return;
-                        // Don't clear fields in Edit mode if just initializing, but here it's a change event
+                        // Party type change → reset customer
+                        $(document).on('change', 'input[name="partyType"]', function() {
+                            $('#customerSelect').val(null).trigger('change');
+                            clearCustomerInfo();
+                        });
 
-                        $.get("{{ url('sale/customers') }}/" + id + "?t=" + new Date().getTime(), function(d) {
-                            $('#address').val(d.address || '');
-                            $('#tel').val(d.mobile || '');
-                            $('#remarks').val(d.status || '');
-                            const prev = parseFloat(d.previous_balance || 0);
-                            const range = parseFloat(d.balance_range || 0);
-                            $('#previousBalance').val(prev.toFixed(2));
-                            $('#rangeBalance').val(range.toFixed(2));
+                        // Customer selected → load details
+                        $('#customerSelect').on('select2:select', function(e) {
+                            const id = e.params.data.id;
+                            if (!id) return;
 
+                            $.get("{{ url('sale/customers') }}/" + id + "?t=" + new Date().getTime(), function(d) {
+                                $('#address').val(d.address || '');
+                                $('#tel').val(d.mobile || '');
+                                $('#remarks').val(d.status || '');
+                                const prev = parseFloat(d.previous_balance || 0);
+                                const range = parseFloat(d.balance_range || 0);
+                                $('#previousBalance').val(prev.toFixed(2));
+                                $('#rangeBalance').val(range.toFixed(2));
+
+                                if (typeof updateGrandTotals === 'function') updateGrandTotals();
+                            }).fail(function() {
+                                showAlert('error', 'Failed to load customer details');
+                            });
+                        });
+
+                        // Customer cleared
+                        $('#customerSelect').on('select2:clear', function() {
+                            clearCustomerInfo();
                             if (typeof updateGrandTotals === 'function') updateGrandTotals();
                         });
-                    });
 
-                    $('#clearCustomerData').on('click', function() {
-                        $('#customerSelect').val('').trigger('change');
-                        $('#address, #tel, #remarks').val('');
-                        $('#previousBalance, #rangeBalance').val('0');
-                        updateGrandTotals();
-                    });
+                        function clearCustomerInfo() {
+                            $('#address, #tel, #remarks').val('');
+                            $('#previousBalance, #rangeBalance').val('0');
+                        }
 
-                    // Edit Sale Specific Handlers
-                    $('#btnPrint').on('click', function() {
-                        ensureSaved().then(id => window.open('{{ url('sales') }}/' + id + '/invoice', '_blank'));
-                    });
-                    $('#btnEstimate').on('click', function() {
-                        ensureSaved().then(id => window.open('{{ url('sales') }}/' + id + '/invoice?type=estimate', '_blank'));
-                    });
-                    $('#btnPrint2').on('click', function() {
-                        ensureSaved().then(id => window.open('{{ url('sales') }}/' + id + '/recepit', '_blank'));
-                    });
-                    $('#btnDcThermal').on('click', function() {
-                        ensureSaved().then(id => window.open('{{ url('sales') }}/' + id + '/dc-thermal', '_blank'));
-                    });
+                        $('#clearCustomerData').on('click', function() {
+                            $('#customerSelect').val(null).trigger('change');
+                            clearCustomerInfo();
+                            if (typeof updateGrandTotals === 'function') updateGrandTotals();
+                        });
 
+                        // Edit Sale Specific Handlers
+                        $('#btnPrint').on('click', function() {
+                            ensureSaved().then(id => window.open('{{ url('sales') }}/' + id + '/invoice', '_blank'));
+                        });
+                        $('#btnEstimate').on('click', function() {
+                            ensureSaved().then(id => window.open('{{ url('sales') }}/' + id + '/invoice?type=estimate', '_blank'));
+                        });
+                        $('#btnPrint2').on('click', function() {
+                            ensureSaved().then(id => window.open('{{ url('sales') }}/' + id + '/recepit', '_blank'));
+                        });
+                        $('#btnDcThermal').on('click', function() {
+                            ensureSaved().then(id => window.open('{{ url('sales') }}/' + id + '/dc-thermal', '_blank'));
+                        });
+                    });
                 </script>
                 @if (isset($sale))
                     <script>
@@ -874,7 +895,17 @@
                                     computeRow($(this));
                                 }
                             });
-                            updateGrandTotals();
+
+                            // Recompute Receipts and then updateGrandTotals
+                            if (typeof window.recomputeReceipts === 'function') {
+                                window.recomputeReceipts();
+                            } else {
+                                updateGrandTotals();
+                            }
+
+                            if (typeof refreshPostedState === 'function') {
+                                refreshPostedState();
+                            }
 
                             setTimeout(() => {
                                 $('#pageLoader').addClass('d-none');

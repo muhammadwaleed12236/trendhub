@@ -136,19 +136,26 @@
       <select class="warehouse d-none" name="warehouse_id[]"></select>
     </td>
 
-    <!-- Qty Pieces (Input) -->
-    <td class="col-qty">
-      <input type="text" class="form-control sales-qty text-end" name="qty[]" id="sales-qty" placeholder="Boxes + Pcs">
+    <!-- Carton Qty -->
+    <td style="width:80px;min-width:80px;">
+      <input type="number" class="form-control carton-qty text-end" name="carton_qty[]" placeholder="0" min="0" value="0">
     </td>
 
-    <!-- Pack Size (Readonly) -->
-    <td class="col-qty">
-       <input type="text" class="form-control pack-qty text-end input-readonly" name="pack_qty[]" readonly placeholder="Size" tabindex="-1">
+    <!-- Loose Pieces -->
+    <td style="width:80px;min-width:80px;">
+      <input type="number" class="form-control loose-pcs-input text-end" name="loose_qty[]" placeholder="0" min="0" value="0">
     </td>
 
-    <!-- Packet/Box (Calculated) -->
+    <!-- Pack Size (Pieces per Carton, Readonly) -->
+    <td class="col-qty">
+       <input type="text" class="form-control pack-qty text-end input-readonly" name="pack_qty[]" readonly placeholder="1" tabindex="-1" value="1">
+    </td>
+
+    <!-- Total Pieces (Calculated) -->
     <td class="col-pieces">
-      <input type="text" class="form-control total-pieces text-end input-readonly" name="total_pieces[]" readonly placeholder="Box" tabindex="-1">
+      <input type="text" class="form-control total-pieces text-end input-readonly" name="total_pieces[]" readonly placeholder="0" tabindex="-1">
+      <!-- Hidden qty field for backend compatibility -->
+      <input type="hidden" class="sales-qty" name="qty[]" value="0">
     </td>
  
     <!-- Price/Piece (EDITABLE) -->
@@ -303,38 +310,29 @@
 
         const m2_per_piece = parseFloat($row.find('.size-h').val() * $row.find('.size-w').val() / 10000);
 
-        const qtyInput = $row.find('.sales-qty').val(); // String
         const sizeMode = $row.data('size_mode');
         const packQty = parseFloat($row.find('.pack-qty').val()) || 1;
 
-        let totalPieces = 0;
-        let displayCalc = 0;
+        // --- NEW: Read separate carton + loose inputs ---
+        const cartonQty = parseInt($row.find('.carton-qty').val()) || 0;
+        const loosePcs  = parseInt($row.find('.loose-pcs-input').val()) || 0;
+        const totalPiecesFromInputs = (cartonQty * packQty) + loosePcs;
 
-        // Qty Parsing
-        if (sizeMode === 'by_cartons' || sizeMode === 'by_size') {
-            // Box.Loose
-            const parts = qtyInput.toString().split('.');
-            const boxes = parseInt(parts[0]) || 0;
-            const loose = parts[1] ? parseInt(parts[1]) : 0;
-            totalPieces = (boxes * packQty) + loose;
-            displayCalc = totalPieces;
-        } else {
-            // Pieces
-            totalPieces = toNum(qtyInput);
-            if (packQty > 0) {
-                displayCalc = totalPieces / packQty;
-            }
-        }
+        let totalPieces = totalPiecesFromInputs;
+        let displayCalc = totalPieces; // shown in "Total Pcs" column
+
+        // Sync hidden qty field (backend uses qty[] as box.loose string OR just pieces)
+        // We'll store total_pieces directly; controller reads total_pieces[] for by_cartons
+        const boxLooseStr = cartonQty + (loosePcs > 0 ? '.' + loosePcs : '');
+        $row.find('.sales-qty').val(boxLooseStr || '0');
 
         const discValue = toNum($row.find('.discount-value').val());
         const discType = $row.find('.discount-toggle').data('type');
         let dam = toNum($row.find('.discount-amount').val());
 
-        $row.find('.total-pieces').val(Number.isInteger(displayCalc) ? displayCalc : displayCalc.toFixed(2));
+        $row.find('.total-pieces').val(totalPieces);
 
-        // Gross Calc
-        // Logic: if mode=by_carton, use box price?
-        // Prioritize `price-per-piece` (hidden) if available, or fall back.
+        // Price per piece
         let unitPrice = toNum($row.find('.price-per-piece').val());
         if (unitPrice <= 0) unitPrice = visiblePrice; // fallback
 
@@ -343,34 +341,15 @@
         if (sizeMode === 'by_size') {
             gross = m2_per_piece * totalPieces * unitPrice;
             if (!m2_per_piece) gross = 0;
-        } else if (sizeMode === 'by_cartons') {
-            // Check if we use m2 or box price
-            if (m2_per_piece > 0) {
-                gross = m2_per_piece * totalPieces * unitPrice;
-            } else {
-                // By Cartons (without size)
-                // If unitPrice is "Price per piece", gross = totalPieces * unitPrice
-                // If unitPrice is "Price per box", we need to adjust.
-                // Usually `price-per-piece` is strictly price per single unit.
-                gross = totalPieces * unitPrice;
-
-                // Note: In edit_sale logic:
-                // if (packQty > 0) gross = (totalPieces / packQty) * unitPrice;
-                // This implies unitPrice was Box Price in that specific context.
-                // Let's check `fetchProductPrice`. 
-                // .price-per-piece -> pRes.sale_price_per_piece.
-                // So it IS per piece. So gross = pieces * price_per_piece is correct.
-            }
         } else {
-            gross = unitPrice * totalPieces;
+            // by_cartons OR by_pieces: always pieces × price_per_piece
+            gross = totalPieces * unitPrice;
         }
 
-        // Discount Calculation — alwys derived from discValue + discType
-        // Never rely on manually entered discount-amount (that field is now readonly/calculated)
+        // Discount Calculation
         if (discType === 'percent') {
             dam = discValue > 0 ? (gross * discValue) / 100 : 0;
         } else {
-            // PKR / fixed mode: discValue IS the rupee amount
             dam = discValue > 0 ? discValue : 0;
         }
         $row.find('.discount-amount').val(dam.toFixed(2));
@@ -388,32 +367,14 @@
 
         $('#salesTableBody tr').each(function() {
             const $r = $(this);
-            // We use the hidden gross amount if available, otherwise fallback to sales-amount
             let gross = toNum($r.find('.gross-amount').val());
             const net = toNum($r.find('.sales-amount').val());
             const dam = toNum($r.find('.discount-amount').val());
             
-            // If gross wasn't set (maybe during initial load), calculate it
             if (gross <= 0 && net > 0) gross = net + dam;
 
-            // Piece calc for total
-            const mode = $r.data('size_mode');
-            const qtyStr = $r.find('.sales-qty').val().toString();
-            const pq = parseFloat($r.find('.pack-qty').val()) || 1;
-
-            let pieces = 0;
-            if (mode === 'by_cartons' || mode === 'by_size') {
-                const parts = qtyStr.split('.');
-                const b = parseInt(parts[0]) || 0;
-                const l = parts[1] ? parseInt(parts[1]) : 0;
-                pieces = (b * pq) + l;
-            } else {
-                pieces = toNum(qtyStr);
-                // Plus loose pieces?? In 'std' mode, loose-pieces input might be used? 
-                // In edit_sale logic: `totalPieces = qtyPcs + loose`.
-                const loose = toNum($r.find('.loose-pieces').val());
-                pieces += loose;
-            }
+            // Piece calc: use total-pieces field (already computed)
+            const pieces = parseInt($r.find('.total-pieces').val()) || 0;
 
             tQty += pieces;
             tGross += gross;
@@ -460,9 +421,9 @@
         let ok = false;
         $('#salesTableBody tr').each(function() {
             const pid = $(this).find('.product').val();
-            const qtyStr = $(this).find('.sales-qty').val();
-            // simple check: qty string not empty/0
-            if (pid && qtyStr && qtyStr != 0) {
+            const cartons = parseInt($(this).find('.carton-qty').val()) || 0;
+            const loose   = parseInt($(this).find('.loose-pcs-input').val()) || 0;
+            if (pid && (cartons > 0 || loose > 0)) {
                 ok = true;
                 return false;
             }
@@ -558,7 +519,9 @@
             const $r = $(this);
             const prod = $r.find('.product').val();
             const wh = $r.find('.warehouse').val();
-            const qty = parseFloat($r.find('.sales-qty').val() || '0') || 0;
+            const cartons = parseInt($r.find('.carton-qty').val()) || 0;
+            const loose   = parseInt($r.find('.loose-pcs-input').val()) || 0;
+            const qty = cartons + loose;
             if ((qty <= 0) || ((!prod || prod === '') && (!wh || wh === ''))) {
                 if ($('#salesTableBody tr').length > 1) {
                     $r.remove();
@@ -566,6 +529,8 @@
                     // clear last row if needed
                     $r.find('select').val('');
                     $r.find('input').val('');
+                    $r.find('.carton-qty').val(0);
+                    $r.find('.loose-pcs-input').val(0);
                     $r.find('.stock').val('');
                     $r.find('.sales-amount').val('0');
                 }
@@ -615,7 +580,8 @@
             const $row = $(this);
             const $wh = $row.find('.warehouse');
             const $prod = $row.find('.product');
-            const $qty = $row.find('.sales-qty');
+            const $cartonQtyInput = $row.find('.carton-qty');
+            const $loosePcsInput = $row.find('.loose-pcs-input');
 
             if (!$wh.val()) {
                 ok = false;
@@ -635,14 +601,14 @@
                 markInvalid($prod);
             }
 
-            const qtyVal = parseFloat($qty.val() || '0') || 0;
+            const qtyVal = (parseInt($cartonQtyInput.val()) || 0) + (parseInt($loosePcsInput.val()) || 0);
             if (qtyVal <= 0) {
                 ok = false;
                 if (!firstMessage) {
-                    firstMessage = 'Please enter Item qty (> 0) for row ' + (rowIndex + 1);
-                    firstEl = $qty;
+                    firstMessage = 'Carton Qty یا Loose Pcs ضرور لکھیں (row ' + (rowIndex + 1) + ')';
+                    firstEl = $cartonQtyInput;
                 }
-                markInvalid($qty);
+                markInvalid($cartonQtyInput);
             }
         });
 
@@ -777,12 +743,8 @@
         // ... existing bindings ...
 
         // Inputs -> Calc
-        $(document).on('input', '.sales-qty, .pack-qty, .loose-pieces, .discount-value, .visible-price',
+        $(document).on('input', '.carton-qty, .loose-pcs-input, .pack-qty, .discount-value, .visible-price',
             function() {
-                if ($(this).hasClass('sales-qty')) {
-                    normalizeQtyInput($(this), $(this).closest('tr'));
-                }
-
                 // If user manually changes the visible price, also update the hidden price-per-piece
                 if ($(this).hasClass('visible-price')) {
                     const $row = $(this).closest('tr');
@@ -815,7 +777,7 @@
         $('#btnAdd').click(addNewRow);
 
         // Enter on any editable input -> compute row, add new row & open product select
-        $('#salesTableBody').on('keydown', '.sales-qty, .discount-value, .discount-amount, .visible-price', function(e) {
+        $('#salesTableBody').on('keydown', '.carton-qty, .loose-pcs-input, .discount-value, .discount-amount, .visible-price', function(e) {
             if (e.key === 'Enter' || e.keyCode === 13) {
                 e.preventDefault();
                 const $current = $(this).closest('tr');
@@ -911,7 +873,9 @@
         });
 
         // Receipts Logic
-        $(document).on('input', '.rv-amount', recomputeReceipts);
+        $(document).on('input', '.rv-amount', function() {
+            if (typeof window.recomputeReceipts === 'function') window.recomputeReceipts();
+        });
 
         $('#btnAddRV').on('click', function() {
             const row = `
@@ -928,7 +892,7 @@
 
         $(document).on('click', '.btnRemRV', function() {
             $(this).closest('.rv-row').remove();
-            recomputeReceipts();
+            if (typeof window.recomputeReceipts === 'function') window.recomputeReceipts();
         });
         // });
 
@@ -952,7 +916,7 @@
             if (currentVal) $select.val(currentVal);
         }
 
-        function recomputeReceipts() {
+        window.recomputeReceipts = function() {
             let sum = 0;
             $('.rv-amount').each(function() {
                 sum += toNum($(this).val());

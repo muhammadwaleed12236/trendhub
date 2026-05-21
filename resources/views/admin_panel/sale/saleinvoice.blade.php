@@ -226,9 +226,9 @@
         <!-- Company Header -->
         @if(!($isEstimate ?? false))
         <div class="company-info">
-            <div class="company-name">Yasir Pipe Store</div>
-            <div style="font-size: 12px;">Gulshan-e-Ilahi, Hyderabad.</div>
-             <p>Phone: 03072996698 </p>
+            <div class="company-name"></div>
+            <div style="font-size: 12px;"></div>
+             <p></p>
         </div>
         @endif
 
@@ -238,7 +238,7 @@
         @if(!($isEstimate ?? false))
         <div class="row g-2 mb-2">
             <!-- Left Box: Customer Info -->
-            <div class="col-4">
+            <div class="col-6">
                 <div class="info-box">
                     <div class="info-box-header">Customer</div>
                     @if($sale->customer_relation?->customer_id)
@@ -252,23 +252,10 @@
                 </div>
             </div>
 
-            <!-- Middle Box: Sales Person / Meta -->
-            <div class="col-4">
-                <div class="info-box">
-                    <div class="info-box-header">Details</div>
-                    <div><span class="info-label">Maker:</span> {{ auth()->user()->name ?? 'Admin' }}</div>
-                    <div>
-                        <span class="info-label">Sales Person:</span>
-                        @php
-                            $officer = $sale->customer_relation?->salesOfficer;
-                        @endphp
-                        <strong>{{ $officer?->name ?? auth()->user()->name ?? 'Admin' }}</strong>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- Right Box: Invoice Specifics -->
-            <div class="col-4">
+            <div class="col-6">
                 <div class="info-box">
                     <div class="info-box-header">Reference</div>
                     <div><span class="info-label">Inv #:</span> <strong>{{ $sale->id }}</strong></div>

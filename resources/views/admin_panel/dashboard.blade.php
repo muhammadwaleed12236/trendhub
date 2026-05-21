@@ -613,6 +613,53 @@
                     </div>
                 @endif
 
+                <!-- Cash & Bank Balances -->
+                @if (isset($cashAndBankAccounts) && $cashAndBankAccounts->isNotEmpty())
+                    <h5 class="mb-3 text-muted"
+                        style="font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Cash & Bank Balances
+                    </h5>
+                    <div class="stats-grid mb-4">
+                        @foreach ($cashAndBankAccounts as $account)
+                            <div class="stat-card {{ strtolower($account->head->name) == 'cash' ? 'primary' : 'purple' }}">
+                                <div class="stat-header">
+                                    <div class="stat-icon">
+                                        <i class="fas {{ strtolower($account->head->name) == 'cash' ? 'fa-wallet' : 'fa-university' }}"></i>
+                                    </div>
+                                    <span class="badge rounded-pill px-2.5 py-1 small fw-bold"
+                                        style="font-size: 0.75rem; background: {{ strtolower($account->head->name) == 'cash' ? '#eef2ff' : '#f3e8ff' }}; color: {{ strtolower($account->head->name) == 'cash' ? '#6366f1' : '#8b5cf6' }};">
+                                        {{ $account->head->name }}
+                                    </span>
+                                </div>
+                                <div class="stat-value">Rs {{ number_format($account->current_balance, 2) }}</div>
+                                <div class="stat-label fw-semibold text-dark mt-1">{{ $account->title }}</div>
+                                <div class="mt-2 pt-2 border-top">
+                                    <a href="{{ route('accounts.ledger', $account->id) }}" class="small text-decoration-none text-primary fw-medium">
+                                        View Ledger <i class="fa fa-arrow-right ms-1" style="font-size: 0.8em;"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+
+                        <!-- Total Cash & Bank Balance Card -->
+                        <div class="stat-card success" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+                            <div class="stat-header">
+                                <div class="stat-icon" style="background: rgba(255, 255, 255, 0.2); color: white;">
+                                    <i class="fas fa-coins"></i>
+                                </div>
+                                <span class="badge bg-white text-success border-0 px-2 py-1 rounded-pill small fw-bold">
+                                    Total Liquidity
+                                </span>
+                            </div>
+                            <div class="stat-value text-white">Rs {{ number_format($totalCashAndBankBalance, 2) }}</div>
+                            <div class="stat-label text-white-50 fw-semibold mt-1">All Cash & Bank Accounts</div>
+                            <div class="mt-2 pt-2" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                                <span class="small text-white-50">Combined Balance</span>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Main Stats (Legacy/Ops) -->
                 <div class="stats-grid">
                     @can('sales.view')
@@ -831,6 +878,67 @@
                         </div>
                     </div>
                 </div>
+                </div>
+                @endcan
+
+                {{-- ===== LOW STOCK ALERT SECTION ===== --}}
+                @can('products.view')
+                @if(isset($lowStockProducts) && $lowStockProducts->count() > 0)
+                <div class="chart-section" style="margin-top: 28px;">
+                    <div class="chart-card full-width">
+                        <div class="chart-header">
+                            <div class="chart-title">
+                                <i class="fa fa-exclamation-triangle" style="color: #ef4444;"></i>
+                                Low Stock Alert
+                                <span class="badge ms-2" style="background:#fee2e2; color:#dc2626; font-size:0.75rem; font-weight:700; padding:3px 10px; border-radius:20px;">
+                                    {{ $lowStockProducts->count() }} Products
+                                </span>
+                            </div>
+                            <a href="{{ route('product') }}?status=active" class="btn btn-sm btn-outline-danger" style="font-size:0.78rem;">
+                                View All Products <i class="fa fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="chart-body" style="padding: 20px 24px;">
+                            <div class="row g-3">
+                                {{-- Left: Horizontal Bar Chart --}}
+                                <div class="col-lg-8">
+                                    <div id="lowStockBarChart" style="height: {{ min($lowStockProducts->count() * 40 + 60, 460) }}px;"></div>
+                                </div>
+                                {{-- Right: List --}}
+                                <div class="col-lg-4">
+                                    <div style="max-height: 420px; overflow-y: auto;">
+                                        @foreach($lowStockProducts as $lsp)
+                                        @php
+                                            $curStock  = (float)($lsp->warehouse_stocks_sum_total_pieces ?? 0);
+                                            $alertQty  = (float)$lsp->alert_quantity;
+                                            $isCritical = $curStock <= 0;
+                                            $pct = $alertQty > 0 ? min(100, ($curStock / $alertQty) * 100) : 0;
+                                        @endphp
+                                        <div style="padding: 9px 0; border-bottom: 1px solid #f1f5f9;">
+                                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                                <span style="font-weight:600; font-size:0.82rem; color:#1e293b; max-width:65%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                                    {{ $lsp->item_name }}
+                                                </span>
+                                                <span style="font-weight:700; font-size:0.8rem; color:{{ $isCritical ? '#dc2626' : '#ea580c' }};">
+                                                    {{ $curStock }} / {{ $alertQty }}
+                                                </span>
+                                            </div>
+                                            <div style="height:5px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
+                                                <div style="height:100%; width:{{ $pct }}%; background:{{ $isCritical ? '#dc2626' : '#f97316' }}; border-radius:3px;"></div>
+                                            </div>
+                                            <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px;">
+                                                {{ $lsp->item_code }} &bull; Alert: {{ $alertQty }} pcs
+                                                @if($isCritical)<span style="color:#dc2626; font-weight:700;"> ⚠ Out of Stock</span>@endif
+                                            </div>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
                 @endcan
 
             </div>
@@ -1113,6 +1221,100 @@
                 };
                 new ApexCharts(document.querySelector("#topCustomersDonut"), custOptions).render();
             }
+
+            // ===== LOW STOCK HORIZONTAL BAR CHART =====
+            const lowStockEl = document.querySelector('#lowStockBarChart');
+            if (lowStockEl) {
+                const lowStockData = @json($lowStockProducts ?? collect());
+                if (lowStockData.length > 0) {
+                    const lsNames  = lowStockData.map(p => p.item_name ? (p.item_name.length > 22 ? p.item_name.substring(0,22)+'…' : p.item_name) : 'Unknown');
+                    const lsStock  = lowStockData.map(p => parseFloat(p.warehouse_stocks_sum_total_pieces) || 0);
+                    const lsAlert  = lowStockData.map(p => parseFloat(p.alert_quantity) || 0);
+                    const lsColors = lsStock.map(s => s <= 0 ? '#dc2626' : '#f97316');
+
+                    const lowStockOptions = {
+                        chart: {
+                            type: 'bar',
+                            height: lowStockEl.style.height,
+                            toolbar: { show: false },
+                            fontFamily: 'inherit',
+                        },
+                        plotOptions: {
+                            bar: {
+                                horizontal: true,
+                                barHeight: '55%',
+                                borderRadius: 4,
+                                distributed: true,
+                                dataLabels: { position: 'bottom' }
+                            }
+                        },
+                        colors: lsColors,
+                        series: [{
+                            name: 'Current Stock',
+                            data: lsStock
+                        }],
+                        xaxis: {
+                            categories: lsNames,
+                            labels: {
+                                style: { colors: '#64748b', fontSize: '11px' },
+                                formatter: val => Math.round(val) + ' pcs'
+                            }
+                        },
+                        yaxis: {
+                            labels: { style: { colors: '#1e293b', fontSize: '11px', fontWeight: 600 } }
+                        },
+                        dataLabels: {
+                            enabled: true,
+                            formatter: (val, opts) => {
+                                const alert = lsAlert[opts.dataPointIndex];
+                                return val + ' / ' + alert;
+                            },
+                            style: { fontSize: '10px', colors: ['#fff'], fontWeight: 700 },
+                            offsetX: 6
+                        },
+                        annotations: {
+                            xaxis: lsAlert.map((a, i) => ({
+                                x: a,
+                                borderColor: '#94a3b8',
+                                borderWidth: 1,
+                                strokeDashArray: 4,
+                                label: {
+                                    text: '',
+                                    style: { background: 'transparent', color: '#94a3b8', fontSize: '9px' }
+                                }
+                            })).slice(0,1) // just one reference line at first alert value
+                        },
+                        grid: {
+                            borderColor: '#f1f5f9',
+                            strokeDashArray: 4,
+                            xaxis: { lines: { show: true } },
+                            yaxis: { lines: { show: false } }
+                        },
+                        legend: { show: false },
+                        tooltip: {
+                            theme: 'light',
+                            custom: function({ series, seriesIndex, dataPointIndex, w }) {
+                                const name  = lowStockData[dataPointIndex]?.item_name || '';
+                                const code  = lowStockData[dataPointIndex]?.item_code || '';
+                                const stock = lsStock[dataPointIndex];
+                                const alert = lsAlert[dataPointIndex];
+                                const diff  = stock - alert;
+                                const color = stock <= 0 ? '#dc2626' : '#f97316';
+                                return `<div style="padding:10px 14px; font-family:inherit; font-size:12px; line-height:1.6;">
+                                    <strong style="color:#1e293b;">${name}</strong><br>
+                                    <span style="color:#64748b;">${code}</span><br>
+                                    <span style="color:${color}; font-weight:700;">Stock: ${stock} pcs</span><br>
+                                    <span style="color:#64748b;">Alert Level: ${alert} pcs</span><br>
+                                    <span style="color:${diff < 0 ? '#dc2626' : '#f97316'}; font-size:11px;">${diff < 0 ? '⚠ ' + Math.abs(diff) + ' pcs below alert' : 'At alert level'}</span>
+                                </div>`;
+                            }
+                        }
+                    };
+
+                    new ApexCharts(lowStockEl, lowStockOptions).render();
+                }
+            }
+
         });
     </script>
 @endsection

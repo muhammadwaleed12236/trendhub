@@ -203,7 +203,7 @@
 
     <div class="receipt-container">
         <!-- Header -->
-        <div class="company-name">Yasir Pipe Store</div>
+        <div class="company-name">  </div>
         <div class="company-info">
             <div>Gulshan-e-Ilahi, Hyderabad.</div>
             <div>Ph: 0327-9226901</div>
@@ -225,11 +225,7 @@
             <span>{{ Str::limit($sale->customer_relation->address, 30) }}</span>
         </div>
         @endif
-        @if (auth()->check())
-        <div class="meta-info mt-1">
-            <span><strong>Maker:</strong> {{ auth()->user()->name }}</span>
-        </div>
-        @endif
+
         
         <!-- Remarks/Ref -->
         @if($sale->reference)

@@ -44,4 +44,17 @@ class WarehouseStock extends Model
         return $this->belongsToMany(Product::class, 'warehouse_stocks', 'warehouse_id', 'product_id')
             ->withPivot('quantity', 'price', 'remarks');
     }
+
+    protected static function booted()
+    {
+        static::saved(function ($warehouseStock) {
+            $product = $warehouseStock->product;
+            if ($product && !is_null($product->alert_quantity)) {
+                $totalPieces = self::where('product_id', $product->id)->sum('total_pieces');
+                if ($totalPieces < $product->alert_quantity) {
+                    \App\Models\SystemNotification::createStockAlertNotification($product, $totalPieces);
+                }
+            }
+        });
+    }
 }

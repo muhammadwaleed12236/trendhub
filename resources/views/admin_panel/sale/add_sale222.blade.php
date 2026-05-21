@@ -240,7 +240,7 @@
     <style>
         /* ===== Sales Table UI Fix ===== */
         .sales-table {
-            min-width: 900px;
+            min-width: 1150px;
             /* Ensure enough space for all columns */
         }
 
@@ -255,6 +255,7 @@
 
         /* Column Widths */
         .col-product {
+            width: 220px;
             min-width: 220px;
         }
 
@@ -482,9 +483,10 @@
                                     <tr>
                                         <th class="col-product">Product</th>
                                         <th class="col-stock">Stock</th>
-                                        <th class="col-qty qty-header">Total Qty</th>
-                                        <th class="col-qty pack-size-col">Pices Box</th>
-                                        <th class="col-pieces boxes-col">total pieces</th>
+                                        <th style="width:80px;min-width:80px;">Carton</th>
+                                        <th style="width:80px;min-width:80px;">Loose Pcs</th>
+                                        <th class="col-qty pack-size-col" title="Pieces per Carton">Pcs/Ctn</th>
+                                        <th class="col-pieces boxes-col">Total Pcs</th>
                                         <th class="col-price-p price-pc-header">Retail Price</th>
                                         <th class="col-disc">Disc %</th>
                                         <th class="col-disc-amt">Disc Amt</th>
@@ -497,7 +499,7 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="8" class="text-end fw-bold">Total:</td>
+                                        <td colspan="9" class="text-end fw-bold">Total:</td>
                                         <td class="text-end fw-bold"><span id="totalAmount">0.00</span></td>
                                         <td></td>
                                     </tr>

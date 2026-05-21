@@ -87,6 +87,8 @@
                                                 class="btn btn-sm btn-outline-info">Estimate</a>
                                         @else
                                             {{-- Posted: All Actions --}}
+                                            <a href="{{ route('sales.edit', $sale->id) }}"
+                                                class="btn btn-sm btn-warning text-dark">Edit</a>
                                             <a href="{{ route('sales.invoice', $sale->id) }}" target="_blank"
                                                 class="btn btn-sm btn-info text-white">Invoice</a>
                                             <a href="{{ route('sales.invoice', ['id' => $sale->id, 'type' => 'estimate']) }}" target="_blank"

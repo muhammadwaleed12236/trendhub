@@ -69,4 +69,19 @@ class JournalEntryService
         $account->current_balance = $currentBalance + $netChange;
         $account->save();
     }
+
+    /**
+     * Delete/reverse all journal entries for a given source model and restore account balances.
+     */
+    public function reverseEntriesForSource(Model $source)
+    {
+        $entries = JournalEntry::where('source_type', get_class($source))
+            ->where('source_id', $source->id)
+            ->get();
+
+        foreach ($entries as $entry) {
+            $this->updateAccountBalance($entry->account_id, $entry->credit, $entry->debit);
+            $entry->delete();
+        }
+    }
 }
