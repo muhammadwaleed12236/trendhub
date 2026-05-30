@@ -618,7 +618,7 @@
                                                 id="view_total_stock_qty">0</span>
                                         </div>
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-danger font-weight-bold">ALERT QUANTITY</small>
+                                            <small class="text-danger font-weight-bold">ALERT QUANTITY (CARTONS)</small>
                                             <span class="h6 mb-0 font-weight-bold text-danger"
                                                 id="view_alert_quantity">-</span>
                                         </div>
@@ -912,7 +912,7 @@
                             maximumFractionDigits: 2
                         }));
 
-                    $('#view_alert_quantity').text(product.alert_quantity !== null && product.alert_quantity !== undefined ? product.alert_quantity + ' Pcs' : 'Not Set');
+                    $('#view_alert_quantity').text(product.alert_carton_quantity !== null && product.alert_carton_quantity !== undefined ? product.alert_carton_quantity + ' Ctns' : 'Not Set');
 
                     $('#productViewModal').modal('show');
                 },

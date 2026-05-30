@@ -280,7 +280,7 @@
             <thead>
                 <tr>
                     <th style="width:40px; text-align:center;">#</th>
-                    <th>Account (Where Payment Received)</th>
+                    <th>Account</th>
                     <th style="text-align:right; width:130px;">Amount (Rs.)</th>
                 </tr>
             </thead>
@@ -290,9 +290,6 @@
                         <td style="text-align:center;">{{ $key + 1 }}</td>
                         <td>
                             <strong>{{ $row['account_name'] ?? '-' }}</strong>
-                            @if(!empty($row['narration']))
-                                <span style="color:#666; font-size:11px; margin-left:4px;">({{ $row['narration'] }})</span>
-                            @endif
                         </td>
                         <td style="text-align:right; font-weight:700;">
                             {{ number_format($row['amount'], 2) }}

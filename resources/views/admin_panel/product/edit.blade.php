@@ -340,8 +340,8 @@
 
                                         {{-- Common Alert Quantity --}}
                                         <div class="col-md-3">
-                                            <label class="form-label-pro text-danger">Alert Quantity (Min Stock Pcs)</label>
-                                            <input type="number" class="form-control-pro border-danger" name="alert_quantity" id="alert_quantity" min="0" value="{{ $product->alert_quantity }}" placeholder="e.g. 10">
+                                            <label class="form-label-pro text-danger">Low Stock Alert (Cartons)</label>
+                                            <input type="number" class="form-control-pro border-danger" name="alert_carton_quantity" id="alert_carton_quantity" min="0" value="{{ $product->alert_carton_quantity }}" placeholder="e.g. 5">
                                         </div>
                                     </div>
                                 </div>

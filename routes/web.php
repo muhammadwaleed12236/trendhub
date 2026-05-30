@@ -62,7 +62,18 @@ Route::get('/test-log', function () {
 });
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $lowStockProducts = \App\Models\Product::withSum('warehouseStocks', 'total_pieces')
+        ->whereNotNull('alert_carton_quantity')
+        ->get()
+        ->filter(function ($product) {
+            $totalPieces = (float)($product->warehouse_stocks_sum_total_pieces ?? 0);
+            $ppb = $product->pieces_per_box > 0 ? $product->pieces_per_box : 1;
+            $cartons = floor($totalPieces / $ppb);
+            $product->current_cartons = $cartons;
+            return $cartons < $product->alert_carton_quantity;
+        })->values();
+
+    return view('dashboard', compact('lowStockProducts'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -122,6 +133,8 @@ Route::middleware('auth')->group(function () {
     // Searches
     Route::get('/generate-barcode-image', [ProductController::class, 'generateBarcode'])->name('generate-barcode-image');
     Route::get('/get-subcategories/{category_id}', [ProductController::class, 'getSubcategories'])->name('fetch-subcategories');
+    Route::get('/get-categories', [ProductController::class, 'getCategoriesJson'])->name('get-categories');
+    Route::get('/get-brands', [ProductController::class, 'getBrandsJson'])->name('get-brands');
 
     Route::prefix('discount')->group(function () {
         Route::get('/', [DiscountController::class, 'index'])->middleware('permission:discount.products.view')->name('discount.index');
