@@ -82,7 +82,7 @@ class ProductController extends Controller
         $term = $request->get('term') ?? $request->get('q') ?? '';
 
         $query = Product::query()
-            ->select('id', 'item_name', 'item_code', 'barcode_path', 'size_mode', 'height', 'width', 'pieces_per_box', 'purchase_price_per_m2', 'purchase_price_per_piece', 'pieces_per_m2', 'purchase_discount_percent', 'sale_discount_percent')
+            ->select('id', 'item_name', 'item_code', 'barcode_path', 'size_mode', 'height', 'width', 'pieces_per_box', 'purchase_price_per_box', 'purchase_price_per_m2', 'purchase_price_per_piece', 'pieces_per_m2', 'purchase_discount_percent', 'sale_discount_percent')
             ->withSum('warehouseStocks', 'total_pieces') /* Sum PIECES, not boxes */
             ->where('is_active', true) /* Only active products */
             ->where(function ($q) use ($term) {
@@ -119,6 +119,7 @@ class ProductController extends Controller
                 'pieces_per_box' => $ppb,
                 'ppb' => $ppb, // Legacy
                 'trade_price' => $p->purchase_price_per_piece ?? 0,
+                'purchase_price_per_box' => $p->purchase_price_per_box ?? 0,
                 'purchase_price_per_m2' => $p->purchase_price_per_m2 ?? 0,
                 'purchase_price_per_piece' => $p->purchase_price_per_piece ?? 0,
                 'height' => $p->height ?? 0,

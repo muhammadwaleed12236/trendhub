@@ -247,6 +247,8 @@ class PurchaseController extends Controller
                 'qty.*' => 'nullable|required_with:product_id.*|numeric|min:1',
                 'price' => 'array',
                 'price.*' => 'nullable|required_with:product_id.*|numeric|min:0',
+                'price_per_carton' => 'array',
+                'price_per_carton.*' => 'nullable|numeric|min:0',
                 'unit' => 'array',
                 'unit.*' => 'nullable|required_with:product_id.*|string',
                 'item_discount' => 'nullable|array',
@@ -295,6 +297,7 @@ class PurchaseController extends Controller
             $pids = $validated['product_id'] ?? [];
             $qtys = $validated['qty'] ?? [];
             $prices = $validated['price'] ?? [];
+            $cartonPrices = $validated['price_per_carton'] ?? [];
             $units = $validated['unit'] ?? [];
             $itemDiscs = $validated['item_discount'] ?? [];
 
@@ -327,9 +330,15 @@ class PurchaseController extends Controller
                     // where pieces_per_m2 is effectively m2 per piece, and price is price per m2
                     $grossTotal = $curPPM2 * $qty * $price;
                 } elseif ($curSizeMode === 'by_cartons' || $curSizeMode === 'by_carton') {
-                    // For cartons, price is per carton, so divide by pieces_per_box to get price per piece
                     $ppb = isset($ppbs[$i]) && $ppbs[$i] > 0 ? (float) $ppbs[$i] : 1;
-                    $grossTotal = $qty * ($price / $ppb);
+                    $cartonPrice = (float) ($cartonPrices[$i] ?? 0);
+                    if ($cartonPrice > 0) {
+                        // Convert carton price to per-piece cost for the stock qty entered in pieces
+                        $grossTotal = $qty * ($cartonPrice / $ppb);
+                    } else {
+                        // Fallback: if hidden carton price is missing, use visible price as piece price
+                        $grossTotal = $qty * $price;
+                    }
                 } else {
                     // Standard: pieces * price_per_piece
                     $grossTotal = $qty * $price;

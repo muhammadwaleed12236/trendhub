@@ -753,6 +753,7 @@
                         <input type="hidden" name="size_mode[]" class="hidden-size-mode" value="">
                         <input type="hidden" name="pieces_per_box[]" class="hidden-pieces-per-box" value="">
                         <input type="hidden" name="pieces_per_m2[]" class="hidden-pieces-per-m2" value="">
+                        <input type="hidden" name="price_per_carton[]" class="hidden-price-per-carton" value="0">
                         <input type="hidden" name="length[]" class="hidden-length" value="">
                         <input type="hidden" name="width[]" class="hidden-width" value="">
                     </td>
@@ -813,6 +814,11 @@
                     $row.find('.hidden-size-mode').val(data.size_mode || '');
                     $row.find('.hidden-pieces-per-box').val(data.pieces_per_box || 1);
                     $row.find('.hidden-pieces-per-m2').val(data.pieces_per_m2 || 0);
+                    $row.find('.hidden-price-per-carton').val(
+                        Number(data.purchase_price_per_box || 0) ||
+                        Number(data.purchase_price_per_piece || 0) * Number(data.pieces_per_box || 1) ||
+                        0
+                    );
                     $row.find('.hidden-length').val(data.length || '');
                     $row.find('.hidden-width').val(data.width || '');
 
@@ -847,10 +853,8 @@
                     if (sizeMode === 'by_size') {
                         $row.find('.price').val(finalPrice);
                         unitLabel = '(m2)';
-                    } else if (sizeMode === 'by_cartons' || sizeMode === 'by_carton') {
-                        $row.find('.price').val(finalPrice * data.ppb);
-                        unitLabel = '(cartons)';
                     } else {
+                        // For purchase entry, always show per-piece cost for box-based products
                         $row.find('.price').val(finalPrice);
                         unitLabel = '(pieces)';
                     }
@@ -923,11 +927,8 @@
                 // Total Amount calculation based on size mode
                 if (sizeMode == 'by_size') {
                     total = (pieces_per_m2 || 0) * totalPieces * price;
-                } else if (sizeMode == 'by_cartons' || sizeMode == 'by_carton') {
-                    // price is per carton box
-                    total = ppb > 0 ? (totalPieces / ppb) * price : totalPieces * price;
                 } else {
-                    // price is per piece
+                    // price is always treated as per-piece for purchase entry
                     total = totalPieces * price;
                 }
 
