@@ -611,9 +611,6 @@ class VoucherController extends Controller
             if ($request->header_account_id) {
                 $sourceAccount = Account::find($request->header_account_id);
                 if ($sourceAccount) {
-                    $sourceAccount->current_balance = $sourceAccount->current_balance - $totalAmount;
-                    $sourceAccount->save();
-
                     // Credit Cash/Bank because money is going out
                     app(\App\Services\JournalEntryService::class)->recordEntry(
                         $payment,

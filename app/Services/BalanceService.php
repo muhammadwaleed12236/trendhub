@@ -219,11 +219,13 @@ class BalanceService
                 'sort_date'   => $r->return_date,
             ]);
 
-        // Payments in range: AP debit journal entries against this vendor
+        // Payments in range: AP debit journal entries against this vendor (excluding duplicate purchase/return voucher entries)
         $apId = $this->getAccountsPayableId();
         $payments = JournalEntry::where('party_type', \App\Models\Vendor::class)
             ->where('party_id', $vendorId)
             ->where('account_id', $apId)
+            ->whereNot('description', 'like', 'Payable to Vendor%')
+            ->whereNot('description', 'like', 'Debit Note for Return%')
             ->whereBetween('entry_date', [$startDate, $endDate])
             ->orderBy('entry_date')
             ->orderBy('id')
@@ -233,8 +235,8 @@ class BalanceService
                 'source_id'   => $e->source_id,
                 'date'        => $e->entry_date,
                 'description' => $e->description,
-                'debit'       => (float) $e->debit,   // Dr = payment reduces payable
-                'credit'      => 0,
+                'debit'       => (float) $e->debit,   // Dr = reduces what we owe
+                'credit'      => (float) $e->credit,  // Cr = increases what we owe (e.g. refunds/adjustments)
                 'sort_date'   => $e->entry_date,
             ]);
 
