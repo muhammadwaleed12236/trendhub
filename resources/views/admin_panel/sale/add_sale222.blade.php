@@ -132,200 +132,328 @@
         }
     </style>
     <style>
+        /* 💎 PREMIUM MODERN ERP THEME FOR TRANSACTION ENTRY 💎 */
+        body {
+            background-color: #f8fafc;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        
+        /* Containers & Cards */
         .main-container {
+            border: 2px solid #475569 !important; /* Bold outer border */
+            border-radius: 12px !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05) !important;
+            background-color: #ffffff !important;
+            padding: 24px !important;
             font-size: .85rem;
             max-width: 98%;
-            /* Widen container */
         }
-
-        .header-text {
-            font-size: 1.1rem;
+        
+        .card-panel {
+            background-color: #f8fafc !important;
+            border: 2px solid #cbd5e1 !important; /* Bold panel borders */
+            border-radius: 10px !important;
+            padding: 20px !important;
+            height: 100%;
+            transition: all 0.2s;
         }
-
+        
+        .card-panel:hover {
+            border-color: #94a3b8 !important;
+        }
+        
+        .totals-card {
+            background-color: #f1f5f9 !important;
+            border: 2px solid #cbd5e1 !important; /* Bold summary borders */
+            border-radius: 10px !important;
+            padding: 20px !important;
+        }
+        
+        /* Bold Section Titles */
+        .section-title {
+            font-weight: 800 !important;
+            text-transform: uppercase;
+            font-size: 0.8rem !important;
+            letter-spacing: 1px !important;
+            color: #1e293b !important;
+            margin-bottom: 16px !important;
+            border-left: 4px solid #2563eb !important;
+            padding-left: 10px !important;
+        }
+        
+        /* Clean inputs with bold borders */
         .form-control,
         .form-select,
-        .btn {
-            font-size: .82rem;
-            /* Slightly smaller for density */
-            padding: .3rem .4rem;
-            /* Reduce padding */
-            height: auto;
+        .select2-container--default .select2-selection--single {
+            border: 2px solid #cbd5e1 !important;
+            border-radius: 8px !important;
+            padding: 6px 12px !important;
+            font-weight: 500 !important;
+            color: #1e293b !important;
+            background-color: #ffffff !important;
+            transition: all 0.2s ease-in-out !important;
+            height: auto !important;
+            font-size: 0.85rem !important;
         }
-
-        .invalid-cell {
-            background-color: #fff5f5 !important;
-            /* soft red */
-            border: 1px solid #e3342f !important;
-            /* red border */
+        
+        .form-control:focus,
+        .form-select:focus,
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15) !important;
+            outline: none !important;
         }
-
-        .invalid-select,
-        .invalid-input {
-            border-color: #e3342f !important;
-            box-shadow: none !important;
-        }
-
+        
+        /* Read-only fields */
         .input-readonly {
-            background: #f9fbff;
+            background-color: #f1f5f9 !important;
+            border-color: #cbd5e1 !important;
+            color: #475569 !important;
+            font-weight: 600 !important;
+            cursor: not-allowed !important;
+        }
+        
+        /* Elegant & Bold Buttons */
+        .btn-action-primary {
+            background-color: #2563eb !important;
+            border: 2px solid #1d4ed8 !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            border-radius: 8px !important;
+            padding: 8px 20px !important;
+            transition: all 0.2s;
+            font-size: 0.85rem !important;
+        }
+        .btn-action-primary:hover {
+            background-color: #1d4ed8 !important;
+            transform: translateY(-1px);
+            color: #ffffff !important;
+        }
+        
+        .btn-action-secondary {
+            background-color: #ffffff !important;
+            border: 2px solid #cbd5e1 !important;
+            color: #475569 !important;
+            font-weight: 700 !important;
+            border-radius: 8px !important;
+            padding: 8px 20px !important;
+            transition: all 0.2s;
+            font-size: 0.85rem !important;
+        }
+        .btn-action-secondary:hover {
+            background-color: #f1f5f9 !important;
+            color: #1e293b !important;
+        }
+        
+        /* Transaction Grid / Table */
+        .table-responsive {
+            border: 1px solid #cbd5e1 !important; /* Elegant outer border */
+            border-radius: 8px !important;
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+            min-height: 200px;
+            background-color: #ffffff;
+        }
+        
+        .minw-350 {
+            min-width: 320px;
+            width: 320px;
+            flex-shrink: 0;
         }
 
-        .section-title {
-            font-weight: 700;
-            color: #6c757d;
-            letter-spacing: .3px;
+        .sales-table {
+            border-collapse: collapse !important;
+            margin-bottom: 0 !important;
+            min-width: 935px;
         }
-
-        .table {
-            --bs-table-padding-y: .35rem;
-            --bs-table-padding-x: .5rem;
-            font-size: .85rem;
-        }
-
-        .table thead th {
-            position: sticky;
-            top: 0;
-            z-index: 2;
-            background: #f8f9fa;
+        
+        .sales-table thead th {
+            background-color: #f8fafc !important; /* Light clean header */
+            color: #0f172a !important;
+            font-weight: 700 !important;
+            text-transform: uppercase;
+            font-size: 11px !important;
+            letter-spacing: 0.5px;
+            padding: 10px 8px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-bottom: 2px solid #94a3b8 !important; /* Thick header separator border */
+            vertical-align: middle !important;
             text-align: center;
         }
 
-        .table-responsive {
-            /* max-height removed to allow expansion */
-            overflow-x: auto;
-            overflow-y: visible;
-            border: 1px solid #eee;
-            border-radius: .5rem;
-            min-height: 200px;
+        .sales-table thead th.col-product {
+            text-align: left !important;
+            padding-left: 12px !important;
+        }
+        
+        .sales-table tbody td {
+            border: 1px solid #cbd5e1 !important; /* Flat interior cell borders */
+            padding: 0 !important; /* Zero padding to let input fill cell completely */
+            background-color: #ffffff;
+            vertical-align: middle !important;
         }
 
-        .minw-350 {
-            min-width: 300px;
+        /* ⚡ FLAT BORDERLESS GRID INPUTS ⚡ */
+        .sales-table tbody .form-control,
+        .sales-table tbody .form-select {
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            height: 38px !important; /* Uniform height */
+            margin: 0 !important;
+            padding: 6px 8px !important;
+            width: 100% !important;
+            background-color: transparent !important;
+            text-align: center; /* Center-align text in grid inputs */
+            color: #1e293b !important;
+            font-weight: 500 !important;
+            font-size: 0.82rem !important;
         }
 
-        .w-70 {
-            width: 70px
+        .sales-table tbody td.col-product .form-select {
+            text-align: left !important;
+            padding-left: 12px !important;
         }
 
-        .w-90 {
-            width: 90px
+        /* Calculations and Read-Only cells get a neat slate tone background */
+        .sales-table tbody .input-readonly,
+        .sales-table tbody input[readonly],
+        .sales-table tbody select[disabled] {
+            background-color: #f1f5f9 !important;
+            cursor: not-allowed !important;
+            color: #475569 !important;
+            font-weight: 600 !important;
         }
 
-        .w-110 {
-            width: 110px
+        /* Subtle focus highlight inside cell */
+        .sales-table tbody .form-control:focus,
+        .sales-table tbody .form-select:focus {
+            outline: none !important;
+            background-color: #f8fafc !important;
+            box-shadow: inset 0 0 0 2px #2563eb !important;
         }
 
-        .w-120 {
-            width: 120px
+        /* Select2 Specific flat borderless styling */
+        .sales-table tbody .select2-container--default .select2-selection--single {
+            height: 38px !important;
+            padding: 0 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background-color: transparent !important;
+            display: flex;
+            align-items: center;
         }
 
-        .w-150 {
-            width: 150px
+        .sales-table tbody .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px !important;
+            padding-left: 12px !important;
+            padding-right: 20px !important;
+            font-size: 0.82rem !important;
+            color: #1e293b !important;
+            font-weight: 500 !important;
+            text-align: left !important;
         }
 
-        .totals-card {
-            background: #fcfcfe;
-            border: 1px solid #eee;
-            border-radius: .5rem;
+        .sales-table tbody .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px !important;
+            right: 8px !important;
         }
 
-        .totals-card .row+.row {
-            border-top: 1px dashed #e5e7eb;
+        /* Select2 Focus state */
+        .sales-table tbody .select2-container--default.select2-container--focus .select2-selection--single {
+            background-color: #f8fafc !important;
+            box-shadow: inset 0 0 0 2px #2563eb !important;
         }
 
+        /* Elegant flat block layout for discount input + toggle */
+        .sales-table tbody .discount-wrapper {
+            display: flex !important;
+            align-items: stretch !important;
+            width: 100% !important;
+            height: 38px !important;
+            gap: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .sales-table tbody .discount-wrapper .discount-value {
+            flex-grow: 1 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            height: 100% !important;
+            text-align: center;
+            background-color: transparent !important;
+            padding: 6px 8px !important;
+        }
+
+        .sales-table tbody .discount-wrapper .discount-toggle {
+            border: none !important;
+            border-radius: 0 !important;
+            background-color: #e2e8f0 !important;
+            color: #475569 !important;
+            font-weight: 700 !important;
+            font-size: 0.75rem !important;
+            width: 32px !important;
+            min-width: 32px !important;
+            height: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            cursor: pointer !important;
+            transition: background-color 0.2s !important;
+        }
+
+        .sales-table tbody .discount-wrapper .discount-toggle:hover {
+            background-color: #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+        
+        .sales-table tfoot td {
+            background-color: #f8fafc !important;
+            border: 1px solid #cbd5e1 !important;
+            border-top: 2px solid #94a3b8 !important; /* Thick tfoot separator */
+            padding: 8px 10px !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+        }
+        
+        /* Row hover */
+        .sales-table tbody tr:hover td {
+            background-color: #f8fafc !important;
+        }
+        
+        /* Column Widths */
+        .col-product { width: 180px; min-width: 180px; }
+        .col-warehouse { min-width: 130px; }
+        .col-stock { width: 70px; }
+        .col-qty { width: 70px; }
+        .col-price { width: 90px; }
+        .col-disc { width: 90px; }
+        .col-disc-amt { width: 80px; }
+        .col-pieces { width: 80px; }
+        .col-price-p { width: 90px; }
+        .col-price-m2 { width: 90px; }
+        .col-amount { width: 100px; }
+        .col-action { width: 40px; text-align: center; }
+
+        /* Invalid cells & inputs */
+        .invalid-cell {
+            background-color: #fff5f5 !important;
+            border: 2px solid #ef4444 !important;
+        }
+        .invalid-select,
+        .invalid-input {
+            border-color: #ef4444 !important;
+            box-shadow: none !important;
+        }
+        
         .badge-soft {
             background: #eef2ff;
             color: #3730a3;
-        }
-    </style>
-    <style>
-        /* ===== Sales Table UI Fix ===== */
-        .sales-table {
-            min-width: 1150px;
-            /* Ensure enough space for all columns */
-        }
-
-        .sales-table th {
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            vertical-align: middle;
-            color: #495057;
-        }
-
-        /* Column Widths */
-        .col-product {
-            width: 220px;
-            min-width: 220px;
-        }
-
-        /* Slightly reduced */
-        .col-warehouse {
-            min-width: 160px;
-        }
-
-        .col-stock {
-            width: 90px;
-        }
-
-        .col-qty {
-            width: 90px;
-        }
-
-
-        .col-price {
-            width: 110px;
-        }
-
-        /* Retail Price */
-        .col-disc {
-            width: 130px;
-        }
-
-        /* Disc % + input */
-        .col-disc-amt {
-            width: 90px;
-        }
-
-        /* New Columns */
-        .col-pieces {
-            width: 100px;
-        }
-
-        .col-price-p {
-            width: 100px;
-        }
-
-        .col-price-m2 {
-            width: 100px;
-        }
-
-        .col-amount {
-            width: 120px;
-        }
-
-        .col-action {
-            width: 50px;
-            text-align: center;
-        }
-
-        .input-readonly {
-            background: #f8f9fa;
-            color: #6c757d;
-            font-weight: 500;
-            border-color: #dee2e6;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: #86b7fe;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
-        }
-
-        /* Premium Table Look */
-        .table-bordered> :not(caption)>*>* {
-            border-width: 1px;
-            border-color: #e9ecef;
+            font-weight: 700;
         }
     </style>
 
@@ -454,7 +582,7 @@
                         </div> -->
 
                         <div class="mb-2">
-                            <label class="form-label fw-bold">Remarks</label>
+                            <label class="form-label fw-bold">M.Bill</label>
                             <textarea class="form-control" name="reference" id="remarks"></textarea>
                         </div>
 
@@ -488,8 +616,8 @@
                                     <tr>
                                         <th class="col-product">Product</th>
                                         <th class="col-stock">Stock</th>
-                                        <th style="width:80px;min-width:80px;">Carton</th>
-                                        <th style="width:80px;min-width:80px;">Loose Pcs</th>
+                                        <th style="width:65px;min-width:65px;">Carton</th>
+                                        <th style="width:70px;min-width:70px;">Loose Pcs</th>
                                         <th class="col-qty pack-size-col" title="Pieces per Carton">Pcs/Ctn</th>
                                         <th class="col-pieces boxes-col">Total Pcs</th>
                                         <th class="col-price-p price-pc-header">Retail Price</th>
@@ -602,14 +730,14 @@
                 </div>
 
                 {{-- Buttons --}}
-                <div class="d-flex flex-wrap gap-2 justify-content-center p-3 mt-3 border-top">
-                    <button type="button" class="btn btn-sm btn-primary" id="btnSave"><i class="fas fa-bookmark me-1"></i>Booking</button>
-                    <button type="button" class="btn btn-sm btn-success" id="btnPosted" disabled><i class="fas fa-check-circle me-1"></i>Sale</button>
+                <div class="d-flex flex-wrap gap-3 justify-content-center p-3 mt-3 border-top">
+                    <button type="button" class="btn btn-action-primary bg-primary border-primary" id="btnSave"><i class="fas fa-bookmark me-2"></i>Booking</button>
+                    <button type="button" class="btn btn-action-primary bg-success border-success" id="btnPosted" disabled><i class="fas fa-check-circle me-2"></i>Sale</button>
 
-                    <button type="button" class="btn btn-sm btn-secondary" id="btnPrint"><i class="fas fa-print me-1"></i>Print A4 Half</button>
-                    <button type="button" class="btn btn-sm btn-outline-info" id="btnEstimate"><i class="fas fa-file-invoice me-1"></i>Estimate</button>
-                    <button type="button" class="btn btn-sm btn-secondary" id="btnPrint2"><i class="fas fa-receipt me-1"></i>Print Thermal</button>
-                    <button type="button" class="btn btn-sm btn-primary" id="btnDcThermal"><i class="fas fa-truck me-1"></i>DC Thermal</button>
+                    <button type="button" class="btn btn-action-secondary" id="btnPrint"><i class="fas fa-print me-2"></i>Print A4 Half</button>
+                    <button type="button" class="btn btn-action-secondary" id="btnEstimate"><i class="fas fa-file-invoice me-2"></i>Estimate</button>
+                    <button type="button" class="btn btn-action-secondary" id="btnPrint2"><i class="fas fa-receipt me-2"></i>Print Thermal</button>
+                    <button type="button" class="btn btn-action-secondary" id="btnDcThermal"><i class="fas fa-truck me-2"></i>DC Thermal</button>
                 </div>
             </form>
         </div>

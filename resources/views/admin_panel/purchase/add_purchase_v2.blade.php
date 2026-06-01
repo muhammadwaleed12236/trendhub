@@ -4,166 +4,309 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
-        /* ================= RESPONSIVE PURCHASE UI (Modernized) ================= */
+        /* 💎 PREMIUM MODERN ERP THEME FOR TRANSACTION ENTRY 💎 */
         body {
-            background-color: #f4f6f9;
-            /* Light gray background for contrast */
+            background-color: #f8fafc;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
-
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        
+        /* Containers & Cards */
+        .main-container {
+            border: 2px solid #475569 !important; /* Bold outer border */
+            border-radius: 12px !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05) !important;
+            background-color: #ffffff !important;
+            padding: 24px !important;
+            font-size: .85rem;
+            max-width: 99%;
         }
-
-        .sales-table {
-            min-width: 1000px;
-            /* Base width */
-            border-collapse: separate;
-            border-spacing: 0;
+        
+        .card-panel {
+            background-color: #f8fafc !important;
+            border: 2px solid #cbd5e1 !important; /* Bold panel borders */
+            border-radius: 10px !important;
+            padding: 20px !important;
+            height: 100%;
+            transition: all 0.2s;
         }
-
-        .sales-table thead th {
-            background-color: #f8f9fa;
-            color: #495057;
-            font-weight: 600;
+        
+        .card-panel:hover {
+            border-color: #94a3b8 !important;
+        }
+        
+        .summary-card {
+            background-color: #f1f5f9 !important;
+            border: 2px solid #cbd5e1 !important; /* Bold summary borders */
+            border-radius: 10px !important;
+            padding: 20px !important;
+        }
+        
+        /* Bold Section Titles */
+        .section-title {
+            font-weight: 800 !important;
             text-transform: uppercase;
-            font-size: 0.75rem;
+            font-size: 0.8rem !important;
+            letter-spacing: 1px !important;
+            color: #1e293b !important;
+            margin-bottom: 16px !important;
+            border-left: 4px solid #2563eb !important;
+            padding-left: 10px !important;
+        }
+        
+        /* Clean inputs with bold borders */
+        .form-control,
+        .form-select,
+        .select2-container--default .select2-selection--single {
+            border: 2px solid #cbd5e1 !important;
+            border-radius: 8px !important;
+            padding: 6px 12px !important;
+            font-weight: 500 !important;
+            color: #1e293b !important;
+            background-color: #ffffff !important;
+            transition: all 0.2s ease-in-out !important;
+            height: auto !important;
+            font-size: 0.85rem !important;
+        }
+        
+        .form-control:focus,
+        .form-select:focus,
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15) !important;
+            outline: none !important;
+        }
+        
+        /* Read-only fields */
+        .input-readonly {
+            background-color: #f1f5f9 !important;
+            border-color: #cbd5e1 !important;
+            color: #475569 !important;
+            font-weight: 600 !important;
+            cursor: not-allowed !important;
+        }
+        
+        /* Elegant & Bold Buttons */
+        .btn-action-primary {
+            background-color: #2563eb !important;
+            border: 2px solid #1d4ed8 !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            border-radius: 8px !important;
+            padding: 8px 20px !important;
+            transition: all 0.2s;
+            font-size: 0.85rem !important;
+        }
+        .btn-action-primary:hover {
+            background-color: #1d4ed8 !important;
+            transform: translateY(-1px);
+            color: #ffffff !important;
+        }
+        
+        .btn-action-secondary {
+            background-color: #ffffff !important;
+            border: 2px solid #cbd5e1 !important;
+            color: #475569 !important;
+            font-weight: 700 !important;
+            border-radius: 8px !important;
+            padding: 8px 20px !important;
+            transition: all 0.2s;
+            font-size: 0.85rem !important;
+        }
+        .btn-action-secondary:hover {
+            background-color: #f1f5f9 !important;
+            color: #1e293b !important;
+        }
+        
+        /* Transaction Grid / Table */
+        .table-responsive {
+            border: 1px solid #cbd5e1 !important; /* Elegant outer border */
+            border-radius: 8px !important;
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+            min-height: 200px;
+            background-color: #ffffff;
+        }
+        
+        .sales-table {
+            border-collapse: collapse !important;
+            margin-bottom: 0 !important;
+            min-width: 1000px;
+        }
+        
+        .sales-table thead th {
+            background-color: #f8fafc !important; /* Light clean header */
+            color: #0f172a !important;
+            font-weight: 700 !important;
+            text-transform: uppercase;
+            font-size: 11px !important;
             letter-spacing: 0.5px;
-            padding: 12px 8px;
-            border-bottom: 2px solid #e9ecef !important;
-        }
-
-        .sales-table tbody td {
-            vertical-align: middle;
-            padding: 8px;
-            border-color: #f1f3f5;
-        }
-
-        .sales-table tfoot td {
-            background-color: #f8f9fa;
-            border-top: 2px solid #dee2e6;
-        }
-
-        /* Premium Table Look */
-        .table-bordered>:not(caption)>*>* {
-            border-width: 1px;
-            border-color: #e9ecef;
-        }
-
-        /* Column widths */
-        .col-product {
-            width: 300px;
-            min-width: 250px;
-        }
-
-        .col-warehouse {
-            width: 140px;
-        }
-
-        .col-stock {
-            width: 90px;
-        }
-
-        .col-qty {
-            width: 100px;
-        }
-
-        .col-pieces {
-            width: 100px;
-        }
-
-        .col-price {
-            width: 120px;
-        }
-
-        .col-disc {
-            width: 80px;
-        }
-
-        .col-disc-amt {
-            width: 95px;
-        }
-
-        .col-price-p {
-            width: 100px;
-        }
-
-        .col-amount {
-            width: 120px;
-            text-align: right;
-        }
-
-        .col-action {
-            width: 50px;
+            padding: 10px 8px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-bottom: 2px solid #94a3b8 !important; /* Thick header separator border */
+            vertical-align: middle !important;
             text-align: center;
         }
 
-        .input-readonly {
-            background: #f8f9fa;
-            color: #495057;
-            font-weight: 500;
-            border: 1px solid #dee2e6;
+        .sales-table thead th.col-product {
+            text-align: left !important;
+            padding-left: 12px !important;
+        }
+        
+        .sales-table tbody td {
+            border: 1px solid #cbd5e1 !important; /* Flat interior cell borders */
+            padding: 0 !important; /* Zero padding to let input fill cell completely */
+            background-color: #ffffff;
+            vertical-align: middle !important;
         }
 
-        .form-control,
-        .form-select {
-            border-radius: 6px;
-            border: 1px solid #ced4da;
-            padding: 0.4rem 0.6rem;
-            font-size: 0.85rem;
-            transition: all 0.2s ease-in-out;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: #86b7fe;
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-        }
-
-        .main-container {
-            font-size: .85rem;
-            max-width: 99%;
-            border-radius: 12px !important;
+        /* ⚡ FLAT BORDERLESS GRID INPUTS ⚡ */
+        .sales-table tbody .form-control,
+        .sales-table tbody .form-select {
             border: none !important;
-            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            height: 38px !important; /* Uniform height */
+            margin: 0 !important;
+            padding: 6px 8px !important;
+            width: 100% !important;
+            background-color: transparent !important;
+            text-align: center; /* Center-align text in grid inputs */
+            color: #1e293b !important;
+            font-weight: 500 !important;
+            font-size: 0.82rem !important;
         }
 
-        .btn {
-            font-size: .82rem;
-            padding: .35rem .8rem;
-            border-radius: 5px;
-            font-weight: 500;
+        .sales-table tbody td.col-product .form-select {
+            text-align: left !important;
+            padding-left: 12px !important;
         }
 
-        .btn-primary {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
+        /* Calculations and Read-Only cells get a neat slate tone background */
+        .sales-table tbody .input-readonly,
+        .sales-table tbody input[readonly],
+        .sales-table tbody select[disabled] {
+            background-color: #f1f5f9 !important;
+            cursor: not-allowed !important;
+            color: #475569 !important;
+            font-weight: 600 !important;
         }
 
-        .btn-success {
-            background-color: #198754;
-            border-color: #198754;
+        /* Subtle focus highlight inside cell */
+        .sales-table tbody .form-control:focus,
+        .sales-table tbody .form-select:focus {
+            outline: none !important;
+            background-color: #f8fafc !important;
+            box-shadow: inset 0 0 0 2px #2563eb !important;
         }
 
-        .section-title {
-            font-weight: 700;
-            color: #6c757d;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.8px;
-            margin-bottom: 10px;
-            border-left: 3px solid #0d6efd;
-            padding-left: 8px;
+        /* Select2 Specific flat borderless styling */
+        .sales-table tbody .select2-container--default .select2-selection--single {
+            height: 38px !important;
+            padding: 0 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background-color: transparent !important;
+            display: flex;
+            align-items: center;
         }
+
+        .sales-table tbody .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px !important;
+            padding-left: 12px !important;
+            padding-right: 20px !important;
+            font-size: 0.82rem !important;
+            color: #1e293b !important;
+            font-weight: 500 !important;
+            text-align: left !important;
+        }
+
+        .sales-table tbody .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px !important;
+            right: 8px !important;
+        }
+
+        /* Select2 Focus state */
+        .sales-table tbody .select2-container--default.select2-container--focus .select2-selection--single {
+            background-color: #f8fafc !important;
+            box-shadow: inset 0 0 0 2px #2563eb !important;
+        }
+
+        /* Elegant flat block layout for discount input + toggle */
+        .sales-table tbody .discount-wrapper {
+            display: flex !important;
+            align-items: stretch !important;
+            width: 100% !important;
+            height: 38px !important;
+            gap: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .sales-table tbody .discount-wrapper .discount-value {
+            flex-grow: 1 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            height: 100% !important;
+            text-align: center;
+            background-color: transparent !important;
+            padding: 6px 8px !important;
+        }
+
+        .sales-table tbody .discount-wrapper .discount-toggle {
+            border: none !important;
+            border-radius: 0 !important;
+            background-color: #e2e8f0 !important;
+            color: #475569 !important;
+            font-weight: 700 !important;
+            font-size: 0.75rem !important;
+            width: 32px !important;
+            min-width: 32px !important;
+            height: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            cursor: pointer !important;
+            transition: background-color 0.2s !important;
+        }
+
+        .sales-table tbody .discount-wrapper .discount-toggle:hover {
+            background-color: #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+        
+        .sales-table tfoot td {
+            background-color: #f8fafc !important;
+            border: 1px solid #cbd5e1 !important;
+            border-top: 2px solid #94a3b8 !important; /* Thick tfoot separator */
+            padding: 8px 10px !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+        }
+        
+        /* Row hover */
+        .sales-table tbody tr:hover td {
+            background-color: #f8fafc !important;
+        }
+        
+        /* Column Widths */
+        .col-product { width: 300px; min-width: 250px; }
+        .col-qty { width: 100px; }
+        .col-stock { width: 90px; }
+        .col-pieces { width: 100px; }
+        .col-price { width: 120px; }
+        .col-disc { width: 80px; }
+        .col-disc-amt { width: 95px; }
+        .col-amount { width: 120px; text-align: right; }
+        .col-action { width: 50px; text-align: center; }
 
         /* Product Search Dropdown */
         .search-results {
             position: absolute;
             background: white;
-            border: 1px solid #ddd;
+            border: 2px solid #cbd5e1;
             z-index: 1000;
             max-height: 250px;
             overflow-y: auto;
@@ -171,14 +314,14 @@
             list-style: none;
             padding: 0;
             margin: 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border-radius: 6px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
         }
 
         .search-result-item {
             padding: 10px 12px;
             cursor: pointer;
-            border-bottom: 1px solid #f1f1f1;
+            border-bottom: 1px solid #e2e8f0;
             transition: background 0.1s;
         }
 
@@ -188,23 +331,8 @@
 
         .search-result-item:hover,
         .search-result-item.active {
-            background-color: #e7f1ff;
-            color: #0b5ed7;
-        }
-
-        /* Layout Helpers */
-        .card-panel {
-            background-color: #fff;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 1rem;
-            height: 100%;
-        }
-
-        .summary-card {
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
+            background-color: #e2e8f0;
+            color: #1e293b;
         }
     </style>
 
@@ -277,7 +405,7 @@
                             </div>
 
                             <div class="mb-2">
-                                <label class="form-label fw-bold text-muted small">Remarks</label>
+                                <label class="form-label fw-bold text-muted small"> M.Bill</label>
                                 <textarea class="form-control" name="note" id="remarks" rows="2" placeholder="Optional notes..."></textarea>
                             </div>
 
@@ -433,17 +561,17 @@
 
                 {{-- Buttons --}}
                 <div class="d-flex flex-wrap gap-3 justify-content-end p-3 mt-3 border-top bg-light rounded-bottom">
-                    <button type="button" class="btn btn-outline-secondary px-4 fw-bold"
+                    <button type="button" class="btn btn-action-secondary"
                         onclick="window.location.reload()">
-                        <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
                     </button>
                     {{-- New Save Only Button --}}
-                    <button type="button" class="btn btn-info px-4 fw-bold shadow-sm text-white" id="btnSaveOnly">
-                        <i class="bi bi-save"></i> Save Purchase
+                    <button type="button" class="btn btn-action-primary bg-info border-info text-white" id="btnSaveOnly">
+                        <i class="bi bi-save me-1"></i> Save Purchase
                     </button>
                     {{-- Existing Submit (Confirm) --}}
-                    <button type="button" class="btn btn-success px-5 fw-bold shadow-sm" id="btnConfirm">
-                        <i class="bi bi-check-circle"></i> Confirm Purchase
+                    <button type="button" class="btn btn-action-primary bg-success border-success text-white" id="btnConfirm">
+                        <i class="bi bi-check-circle me-1"></i> Confirm Purchase
                     </button>
                 </div>
             </form>

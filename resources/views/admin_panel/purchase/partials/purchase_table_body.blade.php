@@ -5,6 +5,7 @@
             {{ \Carbon\Carbon::parse($purchase->purchase_date)->format('d M, Y') }}
         </td>
         <td class="font-monospace text-dark">{{ $purchase->invoice_no }}</td>
+        <td class="font-monospace text-dark small">{{ $purchase->note ?? '-' }}</td>
         <td>
             @if ($purchase->status_purchase == 'draft')
                 <span
@@ -76,9 +77,9 @@
         <td class="pe-3 text-center">
             <div class="dropdown">
                 {{-- Replaced data-bs-toggle with data-toggle for Bootstrap 4 compatibility --}}
-                <button class="btn btn-sm btn-light border dropdown-toggle"
+                <button class="btn btn-premium-action dropdown-toggle"
                     type="button" data-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-ellipsis-v small"></i> Actions
+                    <i class="fas fa-ellipsis-v small me-1"></i> Actions
                 </button>
                 {{-- Replaced dropdown-menu-end (BS5) with dropdown-menu-right (BS4) --}}
                 <ul

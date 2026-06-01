@@ -1,6 +1,122 @@
 @extends('admin_panel.layout.app')
 
 @section('content')
+    <style>
+        /* Premium ERP Card & Container Styling */
+        .premium-card {
+            border: 2px solid #cbd5e1 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+            background-color: #ffffff;
+            margin-top: 10px;
+        }
+        
+        /* Clean & Bold Filter Panel */
+        .filter-panel {
+            background-color: #f8fafc !important;
+            border: 2px dashed #94a3b8 !important;
+            border-radius: 10px !important;
+            padding: 18px !important;
+        }
+        
+        .filter-panel label {
+            font-size: 12px;
+            font-weight: 700 !important;
+            color: #475569 !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .filter-panel .form-control,
+        .filter-panel .form-select {
+            border: 2px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+            font-weight: 500 !important;
+            color: #1e293b !important;
+            transition: all 0.2s ease-in-out;
+            height: 38px !important;
+        }
+        
+        .filter-panel .form-control:focus,
+        .filter-panel .form-select:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+        }
+        
+        /* Elegant & Bold Buttons */
+        .btn-premium-primary {
+            background-color: #2563eb !important;
+            border: 2px solid #1d4ed8 !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            border-radius: 6px !important;
+            height: 38px !important;
+            padding: 0 16px !important;
+            transition: all 0.2s;
+        }
+        .btn-premium-primary:hover {
+            background-color: #1d4ed8 !important;
+            transform: translateY(-1px);
+        }
+        
+        .btn-premium-secondary {
+            background-color: #ffffff !important;
+            border: 2px solid #cbd5e1 !important;
+            color: #475569 !important;
+            font-weight: 600 !important;
+            border-radius: 6px !important;
+            height: 38px !important;
+            padding: 0 16px !important;
+            transition: all 0.2s;
+        }
+        .btn-premium-secondary:hover {
+            background-color: #f1f5f9 !important;
+            border-color: #94a3b8 !important;
+            color: #1e293b !important;
+        }
+
+        /* Premium Bold Table Styling */
+        .premium-table {
+            border: 2px solid #475569 !important; /* Bold outer border */
+            border-radius: 8px !important;
+            overflow: hidden;
+        }
+        
+        .premium-table thead th {
+            background-color: #f1f5f9 !important;
+            color: #1e293b !important;
+            font-weight: 700 !important;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            border-bottom: 3px solid #475569 !important; /* Thick bottom border under headers */
+            border-right: 2px solid #cbd5e1 !important;
+            padding: 12px 10px !important;
+        }
+        
+        .premium-table thead th:last-child {
+            border-right: none !important;
+        }
+        
+        .premium-table tbody td {
+            border: 2px solid #e2e8f0 !important; /* Bold borders between all cells */
+            padding: 12px 10px !important;
+            font-size: 13px !important;
+            color: #334155 !important;
+            background-color: #ffffff;
+        }
+        
+        .premium-table tbody tr:hover td {
+            background-color: #f8fafc !important; /* Elegant row hover background */
+        }
+        
+        /* Table Responsive border fix */
+        .table-responsive {
+            border-radius: 8px !important;
+            overflow: hidden;
+        }
+    </style>
+
     <div class="main-content">
         <div class="main-content-inner">
             <div class="container-fluid py-4">
@@ -12,13 +128,13 @@
                     </div>
                     <div>
                         {{-- Purchase Returns Button --}}
-                        <a class="btn btn-outline-danger px-3 shadow-sm fw-medium me-2"
+                        <a class="btn btn-outline-danger px-3 shadow-sm fw-medium me-2 animate__animated animate__fadeIn"
                             href="{{ route('purchase.return.index') }}">
                             <i class="fas fa-undo"></i> Purchase Returns
                         </a>
 
                         @can('purchases.create')
-                            <a class="btn btn-primary px-4 shadow-sm fw-medium align-items-center gap-2"
+                            <a class="btn btn-primary px-4 shadow-sm fw-medium align-items-center gap-2 animate__animated animate__fadeIn"
                                 href="{{ route('add_purchase') }}">
                                 <i class="fas fa-plus"></i> Add Purchase
                             </a>
@@ -29,24 +145,24 @@
                 {{-- Status Filters --}}
                 <div class="mb-4 d-flex gap-2">
                     <a href="{{ route('Purchase.home', ['status' => 'all']) }}"
-                        class="btn btn-sm {{ request('status') == 'all' || !request('status') ? 'btn-secondary' : 'btn-outline-secondary' }}">
+                        class="btn btn-sm {{ request('status') == 'all' || !request('status') ? 'btn-secondary' : 'btn-outline-secondary' }} rounded-3 shadow-sm">
                         All
                     </a>
                     <a href="{{ route('Purchase.home', ['status' => 'approved']) }}"
-                        class="btn btn-sm {{ request('status') == 'approved' ? 'btn-success' : 'btn-outline-success' }}">
+                        class="btn btn-sm {{ request('status') == 'approved' ? 'btn-success' : 'btn-outline-success' }} rounded-3 shadow-sm">
                         Approved
                     </a>
                     <a href="{{ route('Purchase.home', ['status' => 'draft']) }}"
-                        class="btn btn-sm {{ request('status') == 'draft' ? 'btn-warning' : 'btn-outline-warning' }}">
+                        class="btn btn-sm {{ request('status') == 'draft' ? 'btn-warning text-dark' : 'btn-outline-warning' }} rounded-3 shadow-sm">
                         Draft
                     </a>
                     <a href="{{ route('Purchase.home', ['status' => 'Returned']) }}"
-                        class="btn btn-sm {{ request('status') == 'Returned' ? 'btn-danger' : 'btn-outline-danger' }}">
+                        class="btn btn-sm {{ request('status') == 'Returned' ? 'btn-danger' : 'btn-outline-danger' }} rounded-3 shadow-sm">
                         Returned
                     </a>
                 </div>
 
-                <div class="card border-0 shadow-sm rounded-4">
+                <div class="card premium-card">
                     <div class="card-body p-4">
                         @if (session('success'))
                             <div class="alert alert-success d-flex align-items-center gap-2 rounded-3 mb-4">
@@ -57,188 +173,77 @@
                             </div>
                         @endif
 
+                        {{-- AJAX Filter Panel --}}
+                        <div class="card filter-panel mb-4">
+                            <div class="card-body p-0">
+                                <form id="filterForm" class="row g-3 align-items-end" autocomplete="off">
+                                    <div class="col-md-2">
+                                        <label class="form-label mb-1">From Date</label>
+                                        <input type="date" class="form-control" name="from_date" id="filter_from_date">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label mb-1">To Date</label>
+                                        <input type="date" class="form-control" name="to_date" id="filter_to_date">
+                                    </div>
+                                    <!-- <div class="col-md-2">
+                                        <label class="form-label mb-1">Mobile No</label>
+                                        <input type="text" class="form-control" name="mobile_no" id="filter_mobile_no" placeholder="Search mobile...">
+                                    </div> -->
+                                    <div class="col-md-1">
+                                        <label class="form-label mb-1">Bill#</label>
+                                        <input type="text" class="form-control" name="bill_no" id="filter_bill_no" placeholder="PUR-...">
+                                    </div>
+                                    <div class="col-md-1">
+                                        <label class="form-label mb-1">M.Bill#</label>
+                                        <input type="text" class="form-control" name="reference" id="filter_reference" placeholder="M.Bill...">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label mb-1">Vendor</label>
+                                        <select class="form-select" name="vendor_id" id="filter_vendor_id">
+                                            <option value="">All Vendors</option>
+                                            @foreach ($vendors as $v)
+                                                <option value="{{ $v->id }}">{{ $v->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <!-- <div class="col-md-2">
+                                        <label class="form-label mb-1">Order By</label>
+                                        <select class="form-select" name="order_by" id="filter_order_by">
+                                            <option value="purchase_date">Invoice Date</option>
+                                            <option value="invoice_no">Invoice No</option>
+                                        </select>
+                                    </div> -->
+                                    <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                                        <button type="button" class="btn btn-premium-secondary" id="btnReset">
+                                            <i class="fas fa-undo me-1"></i>Reset
+                                        </button>
+                                        <button type="submit" class="btn btn-premium-primary" id="btnSearch">
+                                            <i class="fas fa-search me-1"></i>Search
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
                         <div class="table-responsive">
-                            <table id="purchase-table" class="table table-hover align-middle datanew" style="width:100%">
+                            <table id="purchase-table" class="table table-hover align-middle datanew premium-table" style="width:100%">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th class="py-3 ps-3 rounded-start text-secondary fw-semibold text-uppercase small">
-                                            ID</th>
+                                        <th class="py-3 ps-3 rounded-start text-secondary fw-semibold text-uppercase small">Bill#</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small">Date</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small">Invoice No</th>
+                                        <th class="py-3 text-secondary fw-semibold text-uppercase small">M.Bill</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small">Status</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small">Vendor</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small">Warehouse</th>
-                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Net Amount
-                                        </th>
+                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Net Amount</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Paid</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Due</th>
-                                        <th
-                                            class="py-3 pe-3 rounded-end text-secondary fw-semibold text-uppercase small text-center">
-                                            Action</th>
+                                        <th class="py-3 pe-3 rounded-end text-secondary fw-semibold text-uppercase small text-center">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @foreach ($Purchase as $purchase)
-                                        <tr class="border-bottom-0">
-                                            <td class="ps-3 fw-bold text-muted">#{{ $purchase->id }}</td>
-                                            <td class="text-nowrap">
-                                                {{ \Carbon\Carbon::parse($purchase->purchase_date)->format('d M, Y') }}
-                                            </td>
-                                            <td class="font-monospace text-dark">{{ $purchase->invoice_no }}</td>
-                                            <td>
-                                                @if ($purchase->status_purchase == 'draft')
-                                                    <span
-                                                        class="badge badge-warning text-dark border border-warning">Draft</span>
-                                                @elseif ($purchase->status_purchase == 'Returned')
-                                                    <span
-                                                        class="badge bg-danger text-white border border-danger">Returned</span>
-                                                @else
-                                                    <span class="badge badge-success border border-success">Approved</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="avatar-circle bg-info-subtle text-info me-2 fw-bold d-flex align-items-center justify-content-center rounded-circle"
-                                                        style="width: 32px; height: 32px; font-size: 14px;">
-                                                        {{ strtoupper(substr($purchase->vendor->name ?? 'V', 0, 1)) }}
-                                                    </div>
-                                                    <span
-                                                        class="fw-medium text-dark">{{ $purchase->vendor->name ?? 'N/A' }}</span>
-                                                </div>
-                                            </td>
-                                            <td class="text-muted small">
-                                                {{ $purchase->warehouse->warehouse_name ?? 'N/A' }}
-                                            </td>
-
-                                            <td class="text-end fw-bold text-dark">
-                                                @if ($purchase->total_returned > 0)
-                                                    {{-- Show original amount struck through --}}
-                                                    <div>
-                                                        <small
-                                                            class="text-muted text-decoration-line-through">{{ number_format($purchase->net_amount, 2) }}</small>
-                                                    </div>
-                                                    {{-- Show updated amount --}}
-                                                    <div class="text-success">
-                                                        {{ number_format($purchase->updated_net_amount, 2) }}
-                                                    </div>
-                                                    <small
-                                                        class="text-danger">(-{{ number_format($purchase->total_returned, 2) }})</small>
-                                                @else
-                                                    {{ number_format($purchase->net_amount, 2) }}
-                                                @endif
-                                            </td>
-                                            <td class="text-end text-success">
-                                                {{ number_format($purchase->paid_amount, 2) }}
-                                            </td>
-                                            <td class="text-end">
-                                                @php
-                                                    $displayDue =
-                                                        $purchase->total_returned > 0
-                                                            ? $purchase->updated_due_amount
-                                                            : $purchase->due_amount;
-                                                @endphp
-                                                @if ($displayDue > 0)
-                                                    <span
-                                                        class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">{{ number_format($displayDue, 2) }}</span>
-                                                @else
-                                                    <span
-                                                        class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Paid</span>
-                                                @endif
-
-                                                @if ($purchase->has_partial_return)
-                                                    <br><small class="badge bg-danger text-white mt-1"><i class="fas fa-undo-alt me-1"></i> Partial
-                                                        Return</small>
-                                                @elseif($purchase->is_fully_returned)
-                                                    <br><small class="badge bg-danger mt-1">Fully Returned</small>
-                                                @endif
-                                            </td>
-
-                                            <td class="pe-3 text-center">
-                                                <div class="dropdown">
-                                                    {{-- Replaced data-bs-toggle with data-toggle for Bootstrap 4 compatibility --}}
-                                                    <button class="btn btn-sm btn-light border dropdown-toggle"
-                                                        type="button" data-toggle="dropdown" aria-expanded="false">
-                                                        <i class="fas fa-ellipsis-v small"></i> Actions
-                                                    </button>
-                                                    {{-- Replaced dropdown-menu-end (BS5) with dropdown-menu-right (BS4) --}}
-                                                    <ul
-                                                        class="dropdown-menu dropdown-menu-right border-0 shadow-lg rounded-3">
-
-                                                        @can('purchases.edit')
-                                                            <li>
-                                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2"
-                                                                    href="{{ route('purchase.edit', $purchase->id) }}">
-                                                                    <i class="fas fa-edit text-primary fa-fw"></i> Edit
-                                                                </a>
-                                                            </li>
-                                                        @endcan
-
-                                                        @if ($purchase->status_purchase == 'draft')
-                                                            @can('purchases.create')
-                                                                <li>
-                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2 text-success confirm-purchase-btn"
-                                                                        href="{{ route('purchase.confirm', $purchase->id) }}">
-                                                                        <i class="fas fa-check-circle fa-fw"></i> Confirm
-                                                                        Purchase
-                                                                    </a>
-                                                                </li>
-                                                                <li>
-                                                                    <hr class="dropdown-divider">
-                                                                </li>
-                                                            @endcan
-                                                        @endif
-
-                                                        @if ($purchase->status_purchase != 'draft')
-                                                            @can('purchases.view')
-                                                                <li>
-                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2"
-                                                                        href="{{ route('purchase.invoice', $purchase->id) }}">
-                                                                        <i class="fas fa-file-invoice text-info fa-fw"></i> View
-                                                                        Invoice
-                                                                    </a>
-                                                                </li>
-                                                                <li>
-                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2"
-                                                                        href="{{ route('purchase.receipt', $purchase->id) }}">
-                                                                        <i class="fas fa-receipt text-secondary fa-fw"></i> View
-                                                                        Receipt
-                                                                    </a>
-                                                                </li>
-                                                            @endcan
-                                                            @can('purchases.create')
-                                                                <li>
-                                                                    <a class="dropdown-item d-flex align-items-center gap-2 py-2"
-                                                                        href="{{ route('purchase.return.show', $purchase->id) }}">
-                                                                        <i class="fas fa-undo text-warning fa-fw"></i> Return
-                                                                    </a>
-                                                                </li>
-                                                            @endcan
-                                                        @endif
-
-                                                        @if ($purchase->status_purchase == 'draft')
-                                                            @can('purchases.delete')
-                                                                <li>
-                                                                    <hr class="dropdown-divider">
-                                                                </li>
-                                                                <li>
-                                                                    <form
-                                                                        action="{{ route('purchase.destroy', $purchase->id) }}"
-                                                                        method="POST" class="d-inline delete-form">
-                                                                        @csrf
-                                                                        @method('DELETE')
-                                                                        <button type="button"
-                                                                            class="dropdown-item d-flex align-items-center gap-2 py-2 delete-btn text-danger">
-                                                                            <i class="fas fa-trash-alt fa-fw"></i> Delete
-                                                                        </button>
-                                                                    </form>
-                                                                </li>
-                                                            @endcan
-                                                        @endif
-                                                    </ul>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
+                                <tbody id="purchaseTableBody">
+                                    @include('admin_panel.purchase.partials.purchase_table_body')
                                 </tbody>
                             </table>
                         </div>
@@ -254,20 +259,73 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
-            // Initialize DataTable
-            if ($.fn.DataTable.isDataTable('.datanew')) {
-                $('.datanew').DataTable().destroy();
+            // Function to initialize DataTable
+            function initDataTable() {
+                if ($.fn.DataTable.isDataTable('.datanew')) {
+                    $('.datanew').DataTable().destroy();
+                }
+                $('.datanew').DataTable({
+                    "pageLength": 10,
+                    "order": [],
+                    "language": {
+                        "search": "",
+                        "searchPlaceholder": "Search purchases..."
+                    },
+                    "dom": "<'row mb-3'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+                        "<'row'<'col-sm-12'tr>>" +
+                        "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+                });
             }
-            $('.datanew').DataTable({
-                "pageLength": 10,
-                "aaSorting": [],
-                "language": {
-                    "search": "",
-                    "searchPlaceholder": "Search purchases..."
-                },
-                "dom": "<'row mb-3'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
-                    "<'row'<'col-sm-12'tr>>" +
-                    "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+
+            // Initial call
+            initDataTable();
+
+            // Submit form via AJAX
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                const $btn = $('#btnSearch');
+                const origHtml = $btn.html();
+                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Searching...');
+
+                $.ajax({
+                    url: '{{ route("Purchase.home") }}',
+                    method: 'GET',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        $btn.prop('disabled', false).html(origHtml);
+                        
+                        // 1. Destroy DataTable first to release DOM bindings
+                        if ($.fn.DataTable.isDataTable('.datanew')) {
+                            $('.datanew').DataTable().destroy();
+                        }
+                        
+                        // 2. Safely replace the table body HTML
+                        $('#purchaseTableBody').html(response.html);
+                        
+                        // 3. Re-initialize the DataTable on the new HTML
+                        $('.datanew').DataTable({
+                            "pageLength": 10,
+                            "order": [],
+                            "language": {
+                                "search": "",
+                                "searchPlaceholder": "Search purchases..."
+                            },
+                            "dom": "<'row mb-3'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+                                "<'row'<'col-sm-12'tr>>" +
+                                "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+                        });
+                    },
+                    error: function(err) {
+                        $btn.prop('disabled', false).html(origHtml);
+                        Swal.fire('Error', 'Failed to retrieve filtered list.', 'error');
+                    }
+                });
+            });
+
+            // Reset form
+            $('#btnReset').on('click', function() {
+                $('#filterForm')[0].reset();
+                $('#filterForm').trigger('submit');
             });
 
             // Confirm Purchase Action

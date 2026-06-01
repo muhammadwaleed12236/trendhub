@@ -60,9 +60,49 @@ class PurchaseController extends Controller
         if ($request->has('status') && $request->status != 'all') {
             $query->where('status_purchase', $request->status);
         }
-        
-        // Add latest() for better ordering
-        $Purchase = $query->latest()->get();
+
+        // Apply Date Filters
+        if ($request->filled('from_date')) {
+            $query->whereDate('purchase_date', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('purchase_date', '<=', $request->to_date);
+        }
+
+        // Apply Mobile Number Filter
+        if ($request->filled('mobile_no')) {
+            $query->whereHas('vendor', function ($q) use ($request) {
+                $q->where('mobile', 'like', "%{$request->mobile_no}%");
+            });
+        }
+
+        // Apply Bill No (Invoice No / ID) Filter
+        if ($request->filled('bill_no')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('invoice_no', 'like', "%{$request->bill_no}%")
+                  ->orWhere('id', 'like', "%{$request->bill_no}%");
+            });
+        }
+
+        // Apply M.Bill # (Note) Filter
+        if ($request->filled('reference')) {
+            $query->where('note', 'like', "%{$request->reference}%");
+        }
+
+        // Apply Vendor Filter
+        if ($request->filled('vendor_id')) {
+            $query->where('vendor_id', $request->vendor_id);
+        }
+
+        // Order By
+        $orderBy = $request->input('order_by', 'purchase_date');
+        if ($orderBy === 'invoice_no') {
+            $query->orderBy('invoice_no', 'desc');
+        } else {
+            $query->orderBy('purchase_date', 'desc');
+        }
+
+        $Purchase = $query->get();
         
         // Calculate updated amounts after returns
         $Purchase->each(function ($purchase) {
@@ -79,7 +119,17 @@ class PurchaseController extends Controller
             $purchase->has_partial_return = $totalReturned > 0 && $totalReturned < $purchase->net_amount;
         });
 
-        return view('admin_panel.purchase.index', compact('Purchase'));
+        // If AJAX request, return only table rows partial
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('admin_panel.purchase.partials.purchase_table_body', compact('Purchase'))->render()
+            ]);
+        }
+
+        // Load all vendors for filter dropdown
+        $vendors = Vendor::orderBy('name')->get();
+
+        return view('admin_panel.purchase.index', compact('Purchase', 'vendors'));
     }
 
     public function addBill($gatepassId)

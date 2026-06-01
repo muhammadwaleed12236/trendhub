@@ -18,14 +18,70 @@ use Illuminate\Support\Facades\DB;
 
 class SaleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $sales = Sale::with(['customer_relation', 'items.product', 'returns'])
-            ->whereIn('sale_status', ['draft', 'booked', 'posted', 'returned'])
-            ->latest()
-            ->get();
+        $query = Sale::with(['customer_relation', 'items.product', 'returns'])
+            ->whereIn('sale_status', ['draft', 'booked', 'posted', 'returned']);
 
-        return view('admin_panel.sale.index', compact('sales'));
+        // Apply Status Filter
+        if ($request->has('status') && $request->status != 'all') {
+            $query->where('sale_status', $request->status);
+        }
+
+        // Apply Date Filters
+        if ($request->filled('from_date')) {
+            $query->whereDate('created_at', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        // Apply Mobile Number Filter
+        if ($request->filled('mobile_no')) {
+            $query->whereHas('customer_relation', function ($q) use ($request) {
+                $q->where('mobile', 'like', "%{$request->mobile_no}%");
+            });
+        }
+
+        // Apply Bill No (Invoice No / ID) Filter
+        if ($request->filled('bill_no')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('invoice_no', 'like', "%{$request->bill_no}%")
+                  ->orWhere('id', 'like', "%{$request->bill_no}%");
+            });
+        }
+
+        // Apply M.Bill # (Reference) Filter
+        if ($request->filled('reference')) {
+            $query->where('reference', 'like', "%{$request->reference}%");
+        }
+
+        // Apply Customer Filter
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        // Order By
+        $orderBy = $request->input('order_by', 'created_at');
+        if ($orderBy === 'invoice_no') {
+            $query->orderBy('invoice_no', 'desc');
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        $sales = $query->get();
+
+        // If AJAX request, return only table rows partial
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('admin_panel.sale.partials.sales_table_body', compact('sales'))->render()
+            ]);
+        }
+
+        // Load all customers for filter dropdown
+        $customers = Customer::orderBy('customer_name')->get();
+
+        return view('admin_panel.sale.index', compact('sales', 'customers'));
     }
 
     public function addsale()

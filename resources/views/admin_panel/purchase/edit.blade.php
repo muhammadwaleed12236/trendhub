@@ -18,38 +18,166 @@
         }
 
         .sales-table {
+            border-collapse: collapse !important;
+            margin-bottom: 0 !important;
             min-width: 1000px;
-            /* Base width */
-            border-collapse: separate;
-            border-spacing: 0;
         }
 
         .sales-table thead th {
-            background-color: #f8f9fa;
-            color: #495057;
-            font-weight: 600;
+            background-color: #f8fafc !important; /* Light clean header */
+            color: #0f172a !important;
+            font-weight: 700 !important;
             text-transform: uppercase;
-            font-size: 0.75rem;
+            font-size: 11px !important;
             letter-spacing: 0.5px;
-            padding: 12px 8px;
-            border-bottom: 2px solid #e9ecef !important;
+            padding: 10px 8px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-bottom: 2px solid #94a3b8 !important; /* Thick header separator border */
+            vertical-align: middle !important;
+            text-align: center;
+        }
+
+        .sales-table thead th.col-product {
+            text-align: left !important;
+            padding-left: 12px !important;
         }
 
         .sales-table tbody td {
-            vertical-align: middle;
-            padding: 8px;
-            border-color: #f1f3f5;
+            border: 1px solid #cbd5e1 !important; /* Flat interior cell borders */
+            padding: 0 !important; /* Zero padding to let input fill cell completely */
+            background-color: #ffffff;
+            vertical-align: middle !important;
+        }
+
+        /* ⚡ FLAT BORDERLESS GRID INPUTS ⚡ */
+        .sales-table tbody .form-control,
+        .sales-table tbody .form-select {
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            height: 38px !important; /* Uniform height */
+            margin: 0 !important;
+            padding: 6px 8px !important;
+            width: 100% !important;
+            background-color: transparent !important;
+            text-align: center; /* Center-align text in grid inputs */
+            color: #1e293b !important;
+            font-weight: 500 !important;
+            font-size: 0.82rem !important;
+        }
+
+        .sales-table tbody td.col-product .form-select {
+            text-align: left !important;
+            padding-left: 12px !important;
+        }
+
+        /* Calculations and Read-Only cells get a neat slate tone background */
+        .sales-table tbody .input-readonly,
+        .sales-table tbody input[readonly],
+        .sales-table tbody select[disabled] {
+            background-color: #f1f5f9 !important;
+            cursor: not-allowed !important;
+            color: #475569 !important;
+            font-weight: 600 !important;
+        }
+
+        /* Subtle focus highlight inside cell */
+        .sales-table tbody .form-control:focus,
+        .sales-table tbody .form-select:focus {
+            outline: none !important;
+            background-color: #f8fafc !important;
+            box-shadow: inset 0 0 0 2px #2563eb !important;
+        }
+
+        /* Select2 Specific flat borderless styling */
+        .sales-table tbody .select2-container--default .select2-selection--single {
+            height: 38px !important;
+            padding: 0 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background-color: transparent !important;
+            display: flex;
+            align-items: center;
+        }
+
+        .sales-table tbody .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px !important;
+            padding-left: 12px !important;
+            padding-right: 20px !important;
+            font-size: 0.82rem !important;
+            color: #1e293b !important;
+            font-weight: 500 !important;
+            text-align: left !important;
+        }
+
+        .sales-table tbody .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px !important;
+            right: 8px !important;
+        }
+
+        /* Select2 Focus state */
+        .sales-table tbody .select2-container--default.select2-container--focus .select2-selection--single {
+            background-color: #f8fafc !important;
+            box-shadow: inset 0 0 0 2px #2563eb !important;
+        }
+
+        /* Elegant flat block layout for discount input + toggle */
+        .sales-table tbody .discount-wrapper {
+            display: flex !important;
+            align-items: stretch !important;
+            width: 100% !important;
+            height: 38px !important;
+            gap: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .sales-table tbody .discount-wrapper .discount-value {
+            flex-grow: 1 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            height: 100% !important;
+            text-align: center;
+            background-color: transparent !important;
+            padding: 6px 8px !important;
+        }
+
+        .sales-table tbody .discount-wrapper .discount-toggle {
+            border: none !important;
+            border-radius: 0 !important;
+            background-color: #e2e8f0 !important;
+            color: #475569 !important;
+            font-weight: 700 !important;
+            font-size: 0.75rem !important;
+            width: 32px !important;
+            min-width: 32px !important;
+            height: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            cursor: pointer !important;
+            transition: background-color 0.2s !important;
+        }
+
+        .sales-table tbody .discount-wrapper .discount-toggle:hover {
+            background-color: #cbd5e1 !important;
+            color: #0f172a !important;
         }
 
         .sales-table tfoot td {
-            background-color: #f8f9fa;
-            border-top: 2px solid #dee2e6;
+            background-color: #f8fafc !important;
+            border: 1px solid #cbd5e1 !important;
+            border-top: 2px solid #94a3b8 !important; /* Thick tfoot separator */
+            padding: 8px 10px !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
         }
 
-        /* Premium Table Look */
-        .table-bordered>:not(caption)>*>* {
-            border-width: 1px;
-            border-color: #e9ecef;
+        /* Row hover */
+        .sales-table tbody tr:hover td {
+            background-color: #f8fafc !important;
         }
 
         /* Column widths */
@@ -98,28 +226,6 @@
         .col-action {
             width: 50px;
             text-align: center;
-        }
-
-        .input-readonly {
-            background: #f8f9fa;
-            color: #495057;
-            font-weight: 500;
-            border: 1px solid #dee2e6;
-        }
-
-        .form-control,
-        .form-select {
-            border-radius: 6px;
-            border: 1px solid #ced4da;
-            padding: 0.4rem 0.6rem;
-            font-size: 0.85rem;
-            transition: all 0.2s ease-in-out;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: #86b7fe;
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
         }
 
         .main-container {

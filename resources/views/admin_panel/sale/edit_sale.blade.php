@@ -200,7 +200,9 @@
         }
 
         .minw-350 {
-            min-width: 360px;
+            min-width: 320px;
+            width: 320px;
+            flex-shrink: 0;
         }
 
         .w-70 {
@@ -241,93 +243,181 @@
     <style>
         /* ===== Sales Table UI Fix ===== */
         .sales-table {
-            min-width: 1150px;
-            /* Ensure enough space for all columns */
+            border-collapse: collapse !important;
+            margin-bottom: 0 !important;
+            min-width: 935px;
         }
 
-        .sales-table th {
-            font-weight: 600;
+        .sales-table thead th {
+            background-color: #f8fafc !important; /* Light clean header */
+            color: #0f172a !important;
+            font-weight: 700 !important;
             text-transform: uppercase;
-            font-size: 0.75rem;
+            font-size: 11px !important;
             letter-spacing: 0.5px;
-            vertical-align: middle;
-            color: #495057;
-        }
-
-        /* Column Widths */
-        .col-product {
-            width: 220px;
-            min-width: 220px;
-        }
-
-        /* Slightly reduced */
-        .col-warehouse {
-            min-width: 160px;
-        }
-
-        .col-stock {
-            width: 90px;
-        }
-
-        .col-qty {
-            width: 90px;
-        }
-
-
-        .col-price {
-            width: 110px;
-        }
-
-        /* Retail Price */
-        .col-disc {
-            width: 130px;
-        }
-
-        /* Disc % + input */
-        .col-disc-amt {
-            width: 90px;
-        }
-
-        /* New Columns */
-        .col-pieces {
-            width: 100px;
-        }
-
-        .col-price-p {
-            width: 100px;
-        }
-
-        .col-price-m2 {
-            width: 100px;
-        }
-
-        .col-amount {
-            width: 120px;
-        }
-
-        .col-action {
-            width: 50px;
+            padding: 10px 8px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-bottom: 2px solid #94a3b8 !important; /* Thick header separator border */
+            vertical-align: middle !important;
             text-align: center;
         }
 
-        .input-readonly {
-            background: #f8f9fa;
-            color: #6c757d;
-            font-weight: 500;
-            border-color: #dee2e6;
+        .sales-table thead th.col-product {
+            text-align: left !important;
+            padding-left: 12px !important;
         }
 
-        .form-control:focus,
-        .form-select:focus {
-            border-color: #86b7fe;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        .sales-table tbody td {
+            border: 1px solid #cbd5e1 !important; /* Flat interior cell borders */
+            padding: 0 !important; /* Zero padding to let input fill cell completely */
+            background-color: #ffffff;
+            vertical-align: middle !important;
         }
 
-        /* Premium Table Look */
-        .table-bordered> :not(caption)>*>* {
-            border-width: 1px;
-            border-color: #e9ecef;
+        /* ⚡ FLAT BORDERLESS GRID INPUTS ⚡ */
+        .sales-table tbody .form-control,
+        .sales-table tbody .form-select {
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            height: 38px !important; /* Uniform height */
+            margin: 0 !important;
+            padding: 6px 8px !important;
+            width: 100% !important;
+            background-color: transparent !important;
+            text-align: center; /* Center-align text in grid inputs */
+            color: #1e293b !important;
+            font-weight: 500 !important;
+            font-size: 0.82rem !important;
         }
+
+        .sales-table tbody td.col-product .form-select {
+            text-align: left !important;
+            padding-left: 12px !important;
+        }
+
+        /* Calculations and Read-Only cells get a neat slate tone background */
+        .sales-table tbody .input-readonly,
+        .sales-table tbody input[readonly],
+        .sales-table tbody select[disabled] {
+            background-color: #f1f5f9 !important;
+            cursor: not-allowed !important;
+            color: #475569 !important;
+            font-weight: 600 !important;
+        }
+
+        /* Subtle focus highlight inside cell */
+        .sales-table tbody .form-control:focus,
+        .sales-table tbody .form-select:focus {
+            outline: none !important;
+            background-color: #f8fafc !important;
+            box-shadow: inset 0 0 0 2px #2563eb !important;
+        }
+
+        /* Select2 Specific flat borderless styling */
+        .sales-table tbody .select2-container--default .select2-selection--single {
+            height: 38px !important;
+            padding: 0 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background-color: transparent !important;
+            display: flex;
+            align-items: center;
+        }
+
+        .sales-table tbody .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px !important;
+            padding-left: 12px !important;
+            padding-right: 20px !important;
+            font-size: 0.82rem !important;
+            color: #1e293b !important;
+            font-weight: 500 !important;
+            text-align: left !important;
+        }
+
+        .sales-table tbody .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px !important;
+            right: 8px !important;
+        }
+
+        /* Select2 Focus state */
+        .sales-table tbody .select2-container--default.select2-container--focus .select2-selection--single {
+            background-color: #f8fafc !important;
+            box-shadow: inset 0 0 0 2px #2563eb !important;
+        }
+
+        /* Elegant flat block layout for discount input + toggle */
+        .sales-table tbody .discount-wrapper {
+            display: flex !important;
+            align-items: stretch !important;
+            width: 100% !important;
+            height: 38px !important;
+            gap: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .sales-table tbody .discount-wrapper .discount-value {
+            flex-grow: 1 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            height: 100% !important;
+            text-align: center;
+            background-color: transparent !important;
+            padding: 6px 8px !important;
+        }
+
+        .sales-table tbody .discount-wrapper .discount-toggle {
+            border: none !important;
+            border-radius: 0 !important;
+            background-color: #e2e8f0 !important;
+            color: #475569 !important;
+            font-weight: 700 !important;
+            font-size: 0.75rem !important;
+            width: 32px !important;
+            min-width: 32px !important;
+            height: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            cursor: pointer !important;
+            transition: background-color 0.2s !important;
+        }
+
+        .sales-table tbody .discount-wrapper .discount-toggle:hover {
+            background-color: #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+
+        .sales-table tfoot td {
+            background-color: #f8fafc !important;
+            border: 1px solid #cbd5e1 !important;
+            border-top: 2px solid #94a3b8 !important; /* Thick tfoot separator */
+            padding: 8px 10px !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+        }
+
+        /* Row hover */
+        .sales-table tbody tr:hover td {
+            background-color: #f8fafc !important;
+        }
+
+        /* Column Widths */
+        .col-product { width: 180px; min-width: 180px; }
+        .col-warehouse { min-width: 130px; }
+        .col-stock { width: 70px; }
+        .col-qty { width: 70px; }
+        .col-price { width: 90px; }
+        .col-disc { width: 90px; }
+        .col-disc-amt { width: 80px; }
+        .col-pieces { width: 80px; }
+        .col-price-p { width: 90px; }
+        .col-price-m2 { width: 90px; }
+        .col-amount { width: 100px; }
+        .col-action { width: 40px; text-align: center; }
     </style>
 
 
@@ -447,8 +537,8 @@
                                     <tr>
                                         <th class="col-product">Product</th>
                                         <th class="col-stock">Stock</th>
-                                        <th style="width:80px;min-width:80px;">Carton</th>
-                                        <th style="width:80px;min-width:80px;">Loose Pcs</th>
+                                        <th style="width:65px;min-width:65px;">Carton</th>
+                                        <th style="width:70px;min-width:70px;">Loose Pcs</th>
                                         <th class="col-qty pack-size-col" title="Pieces per Carton">Pcs/Ctn</th>
                                         <th class="col-pieces boxes-col">Total Pcs</th>
                                         <th class="col-price-p price-pc-header">Retail Price</th>

@@ -65,90 +65,52 @@
         </td>
         <td>{!! $statusBadge !!}</td>
         <td class="pe-3 text-center">
-            <div class="dropdown">
-                <button class="btn btn-sm btn-light border dropdown-toggle"
-                    type="button" data-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-ellipsis-v small"></i> Actions
-                </button>
-                <ul class="dropdown-menu dropdown-menu-right border-0 shadow-lg rounded-3">
-                    @if ($sale->sale_status === 'draft' || $sale->sale_status === 'booked')
-                        {{-- Draft / Booked Actions --}}
-                        <li>
-                            <form action="{{ route('sales.confirm', $sale->id) }}" method="POST" class="d-inline confirm-booking-form">
-                                @csrf
-                                <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-2 text-success confirm-booking-btn">
-                                    <i class="fas fa-check-circle fa-fw text-success"></i> Confirm Booking
-                                </button>
-                            </form>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('sales.edit', $sale->id) }}">
-                                <i class="fas fa-edit text-primary fa-fw"></i> Edit
-                            </a>
-                        </li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('sales.invoice', $sale->id) }}" target="_blank">
-                                <i class="fas fa-file-invoice text-info fa-fw"></i> View Invoice
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('sales.invoice', ['id' => $sale->id, 'type' => 'estimate']) }}" target="_blank">
-                                <i class="fas fa-calculator text-secondary fa-fw"></i> View Estimate
-                            </a>
-                        </li>
+            <div class="d-flex flex-wrap gap-1 align-items-center justify-content-center">
+                @if ($sale->sale_status === 'draft' || $sale->sale_status === 'booked')
+                    {{-- Draft / Booked Actions --}}
+                    <form action="{{ route('sales.confirm', $sale->id) }}" method="POST" class="d-inline confirm-booking-form">
+                        @csrf
+                        <button type="button" class="btn btn-xs btn-success confirm-booking-btn">
+                            <i class="fas fa-check-circle me-1"></i>Confirm
+                        </button>
+                    </form>
+                    <a href="{{ route('sales.edit', $sale->id) }}" class="btn btn-xs btn-warning text-dark">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </a>
+                    <a href="{{ route('sales.invoice', $sale->id) }}" target="_blank" class="btn btn-xs btn-info text-white">
+                        <i class="fas fa-file-invoice me-1"></i>Invoice
+                    </a>
+                    <a href="{{ route('sales.invoice', ['id' => $sale->id, 'type' => 'estimate']) }}" target="_blank" class="btn btn-xs btn-outline-info">
+                        <i class="fas fa-calculator me-1"></i>Estimate
+                    </a>
+                @else
+                    {{-- Posted Actions --}}
+                    <a href="{{ route('sales.edit', $sale->id) }}" class="btn btn-xs btn-warning text-dark">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </a>
+                    <a href="{{ route('sales.invoice', $sale->id) }}" target="_blank" class="btn btn-xs btn-info text-white">
+                        <i class="fas fa-file-invoice me-1"></i>Invoice
+                    </a>
+                    <a href="{{ route('sales.invoice', ['id' => $sale->id, 'type' => 'estimate']) }}" target="_blank" class="btn btn-xs btn-outline-info">
+                        <i class="fas fa-calculator me-1"></i>Est.
+                    </a>
+                    <a href="{{ route('sales.dc', $sale->id) }}" target="_blank" class="btn btn-xs btn-warning text-white" style="background-color: #f97316; border-color: #ea580c;">
+                        <i class="fas fa-shipping-fast me-1"></i>DC
+                    </a>
+                    <a href="{{ route('sales.dc_thermal', $sale->id) }}" target="_blank" class="btn btn-xs btn-secondary text-white">
+                        <i class="fas fa-truck me-1"></i>DC Thermal
+                    </a>
+                    <a href="{{ route('sales.receipt', $sale->id) }}" target="_blank" class="btn btn-xs btn-success text-white">
+                        <i class="fas fa-receipt me-1"></i>Receipt
+                    </a>
+                    @if ($sale->sale_status !== 'returned')
+                        <a href="{{ route('sale.return.show', $sale->id) }}" class="btn btn-xs btn-danger text-white">
+                            <i class="fas fa-undo me-1"></i>Return
+                        </a>
                     @else
-                        {{-- Posted Actions --}}
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('sales.edit', $sale->id) }}">
-                                <i class="fas fa-edit text-primary fa-fw"></i> Edit
-                            </a>
-                        </li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('sales.invoice', $sale->id) }}" target="_blank">
-                                <i class="fas fa-file-invoice text-info fa-fw"></i> View Invoice
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('sales.invoice', ['id' => $sale->id, 'type' => 'estimate']) }}" target="_blank">
-                                <i class="fas fa-calculator text-secondary fa-fw"></i> View Estimate
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('sales.dc', $sale->id) }}" target="_blank">
-                                <i class="fas fa-shipping-fast text-warning fa-fw"></i> View DC
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('sales.dc_thermal', $sale->id) }}" target="_blank">
-                                <i class="fas fa-truck text-secondary fa-fw"></i> DC Thermal
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('sales.receipt', $sale->id) }}" target="_blank">
-                                <i class="fas fa-receipt text-success fa-fw"></i> View Receipt
-                            </a>
-                        </li>
-                        @if ($sale->sale_status !== 'returned')
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 text-danger" href="{{ route('sale.return.show', $sale->id) }}">
-                                    <i class="fas fa-undo text-danger fa-fw"></i> Return Sale
-                                </a>
-                            </li>
-                        @else
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 disabled text-muted" href="#" onclick="return false;">
-                                    <i class="fas fa-undo fa-fw"></i> Returned
-                                </a>
-                            </li>
-                        @endif
+                        <button class="btn btn-xs btn-secondary text-white" disabled>Returned</button>
                     @endif
-                </ul>
+                @endif
             </div>
         </td>
     </tr>
