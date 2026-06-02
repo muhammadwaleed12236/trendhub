@@ -4,6 +4,146 @@
         div.dataTables_wrapper div.dataTables_length select {
             width: 75px !important
         }
+        
+        /* Fine Styling Refinements */
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04) !important;
+            overflow: hidden;
+            border: 1px solid #e2e8f0 !important;
+        }
+        .card-header {
+            background-color: #ffffff !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            padding: 1rem 1.5rem !important;
+        }
+        .card-header h5 {
+            color: #1e293b;
+            font-size: 1.15rem;
+        }
+        
+        /* Filter inputs */
+        #filterForm input, #filterForm select {
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            padding: 0.35rem 0.5rem;
+            font-size: 0.85rem;
+        }
+        #filterForm input:focus, #filterForm select:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        /* Table custom appearance */
+        #productTable {
+            border-collapse: collapse !important;
+            margin-top: 1rem !important;
+            margin-bottom: 1rem !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+        #productTable thead th {
+            background-color: #f8fafc !important;
+            color: #475569 !important;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            letter-spacing: 0.5px;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1 !important;
+            border-bottom: 2px solid #94a3b8 !important;
+        }
+        #productTable tbody td {
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0 !important;
+            font-size: 0.88rem;
+            color: #334155;
+            vertical-align: middle;
+        }
+        #productTable tbody tr {
+            transition: background-color 0.15s ease;
+        }
+        #productTable tbody tr:hover {
+            background-color: #f8fafc !important;
+        }
+        
+        /* Zoom-in thumbnail preview */
+        #productTable img.rounded {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+        #productTable img.rounded:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+            z-index: 10;
+            position: relative;
+        }
+
+        /* Status & Alert Badges */
+        .badge.bg-success {
+            background-color: #ecfdf5 !important;
+            color: #065f46 !important;
+            border: 1px solid #a7f3d0 !important;
+        }
+        .badge.bg-danger {
+            background-color: #fef2f2 !important;
+            color: #991b1b !important;
+            border: 1px solid #fecaca !important;
+        }
+        .badge.bg-danger-subtle {
+            background-color: #fef2f2 !important;
+            color: #b91c1c !important;
+            border: 1px solid #fee2e2 !important;
+        }
+        .badge.bg-light {
+            background-color: #f8fafc !important;
+            color: #64748b !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        /* Clean action buttons styling */
+        .btn-sm {
+            border-radius: 6px;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .btn-warning {
+            background-color: #fffbeb !important;
+            color: #d97706 !important;
+            border-color: #fde68a !important;
+        }
+        .btn-warning:hover {
+            background-color: #fef3c7 !important;
+            color: #b45309 !important;
+            border-color: #fcd34d !important;
+        }
+        .btn-outline-primary {
+            color: #4f46e5 !important;
+            border-color: #c7d2fe !important;
+        }
+        .btn-outline-primary:hover {
+            background-color: #4f46e5 !important;
+            color: #ffffff !important;
+            border-color: #4f46e5 !important;
+        }
+        .btn-outline-success {
+            color: #10b981 !important;
+            border-color: #a7f3d0 !important;
+        }
+        .btn-outline-success:hover {
+            background-color: #10b981 !important;
+            color: #ffffff !important;
+            border-color: #10b981 !important;
+        }
+        .btn-outline-danger {
+            color: #ef4444 !important;
+            border-color: #fecaca !important;
+        }
+        .btn-outline-danger:hover {
+            background-color: #ef4444 !important;
+            color: #ffffff !important;
+            border-color: #ef4444 !important;
+        }
     </style>
 
 
@@ -347,8 +487,10 @@
                             <th>Category</th>
                             <th>Item Name</th>
                             <th>Stock</th>
+                            <th>Min Qty</th>
                             <th>Trade Price</th>
                             <th>Retail Price</th>
+                            <th>Discount (Pur/Sale)</th>
                             <th>Brand</th>
                             <th>Status</th>
                             <th class="text-center">Action</th>
@@ -400,8 +542,23 @@
                                 <td>
                                     <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.85rem;">{!! $stockDisplay !!}</span>
                                 </td>
+                                <td>
+                                    @if($product->alert_quantity !== null)
+                                        <span class="badge bg-light text-dark border px-2 py-1 {{ $stockPieces < $product->alert_quantity ? 'text-danger border-danger fw-bold bg-danger-subtle' : '' }}" style="font-size: 0.85rem;">
+                                            {{ $product->alert_quantity }} Pcs
+                                        </span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
                                 <td>Rs. {{ number_format($tradePrice, 2) }} <small class="text-muted">/pc</small></td>
                                 <td>Rs. {{ number_format($retailPrice, 2) }} <small class="text-muted">/pc</small></td>
+                                <td>
+                                    <div class="d-flex flex-column" style="font-size: 0.85rem; gap: 2px;">
+                                        <span>Pur: <strong class="text-danger">{{ $product->purchase_discount_percent ?? 0 }}%</strong></span>
+                                        <span>Sale: <strong class="text-success">{{ $product->sale_discount_percent ?? 0 }}%</strong></span>
+                                    </div>
+                                </td>
                                 <td>{{ $product->brand->name ?? '-' }}</td>
                                 <td class="text-center">
                                     @if($product->is_active)
@@ -657,6 +814,21 @@
                                         </div>
                                     </div>
 
+                                    <div class="row no-gutters mb-3">
+                                        <div class="col-6 pr-1">
+                                            <div class="bg-light p-2 rounded border">
+                                                <small class="text-muted d-block" style="font-size: 0.75rem;">PURCHASE DISC</small>
+                                                <strong class="text-danger" id="view_purchase_discount" style="font-size: 0.95rem;">0%</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 pl-1">
+                                            <div class="bg-light p-2 rounded border">
+                                                <small class="text-muted d-block" style="font-size: 0.75rem;">SALE DISC</small>
+                                                <strong class="text-success" id="view_sale_discount" style="font-size: 0.95rem;">0%</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="alert alert-success p-2 mb-0 mt-4 mx-0 text-center"
                                         style="background-color: #d1e7dd; border-color: #badbcc;">
                                         <small class="d-block text-success font-weight-bold text-uppercase"
@@ -901,6 +1073,8 @@
                     // Format Financials
                     $('#view_price_unit').text('Rs. ' + parseFloat(salePrice || 0).toFixed(2));
                     $('#view_purch_unit').text('Rs. ' + parseFloat(purchPrice || 0).toFixed(2));
+                    $('#view_purchase_discount').text((product.purchase_discount_percent ?? 0) + '%');
+                    $('#view_sale_discount').text((product.sale_discount_percent ?? 0) + '%');
                     $('#view_sale_total').text('Rs. ' + parseFloat(estSaleVal || 0).toLocaleString(
                         'en-US', {
                             minimumFractionDigits: 2,
