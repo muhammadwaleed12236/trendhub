@@ -5,6 +5,30 @@
             width: 75px !important
         }
         
+        /* Bulk Edit Checkbox & Label Alignment */
+        .bulk-edit-controls-card .form-check-inline {
+            display: inline-flex !important;
+            align-items: center !important;
+            margin-right: 1.5rem !important;
+            margin-left: 0 !important;
+            padding-left: 0 !important;
+            cursor: pointer;
+        }
+        .bulk-edit-controls-card .form-check-input {
+            margin: 0 !important;
+            cursor: pointer;
+            width: 1rem;
+            height: 1rem;
+        }
+        .bulk-edit-controls-card .form-check-label {
+            cursor: pointer;
+            user-select: none;
+            line-height: 1 !important;
+            margin-bottom: 0 !important;
+            margin-left: 6px !important;
+            padding-left: 0 !important;
+        }
+
         /* Fine Styling Refinements */
         .card {
             border-radius: 12px;
@@ -475,8 +499,42 @@
                 @endif
             </form>
 
-            <div class="table-responsive">
-                <table id="productTable" class="table table-striped table-bordered align-middle nowrap" style="width:100%">
+            {{-- Bulk Edit Checkboxes Controls Panel --}}
+            <div class="bulk-edit-controls-card p-3 mb-3 border rounded bg-light d-flex align-items-center justify-content-between flex-wrap gap-3 shadow-sm" style="border-radius:10px;">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <span class="fw-bold text-secondary" style="font-size:0.85rem;"><i class="las la-edit fs-5"></i> Bulk Edit Columns:</span>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input bulk-column-toggle" type="checkbox" id="toggleCategory" data-target="category">
+                        <label class="form-check-label fw-semibold text-dark mb-0" for="toggleCategory" style="font-size:0.85rem; cursor:pointer;">Category</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input bulk-column-toggle" type="checkbox" id="toggleTradePrice" data-target="trade-price">
+                        <label class="form-check-label fw-semibold text-dark mb-0" for="toggleTradePrice" style="font-size:0.85rem; cursor:pointer;">Trade Price</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input bulk-column-toggle" type="checkbox" id="toggleRetailPrice" data-target="retail-price">
+                        <label class="form-check-label fw-semibold text-dark mb-0" for="toggleRetailPrice" style="font-size:0.85rem; cursor:pointer;">Retail Price</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input bulk-column-toggle" type="checkbox" id="toggleDiscount" data-target="discount">
+                        <label class="form-check-label fw-semibold text-dark mb-0" for="toggleDiscount" style="font-size:0.85rem; cursor:pointer;">Discount</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input bulk-column-toggle" type="checkbox" id="toggleMinQty" data-target="minqty">
+                        <label class="form-check-label fw-semibold text-dark mb-0" for="toggleMinQty" style="font-size:0.85rem; cursor:pointer;">Min Qty</label>
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" form="bulkEditForm" id="bulkSaveBtn" class="btn btn-primary btn-sm px-4 fw-bold d-none shadow-sm" style="border-radius:6px; background-color:#4f46e5 !important; border-color:#4f46e5 !important;">
+                        <i class="las la-save fs-5"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+
+            <form id="bulkEditForm" method="POST" action="{{ route('products.bulk-update') }}">
+                @csrf
+                <div class="table-responsive">
+                    <table id="productTable" class="table table-striped table-bordered align-middle nowrap" style="width:100%">
 
                     <thead class="table-light">
                         <tr>
@@ -487,7 +545,7 @@
                             <th>Category</th>
                             <th>Item Name</th>
                             <th>Stock</th>
-                            <th>Min Qty</th>
+                            <th>Min Qty (Ctn)</th>
                             <th>Trade Price</th>
                             <th>Retail Price</th>
                             <th>Discount (Pur/Sale)</th>
@@ -511,8 +569,20 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <strong>{{ $product->category_relation->name ?? '-' }}</strong><br>
-                                    <small class="text-muted">{{ $product->sub_category_relation->name ?? '-' }}</small>
+                                    <div class="category-view-mode">
+                                        <strong>{{ $product->category_relation->name ?? '-' }}</strong><br>
+                                        <small class="text-muted">{{ $product->sub_category_relation->name ?? '-' }}</small>
+                                    </div>
+                                    <div class="category-edit-mode d-none">
+                                        <select name="products[{{ $product->id }}][category_id]" class="form-select form-select-sm" disabled style="min-width: 120px;">
+                                            <option value="">Select Category</option>
+                                            @foreach ($categories as $cat)
+                                                <option value="{{ $cat->id }}" {{ $product->category_id == $cat->id ? 'selected' : '' }}>
+                                                    {{ $cat->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </td>
                                 <td>{{ $product->item_name }}</td>
                                 @php
@@ -543,20 +613,67 @@
                                     <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.85rem;">{!! $stockDisplay !!}</span>
                                 </td>
                                 <td>
-                                    @if($product->alert_quantity !== null)
-                                        <span class="badge bg-light text-dark border px-2 py-1 {{ $stockPieces < $product->alert_quantity ? 'text-danger border-danger fw-bold bg-danger-subtle' : '' }}" style="font-size: 0.85rem;">
-                                            {{ $product->alert_quantity }} Pcs
-                                        </span>
-                                    @else
-                                        <span class="text-muted">-</span>
-                                    @endif
+                                    <div class="minqty-view-mode">
+                                        @if($product->alert_carton_quantity !== null)
+                                            @php
+                                                $isLowStock = false;
+                                                if (($product->size_mode === 'by_cartons' || $product->size_mode === 'by_size') && $ppb > 1) {
+                                                    $isLowStock = ($stockPieces / $ppb) < $product->alert_carton_quantity;
+                                                } else {
+                                                    $isLowStock = $stockPieces < $product->alert_carton_quantity;
+                                                }
+                                            @endphp
+                                            <span class="badge bg-light text-dark border px-2 py-1 {{ $isLowStock ? 'text-danger border-danger fw-bold bg-danger-subtle' : '' }}" style="font-size: 0.85rem;">
+                                                {{ $product->alert_carton_quantity }} Ctn
+                                            </span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </div>
+                                    <div class="minqty-edit-mode d-none">
+                                        <input type="number" step="1" name="products[{{ $product->id }}][alert_carton_quantity]" value="{{ $product->alert_carton_quantity }}" class="form-control form-control-sm" disabled style="max-width: 80px;">
+                                    </div>
                                 </td>
-                                <td>Rs. {{ number_format($tradePrice, 2) }} <small class="text-muted">/pc</small></td>
-                                <td>Rs. {{ number_format($retailPrice, 2) }} <small class="text-muted">/pc</small></td>
                                 <td>
-                                    <div class="d-flex flex-column" style="font-size: 0.85rem; gap: 2px;">
-                                        <span>Pur: <strong class="text-danger">{{ $product->purchase_discount_percent ?? 0 }}%</strong></span>
-                                        <span>Sale: <strong class="text-success">{{ $product->sale_discount_percent ?? 0 }}%</strong></span>
+                                    <div class="trade-price-view-mode">
+                                        Rs. {{ number_format($tradePrice, 2) }} <small class="text-muted">/pc</small>
+                                    </div>
+                                    <div class="trade-price-edit-mode d-none">
+                                        <div class="input-group input-group-sm" style="min-width: 100px;">
+                                            <span class="input-group-text px-1" style="font-size: 0.75rem;">Rs.</span>
+                                            <input type="number" step="0.01" name="products[{{ $product->id }}][purchase_price_per_piece]" value="{{ $product->purchase_price_per_piece }}" class="form-control form-control-sm px-1 fw-semibold text-secondary" disabled>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="retail-price-view-mode">
+                                        Rs. {{ number_format($retailPrice, 2) }} <small class="text-muted">/pc</small>
+                                    </div>
+                                    <div class="retail-price-edit-mode d-none">
+                                        <div class="input-group input-group-sm" style="min-width: 100px;">
+                                            <span class="input-group-text px-1" style="font-size: 0.75rem;">Rs.</span>
+                                            <input type="number" step="0.01" name="products[{{ $product->id }}][sale_price_per_piece]" value="{{ $product->sale_price_per_piece }}" class="form-control form-control-sm px-1 fw-bold text-success" disabled>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="discount-view-mode">
+                                        <div class="d-flex flex-column" style="font-size: 0.85rem; gap: 2px;">
+                                            <span>Pur: <strong class="text-danger">{{ $product->purchase_discount_percent ?? 0 }}%</strong></span>
+                                            <span>Sale: <strong class="text-success">{{ $product->sale_discount_percent ?? 0 }}%</strong></span>
+                                        </div>
+                                    </div>
+                                    <div class="discount-edit-mode d-none">
+                                        <div class="d-flex flex-column gap-1" style="min-width: 90px;">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text px-1 py-0" style="font-size:0.7rem;">P%</span>
+                                                <input type="number" step="0.01" name="products[{{ $product->id }}][purchase_discount_percent]" value="{{ $product->purchase_discount_percent ?? 0 }}" class="form-control form-control-sm px-1 py-0" disabled>
+                                            </div>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text px-1 py-0" style="font-size:0.7rem;">S%</span>
+                                                <input type="number" step="0.01" name="products[{{ $product->id }}][sale_discount_percent]" value="{{ $product->sale_discount_percent ?? 0 }}" class="form-control form-control-sm px-1 py-0" disabled>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td>{{ $product->brand->name ?? '-' }}</td>
@@ -602,6 +719,7 @@
                     </tbody>
                 </table>
             </div>
+            </form>
             <div class="mt-3 d-flex justify-content-between align-items-center">
                 <small class="text-muted">Showing {{ $products->firstItem() }}–{{ $products->lastItem() }} of {{ $products->total() }} products</small>
                 {{ $products->links() }}
@@ -1155,6 +1273,75 @@
                     orderable: false,
                     searchable: false
                 }]
+            });
+
+            // Column toggling logic
+            $('.bulk-column-toggle').on('change', function() {
+                let target = $(this).data('target');
+                let isChecked = $(this).is(':checked');
+
+                if (isChecked) {
+                    $(`.${target}-view-mode`).addClass('d-none');
+                    $(`.${target}-edit-mode`).removeClass('d-none');
+                    $(`.${target}-edit-mode input, .${target}-edit-mode select`).removeAttr('disabled');
+                } else {
+                    $(`.${target}-view-mode`).removeClass('d-none');
+                    $(`.${target}-edit-mode`).addClass('d-none');
+                    $(`.${target}-edit-mode input, .${target}-edit-mode select`).attr('disabled', 'disabled');
+                }
+
+                // Show/hide Bulk Save Button
+                if ($('.bulk-column-toggle:checked').length > 0) {
+                    $('#bulkSaveBtn').removeClass('d-none');
+                } else {
+                    $('#bulkSaveBtn').addClass('d-none');
+                }
+            });
+
+            // AJAX form submission
+            $('#bulkEditForm').on('submit', function(e) {
+                e.preventDefault();
+                let form = $(this);
+                let btn = $('#bulkSaveBtn');
+                let originalHtml = btn.html();
+
+                btn.html('<i class="las la-spinner la-spin"></i> Saving...').prop('disabled', true);
+
+                $.ajax({
+                    url: form.attr('action'),
+                    method: 'POST',
+                    data: form.serialize(),
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success',
+                                text: response.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message || 'Something went wrong.'
+                            });
+                            btn.html(originalHtml).prop('disabled', false);
+                        }
+                    },
+                    error: function(xhr) {
+                        let errors = xhr.responseJSON;
+                        let msg = errors && errors.message ? errors.message : 'Server error occurred.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: msg
+                        });
+                        btn.html(originalHtml).prop('disabled', false);
+                    }
+                });
             });
 
         });

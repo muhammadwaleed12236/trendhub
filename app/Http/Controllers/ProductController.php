@@ -761,6 +761,109 @@ class ProductController extends Controller
         return redirect()->back()->with('success', 'Product updated successfully');
     }
 
+    public function bulkUpdate(Request $request)
+    {
+        $userId = auth()->id();
+        $productsData = $request->input('products', []);
+
+        if (empty($productsData)) {
+            return response()->json(['status' => 'error', 'message' => 'No products selected for update.'], 400);
+        }
+
+        try {
+            DB::transaction(function () use ($productsData, $userId) {
+                foreach ($productsData as $id => $data) {
+                    $product = Product::findOrFail($id);
+                    $updateData = [
+                        'creater_id' => $userId,
+                        'updated_at' => now(),
+                    ];
+
+                    // 1. Category
+                    if (array_key_exists('category_id', $data)) {
+                        $updateData['category_id'] = $data['category_id'];
+                    }
+
+                    // 2. Alert quantity (Min Qty in Cartons)
+                    if (array_key_exists('alert_carton_quantity', $data)) {
+                        $val = $data['alert_carton_quantity'];
+                        $updateData['alert_carton_quantity'] = ($val !== null && $val !== '') ? (int)$val : null;
+                        
+                        // Sync alert_quantity (pieces) for legacy compatibility
+                        $ppb = $product->pieces_per_box > 0 ? $product->pieces_per_box : 1;
+                        $updateData['alert_quantity'] = ($val !== null && $val !== '') ? ((int)$val * $ppb) : null;
+                    }
+
+                    // 3. Discounts
+                    if (array_key_exists('purchase_discount_percent', $data)) {
+                        $updateData['purchase_discount_percent'] = (float)$data['purchase_discount_percent'];
+                    }
+                    if (array_key_exists('sale_discount_percent', $data)) {
+                        $updateData['sale_discount_percent'] = (float)$data['sale_discount_percent'];
+                    }
+
+                    // 4. Prices
+                    $tradePrice = null;
+                    $retailPrice = null;
+
+                    if (array_key_exists('purchase_price_per_piece', $data)) {
+                        $tradePrice = (float)$data['purchase_price_per_piece'];
+                    }
+                    if (array_key_exists('sale_price_per_piece', $data)) {
+                        $retailPrice = (float)$data['sale_price_per_piece'];
+                    }
+
+                    if ($product->size_mode === 'by_size') {
+                        $m2PerPiece = ($product->height * $product->width) / 10000;
+                        $m2PerBox = $m2PerPiece * ($product->pieces_per_box ?: 1);
+
+                        if ($tradePrice !== null) {
+                            $updateData['purchase_price_per_piece'] = $tradePrice;
+                            $purchasePricePerM2 = $m2PerPiece > 0 ? ($tradePrice / $m2PerPiece) : 0;
+                            $updateData['purchase_price_per_m2'] = $purchasePricePerM2;
+                            $updateData['purchase_price_per_box'] = $m2PerBox * $purchasePricePerM2;
+                        }
+
+                        if ($retailPrice !== null) {
+                            $updateData['sale_price_per_piece'] = $retailPrice;
+                            $pricePerM2 = $m2PerPiece > 0 ? ($retailPrice / $m2PerPiece) : 0;
+                            $updateData['price_per_m2'] = $pricePerM2;
+                            $updateData['sale_price_per_box'] = $m2PerBox * $pricePerM2;
+                        }
+                    } elseif ($product->size_mode === 'by_cartons') {
+                        $ppb = $product->pieces_per_box > 0 ? $product->pieces_per_box : 1;
+
+                        if ($tradePrice !== null) {
+                            $updateData['purchase_price_per_piece'] = $tradePrice;
+                            $updateData['purchase_price_per_box'] = $tradePrice * $ppb;
+                        }
+
+                        if ($retailPrice !== null) {
+                            $updateData['sale_price_per_piece'] = $retailPrice;
+                            $updateData['sale_price_per_box'] = $retailPrice * $ppb;
+                        }
+                    } else { // by_pieces / fallback
+                        if ($tradePrice !== null) {
+                            $updateData['purchase_price_per_piece'] = $tradePrice;
+                            $updateData['purchase_price_per_box'] = $tradePrice;
+                        }
+
+                        if ($retailPrice !== null) {
+                            $updateData['sale_price_per_piece'] = $retailPrice;
+                            $updateData['sale_price_per_box'] = $retailPrice;
+                        }
+                    }
+
+                    $product->update($updateData);
+                }
+            });
+
+            return response()->json(['status' => 'success', 'message' => 'Products bulk updated successfully.']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()], 500);
+        }
+    }
+
     // ===== Edit view =====
     public function edit($id)
     {
