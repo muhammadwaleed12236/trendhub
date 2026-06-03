@@ -260,7 +260,8 @@
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small">Products</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small text-center">Qty</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Gross</th>
-                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Disc</th>
+                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Inline Disc</th>
+                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Add. Disc</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Net Total</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small">Date</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small">Status</th>

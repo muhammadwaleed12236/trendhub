@@ -51,14 +51,37 @@
         <td class="text-center font-monospace">
             {{ $sale->total_items > 0 ? $sale->total_items : $sale->qty }}
         </td>
+        @php
+            $inline_val = $sale->items ? $sale->items->sum('discount_amount') : 0;
+            $bill_amount = $sale->total_bill_amount > 0 ? $sale->total_bill_amount : (float) $sale->per_total;
+            $gross_subtotal = $bill_amount + $inline_val;
+            $inline_pct = $gross_subtotal > 0 ? ($inline_val / $gross_subtotal) * 100 : 0;
+        @endphp
         <td class="text-end fw-bold text-dark font-monospace">
-            {{ number_format($sale->total_bill_amount > 0 ? $sale->total_bill_amount : (float) $sale->per_total, 2) }}
+            Rs. {{ number_format($gross_subtotal, 2) }}
         </td>
-        <td class="text-end text-danger font-monospace">
-            {{ number_format($sale->total_extradiscount, 2) }}
+        <td class="text-end text-dark font-monospace">
+            Rs. {{ number_format($inline_val, 2) }}
+            @if ($inline_val > 0)
+                <div class="text-muted small mt-1" style="font-size: 10px;">({{ number_format($inline_pct, 1) }}%)</div>
+            @endif
+        </td>
+        <td class="text-end text-dark font-monospace">
+            @if ($sale->total_extradiscount > 0)
+                @php
+                    $add_val = $sale->total_extradiscount;
+                    $add_pct = $bill_amount > 0 ? ($add_val / $bill_amount) * 100 : 0;
+                @endphp
+                <span class="badge rounded-pill border px-2 py-1" style="background-color: #fff8e1; color: #b78103; border-color: #ffe082 !important; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fas fa-tag" style="font-size: 10px;"></i> Rs. {{ number_format($add_val, 2) }}
+                </span>
+                <div class="text-muted small mt-1" style="font-size: 10px;">({{ number_format($add_pct, 1) }}%)</div>
+            @else
+                <span class="text-muted">Rs. 0.00</span>
+            @endif
         </td>
         <td class="text-end text-success fw-bold font-monospace">
-            {{ number_format($sale->total_net, 2) }}
+            Rs. {{ number_format($sale->total_net, 2) }}
         </td>
         <td class="text-nowrap small text-muted">
             {{ $sale->created_at->format('d M, Y') }}

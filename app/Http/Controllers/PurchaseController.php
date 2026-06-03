@@ -508,6 +508,7 @@ class PurchaseController extends Controller
             $purchase->update([
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'additional_discount' => $discount,
                 'extra_cost' => $extraCost,
                 'net_amount' => $netAmount,
                 'due_amount' => $netAmount,
@@ -1053,6 +1054,7 @@ class PurchaseController extends Controller
             $purchase->update([
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'additional_discount' => $discount,
                 'extra_cost' => $extraCost,
                 'net_amount' => $netAmount,
                 'due_amount' => $netAmount, // Assuming fully due? Or should we subtract paid?

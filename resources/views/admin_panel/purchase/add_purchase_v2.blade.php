@@ -528,7 +528,8 @@
                                     <input type="number" class="form-control text-end form-control-sm"
                                         id="billDiscountPct" placeholder="%" style="width: 70px;" step="0.01">
                                     <input type="number" class="form-control text-end form-control-sm"
-                                        name="discount" id="billDiscount" value="0" step="0.01">
+                                        id="billDiscount" value="0" step="0.01">
+                                    <input type="hidden" name="discount" id="discountInput" value="0">
                                 </div>
                             </div>
                                 <div class="row py-1 align-items-center">
@@ -681,6 +682,28 @@
                 recalcAll();
             });
 
+            function normalizeDiscountInput() {
+                let totalInlineDiscount = 0;
+                $('#purchaseTableBody tr').each(function() {
+                    const rowDiscAmt = parseFloat($(this).find('.item-disc-amt').val()) || 0;
+                    totalInlineDiscount += rowDiscAmt;
+                });
+
+                let billDiscVal = parseFloat($('#billDiscount').val());
+                if (isNaN(billDiscVal) || billDiscVal < totalInlineDiscount) {
+                    $('#billDiscount').val(totalInlineDiscount.toFixed(2));
+                }
+                recalcAll();
+            }
+
+            $('#billDiscount, #billDiscountPct').on('blur', function() {
+                normalizeDiscountInput();
+            });
+
+            $('#purchaseForm').on('submit', function() {
+                normalizeDiscountInput();
+            });
+
             // Payment Row Add
             $('#btnAddPayment').click(function() {
                 const html = `
@@ -724,6 +747,7 @@
             // 1. Save (Draft)
             $('#btnSaveOnly').click(function(e) {
                 e.preventDefault();
+                normalizeDiscountInput();
                 let $btn = $(this);
                 $btn.prop('disabled', true).html(
                     '<span class="spinner-border spinner-border-sm me-2"></span>Saving...');
@@ -765,6 +789,7 @@
             // 2. Confirm (Approved)
             $('#btnConfirm').click(function(e) {
                 e.preventDefault();
+                normalizeDiscountInput();
 
                 Swal.fire({
                     title: 'Confirm Purchase?',
@@ -889,7 +914,7 @@
                     <td><input type="number" class="form-control loose-qty" name="loose_qty[]" value="0" placeholder="Loose Pcs" min="0"></td>
                     <td><input type="number" class="form-control input-readonly pack-size" name="pieces_per_box_display[]" value="1" readonly></td>
                     <td><input type="number" name="qty[]" class="form-control input-readonly qty-pcs" value="0" readonly></td>
-                    <td><input type="number" name="price[]" class="form-control price" value="0"></td>
+                    <td><input type="number" name="price[]" class="form-control input-readonly price" value="0" readonly tabindex="-1"></td>
                     <td><input type="number" name="item_discount[]" class="form-control item-disc-percent" value="0"></td>
                     <td><input type="number" class="form-control item-disc-amt" value="0" readonly></td>
                     <td><input type="number" class="form-control input-readonly row-total" value="0" readonly></td>
@@ -1072,6 +1097,7 @@
             function recalcAll() {
                 let totalQty = 0;
                 let subtotal = 0;
+                let totalInlineDiscount = 0;
 
                 $('#purchaseTableBody tr').each(function() {
                     let qty = $(this).data('total-pieces');
@@ -1080,32 +1106,49 @@
                         qty = parseFloat($(this).find('.qty-pcs').val()) || 0;
                     }
                     const total = parseFloat($(this).find('.row-total').val()) || 0;
+                    const rowDiscAmt = parseFloat($(this).find('.item-disc-amt').val()) || 0;
 
                     totalQty += qty;
                     subtotal += total;
+                    totalInlineDiscount += rowDiscAmt;
                 });
+
+                const grossSubtotal = subtotal + totalInlineDiscount;
 
                 $('#tQty').text(totalQty.toFixed(2));
                 $('#tSub').text(subtotal.toFixed(2));
                 $('#subtotalInput').val(subtotal.toFixed(2));
 
-                const billDiscVal = parseFloat($('#billDiscount').val()) || 0;
-                
-                // If focus is on %, recalc the amount before using it
-                if ($(document.activeElement).is('#billDiscountPct')) {
-                    const pct = parseFloat($('#billDiscountPct').val()) || 0;
-                    const calculatedAmt = subtotal * (pct / 100);
-                    $('#billDiscount').val(calculatedAmt.toFixed(2));
-                } else {
-                    // Calc % from amount
-                    const pct = subtotal > 0 ? (billDiscVal / subtotal) * 100 : 0;
-                    $('#billDiscountPct').val(pct.toFixed(2));
-                }
+                let additionalDiscount = parseFloat($('#discountInput').val()) || 0;
+                let billDiscVal = parseFloat($('#billDiscount').val());
 
-                const finalBillDisc = parseFloat($('#billDiscount').val()) || 0;
+                if ($(document.activeElement).is('#billDiscount') || $(document.activeElement).is('#billDiscountPct')) {
+                    // User is editing bill discount manually
+                    if ($(document.activeElement).is('#billDiscountPct')) {
+                        const pct = parseFloat($('#billDiscountPct').val()) || 0;
+                        billDiscVal = grossSubtotal * (pct / 100);
+                        $('#billDiscount').val(billDiscVal.toFixed(2));
+                    }
+                    if (!isNaN(billDiscVal)) {
+                        additionalDiscount = Math.max(0, billDiscVal - totalInlineDiscount);
+                    } else {
+                        additionalDiscount = 0;
+                    }
+                } else {
+                    // Inline discount or items changed: keep additional discount and update total discount
+                    billDiscVal = totalInlineDiscount + additionalDiscount;
+                    $('#billDiscount').val(billDiscVal.toFixed(2));
+                }
+                
+                // Calc % from amount
+                const pct = grossSubtotal > 0 ? (billDiscVal / grossSubtotal) * 100 : 0;
+                $('#billDiscountPct').val(pct.toFixed(2));
+
+                $('#discountInput').val(additionalDiscount.toFixed(2));
+
                 const extraCost = parseFloat($('#extraCost').val()) || 0;
 
-                const net = subtotal - finalBillDisc + extraCost;
+                const net = subtotal - additionalDiscount + extraCost;
 
                 $('#tPayable').text(net.toFixed(2));
                 $('#netAmountInput').val(net.toFixed(2));

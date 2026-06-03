@@ -605,26 +605,89 @@ class VoucherController extends Controller
 
             $totalAmount = (float) $request->total_amount;
 
-            /**
-             * STEP 1: Header Source (Account) -> MINUS (Money Leaving)
-             */
-            if ($request->header_account_id) {
-                $sourceAccount = Account::find($request->header_account_id);
-                if ($sourceAccount) {
-                    // Credit Cash/Bank because money is going out
-                    app(\App\Services\JournalEntryService::class)->recordEntry(
-                        $payment,
-                        $request->header_account_id,
-                        0, // Debit
-                        $totalAmount, // Credit
-                        "Payment Voucher #$pvid",
-                        $request->entry_date ?? date('Y-m-d')
-                    );
+            // ✅ V2 VOUCHER INTEGRATION (Primary Logic for printing and GL)
+            try {
+                \Log::info('V2 Payment Integration Start. Header Account: '.$request->header_account_id);
+
+                $balanceService = app(\App\Services\BalanceService::class);
+                $firstRow = null;
+                if ($request->vendor_id && count($request->vendor_id) > 0) {
+                    $firstRow = [
+                        'type' => $request->vendor_type[0] ?? null,
+                        'id'   => $request->vendor_id[0] ?? null,
+                    ];
                 }
+
+                $partyType = null;
+                if ($firstRow) {
+                    $fType = strtolower($firstRow['type']);
+                    if ($fType == 'customer' || $fType == 'walkin') {
+                        $partyType = \App\Models\Customer::class;
+                    } elseif ($fType == 'vendor') {
+                        $partyType = \App\Models\Vendor::class;
+                    } else {
+                        $partyType = \App\Models\Account::class;
+                    }
+                }
+
+                $v2Lines = [];
+                // 1. DEBIT SIDE (AP / AR / Accounts) - Table Destinations
+                if ($request->vendor_id && $request->amount) {
+                    foreach ($request->vendor_id as $idx => $partyId) {
+                        $type = $request->vendor_type[$idx] ?? null;
+                        $amt = (float) ($request->amount[$idx] ?? 0);
+                        if ($amt <= 0) {
+                            continue;
+                        }
+
+                        $controlAccountId = null;
+                        if ($type == 'vendor') {
+                            $controlAccountId = $balanceService->getAccountsPayableId();
+                        } elseif ($type == 'customer' || $type == 'walkin') {
+                            $controlAccountId = $balanceService->getAccountsReceivableId();
+                        } else {
+                            $controlAccountId = $partyId;
+                        }
+
+                        if ($controlAccountId) {
+                            $v2Lines[] = [
+                                'account_id' => $controlAccountId,
+                                'debit' => $amt,
+                                'credit' => 0,
+                                'narration' => $request->narration_text[$idx] ?? "Payment to " . $type,
+                            ];
+                        }
+                    }
+                }
+
+                // 2. CREDIT SIDE (Cash/Bank) - Header Source
+                if ($totalAmount > 0 && $request->header_account_id) {
+                    $v2Lines[] = [
+                        'account_id' => $request->header_account_id,
+                        'debit' => 0,
+                        'credit' => $totalAmount,
+                        'narration' => $request->remarks ?: "Payment from Cash/Bank",
+                    ];
+                }
+
+                if (! empty($v2Lines)) {
+                    app(\App\Services\VoucherService::class)->createVoucher([
+                        'voucher_type' => 'payment',
+                        'date' => $request->receipt_date,
+                        'status' => 'posted',
+                        'party_type' => $partyType,
+                        'party_id' => $firstRow ? $firstRow['id'] : null,
+                        'remarks' => $request->remarks." (Ref: $pvid)",
+                    ], $v2Lines, auth()->id());
+
+                    \Log::info('V2 Payment Voucher Created Successfully.');
+                }
+            } catch (\Exception $e) {
+                \Log::error('V2 Payment Sync Error: '.$e->getMessage());
             }
 
             /**
-             * STEP 2: Table Destinations (Parties) -> PLUS (Getting Paid)
+             * STEP 2: Legacy Table Destinations (Parties) - Update polymorphic ledger balances (Closing balances)
              */
             if ($request->vendor_id && $request->amount) {
                 foreach ($request->vendor_id as $index => $partyId) {
@@ -636,7 +699,6 @@ class VoucherController extends Controller
                     }
 
                     if ($type === 'vendor') {
-                        $balanceService = app(\App\Services\BalanceService::class);
                         $ledger = VendorLedger::where('vendor_id', $partyId)->latest()->first();
                         $bal = $ledger ? $ledger->closing_balance : 0;
                         VendorLedger::create([
@@ -647,21 +709,7 @@ class VoucherController extends Controller
                             'closing_balance'   => $bal - $rowAmount, // ✅ MINUS: payment reduces vendor balance
                         ]);
 
-                        // Journal Entry: Debit Vendor Control Account (Liability decreases)
-                        $journalService = app(\App\Services\JournalEntryService::class);
-                        $payablesAccount = $balanceService->getAccountsPayableId();
-
-                        $journalService->recordEntry(
-                            $payment,
-                            $payablesAccount,
-                            $rowAmount, // Debit → Liability decreases
-                            0,
-                            "Payment #$pvid",
-                            $request->entry_date ?? date('Y-m-d'),
-                            \App\Models\Vendor::find($partyId)
-                        );
-
-                    } elseif ($type === 'customer') {
+                    } elseif ($type === 'customer' || $type === 'walkin') {
                         $ledger = CustomerLedger::where('customer_id', $partyId)->latest()->first();
                         $bal = $ledger ? $ledger->closing_balance : 0;
                         CustomerLedger::create([
@@ -669,7 +717,7 @@ class VoucherController extends Controller
                             'admin_or_user_id' => auth()->id(),
                             'previous_balance' => $bal,
                             'opening_balance'  => 0,
-                            'closing_balance'  => $bal - $rowAmount, // ✅ MINUS: payment reduces customer balance
+                            'closing_balance'  => $bal + $rowAmount, // ✅ PLUS: paying customer increases customer balance
                         ]);
                     } elseif ($type) {
                         // Account ID in table
