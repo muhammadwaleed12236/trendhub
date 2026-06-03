@@ -74,13 +74,12 @@ class VendorController extends Controller
 }
 
 
-    // Show vendor ledger for the authenticated user
+    // Show vendor ledger
     public function vendors_ledger()
     {
         if (Auth::check()) {
-            $userId = Auth::id();
             // Get all ledgers
-            $VendorLedgers = VendorLedger::where('admin_or_user_id', $userId)->with('vendor')->get();
+            $VendorLedgers = VendorLedger::with('vendor')->get();
             
             // Recalculate balances from Journal Entries
             $balanceService = app(\App\Services\BalanceService::class);

@@ -214,7 +214,9 @@ class CustomerController extends Controller
         if (Auth::check()) {
             
             $customers = Customer::all();
-            $ledgerData = [];
+            $ledgerData = collect([]);
+            $openingBalance = 0;
+            $closingBalance = 0;
             
             if ($request->filled('customer_id')) {
                 // Use Balance Service for accurate Statement
@@ -224,6 +226,9 @@ class CustomerController extends Controller
                 $endDate = $request->to_date ?? date('Y-m-d');
                 
                 $data = $balanceService->getCustomerLedger($request->customer_id, $startDate, $endDate);
+                
+                $openingBalance = $data['opening_balance'];
+                $closingBalance = $data['closing_balance'];
                 
                 // transform for view
                 $ledgerData = collect($data['transactions'])->map(function($t) use ($data) {
@@ -239,20 +244,13 @@ class CustomerController extends Controller
                     ];
                 });
                 
-                // Add Opening Balance as first row if needed?
-                // The BalanceService includes opening balance in the calculation but returns transactions.
-                // We might want to pass opening balance to view.
-                
-            } else {
-                // If no customer selected, show empty or recent journal entries?
-                // For now, let's keep it empty to encourage selection or just basic legacy entries if needed
-                // But legacy entries are wrong. Let's return empty to force selection.
-                $ledgerData = collect([]);
             }
 
             return view('admin_panel.customers.customer_ledger', [
                 'CustomerLedgers' => $ledgerData,
-                'customers' => $customers
+                'customers' => $customers,
+                'opening_balance' => $openingBalance,
+                'closing_balance' => $closingBalance,
             ]);
             
         } else {

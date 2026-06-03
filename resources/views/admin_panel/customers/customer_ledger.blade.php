@@ -75,6 +75,42 @@
                             </div>
                         </form>
 
+                        @if(request('customer_id'))
+                        <!-- Summary Cards -->
+                        <div class="row mb-4 g-3">
+                            <div class="col-md-4">
+                                <div class="card border-0 shadow-sm rounded-4 h-100 bg-light">
+                                    <div class="card-body p-4">
+                                        <h6 class="text-secondary text-uppercase small fw-bold mb-2">Opening Balance</h6>
+                                        <h3 class="fw-bold text-dark mb-0">Rs. {{ number_format(abs($opening_balance ?? 0), 2) }} <small class="fs-6 text-muted">{{ ($opening_balance ?? 0) >= 0 ? 'Dr' : 'Cr' }}</small></h3>
+                                        <p class="small text-muted mb-0 mt-1">As of {{ \Carbon\Carbon::parse(request('from_date', '2000-01-01'))->format('d M, Y') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                @php
+                                    $cb = $closing_balance ?? 0;
+                                @endphp
+                                <div class="card border-0 shadow-sm rounded-4 h-100 {{ $cb > 0 ? 'bg-danger text-white' : ($cb < 0 ? 'bg-success text-white' : 'bg-primary text-white') }}">
+                                    <div class="card-body p-4">
+                                        <h6 class="text-white-50 text-uppercase small fw-bold mb-2">Closing Balance</h6>
+                                        <h3 class="fw-bold mb-0">Rs. {{ number_format(abs($cb), 2) }} <small class="fs-6 text-white-50">{{ $cb >= 0 ? 'Dr' : 'Cr' }}</small></h3>
+                                        <p class="small text-white-50 mb-0 mt-1">{{ $cb > 0 ? 'Receivable (Customer Owes)' : ($cb < 0 ? 'Advance (We Owe)' : 'Settled') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-0 shadow-sm rounded-4 h-100 bg-light">
+                                    <div class="card-body p-4">
+                                        <h6 class="text-secondary text-uppercase small fw-bold mb-2">Total Transactions</h6>
+                                        <h3 class="fw-bold text-dark mb-0">{{ $CustomerLedgers->count() }}</h3>
+                                        <p class="small text-muted mb-0 mt-1">In selected period</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         <!-- Ledger Table -->
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped table-hover table-ledger" id="ledger-table">
@@ -90,7 +126,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($CustomerLedgers as $key => $ledger)
+                                    @forelse ($CustomerLedgers as $key => $ledger)
                                         @php
                                             // Ledger object now has explicit debit/credit from Controller/BalanceService
                                             $debit = $ledger->debit ?? 0;
@@ -116,7 +152,14 @@
                                                 <small class="text-muted">{{ $suffix }}</small>
                                             </td>
                                         </tr>
-                                    @endforeach
+                                    @empty
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>
+                                                No transactions found in this period.
+                                            </td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
