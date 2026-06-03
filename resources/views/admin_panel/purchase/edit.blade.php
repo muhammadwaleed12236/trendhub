@@ -488,8 +488,8 @@
                                                 </td>
                                                 <td>
                                                     <div class="input-group input-group-sm">
-                                                        <input type="number" name="price[]" class="form-control input-readonly price"
-                                                            step="0.01" value="{{ (float) $item->price }}" readonly tabindex="-1">
+                                                        <input type="number" name="price[]" class="form-control price"
+                                                            step="0.01" value="{{ (float) $item->price }}">
                                                     </div>
                                                     <small class="text-muted price-unit-label"
                                                         style="font-size:0.7rem;">{{ $unitLabel }}</small>
@@ -653,7 +653,7 @@
                     <td><input type="number" class="form-control loose-qty" name="loose_qty[]" value="0" placeholder="Loose Pcs" min="0"></td>
                     <td><input type="number" class="form-control input-readonly pack-size" name="pieces_per_box_display[]" value="1" readonly></td>
                     <td><input type="number" name="qty[]" class="form-control input-readonly qty-pcs" value="0" readonly></td>
-                    <td><div class="input-group input-group-sm"><input type="number" name="price[]" class="form-control input-readonly price" step="0.01" value="0" readonly tabindex="-1"></div></td>
+                    <td><div class="input-group input-group-sm"><input type="number" name="price[]" class="form-control price" step="0.01" value="0"></div></td>
                     <td><input type="number" class="form-control item-disc-percent" value="0"></td>
                     <td><input type="number" name="item_discount[]" class="form-control item-disc-amt" value="0"></td>
                     <td><input type="number" class="form-control input-readonly row-total" value="0" readonly></td>

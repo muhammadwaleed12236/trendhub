@@ -460,16 +460,6 @@ class PurchaseController extends Controller
                     // Frontend: pieces_per_m2 * totalPieces * price
                     // where pieces_per_m2 is effectively m2 per piece, and price is price per m2
                     $grossTotal = $curPPM2 * $qty * $price;
-                } elseif ($curSizeMode === 'by_cartons' || $curSizeMode === 'by_carton') {
-                    $ppb = isset($ppbs[$i]) && $ppbs[$i] > 0 ? (float) $ppbs[$i] : 1;
-                    $cartonPrice = (float) ($cartonPrices[$i] ?? 0);
-                    if ($cartonPrice > 0) {
-                        // Convert carton price to per-piece cost for the stock qty entered in pieces
-                        $grossTotal = $qty * ($cartonPrice / $ppb);
-                    } else {
-                        // Fallback: if hidden carton price is missing, use visible price as piece price
-                        $grossTotal = $qty * $price;
-                    }
                 } else {
                     // Standard: pieces * price_per_piece
                     $grossTotal = $qty * $price;
