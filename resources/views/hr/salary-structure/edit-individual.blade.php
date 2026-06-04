@@ -1,7 +1,6 @@
 @extends('admin_panel.layout.app')
 
 @section('content')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <div class="main-content">
         <div class="main-content-inner">
@@ -742,7 +741,8 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+
     <script>
         $(document).ready(function() {
             var allowanceIndex = {{ count($salaryStructure->allowances ?? []) }};

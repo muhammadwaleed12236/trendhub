@@ -1,6 +1,6 @@
 @extends('admin_panel.layout.app')
 @section('content')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     @if (session('success'))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -108,15 +108,14 @@
         </div>
     </div>
 
-    <!-- DataTable CSS -->
+ <!-- DataTable CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ asset('assets/vendors/bootstrap-icons/css/bootstrap-icons.min.css') }}">
 
     <!-- jQuery & JS -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('assets/js/mycode.js') }}"></script>
 
     <script>

@@ -286,7 +286,7 @@
 @endsection
 
 @section('js')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ asset('assets/vendors/chartjs/chart.umd.min.js') }}"></script>
 <script>
 $(document).ready(function() {
     var profitTable = $('#profitTable').DataTable({

@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Expense Entry Enhanced</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
+    <link href="{{ asset('assets/vendors/bootstrap5/css/bootstrap.min.css') }}" rel="stylesheet">
         td, th {
             padding: 0 !important;
             vertical-align: middle !important;

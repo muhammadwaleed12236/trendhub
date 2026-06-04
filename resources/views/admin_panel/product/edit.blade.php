@@ -7,10 +7,10 @@
     --}}
     
     {{-- External Resources --}}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/line-awesome/1.3.0/line-awesome/css/line-awesome.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="{{ asset('assets/vendors/bootstrap5/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/vendors/select2/css/select2.min.css') }}" rel="stylesheet" />
+    {{-- line-awesome replaced by Font Awesome 6 (local) --}}
+    <link rel="stylesheet" href="{{ asset('assets/fonts/inter/inter.css') }}">
 
     <style>
         :root {

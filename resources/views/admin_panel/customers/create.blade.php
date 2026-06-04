@@ -3,7 +3,7 @@
 @section('content')
     <style>
         /* Modern Compact UI variables */
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400..700&display=swap');
+        @import url('/assets/fonts/noto-nastaliq/noto-nastaliq.css');
 
         :root {
             --primary-color: #4f46e5;

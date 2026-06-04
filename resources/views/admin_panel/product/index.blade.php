@@ -978,12 +978,7 @@
 
 
 
-    <!-- SweetAlert2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-
-    <!-- SweetAlert2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+   
     {{-- Toggle Active JS --}}
     <script>
         $(document).on('click', '.toggle-active-btn', function () {
@@ -1349,7 +1344,7 @@
 
     <!-- DataTables CSS -->
 @endsection
-<script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"></script>
+<script src="{{ asset('assets/js/jquery.min.js') }}"></script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {

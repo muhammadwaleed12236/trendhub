@@ -1,8 +1,10 @@
 @extends('admin_panel.layout.app')
 
 @section('content')
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+   <link href="{{ asset('assets/vendors/bootstrap5/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/vendors/select2/css/select2.min.css') }}" rel="stylesheet" />
+    <link href="{{ asset('assets/vendors/bootstrap-icons/css/bootstrap-icons.min.css') }}" rel="stylesheet">
+    
     <style>
         /* 💎 PREMIUM MODERN ERP THEME FOR TRANSACTION ENTRY 💎 */
         body {
@@ -393,7 +395,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addVendorModal" style="padding: 0.38rem 0.75rem;" title="Add New Vendor">
+                                    <button type="button" class="btn btn-primary shadow-sm" data-toggle="modal" data-target="#addVendorModal" style="padding: 0.38rem 0.75rem;" title="Add New Vendor">
                                         <i class="bi bi-plus-lg"></i>
                                     </button>
                                 </div>
@@ -439,7 +441,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div class="section-title mb-0">Purchase Items</div>
                                 <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-sm btn-outline-success px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#quickAddProductModal">
+                                    <button type="button" class="btn btn-sm btn-outline-success px-3 shadow-sm" data-toggle="modal" data-target="#quickAddProductModal">
                                         <i class="bi bi-plus-circle me-1"></i>Quick Add Product
                                     </button>
                                     <button type="button" class="btn btn-sm btn-primary px-3 shadow-sm" id="btnAdd">
@@ -618,10 +620,8 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/vendors/select2/js/select2.min.js') }}"></script>
 
     {{-- Quick Add Product Modal --}}
     @include('admin_panel.partials.quick_add_product_modal')

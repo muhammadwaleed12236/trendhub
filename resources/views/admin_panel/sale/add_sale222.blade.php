@@ -10,8 +10,8 @@
         </div>
         <div class="fw-bold text-primary fs-5">Loading Sale Data...</div>
     </div>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="{{ asset('assets/vendors/bootstrap5/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/vendors/select2/css/select2.min.css') }}" rel="stylesheet" />
     <style>
         /* ================= RESPONSIVE SALES UI ================= */
 
@@ -1106,9 +1106,9 @@ $(document).ready(function() {
     <!-- {{-- Quick Add Product Modal --}}
     @include('admin_panel.partials.quick_add_product_modal') -->
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+   <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/vendors/select2/js/select2.min.js') }}"></script>
+    <script src="{{ asset('assets/vendors/bootstrap5/js/bootstrap.bundle.min.js') }}"></script>
   {{-- Quick Add Product Modal --}}
     @include('admin_panel.partials.quick_add_product_modal')
     {{-- sjadlfksal --}}

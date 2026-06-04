@@ -22,8 +22,7 @@
         <div class="main-content-inner">
             <div class="container">
                 <div class="row">
-                    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
-                        rel="stylesheet">
+                      <link href="{{ asset('assets/vendors/bootstrap-icons/css/bootstrap-icons.min.css') }}"
 
                     <style>
                         .table-scroll tbody {
@@ -427,9 +426,7 @@
     </div>
     </div>
 @endsection
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ asset('assets/js/jquery.min.js') }}"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const form = document.querySelector("form[action='{{ route('store.Purchase') }}']");

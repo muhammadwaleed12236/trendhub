@@ -1,7 +1,8 @@
 @extends('admin_panel.layout.app')
 
 @section('content')
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="{{ asset('assets/vendors/bootstrap5/css/bootstrap.min.css') }}" rel="stylesheet">
+
 
     <!-- Loader Overlay -->
     <div id="pageLoader"
@@ -12,7 +13,7 @@
         </div>
         <div class="fw-bold text-primary fs-5">Loading...</div>
     </div>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="{{ asset('assets/vendors/select2/css/select2.min.css') }}" rel="stylesheet" />
     <style>
         /* ================= RESPONSIVE SALES UI ================= */
 

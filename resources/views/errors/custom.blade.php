@@ -1,5 +1,5 @@
 <style>
-    @import url("https://fonts.googleapis.com/css?family=Comfortaa");
+    @font-face { font-family: 'Comfortaa'; src: local('Arial'); }
 
 $bg: darken(#f76b1c, 20%);
 

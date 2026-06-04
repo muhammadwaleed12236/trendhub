@@ -130,7 +130,7 @@
 @endsection
 
 @section('js')
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+      <script src="{{ asset('assets/vendors/apexcharts/apexcharts.min.js') }}"></script>
     <script>
         $(document).ready(function() {
             if ($('.select2').length > 0) {

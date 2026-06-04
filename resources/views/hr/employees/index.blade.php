@@ -2,7 +2,8 @@
 
 @section('content')
     <!-- Script for Face API -->
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="{{ asset('assets/vendors/face-api/js/face-api.min.js') }}"></script>
+
 
     @include('hr.partials.hr-styles')
 
@@ -472,7 +473,6 @@
     </style>
     <!-- jQuery and Bootstrap are already loaded in the main layout -->
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         // Badge click handler for casual leave days

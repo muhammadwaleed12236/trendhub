@@ -103,7 +103,8 @@
         </div>
     </div>
 @endsection
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+
 <script>
     $(document).ready(function() {
         let availableProducts = [];
