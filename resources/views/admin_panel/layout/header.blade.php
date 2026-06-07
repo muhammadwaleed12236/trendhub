@@ -368,6 +368,13 @@
                             </div>
                         </li>
 
+                        <!-- Cashbook / Checkbook -->
+                        <li class="nav-item">
+                            <a href="{{ route('checkbook.index') }}" class="nav-link"><i
+                                    class="menu_icon fas fa-book"></i><span
+                                    class="menu-title">Cashbook</span></a>
+                        </li>
+
                         <!-- Settings -->
                         @if (auth()->user()->email === 'admin@admin.com')
                             <li class="nav-item">

@@ -439,6 +439,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications/{id}/read', [App\Http\Controllers\SettingsController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [App\Http\Controllers\SettingsController::class, 'markAllAsRead'])->name('notifications.readAll');
 
+    // Checkbook / Cashbook
+    Route::get('/checkbook', [\App\Http\Controllers\CheckbookController::class, 'index'])->name('checkbook.index');
+
 });
 // Temporary debug route to inspect authenticated user's roles & permissions (remove after use)
 Route::get('/debug-perms', function () {

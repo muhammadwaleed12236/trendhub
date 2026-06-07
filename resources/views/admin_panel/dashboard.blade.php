@@ -492,8 +492,8 @@
     </style>
 
     <div class="main-content">
-        <div class="main-content-inner">
-            <div class="container dashboard-container">
+        <div class="main-content-inner" style="padding-left: 15px; padding-right: 15px;">
+            <div class="container-fluid dashboard-container" style="padding: 0;">
 
                 <!-- Welcome Section -->
                 <div class="welcome-section">

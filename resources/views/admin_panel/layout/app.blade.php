@@ -702,6 +702,17 @@
                                 </div>
                             @endcanany
                         </li>
+                        
+                        <!-- Cashbook / Checkbook -->
+                        @can('checkbook.view')
+                        <li class="nav-item">
+                            <a href="{{ route('checkbook.index') }}" class="nav-link">
+                                <i class="menu_icon fas fa-wallet"></i>
+                                <span class="menu-title">Cashbook</span>
+                            </a>
+                        </li>
+                        @endcan
+
                         <!-- HR Management Menu -->
                         <li class="nav-item">
                             @canany(['hr.departments.view', 'hr.designations.view', 'hr.employees.view',

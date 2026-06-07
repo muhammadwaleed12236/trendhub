@@ -509,11 +509,11 @@
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input bulk-column-toggle" type="checkbox" id="toggleTradePrice" data-target="trade-price">
-                        <label class="form-check-label fw-semibold text-dark mb-0" for="toggleTradePrice" style="font-size:0.85rem; cursor:pointer;">Trade Price</label>
+                        <label class="form-check-label fw-semibold text-dark mb-0" for="toggleTradePrice" style="font-size:0.85rem; cursor:pointer;">Purchase Price</label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input bulk-column-toggle" type="checkbox" id="toggleRetailPrice" data-target="retail-price">
-                        <label class="form-check-label fw-semibold text-dark mb-0" for="toggleRetailPrice" style="font-size:0.85rem; cursor:pointer;">Retail Price</label>
+                        <label class="form-check-label fw-semibold text-dark mb-0" for="toggleRetailPrice" style="font-size:0.85rem; cursor:pointer;">Sale Price</label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input bulk-column-toggle" type="checkbox" id="toggleDiscount" data-target="discount">
