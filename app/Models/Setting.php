@@ -44,6 +44,8 @@ class Setting extends Model
         $setting->value = $value;
         $setting->save();
 
+        Cache::forget('setting_' . $key);
+
         // Clear cache
         Cache::forget('setting_' . $key);
 
