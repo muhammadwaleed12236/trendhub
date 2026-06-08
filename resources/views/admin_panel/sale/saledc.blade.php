@@ -372,7 +372,7 @@
                         <td class="text-center" style="vertical-align: middle;">
                             @if ($sizeMode == 'by_pieces')
                             <span class="fw-bold">
-                            Peices
+                            Pieces
                         </span> 
                             @elseif ($sizeMode == 'by_cartons')
                             <span class="fw-bold">
@@ -392,8 +392,8 @@
         <!-- Footer -->
         <div class="row mt-2">
             <div class="col-7">
-                <div class="terms-box pt-2">
-                    <p class="fw-bold mb-1">Terms & Conditions:</p>
+                <div class="terms-box pt-2" contenteditable="true" style="outline: none; padding: 5px; border-radius: 4px;" title="Click to edit terms before printing" onfocus="this.style.backgroundColor='#f8f9fa';" onblur="this.style.backgroundColor='transparent';">
+                    <p class="fw-bold mb-1">Terms & Conditions: <small class="fw-normal text-muted" style="font-size: 8px;">(Editable)</small></p>
                     <ul style="font-size: 10px;">
                         <li>Please check items upon delivery.</li>
                         <li>This is a Delivery Challan, not a final invoice.</li>
