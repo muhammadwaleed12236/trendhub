@@ -61,6 +61,13 @@ public function store(Request $request)
 
     // RESPONSE FOR ALERT
     if ($request->page === 'product_page') {
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'id' => $subcategory->id,
+                'name' => $subcategory->name
+            ]);
+        }
         return redirect()->back()->with('success',$message);
     }
 

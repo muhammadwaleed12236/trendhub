@@ -666,6 +666,42 @@
                     });
                 }
             });
+
+            // Quick Add AJAX Handlers
+            function handleQuickAdd(modalId, selectSelector) {
+                $('#' + modalId + ' form').on('submit', function(e) {
+                    e.preventDefault();
+                    let form = $(this);
+                    let btn = form.find('button[type="submit"]');
+                    let originalText = btn.text();
+                    btn.text('Saving...').prop('disabled', true);
+                    
+                    $.ajax({
+                        url: form.attr('action'),
+                        method: 'POST',
+                        data: form.serialize(),
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        success: function(res) {
+                            if(res.success) {
+                                $(selectSelector).append(new Option(res.name, res.id, true, true)).trigger('change');
+                                $('#' + modalId).modal('hide');
+                                form[0].reset();
+                                Swal.fire({icon: 'success', title: 'Added successfully', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500});
+                            }
+                        },
+                        error: function() {
+                            Swal.fire({icon: 'error', title: 'Error', text: 'Something went wrong!'});
+                        },
+                        complete: function() {
+                            btn.text(originalText).prop('disabled', false);
+                        }
+                    });
+                });
+            }
+
+            handleQuickAdd('categoryModal', '#category-dropdown, #subcategoryModal select[name="category_id"]');
+            handleQuickAdd('subcategoryModal', '#subcategory-dropdown');
+            handleQuickAdd('brandModal', 'select[name="brand_id"]');
         });
     </script>
 @endsection

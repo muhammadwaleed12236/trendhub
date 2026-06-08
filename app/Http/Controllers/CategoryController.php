@@ -59,7 +59,13 @@ class CategoryController extends Controller
      */
     $obj = Category::all();
     if ($request->page === 'product_page') {
-        
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'id' => $category->id,
+                'name' => $category->name
+            ]);
+        }
        return redirect()->back()->with('success', 'Category saved successfully');
     }
 

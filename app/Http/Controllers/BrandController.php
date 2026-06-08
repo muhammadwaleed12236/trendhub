@@ -57,6 +57,13 @@ class BrandController extends Controller
 
     // PRODUCT PAGE RESPONSE
     if ($request->page === 'product_page') {
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'id' => $brand->id,
+                'name' => $brand->name
+            ]);
+        }
         
         $msg = 'Brand Created Successfully';
          return redirect()->back()->with('success',$msg);
