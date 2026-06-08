@@ -214,6 +214,16 @@
                             <div class="card-body p-0">
                                 <form id="filterForm" class="row g-3 align-items-end" autocomplete="off">
                                     <div class="col-md-2">
+                                        <label class="form-label mb-1">Quick Filter</label>
+                                        <select id="quick_filter" class="form-select">
+                                            <option value="custom">Custom Range</option>
+                                            <option value="daily">Daily (Today)</option>
+                                            <option value="weekly">Weekly (This Week)</option>
+                                            <option value="monthly">Monthly (This Month)</option>
+                                            <option value="yearly">Yearly (This Year)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
                                         <label class="form-label mb-1">From Date</label>
                                         <input type="date" class="form-control datepicker-custom" name="from_date" id="filter_from_date">
                                     </div>
@@ -221,15 +231,15 @@
                                         <label class="form-label mb-1">To Date</label>
                                         <input type="date" class="form-control datepicker-custom" name="to_date" id="filter_to_date">
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-1">
                                         <label class="form-label mb-1">Bill#</label>
                                         <input type="text" class="form-control" name="bill_no" id="filter_bill_no" placeholder="Search bill...">
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-1">
                                         <label class="form-label mb-1">M.Bill# / Ref</label>
                                         <input type="text" class="form-control" name="reference" id="filter_reference" placeholder="M.Bill...">
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-2">
                                         <label class="form-label mb-1">Customer</label>
                                         <select class="form-select" name="customer_id" id="filter_customer_id">
                                             <option value="">All Customers</option>
@@ -238,11 +248,11 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-12 d-flex justify-content-end gap-2 mt-3">
-                                        <button type="button" class="btn btn-premium-secondary" id="btnReset">
+                                    <div class="col-md-2 d-flex gap-2">
+                                        <button type="button" class="btn btn-premium-secondary w-50" id="btnReset">
                                             <i class="fas fa-undo me-1"></i>Reset
                                         </button>
-                                        <button type="submit" class="btn btn-premium-primary" id="btnSearch">
+                                        <button type="submit" class="btn btn-premium-primary w-50" id="btnSearch">
                                             <i class="fas fa-search me-1"></i>Search
                                         </button>
                                     </div>
@@ -307,6 +317,41 @@
             initDataTable();
 
             // Submit form via AJAX
+            // Quick Filter Logic
+            $(document).on('change', '#quick_filter', function() {
+                let val = $(this).val();
+                let today = new Date();
+                let start = new Date();
+                let end = new Date();
+
+                if (val === 'daily') {
+                    // Start and end are both today
+                } else if (val === 'weekly') {
+                    // Start is first day of current week (let's use Monday)
+                    let day = today.getDay(); // 0 is Sunday, 1 is Monday
+                    let diff = today.getDate() - day + (day === 0 ? -6 : 1);
+                    start.setDate(diff);
+                } else if (val === 'monthly') {
+                    // Start is 1st of current month
+                    start.setDate(1);
+                } else if (val === 'yearly') {
+                    // Start is Jan 1st of current year
+                    start.setMonth(0, 1);
+                } else if (val === 'custom') {
+                    return; // Don't change dates for custom
+                }
+
+                let pickerFrom = document.getElementById('filter_from_date')._flatpickr;
+                let pickerTo = document.getElementById('filter_to_date')._flatpickr;
+                if(pickerFrom) pickerFrom.setDate(start);
+                else $("#filter_from_date").val(start.toISOString().split('T')[0]);
+                
+                if(pickerTo) pickerTo.setDate(end);
+                else $("#filter_to_date").val(end.toISOString().split('T')[0]);
+                
+                $('#filterForm').trigger('submit');
+            });
+
             $('#filterForm').on('submit', function(e) {
                 e.preventDefault();
                 const $btn = $('#btnSearch');
