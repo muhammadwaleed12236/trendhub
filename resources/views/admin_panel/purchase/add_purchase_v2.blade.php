@@ -403,7 +403,7 @@
 
                             <div class="mb-2">
                                 <label class="form-label fw-bold mb-1 text-muted small">Date</label>
-                                <input type="date" name="purchase_date" class="form-control" value="{{ date('Y-m-d') }}">
+                                <input type="date" name="purchase_date" class="form-control datepicker-custom" value="{{ date('Y-m-d') }}">
                             </div>
 
                             <div class="mb-2">

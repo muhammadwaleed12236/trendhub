@@ -1041,6 +1041,10 @@ class SaleController extends Controller
                 $sale->is_booking = 0;
             }
 
+            if ($request->filled('sale_date')) {
+                $sale->created_at = \Carbon\Carbon::parse($request->sale_date)->format('Y-m-d H:i:s');
+            }
+
             $sale->save(); // Save first to get ID
 
             // 3. Process Items

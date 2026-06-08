@@ -643,7 +643,7 @@
                                 </div>
                                 <div class="col-sm-3">
                                     <label class="form-label fw-bold text-secondary mb-1" style="font-size: 0.82rem;">Date:</label>
-                                    <input type="text" class="form-control" id="displayDateInput" value="{{ date('d/m/Y') }}" readonly style="background-color: #ffffff; cursor: default; height: 38px !important;">
+                                    <input type="date" name="sale_date" class="form-control datepicker-custom" id="displayDateInput" value="{{ date('Y-m-d') }}" style="background-color: #ffffff; height: 38px !important;">
                                 </div>
                                 <div class="col-sm-5">
                                     <label class="form-label fw-bold text-secondary mb-1" style="font-size: 0.82rem;">Customer:</label>

@@ -215,11 +215,11 @@
                                 <form id="filterForm" class="row g-3 align-items-end" autocomplete="off">
                                     <div class="col-md-2">
                                         <label class="form-label mb-1">From Date</label>
-                                        <input type="date" class="form-control" name="from_date" id="filter_from_date">
+                                        <input type="date" class="form-control datepicker-custom" name="from_date" id="filter_from_date">
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label mb-1">To Date</label>
-                                        <input type="date" class="form-control" name="to_date" id="filter_to_date">
+                                        <input type="date" class="form-control datepicker-custom" name="to_date" id="filter_to_date">
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label mb-1">Bill#</label>

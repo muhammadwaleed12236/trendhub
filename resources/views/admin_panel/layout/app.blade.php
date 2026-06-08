@@ -152,6 +152,10 @@
     {{-- SweetAlert2 CSS - Local --}}
     <link rel="stylesheet" href="{{ asset('assets/vendors/sweetalert2/css/sweetalert2.min.css') }}">
 
+    {{-- Flatpickr CSS for custom date formats --}}
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> -->
+    <link rel="stylesheet" href="{{ asset('assets/css/flatpickr.min.css') }}">
+
     @vite(['resources/js/app.js'])
 </head>
 
@@ -997,6 +1001,20 @@
         .swal2-container { z-index: 99999 !important; }
     </style>
 
+    {{-- Flatpickr JS --}}
+    
+    <script src="/assets/js/flatpickr.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script> -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            flatpickr('.datepicker-custom', {
+                dateFormat: "Y-m-d", // The value submitted to the server
+                altInput: true,      // Show a secondary visually formatted input
+                altFormat: "d/m/Y",  // Day/Month/Year
+                allowInput: true     // Allow typing
+            });
+        });
+    </script>
 </body>
 
 </html>
