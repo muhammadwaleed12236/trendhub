@@ -152,7 +152,7 @@ class PurchaseController extends Controller
 
         $lastInvoice = Purchase::latest('id')->value('invoice_no');
         $nextInvoice = $lastInvoice
-            ? 'PUR-'.str_pad(((int) filter_var($lastInvoice, FILTER_SANITIZE_NUMBER_INT)) + 1, 3, '0', STR_PAD_LEFT)
+            ? 'PUR-'.str_pad(((int) preg_replace('/[^0-9]/', '', $lastInvoice)) + 1, 3, '0', STR_PAD_LEFT)
             : 'PUR-001';
 
         // Return new V2 view
@@ -398,7 +398,7 @@ class PurchaseController extends Controller
             // invoice number
             $lastInvoice = Purchase::latest('id')->value('invoice_no');
             $nextInvoice = $lastInvoice
-                ? 'PUR-'.str_pad(((int) filter_var($lastInvoice, FILTER_SANITIZE_NUMBER_INT)) + 1, 3, '0', STR_PAD_LEFT)
+                ? 'PUR-'.str_pad(((int) preg_replace('/[^0-9]/', '', $lastInvoice)) + 1, 3, '0', STR_PAD_LEFT)
                 : 'PUR-001';
 
             $branchId = (int) ($validated['branch_id'] ?? 1);                 // ✅ use real branch
@@ -1189,14 +1189,65 @@ class PurchaseController extends Controller
         $balanceService = app(\App\Services\BalanceService::class);
         $vendor_balance = $balanceService->getVendorBalance($purchase->vendor_id);
 
-        return view('admin_panel.purchase.Invoice', compact('purchase', 'vendor_balance'));
+        $previousBalance = 0;
+        if ($purchase->vendor_id) {
+            $voucher = \App\Models\VoucherMaster::where('remarks', "Purchase Voucher #{$purchase->invoice_no}")
+                ->orderByRaw("ABS(TIMESTAMPDIFF(SECOND, created_at, '{$purchase->created_at}'))")
+                ->first();
+            $journalEntry = null;
+            if ($voucher) {
+                $journalEntry = \App\Models\JournalEntry::where('source_type', \App\Models\VoucherMaster::class)
+                    ->where('source_id', $voucher->id)
+                    ->where('party_type', \App\Models\Vendor::class)
+                    ->where('party_id', $purchase->vendor_id)
+                    ->first();
+            }
+
+            if ($journalEntry) {
+                $previousBalance = \App\Models\JournalEntry::where('party_type', \App\Models\Vendor::class)
+                    ->where('party_id', $purchase->vendor_id)
+                    ->where('id', '<', $journalEntry->id)
+                    ->sum(\Illuminate\Support\Facades\DB::raw('credit - debit'));
+            } else {
+                $previousBalance = $balanceService->getVendorBalanceBeforeDate($purchase->vendor_id, $purchase->created_at->format('Y-m-d H:i:s'));
+            }
+        }
+        $currentBalance = $previousBalance + $purchase->net_amount - $purchase->paid_amount;
+
+        return view('admin_panel.purchase.Invoice', compact('purchase', 'vendor_balance', 'previousBalance', 'currentBalance'));
     }
 
     public function receipt($id)
     {
         $purchase = Purchase::with(['items.product', 'vendor'])->findOrFail($id);
 
-        return view('admin_panel.purchase.receipt', compact('purchase'));
+        $balanceService = app(\App\Services\BalanceService::class);
+        $previousBalance = 0;
+        if ($purchase->vendor_id) {
+            $voucher = \App\Models\VoucherMaster::where('remarks', "Purchase Voucher #{$purchase->invoice_no}")
+                ->orderByRaw("ABS(TIMESTAMPDIFF(SECOND, created_at, '{$purchase->created_at}'))")
+                ->first();
+            $journalEntry = null;
+            if ($voucher) {
+                $journalEntry = \App\Models\JournalEntry::where('source_type', \App\Models\VoucherMaster::class)
+                    ->where('source_id', $voucher->id)
+                    ->where('party_type', \App\Models\Vendor::class)
+                    ->where('party_id', $purchase->vendor_id)
+                    ->first();
+            }
+
+            if ($journalEntry) {
+                $previousBalance = \App\Models\JournalEntry::where('party_type', \App\Models\Vendor::class)
+                    ->where('party_id', $purchase->vendor_id)
+                    ->where('id', '<', $journalEntry->id)
+                    ->sum(\Illuminate\Support\Facades\DB::raw('credit - debit'));
+            } else {
+                $previousBalance = $balanceService->getVendorBalanceBeforeDate($purchase->vendor_id, $purchase->created_at->format('Y-m-d H:i:s'));
+            }
+        }
+        $currentBalance = $previousBalance + $purchase->net_amount - $purchase->paid_amount;
+
+        return view('admin_panel.purchase.receipt', compact('purchase', 'previousBalance', 'currentBalance'));
     }
 
     // purchase_reutun

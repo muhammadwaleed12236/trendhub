@@ -232,8 +232,18 @@
         </div>
 
         <div class="info-row" style="font-weight: bold;">
-            <span>Balance:</span>
+            <span>Bill Due:</span>
             <span>{{ number_format($purchase->net_amount - $purchase->paid_amount, 2) }}</span>
+        </div>
+
+        <div class="info-row">
+            <span>Previous Bal:</span>
+            <span>{{ number_format($previousBalance, 2) }}</span>
+        </div>
+
+        <div class="info-row" style="font-weight: bold; font-size: 14px; border-top: 1px dashed #000; padding-top: 5px; margin-top: 5px;">
+            <span>Total Closing Bal:</span>
+            <span>{{ number_format($currentBalance, 2) }}</span>
         </div>
     </div>
 

@@ -442,10 +442,14 @@
                             <td class="text-end fw-bold">
                                 {{ number_format($purchase->net_amount - $purchase->paid_amount, 2) }}</td>
                         </tr>
+                        <tr>
+                            <td class="text-dark">Previous Bal</td>
+                            <td class="text-end text-dark">{{ number_format($previousBalance, 2) }}</td>
+                        </tr>
                         <tr style="border-top: 1px solid #000;">
                             <td class="fw-bold text-danger">Total Closing Bal</td>
                             <td class="text-end fw-bold text-danger">
-                                {{ number_format($vendor_balance, 2) }}
+                                {{ number_format($currentBalance, 2) }}
                             </td>
                         </tr>
                     </table>

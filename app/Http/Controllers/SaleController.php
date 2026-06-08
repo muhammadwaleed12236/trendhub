@@ -1353,7 +1353,7 @@ class SaleController extends Controller
 
         // Generate unique RVID
         $lastRV = \App\Models\ReceiptsVoucher::orderBy('id', 'desc')->first();
-        $nextNumber = $lastRV ? (int) filter_var($lastRV->rvid, FILTER_SANITIZE_NUMBER_INT) + 1 : 1;
+        $nextNumber = $lastRV ? (int) preg_replace('/[^0-9]/', '', $lastRV->rvid) + 1 : 1;
         $rvid = 'RV-'.str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
         // Create receipt voucher
