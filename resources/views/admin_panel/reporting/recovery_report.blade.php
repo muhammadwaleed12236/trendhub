@@ -22,11 +22,11 @@
         <div class="row mb-3 align-items-center no-print">
             <div class="col-md-3">
                 <label>Start Date:</label>
-                <input type="date" id="start_date" class="form-control" value="{{ date('Y-m-01') }}">
+                <input type="text" id="start_date" class="form-control datepicker-custom" value="{{ date('Y-m-01') }}">
             </div>
             <div class="col-md-3">
                 <label>End Date:</label>
-                <input type="date" id="end_date" class="form-control" value="{{ date('Y-m-d') }}">
+                <input type="text" id="end_date" class="form-control datepicker-custom" value="{{ date('Y-m-d') }}">
             </div>
             <div class="col-md-2 mt-4">
                 <button class="btn btn-primary w-100" id="btnGenerate">Generate</button>

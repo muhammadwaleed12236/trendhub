@@ -16,11 +16,11 @@
                     <form id="purchaseFilterForm" class="row g-2 align-items-end">
                         <div class="col-md-2">
                             <label class="form-label">Start Date</label>
-                            <input type="date" name="start_date" id="start_date" class="form-control">
+                            <input type="text" name="start_date" id="start_date" class="form-control datepicker-custom">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">End Date</label>
-                            <input type="date" name="end_date" id="end_date" class="form-control">
+                            <input type="text" name="end_date" id="end_date" class="form-control datepicker-custom">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Vendor</label>

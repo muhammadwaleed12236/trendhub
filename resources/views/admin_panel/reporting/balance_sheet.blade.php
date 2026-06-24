@@ -88,7 +88,7 @@
             <div class="row align-items-center">
                 <div class="col-md-3">
                     <label class="fw-bold small mb-1">Select As-of Date:</label>
-                    <input type="date" id="bs_date" class="form-control" value="{{ date('Y-m-d') }}">
+                    <input type="text" id="bs_date" class="form-control datepicker-custom" value="{{ date('Y-m-d') }}">
                 </div>
                 <div class="col-md-2 mt-4">
                     <button class="btn btn-dark w-100 fw-bold" id="btnGenerate">Generate Report</button>

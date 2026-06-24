@@ -59,12 +59,12 @@
                         <form method="GET" class="row g-3 mb-4">
                             <div class="col-md-3">
                                 <label class="form-label">From Date</label>
-                                <input type="date" name="from_date" value="{{ request('from_date') }}"
-                                    class="form-control">
+                                <input type="text" name="from_date" value="{{ request('from_date') }}"
+                                    class="form-control datepicker-custom">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">To Date</label>
-                                <input type="date" name="to_date" value="{{ request('to_date') }}" class="form-control">
+                                <input type="text" name="to_date" value="{{ request('to_date') }}" class="form-control datepicker-custom">
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
                                 <button type="submit" class="btn btn-primary w-100"><i class="bi bi-filter"></i>

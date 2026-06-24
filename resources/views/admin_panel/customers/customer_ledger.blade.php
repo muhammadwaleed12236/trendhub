@@ -58,12 +58,12 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label fw-bold">From Date</label>
-                                <input type="date" name="from_date" value="{{ request('from_date') }}"
-                                    class="form-control">
+                                <input type="text" name="from_date" value="{{ request('from_date') }}"
+                                    class="form-control datepicker-custom">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label fw-bold">To Date</label>
-                                <input type="date" name="to_date" value="{{ request('to_date') }}" class="form-control">
+                                <input type="text" name="to_date" value="{{ request('to_date') }}" class="form-control datepicker-custom">
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
                                 <div class="d-flex w-100 gap-2">

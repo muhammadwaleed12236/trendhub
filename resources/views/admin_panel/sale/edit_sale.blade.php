@@ -638,7 +638,7 @@
                                 </div>
                                 <div class="col-sm-3">
                                     <label class="form-label fw-bold text-secondary mb-1" style="font-size: 0.82rem;">Date:</label>
-                                    <input type="date" name="sale_date" class="form-control datepicker-custom" id="displayDateInput" value="{{ isset($sale) ? $sale->created_at->format('Y-m-d') : date('Y-m-d') }}" style="background-color: #ffffff; height: 38px !important;">
+                                    <input type="text" name="sale_date" class="form-control datepicker-custom" id="displayDateInput" value="{{ isset($sale) ? $sale->created_at->format('Y-m-d') : date('Y-m-d') }}" style="background-color: #ffffff; height: 38px !important;">
                                 </div>
                                 <div class="col-sm-5">
                                     <label class="form-label fw-bold text-secondary mb-1" style="font-size: 0.82rem;">Customer:</label>

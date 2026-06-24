@@ -41,7 +41,7 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label text-muted fw-semibold">Current Date:</label>
-                        <input type="date" id="as_of_date" class="form-control" value="{{ date('Y-m-d') }}">
+                        <input type="text" id="as_of_date" class="form-control datepicker-custom" value="{{ date('Y-m-d') }}">
                     </div>
                     <div class="col-md-2">
                         <button class="btn btn-primary w-100 mt-1" id="btnGenerate">Generate</button>

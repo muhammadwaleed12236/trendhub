@@ -121,11 +121,11 @@
                 <form id="profitLossForm" class="row g-2 align-items-end">
                     <div class="col-lg-2 col-md-4">
                         <label class="form-label small fw-semibold text-muted mb-1">From</label>
-                        <input type="date" id="start_date" class="form-control form-control-sm" value="{{ date('Y-m-01') }}">
+                        <input type="text" id="start_date" class="form-control form-control-sm datepicker-custom" value="{{ date('Y-m-01') }}">
                     </div>
                     <div class="col-lg-2 col-md-4">
                         <label class="form-label small fw-semibold text-muted mb-1">To</label>
-                        <input type="date" id="end_date" class="form-control form-control-sm" value="{{ date('Y-m-t') }}">
+                        <input type="text" id="end_date" class="form-control form-control-sm datepicker-custom" value="{{ date('Y-m-t') }}">
                     </div>
                     <div class="col-lg-2 col-md-4">
                         <label class="form-label small fw-semibold text-muted mb-1">Category</label>

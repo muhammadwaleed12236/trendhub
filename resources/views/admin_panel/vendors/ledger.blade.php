@@ -25,12 +25,12 @@
                         <form method="GET" class="row g-3 align-items-end">
                             <div class="col-md-4">
                                 <label class="form-label small text-secondary fw-bold">Start Date</label>
-                                <input type="date" name="start_date" class="form-control"
+                                <input type="text" name="start_date" class="form-control datepicker-custom"
                                     value="{{ request('start_date', now()->startOfMonth()->format('Y-m-d')) }}">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small text-secondary fw-bold">End Date</label>
-                                <input type="date" name="end_date" class="form-control"
+                                <input type="text" name="end_date" class="form-control datepicker-custom"
                                     value="{{ request('end_date', now()->endOfMonth()->format('Y-m-d')) }}">
                             </div>
                             <div class="col-md-4">
