@@ -214,7 +214,7 @@
         <!-- Meta -->
         <div class="meta-info">
             <span><strong>Inv #:</strong> {{ $sale->invoice_no }}</span>
-            <span>{{ $sale->created_at->format('d-m-Y h:i A') }}</span>
+            <span>{{ $sale->created_at->format('d/m/Y h:i A') }}</span>
         </div>
         <div class="meta-info">
             <span><strong>Cust:</strong> {{ Str::limit($sale->customer_relation->customer_name ?? 'Walking Customer', 22) }}</span>

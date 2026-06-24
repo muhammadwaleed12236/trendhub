@@ -32,7 +32,7 @@
 <div class="header">
     <h2>Booking Receipt</h2>
     <p>Booking ID: {{ $booking->id }}</p>
-    <p>Date: {{ $booking->created_at->format('d-m-Y') }}</p>
+    <p>Date: {{ $booking->created_at->format('d/m/Y') }}</p>
 </div>
 
 <div class="section">

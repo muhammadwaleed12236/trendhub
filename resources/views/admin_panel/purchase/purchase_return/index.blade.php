@@ -52,7 +52,7 @@
                                                 </td>
                                                 <td>{{ $return->vendor->name ?? 'N/A' }}</td>
                                                 <td>{{ $return->warehouse->warehouse_name ?? 'N/A' }}</td>
-                                                <td>{{ \Carbon\Carbon::parse($return->return_date)->format('Y-m-d') }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($return->return_date)->format('d/m/Y') }}</td>
 
                                                 {{-- Return Amount --}}
                                                 <td class="text-danger">

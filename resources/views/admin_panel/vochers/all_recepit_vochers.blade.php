@@ -37,7 +37,7 @@
                                         <td>
                                             <span class="fw-bold text-primary">{{ $item->voucher_no }}</span>
                                         </td>
-                                        <td>{{ $item->date ? $item->date->format('d-M-Y') : '-' }}</td>
+                                        <td>{{ $item->date ? $item->date->format('d/m/Y') : '-' }}</td>
                                         <td>
                                             <span
                                                 class="badge bg-info text-dark">{{ ucfirst($item->payment_from ?? 'Receipt') }}</span>

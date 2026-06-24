@@ -287,7 +287,7 @@
                                 <small class="text-muted d-block text-start" style="font-size: 0.7rem;">ORIGINAL PURCHASE
                                     DATE</small>
                                 <strong class="text-dark"><i class="far fa-calendar-alt me-1"></i>
-                                    {{ $purchase->created_at->format('d M, Y h:i A') }}</strong>
+                                    {{ $purchase->created_at->format('d/m/Y h:i A') }}</strong>
                             </div>
                         </div>
                     </div>

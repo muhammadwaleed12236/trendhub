@@ -170,12 +170,12 @@
                                             <td>{{ $assignment->employee->designation->name ?? 'N/A' }}</td>
                                             <td>
                                                 <i class="fa fa-calendar-check text-success"></i>
-                                                {{ $assignment->start_date->format('M d, Y') }}
+                                                {{ $assignment->start_date->format('d/m/Y') }}
                                             </td>
                                             <td>
                                                 @if ($assignment->end_date)
                                                     <i class="fa fa-calendar-times text-danger"></i>
-                                                    {{ $assignment->end_date->format('M d, Y') }}
+                                                    {{ $assignment->end_date->format('d/m/Y') }}
                                                 @else
                                                     <span class="text-muted">-</span>
                                                 @endif

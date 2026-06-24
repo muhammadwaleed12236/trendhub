@@ -262,7 +262,7 @@
                 <div class="info-box">
                     <div class="info-box-header">Reference</div>
                     <div><span class="info-label">DC #:</span> <strong>{{ $sale->invoice_no }}</strong></div>
-                    <div><span class="info-label">Date:</span> {{ $sale->created_at->format('d-m-Y') }}</div>
+                    <div><span class="info-label">Date:</span> {{ $sale->created_at->format('d/m/Y') }}</div>
                     @if($sale->reference)
                     <div style="margin-top:4px; padding-top:4px; border-top:1px dashed #ddd;">
                         <span class="info-label" style="display:block; margin-bottom:2px;">Remarks:</span>
@@ -422,7 +422,7 @@
                     </div>
 
                     <div class="small text-muted mt-1" style="font-size: 10px;">
-                        Printed on: {{ date('d-m-Y h:i A') }}
+                        Printed on: {{ date('d/m/Y h:i A') }}
                     </div>
                 </div>
             </div>

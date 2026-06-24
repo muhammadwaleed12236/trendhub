@@ -94,7 +94,7 @@
                                                 @endif
                                             </td>
                                             <td class="text-nowrap small text-muted">
-                                                {{ $booking->created_at->format('d M, Y') }}
+                                                {{ $booking->created_at->format('d/m/Y') }}
                                             </td>
                                             <td class="pe-3 text-center">
                                                 <div class="dropdown">

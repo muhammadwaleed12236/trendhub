@@ -380,7 +380,7 @@ class PayrollCalculationService
                 $deductionDetails[] = [
                     'name' => 'Late Check-in ('.$attendance->late_minutes.' min)',
                     'amount' => $lateDeduction,
-                    'description' => 'Late arrival deduction for '.Carbon::parse($attendance->date)->format('M d, Y'),
+                    'description' => 'Late arrival deduction for '.Carbon::parse($attendance->date)->format('d/m/Y'),
                 ];
             }
         }
@@ -398,7 +398,7 @@ class PayrollCalculationService
                 $deductionDetails[] = [
                     'name' => 'Early Leave ('.$attendance->early_leave_minutes.' min)',
                     'amount' => $earlyDeduction,
-                    'description' => 'Early departure deduction for '.Carbon::parse($attendance->date)->format('M d, Y'),
+                    'description' => 'Early departure deduction for '.Carbon::parse($attendance->date)->format('d/m/Y'),
                 ];
             }
         }

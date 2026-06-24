@@ -38,7 +38,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
                         <h4 class="fw-bold mb-1">PAYABLE REPORTS</h4>
-                        <p class="text-muted mb-0" id="reportDateLabel">Report generated on : {{ date('d-m-Y') }}</p>
+                        <p class="text-muted mb-0" id="reportDateLabel">Report generated on : {{ date('d/m/Y') }}</p>
                     </div>
                     <button class="btn-print no-print" onclick="window.print()"><i class="fa fa-print"></i> Print</button>
                 </div>

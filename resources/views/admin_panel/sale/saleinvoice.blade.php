@@ -261,7 +261,7 @@
                 <div class="info-box">
                     <div class="info-box-header">Reference</div>
                     <div><span class="info-label">Inv #:</span> <strong>{{ $sale->invoice_no }}</strong></div>
-                    <div><span class="info-label">Date:</span> {{ $sale->created_at->format('d-m-Y') }}</div>
+                    <div><span class="info-label">Date:</span> {{ $sale->created_at->format('d/m/Y') }}</div>
                     @if($sale->reference)
                     <div style="margin-top:4px; padding-top:4px; border-top:1px dashed #ddd;">
                         <span class="info-label">Remarks:</span>
@@ -275,7 +275,7 @@
         <div class="row g-2 mb-2">
              <div class="col-12 text-end">
                 <div class="info-box">
-                    <div><span class="info-label">Date:</span> {{ $sale->created_at->format('d-m-Y') }}</div>
+                    <div><span class="info-label">Date:</span> {{ $sale->created_at->format('d/m/Y') }}</div>
                 </div>
             </div>
         </div>
@@ -453,7 +453,7 @@
                         Authorized Signature
                     </div>
                     <div class="small text-muted mt-1" style="font-size: 10px;">
-                        Printed on: {{ date('d-m-Y h:i A') }}
+                        Printed on: {{ date('d/m/Y h:i A') }}
                     </div>
                 </div>
             </div>

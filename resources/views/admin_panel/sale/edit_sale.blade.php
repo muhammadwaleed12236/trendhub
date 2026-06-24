@@ -1170,7 +1170,7 @@
                             // --- PRE-FILL EDIT MODE (Server Side Rendered) ---
                             console.log("Loading Edit Mode for Sale #{{ $sale->id }}");
                             $('#booking_id').val("{{ $sale->id }}");
-                            $('#entryDateTime').text("Date: {{ $sale->created_at->format('Y-m-d H:i') }}");
+                            $('#entryDateTime').text("Date: {{ $sale->created_at->format('d/m/Y H:i') }}");
 
                             // Initialize Select2 on server-rendered rows
                             $('.product').each(function() {

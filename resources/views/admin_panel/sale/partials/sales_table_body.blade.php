@@ -84,7 +84,7 @@
             Rs. {{ number_format($sale->total_net, 2) }}
         </td>
         <td class="text-nowrap small text-muted">
-            {{ $sale->created_at->format('d M, Y') }}
+            {{ $sale->created_at->format('d/m/Y') }}
         </td>
         <td>{!! $statusBadge !!}</td>
         <td class="pe-3 text-center">

@@ -152,7 +152,7 @@
 
                                 <div class="leave-dates">
                                     <div class="date-range">
-                                        {{ $startDate->format('M d') }} - {{ $endDate->format('M d, Y') }}
+                                        {{ $startDate->format('d/m') }} - {{ $endDate->format('d/m/Y') }}
                                     </div>
                                     <div class="days-count">{{ $days }} day{{ $days > 1 ? 's' : '' }}</div>
                                 </div>

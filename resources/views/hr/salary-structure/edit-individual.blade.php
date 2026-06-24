@@ -58,7 +58,7 @@
                                                             min="{{ $currentAssignment->start_date ? $currentAssignment->start_date->addDay()->format('Y-m-d') : date('Y-m-d') }}"
                                                             value="{{ date('Y-m-d') }}">
                                                         <small class="text-muted">Must be after current start date
-                                                            ({{ $currentAssignment->start_date ? $currentAssignment->start_date->format('M d, Y') : 'N/A' }})</small>
+                                                            ({{ $currentAssignment->start_date ? $currentAssignment->start_date->format('d/m/Y') : 'N/A' }})</small>
                                                     </div>
                                                 </div>
                                             </div>

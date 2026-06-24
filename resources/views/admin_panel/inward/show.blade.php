@@ -78,7 +78,7 @@
                                 <p class="mb-1"><strong>Vendor:</strong> {{ $gatepass->vendor->name ?? 'N/A' }}</p>
                             </div>
                             <div class="col-md-6">
-                                <p class="mb-1"><strong>Date:</strong> {{ \Carbon\Carbon::parse($gatepass->gatepass_date)->format('d M, Y') }}</p>
+                                <p class="mb-1"><strong>Date:</strong> {{ \Carbon\Carbon::parse($gatepass->gatepass_date)->format('d/m/Y') }}</p>
                                 <p class="mb-1"><strong>Note:</strong> {{ $gatepass->note ?? '-' }}</p>
                                 <p class="mb-1"><strong>Status:</strong> 
                                     <span class="badge bg-{{ $gatepass->status == 'linked' ? 'success' : 'secondary' }}">

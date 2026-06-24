@@ -184,7 +184,7 @@ class PayrollController extends Controller
             $date = \Carbon\Carbon::parse($payroll->month);
             return [
                 'type' => 'daily',
-                'formatted' => $date->format('d F Y'),
+                'formatted' => $date->format('d/m/Y'),
                 'day' => $date->format('d'),
                 'month' => $date->format('F'),
                 'year' => $date->format('Y'),
@@ -256,7 +256,7 @@ class PayrollController extends Controller
             $absentDays = $attendances->filter(fn($att) => strtolower($att->status) === 'absent')
                 ->map(function ($att) use ($perDayDeduction) {
                     return [
-                        'date' => \Carbon\Carbon::parse($att->date)->format('d M Y'),
+                        'date' => \Carbon\Carbon::parse($att->date)->format('d/m/Y'),
                         'day' => \Carbon\Carbon::parse($att->date)->format('l'),
                         'deduction' => $perDayDeduction,
                     ];
@@ -264,7 +264,7 @@ class PayrollController extends Controller
             
             $lateDays = $attendances->where('is_late', true)->map(function ($att) use ($latePenalty) {
                 return [
-                    'date' => \Carbon\Carbon::parse($att->date)->format('d M Y'),
+                    'date' => \Carbon\Carbon::parse($att->date)->format('d/m/Y'),
                     'day' => \Carbon\Carbon::parse($att->date)->format('l'),
                     'check_in' => $att->clock_in ? \Carbon\Carbon::parse($att->clock_in)->format('h:i A') : 'N/A', // Fixed: clock_in
                     'late_minutes' => $att->late_minutes ?? 0,
@@ -274,7 +274,7 @@ class PayrollController extends Controller
             
             $earlyDays = $attendances->where('is_early_leave', true)->map(function ($att) use ($earlyPenalty) { // Fixed: is_early_leave
                 return [
-                    'date' => \Carbon\Carbon::parse($att->date)->format('d M Y'),
+                    'date' => \Carbon\Carbon::parse($att->date)->format('d/m/Y'),
                     'day' => \Carbon\Carbon::parse($att->date)->format('l'),
                     'check_out' => $att->clock_out ? \Carbon\Carbon::parse($att->clock_out)->format('h:i A') : 'N/A', // Fixed: clock_out
                     'early_minutes' => $att->early_leave_minutes ?? 0, // Fixed: early_leave_minutes
@@ -329,7 +329,7 @@ class PayrollController extends Controller
                     'has_data' => true,
                     'has_attendance_deductions' => $payroll->attendance_deductions > 0,
                     'date' => $date->format('Y-m-d'),
-                    'formatted_date' => $date->format('d M Y'),
+                    'formatted_date' => $date->format('d/m/Y'),
                     'day' => $date->format('l'),
                     'status' => $attendance->status,
                     'check_in' => $attendance->clock_in ? \Carbon\Carbon::parse($attendance->clock_in)->format('h:i A') : 'N/A',

@@ -71,7 +71,7 @@
         </td>
 
         {{-- Date --}}
-        <td>{{ \Carbon\Carbon::parse($discount->date)->format('d-M-Y') }}</td>
+        <td>{{ \Carbon\Carbon::parse($discount->date)->format('d/m/Y') }}</td>
 
         {{-- Final Price --}}
         <td><strong class="text-success">{{ number_format($discount->final_price,2) }}</strong></td>

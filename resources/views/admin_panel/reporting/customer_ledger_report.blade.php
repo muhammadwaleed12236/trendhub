@@ -126,7 +126,7 @@
                             </div>
 
                             <div class="text-center mt-3 text-muted">
-                                <small>Report generated on {{ date('d-M-Y H:i A') }}</small>
+                                <small>Report generated on {{ date('d/m/Y H:i A') }}</small>
                             </div>
                         </div>
 

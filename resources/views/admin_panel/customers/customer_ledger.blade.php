@@ -83,7 +83,7 @@
                                     <div class="card-body p-4">
                                         <h6 class="text-secondary text-uppercase small fw-bold mb-2">Opening Balance</h6>
                                         <h3 class="fw-bold text-dark mb-0">Rs. {{ number_format(abs($opening_balance ?? 0), 2) }} <small class="fs-6 text-muted">{{ ($opening_balance ?? 0) >= 0 ? 'Dr' : 'Cr' }}</small></h3>
-                                        <p class="small text-muted mb-0 mt-1">As of {{ \Carbon\Carbon::parse(request('from_date', '2000-01-01'))->format('d M, Y') }}</p>
+                                        <p class="small text-muted mb-0 mt-1">As of {{ \Carbon\Carbon::parse(request('from_date', '2000-01-01'))->format('d/m/Y') }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -136,7 +136,7 @@
                                         @endphp
                                         <tr>
                                             <td>{{ $loop->iteration }}</td>
-                                            <td>{{ $ledger->created_at->format('d-M-Y') }}</td>
+                                            <td>{{ $ledger->created_at->format('d/m/Y') }}</td>
                                             <td class="fw-bold">{{ $ledger->customer->customer_name ?? 'N/A' }}</td>
                                             <td>
                                                 {{ $ledger->description }}

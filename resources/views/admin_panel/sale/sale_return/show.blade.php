@@ -31,7 +31,7 @@
                                     </tr>
                                     <tr>
                                         <td class="fw-bold">Return Date:</td>
-                                        <td>{{ \Carbon\Carbon::parse($return->return_date)->format('d M, Y') }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($return->return_date)->format('d/m/Y') }}</td>
                                     </tr>
                                     <tr>
                                         <td class="fw-bold">Customer:</td>

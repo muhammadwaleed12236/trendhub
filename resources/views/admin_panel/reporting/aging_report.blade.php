@@ -56,7 +56,7 @@
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
                         <h5 class="fw-bold mb-0" id="reportTitle">Account Receivable Aging Report</h5>
-                        <small class="text-muted">As of: <span id="displayDate">{{ date('d-M-Y') }}</span></small>
+                        <small class="text-muted">As of: <span id="displayDate">{{ date('d/m/Y') }}</span></small>
                     </div>
                     <button class="btn-print no-print" onclick="window.print()"><i class="fa fa-print"></i> Print</button>
                 </div>

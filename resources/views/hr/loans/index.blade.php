@@ -73,7 +73,7 @@
                             <div class="hr-item-card" data-id="{{ $loan->id }}"
                                 data-employee="{{ strtolower($loan->employee->full_name) }}"
                                 data-designation="{{ strtolower($loan->employee->designation->name ?? '') }}"
-                                data-date="{{ $loan->created_at->format('d M Y') }}" data-amount="{{ $loan->amount }}"
+                                data-date="{{ $loan->created_at->format('d/m/Y') }}" data-amount="{{ $loan->amount }}"
                                 data-status="{{ $loan->status }}">
                                 <div class="hr-item-header">
                                     <div class="d-flex align-items-center">
@@ -87,7 +87,7 @@
                                             </div>
                                             <div class="hr-item-meta">
                                                 <i class="fa fa-calendar-alt me-1"></i>
-                                                {{ $loan->created_at->format('d M, Y') }}
+                                                {{ $loan->created_at->format('d/m/Y') }}
                                             </div>
                                         </div>
                                     </div>

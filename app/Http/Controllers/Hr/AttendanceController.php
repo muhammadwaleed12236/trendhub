@@ -258,8 +258,8 @@ class AttendanceController extends Controller
                             $leave = Leave::getApprovedLeave($empId, $dateParsed);
                             return response()->json([
                                 'error' => "Cannot mark {$employee->full_name} as absent. Employee has approved {$leave->leave_type} leave from " . 
-                                          Carbon::parse($leave->start_date)->format('M d') . " to " . 
-                                          Carbon::parse($leave->end_date)->format('M d, Y') . "."
+                                          Carbon::parse($leave->start_date)->format('d/m') . " to " . 
+                                          Carbon::parse($leave->end_date)->format('d/m/Y') . "."
                             ], 422);
                         }
                         

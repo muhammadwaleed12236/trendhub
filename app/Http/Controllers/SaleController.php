@@ -263,7 +263,7 @@ class SaleController extends Controller
             if (! $isSuperAdmin && ! $canApprovePastDeadline) {
                 $daysLate = now()->diffInDays($returnDeadline);
 
-                return back()->with('error', "Return period expired! This sale is {$daysLate} days past the {$returnDeadlineDays}-day return deadline (Sale Date: {$sale->created_at->format('d-M-Y')}). Only Super Admin can approve past deadline returns.");
+                return back()->with('error', "Return period expired! This sale is {$daysLate} days past the {$returnDeadlineDays}-day return deadline (Sale Date: {$sale->created_at->format('d/m/Y')}). Only Super Admin can approve past deadline returns.");
             }
 
             // Log that this is a past-deadline return approved by authorized user

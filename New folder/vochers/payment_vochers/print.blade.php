@@ -252,7 +252,7 @@
                 </div>
                 <div class="meta-item">
                     <span>Voucher Date:</span>
-                    <span>{{ \Carbon\Carbon::parse($voucher->receipt_date)->format('d-M-Y') }}</span>
+                    <span>{{ \Carbon\Carbon::parse($voucher->receipt_date)->format('d/m/Y') }}</span>
                 </div>
             </div>
         </div>

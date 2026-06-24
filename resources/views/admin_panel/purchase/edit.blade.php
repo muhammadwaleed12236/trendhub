@@ -339,7 +339,7 @@
                     </div>
                     <h2 class="header-text text-secondary fw-bold mb-0">Edit Purchase #{{ $purchase->invoice_no }}</h2>
                     <div class="d-flex align-items-center gap-2">
-                        <small class="text-secondary" id="entryDate">Date: {{ date('d-M-Y') }}</small>
+                        <small class="text-secondary" id="entryDate">Date: {{ date('d/m/Y') }}</small>
                     </div>
                 </div>
 

@@ -259,7 +259,7 @@
                 </div>
                 <div class="vrow">
                     <span>Date:</span>
-                    <span>{{ \Carbon\Carbon::parse($voucher->receipt_date)->format('d-M-Y') }}</span>
+                    <span>{{ \Carbon\Carbon::parse($voucher->receipt_date)->format('d/m/Y') }}</span>
                 </div>
             </div>
         </div>
@@ -325,7 +325,7 @@
 
         {{-- ── FOOTER ── --}}
         <div class="vch-footer">
-            <span>Printed: {{ now()->format('d-M-Y') }} | {{ now()->format('H:i') }}</span>
+            <span>Printed: {{ now()->format('d/m/Y') }} | {{ now()->format('H:i') }}</span>
             <span class="thank">Thank You ✓</span>
         </div>
 

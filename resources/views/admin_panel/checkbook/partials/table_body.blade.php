@@ -1,6 +1,6 @@
 @foreach ($transactions as $txn)
     <tr>
-        <td class="text-secondary fw-medium">{{ \Carbon\Carbon::parse($txn->entry_date)->format('d-M-Y') }}</td>
+        <td class="text-secondary fw-medium">{{ \Carbon\Carbon::parse($txn->entry_date)->format('d/m/Y') }}</td>
         <td class="text-secondary fw-medium">{{ $txn->description ?? '-' }}</td>
         <td class="text-secondary fw-medium">
             <span class="badge bg-light text-dark border">

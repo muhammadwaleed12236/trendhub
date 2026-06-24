@@ -5,7 +5,7 @@
         </td>
         <td class="fw-bold text-muted">#{{ $purchase->id }}</td>
         <td class="text-nowrap">
-            {{ \Carbon\Carbon::parse($purchase->purchase_date)->format('d M, Y') }}
+            {{ \Carbon\Carbon::parse($purchase->purchase_date)->format('d/m/Y') }}
         </td>
         <td class="font-monospace text-dark">{{ $purchase->invoice_no }}</td>
         <td class="font-monospace text-dark small">{{ $purchase->note ?? '-' }}</td>

@@ -37,7 +37,7 @@
                                 <td>{{ $key+1 }}</td>
                                 <td>{{ $row->expense_head }}</td>
                                 <td>{{ $row->narration }}</td>
-                                <td>{{ $row->created_at->format('Y-m-d') }}</td>
+                                <td>{{ $row->created_at->format('d/m/Y') }}</td>
                                 <td>
                                     <button class="btn btn-warning btn-sm editBtn" 
                                         data-id="{{ $row->id }}"

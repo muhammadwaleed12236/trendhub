@@ -59,7 +59,7 @@
             <div class="card-body p-4" id="printArea">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <small class="text-muted" id="reportDateLabel">Report generated on : {{ date('d-m-Y') }}</small>
+                        <small class="text-muted" id="reportDateLabel">Report generated on : {{ date('d/m/Y') }}</small>
                     </div>
                     <h5 class="fw-bold mb-0 text-center" style="position:absolute; left:50%; transform:translateX(-50%);" id="reportTitle">PARTIES BALANCES</h5>
                     <div class="no-print">

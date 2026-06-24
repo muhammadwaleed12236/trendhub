@@ -139,7 +139,7 @@
                                             }
                                         @endphp
                                         <tr>
-                                            <td class="text-center">{{ $entry->entry_date->format('d-M-Y') }}</td>
+                                            <td class="text-center">{{ $entry->entry_date->format('d/m/Y') }}</td>
                                             <td class="text-center">
                                                 <span class="badge bg-light text-dark border">{{ $voucherNo }}</span>
                                             </td>

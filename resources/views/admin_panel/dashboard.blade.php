@@ -502,7 +502,7 @@
                         <p class="welcome-subtitle">Here's what's happening with your business today.</p>
                         <div class="welcome-date">
                             <i class="fa fa-calendar-alt"></i>
-                            {{ now()->format('l, F d, Y') }}
+                            {{ now()->format('d/m/Y') }}
                         </div>
                     </div>
                 </div>

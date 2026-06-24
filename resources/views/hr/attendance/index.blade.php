@@ -232,7 +232,7 @@
                 <div class="page-header d-flex justify-content-between align-items-start">
                     <div>
                         <h1 class="page-title"><i class="fa fa-clock"></i> Daily Attendance</h1>
-                        <p class="page-subtitle">{{ \Carbon\Carbon::parse($selectedDate)->format('l, F d, Y') }}</p>
+                        <p class="page-subtitle">{{ \Carbon\Carbon::parse($selectedDate)->format('d/m/Y') }}</p>
                     </div>
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-light border" data-bs-toggle="modal"

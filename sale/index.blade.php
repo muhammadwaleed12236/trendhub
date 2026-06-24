@@ -64,7 +64,7 @@
                                 </td>
                                 <td>{{ number_format($sale->total_extradiscount, 2) }}</td>
                                 <td>{{ number_format($sale->total_net, 2) }}</td>
-                                <td>{{ $sale->created_at->format('d-m-Y') }}</td>
+                                <td>{{ $sale->created_at->format('d/m/Y') }}</td>
                                 <td>{!! $status !!}</td>
                                 <td>
                                     <div class="btn-group" role="group">

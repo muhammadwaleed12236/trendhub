@@ -255,7 +255,7 @@
                 <div class="info-box">
                     <div class="info-box-header">Reference</div>
                     <div><span class="info-label">Invoice No:</span> #{{ $sale->id }}</div>
-                    <div><span class="info-label">Date:</span> {{ $sale->created_at->format('d-m-Y') }}</div>
+                    <div><span class="info-label">Date:</span> {{ $sale->created_at->format('d/m/Y') }}</div>
                     <div><span class="info-label">Ref:</span> {{ $sale->reference ?? '-' }}</div>
                 </div>
             </div>
