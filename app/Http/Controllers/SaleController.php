@@ -982,12 +982,13 @@ class SaleController extends Controller
         $status = $request->action === 'post' ? 'posted' : 'booked';
 
         // Concurrency Safe Transaction
-        return DB::transaction(function () use ($request, $sale, $status) {
+        try {
+            return DB::transaction(function () use ($request, $sale, $status) {
 
-            // If this is an update to a previously posted sale, rollback its impact first
-            if ($sale->exists && $sale->sale_status === 'posted') {
-                $this->rollbackPostedSale($sale);
-            }
+                // If this is an update to a previously posted sale, rollback its impact first
+                if ($sale->exists && $sale->sale_status === 'posted') {
+                    $this->rollbackPostedSale($sale);
+                }
 
             // 2. Prepare Header Data
             $isNew = ! $sale->exists;
@@ -1107,7 +1108,17 @@ class SaleController extends Controller
                     }
                 } else {
                     // Start of By Piece
-                    $totalPieces = (float) ($quantities[$index] ?? 0) + $loose;
+                    $reqTotal = (float) ($request->total_pieces[$index] ?? 0);
+                    if ($reqTotal > 0) {
+                        $totalPieces = $reqTotal;
+                    } else {
+                        $qStr = (string) ($quantities[$index] ?? '');
+                        $parts = explode('.', $qStr);
+                        $boxes = (int) ($parts[0] ?? 0);
+                        $l = isset($parts[1]) ? (int) $parts[1] : 0;
+                        // For by_pieces, both fields act as plain piece counts in frontend
+                        $totalPieces = $boxes + $l;
+                    }
                 }
 
                 // Calculate boxes for storage (reverse calculation)
@@ -1229,6 +1240,15 @@ class SaleController extends Controller
 
             return redirect()->route('sale.index')->with('success', 'Sale saved as '.$status);
         });
+        } catch (\Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => $e->getMessage()
+                ], 422);
+            }
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
+        }
     }
 
     private function handleStockImpact(Sale $sale, $type = 'out')
