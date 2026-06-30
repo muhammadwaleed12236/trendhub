@@ -1,7 +1,25 @@
 @foreach ($transactions as $txn)
     <tr>
         <td class="text-secondary fw-medium">{{ \Carbon\Carbon::parse($txn->entry_date)->format('d/m/Y') }}</td>
-        <td class="text-secondary fw-medium">{{ $txn->description ?? '-' }}</td>
+        <td class="text-secondary fw-medium">
+            @php
+                $desc = $txn->description ?? '-';
+                if ($txn->source && method_exists($txn->source, 'party') && $txn->source->party) {
+                    $party = $txn->source->party;
+                    if (class_basename($party) === 'Customer') {
+                        $customerName = $party->customer_name ?? null;
+                        if ($customerName) {
+                            if (preg_match('/Payment received from (Invoice\s*#[A-Za-z0-9\-]+)/i', $desc, $matches)) {
+                                $desc = "Payment received from {$customerName} against {$matches[1]}";
+                            } elseif (isset($txn->source->voucher_type) && $txn->source->voucher_type === 'receipt' && $txn->debit > 0) {
+                                $desc = "Receipt received from {$customerName}";
+                            }
+                        }
+                    }
+                }
+            @endphp
+            {{ $desc }}
+        </td>
         <td class="text-secondary fw-medium">
             <span class="badge bg-light text-dark border">
                 {{ $txn->account->title ?? 'Unknown' }}
