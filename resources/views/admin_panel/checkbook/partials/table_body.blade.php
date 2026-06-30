@@ -15,6 +15,15 @@
                                 $desc = "Receipt received from {$customerName}";
                             }
                         }
+                    } elseif (class_basename($party) === 'Vendor') {
+                        $vendorName = $party->name ?? null;
+                        if ($vendorName) {
+                            if (preg_match('/Payment for (Purchase\s*#[A-Za-z0-9\-]+)/i', $desc, $matches)) {
+                                $desc = "Payment made to {$vendorName} against {$matches[1]}";
+                            } elseif (isset($txn->source->voucher_type) && $txn->source->voucher_type === 'payment' && $txn->credit > 0) {
+                                $desc = "Payment made to {$vendorName}";
+                            }
+                        }
                     }
                 }
             @endphp
