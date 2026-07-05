@@ -113,7 +113,7 @@
     <!--=========================*
               Page Title
     *===========================-->
-    <title>Home 2 | Zare Bootstrap 4 Admin Template</title>
+    <title>{{ \App\Models\Setting::get('company_name', 'prowave technogies') }}</title>
 
     <!--=========================*
                 Favicon
@@ -179,7 +179,7 @@
                 *===========================-->
                     <div class="text-center rt_nav_wrapper d-flex align-items-center">
                         {{-- <a class="nav_logo rt_logo" href="index.html"><img  src="{{asset('assets/images/WIJDAN-removebg-preview.png')}}" alt="logo" /></a> --}}
-                        <a class="nav_logo rt_logo text-success" href="index.html">Prowaves</a>
+                        <a class="nav_logo rt_logo text-success" href="{{ url('/') }}">{{ \App\Models\Setting::get('company_name', 'prowave technogies') }}</a>
                         {{-- <a class="nav_logo nav_logo_mob" href="index.html"><img src="{{asset('assets/images/WIJDAN-removebg-preview.png')}}" alt="logo"/></a> --}}
                     </div>
                     <!--=========================*

@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Receipt Voucher - Yasir Pipe</title>
+    <title>Receipt Voucher - {{ \App\Models\Setting::get('company_name', 'prowave technogies') }}</title>
    
    <link rel="stylesheet" href="{{ asset('assets/fonts/poppins/poppins.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/vendors/font-awesome/css/all.min.css') }}">
@@ -221,7 +221,7 @@
 
         {{-- ── HEADER ── --}}
         <div class="vch-header">
-            <h1>Yasir Pipe</h1>
+            <h1>{{ \App\Models\Setting::get('company_name', 'prowave technogies') }}</h1>
             <span class="vch-badge">RECEIPT VOUCHER</span>
         </div>
         <hr class="sep">

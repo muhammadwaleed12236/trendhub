@@ -203,10 +203,10 @@
 
     <div class="receipt-container">
         <!-- Header -->
-        <div class="company-name">  </div>
+        <div class="company-name">{{ \App\Models\Setting::get('company_name', 'prowave technogies') }}</div>
         <div class="company-info">
-            <div>Gulshan-e-Ilahi, Hyderabad.</div>
-            <div>Ph: 0327-9226901</div>
+            <div>{{ \App\Models\Setting::get('company_address', 'Hyderabad') }}</div>
+            <div>Ph: {{ \App\Models\Setting::get('company_phone', '0327-9226901') }}</div>
         </div>
 
         <div class="dc-title">DELIVERY CHALLAN</div>

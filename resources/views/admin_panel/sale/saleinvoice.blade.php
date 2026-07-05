@@ -228,9 +228,9 @@
         <!-- Company Header -->
         @if(!($isEstimate ?? false))
         <div class="company-info">
-            <div class="company-name"></div>
-            <div style="font-size: 12px;"></div>
-             <p></p>
+            <div class="company-name">{{ \App\Models\Setting::get('company_name', 'prowave technogies') }}</div>
+            <div style="font-size: 12px;">{{ \App\Models\Setting::get('company_address', 'Hyderabad') }}</div>
+             <p>{{ \App\Models\Setting::get('company_phone', '0327-9226901') }}</p>
         </div>
         @endif
 

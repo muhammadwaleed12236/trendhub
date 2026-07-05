@@ -225,8 +225,8 @@
     <div class="invoice-container">
         <!-- Company Header -->
         <div class="company-info">
-            <div class="company-name">  </div>
-            <div style="font-size: 12px;">Gulshan-e-Ilahi, Hyderabad.</div>
+            <div class="company-name">{{ \App\Models\Setting::get('company_name', 'prowave technogies') }}</div>
+            <div style="font-size: 12px;">{{ \App\Models\Setting::get('company_address', 'Hyderabad') }}</div>
         </div>
 
         <div class="invoice-title">Delivery Challan</div>

@@ -227,8 +227,8 @@
         <!-- Company Header -->
         <div class="company-info">
             <!-- year dynamic -->
-            <div class="company-name">  Yasir Pipe - <span>{{ date('Y') }}</span></div>
-            <div style="font-size: 12px;">Gulshan-e-Ilahi, Hyderabad.</div>
+            <div class="company-name">  {{ \App\Models\Setting::get('company_name', 'prowave technogies') }} - <span>{{ date('Y') }}</span></div>
+            <div style="font-size: 12px;">{{ \App\Models\Setting::get('company_address', 'Hyderabad') }}</div>
         </div>
 
         <div class="invoice-title">Purchase Invoice</div>
