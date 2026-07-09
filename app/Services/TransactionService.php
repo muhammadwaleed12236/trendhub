@@ -60,32 +60,59 @@ class TransactionService
             $totalPaid = 0;
             $lines = [];
 
+            // Adjust for change returned to walk-in customer (so only net cash received is logged in cashbook)
+            $changeToDeduct = 0;
+            if (empty($sale->customer_id) && $sale->change > 0) {
+                $changeToDeduct = (float) $sale->change;
+            }
+
             // 2. Prepare Debit Lines (Money In)
             foreach ($accountIds as $index => $accId) {
                 $amount = (float) ($amounts[$index] ?? 0);
 
-                if ($amount > 0) { // Fixed: Only positive amounts
-                    $totalPaid += $amount;
+                if ($amount > 0) {
+                    if ($changeToDeduct > 0 && $accId == $balanceService->getCashAccountId()) {
+                        $deduct = min($amount, $changeToDeduct);
+                        $amount -= $deduct;
+                        $changeToDeduct -= $deduct;
+                    }
 
-                    $lines[] = [
-                        'account_id' => $accId,
-                        'debit' => $amount,
-                        'credit' => 0,
-                        'narration' => "Payment received from Invoice #{$sale->invoice_no}",
-                    ];
+                    if ($amount > 0) {
+                        $totalPaid += $amount;
+
+                        $lines[] = [
+                            'account_id' => $accId,
+                            'debit' => $amount,
+                            'credit' => 0,
+                            'narration' => "Payment received from Invoice #{$sale->invoice_no}",
+                        ];
+                    }
                 }
             }
 
+            // Fallback: If cash account was not in list or had insufficient amount, deduct remaining change from the first line
+            if ($changeToDeduct > 0 && count($lines) > 0) {
+                $deduct = min($lines[0]['debit'], $changeToDeduct);
+                $lines[0]['debit'] -= $deduct;
+                $totalPaid -= $deduct;
+            }
+
+            // Clean up lines with zero or negative debit
+            $lines = array_values(array_filter($lines, function($line) {
+                return $line['debit'] > 0;
+            }));
+
             // Skip if no payment (Credit Sale - customer will pay later)
             if ($totalPaid <= 0) {
-                \Log::info('TransactionService: No payment received (Credit Sale), skipping receipt voucher.');
+                \Log::info('TransactionService: No payment received (Credit Sale) after change deduction, skipping receipt voucher.');
 
                 return;
             }
 
-            // 3. Prepare Credit Line (Customer Control - Money Out / Receivable Reduced)
+            // 3. Prepare Credit Line (Customer Control - Money Out / Receivable Reduced or Sales Revenue for Walkin)
+            $creditAccountId = $sale->customer_id ? $customerControlAccountId : $balanceService->getSalesRevenueId();
             $lines[] = [
-                'account_id' => $customerControlAccountId,
+                'account_id' => $creditAccountId,
                 'debit' => 0,
                 'credit' => $totalPaid,
                 'narration' => "Payment for Invoice #{$sale->invoice_no}",
@@ -96,8 +123,8 @@ class TransactionService
                 'voucher_type' => VoucherMaster::TYPE_RECEIPT,
                 'date' => now()->format('Y-m-d'),
                 'status' => VoucherMaster::STATUS_POSTED, // Auto-post
-                'payment_from' => 'Customer',
-                'party_type' => Customer::class,
+                'payment_from' => $sale->customer_id ? 'Customer' : 'Walk-in',
+                'party_type' => $sale->customer_id ? Customer::class : null,
                 'party_id' => $sale->customer_id,
                 'remarks' => "Auto-Receipt for Sale Invoice #{$sale->invoice_no}. Total: $totalPaid",
             ];

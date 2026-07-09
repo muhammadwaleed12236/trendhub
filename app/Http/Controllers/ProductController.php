@@ -82,7 +82,7 @@ class ProductController extends Controller
         $term = $request->get('term') ?? $request->get('q') ?? '';
 
         $query = Product::query()
-            ->select('id', 'item_name', 'item_code', 'barcode_path', 'size_mode', 'height', 'width', 'pieces_per_box', 'purchase_price_per_box', 'purchase_price_per_m2', 'purchase_price_per_piece', 'pieces_per_m2', 'purchase_discount_percent', 'sale_discount_percent')
+            ->select('id', 'item_name', 'item_code', 'barcode_path', 'size_mode', 'height', 'width', 'pieces_per_box', 'purchase_price_per_box', 'purchase_price_per_m2', 'purchase_price_per_piece', 'pieces_per_m2', 'purchase_discount_percent', 'sale_discount_percent', 'color', 'sale_price_per_piece')
             ->withSum('warehouseStocks', 'total_pieces') /* Sum PIECES, not boxes */
             ->where('is_active', true) /* Only active products */
             ->where(function ($q) use ($term) {
@@ -93,42 +93,148 @@ class ProductController extends Controller
 
         $products = $query->paginate(10); // Lazy loading (10 per request)
 
-        $results = $products->map(function ($p) {
-            // Get total pieces from warehouse stocks
+        $results = $products->getCollection()->flatMap(function ($p) {
             $stockPieces = (float) ($p->warehouse_stocks_sum_total_pieces ?? 0);
             $ppb = $p->pieces_per_box > 0 ? $p->pieces_per_box : 1;
 
-            // Calculate Stock Display (Boxes.Loose vs Pieces)
             $stockDisplay = $stockPieces;
             if (($p->size_mode === 'by_cartons' || $p->size_mode === 'by_size') && $ppb > 1) {
-                // For box-based products, show as "Boxes.Loose"
                 $boxes = floor($stockPieces / $ppb);
                 $loose = $stockPieces % $ppb;
                 $stockDisplay = $loose > 0 ? "$boxes.$loose" : $boxes;
             }
 
-            return [
+            $variants = [];
+            if ($p->color) {
+                try {
+                    $parsed = is_string($p->color) ? json_decode($p->color, true) : $p->color;
+                    if (is_array($parsed) && count($parsed) > 0 && isset($parsed[0]['name'])) {
+                        $variants = $parsed;
+                    }
+                } catch (\Exception $e) {}
+            }
+
+            if (count($variants) > 0) {
+                // Fetch all sales and returns for this product to distribute
+                $salesList = DB::table('sale_items')
+                    ->where('product_id', $p->id)
+                    ->select('total_pieces', 'color')
+                    ->get();
+
+                $returnsList = DB::table('sale_return_items as sri')
+                    ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
+                    ->leftJoin('sale_items as si', function($join) {
+                        $join->on('si.sale_id', '=', 'sr.sale_id')
+                             ->on('si.product_id', '=', 'sri.product_id');
+                    })
+                    ->where('sri.product_id', $p->id)
+                    ->select('sri.qty', 'si.color')
+                    ->get();
+
+                // Fetch all approved purchases
+                $purchasesList = DB::table('purchase_items as pi')
+                    ->join('purchases as pur', 'pur.id', '=', 'pi.purchase_id')
+                    ->where('pi.product_id', $p->id)
+                    ->where('pur.status_purchase', 'approved')
+                    ->select('pi.qty as total_pieces', 'pi.color')
+                    ->get();
+
+                // Fetch all purchase returns
+                $purchaseReturnsList = DB::table('purchase_return_items as pri')
+                    ->where('pri.product_id', $p->id)
+                    ->select('pri.qty', 'pri.color')
+                    ->get();
+
+                $expanded = [];
+                foreach ($variants as $v) {
+                    $size = (isset($v['size']) && $v['size'] !== '-') ? " {$v['size']}" : '';
+                    $color = (isset($v['color']) && $v['color'] !== '-') ? " ({$v['color']})" : '';
+                    $vName = ($v['name'] ?? $p->item_name) . $size . $color;
+                    
+                    $initial = (float) ($v['stock'] ?? 0);
+
+                    // Calculate Purchased variant qty
+                    $purchased = 0;
+                    foreach ($purchasesList as $pItem) {
+                        if ($this->matchSaleItemToVariant($pItem, $v)) {
+                            $purchased += (float) $pItem->total_pieces;
+                        }
+                    }
+
+                    // Calculate Purchase Returned variant qty
+                    $pReturned = 0;
+                    foreach ($purchaseReturnsList as $prItem) {
+                        if ($this->matchSaleItemToVariant($prItem, $v)) {
+                            $pReturned += (float) $prItem->qty;
+                        }
+                    }
+                    
+                    // Calculate Sold variant qty
+                    $sold = 0;
+                    foreach ($salesList as $sItem) {
+                        if ($this->matchSaleItemToVariant($sItem, $v)) {
+                            $sold += (float) $sItem->total_pieces;
+                        }
+                    }
+
+                    // Calculate Returned variant qty
+                    $returnedQty = 0;
+                    foreach ($returnsList as $rItem) {
+                        if ($this->matchSaleItemToVariant($rItem, $v)) {
+                            $returnedQty += (float) $rItem->qty;
+                        }
+                    }
+
+                    $vBalance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned);
+
+                    $vStockDisplay = $vBalance;
+                    if (($p->size_mode === 'by_cartons' || $p->size_mode === 'by_size') && $ppb > 1) {
+                        $vBoxes = floor($vBalance / $ppb);
+                        $vLoose = $vBalance % $ppb;
+                        $vStockDisplay = $vLoose > 0 ? "$vBoxes.$vLoose" : $vBoxes;
+                    }
+
+                    $v['current_stock'] = $vStockDisplay;
+                    $variantJson = json_encode($v);
+
+                    $expanded[] = [
+                        'id' => $p->id . '|variant|' . base64_encode($variantJson),
+                        'text' => $vName." (SKU: {$p->item_code})",
+                        'sku' => $p->item_code ?? '',
+                        'stock' => $vStockDisplay,
+                        'stock_pieces' => $vBalance,
+                        'name' => $vName,
+                        'size_mode' => $p->size_mode,
+                        'pieces_per_box' => $ppb,
+                        'ppb' => $ppb,
+                        'trade_price' => $v['purch_price'] ?? $p->purchase_price_per_piece ?? 0,
+                        'retail_price' => $v['sale_price'] ?? $p->sale_price_per_piece ?? 0,
+                        'purchase_price_per_piece' => $v['purch_price'] ?? $p->purchase_price_per_piece ?? 0,
+                        'purchase_price_per_m2' => $p->purchase_price_per_m2 ?? 0,
+                        'sale_discount_percent' => $p->sale_discount_percent ?? 0,
+                        'variant_data' => base64_encode($variantJson)
+                    ];
+                }
+                return $expanded;
+            }
+
+            return [[
                 'id' => $p->id,
-                'text' => $p->item_name." (SKU: {$p->item_code})", // Enhanced text for selection
-                // Custom attributes for template
+                'text' => $p->item_name." (SKU: {$p->item_code})",
                 'sku' => $p->item_code ?? '',
                 'stock' => $stockDisplay,
-                'stock_pieces' => $stockPieces, // Raw pieces for validation
+                'stock_pieces' => $stockPieces,
                 'name' => $p->item_name,
                 'size_mode' => $p->size_mode,
                 'pieces_per_box' => $ppb,
-                'ppb' => $ppb, // Legacy
+                'ppb' => $ppb,
                 'trade_price' => $p->purchase_price_per_piece ?? 0,
-                'purchase_price_per_box' => $p->purchase_price_per_box ?? 0,
-                'purchase_price_per_m2' => $p->purchase_price_per_m2 ?? 0,
+                'retail_price' => $p->sale_price_per_piece ?? 0,
                 'purchase_price_per_piece' => $p->purchase_price_per_piece ?? 0,
-                'height' => $p->height ?? 0,
-                'length' => $p->height ?? 0, // Alias for purchase snapshot
-                'width' => $p->width ?? 0,
-                'pieces_per_m2' => $p->pieces_per_m2 ?? 0,
-                'purchase_discount_percent' => $p->purchase_discount_percent ?? 0,
+                'purchase_price_per_m2' => $p->purchase_price_per_m2 ?? 0,
                 'sale_discount_percent' => $p->sale_discount_percent ?? 0,
-            ];
+                'variant_data' => ''
+            ]];
         });
 
         return response()->json([
@@ -443,6 +549,32 @@ class ProductController extends Controller
             $totalM2, $pricePerM2, $purchasePricePerM2, $totalStockQty, $piecesPerM2,
             $salePricePerPiece, $salePricePerBox, $purchasePricePerPiece, $purchasePricePerBox) {
 
+            $variants = [];
+            if ($request->has('variant_name')) {
+                $names = $request->variant_name;
+                $sizes = $request->variant_size;
+                $colors = $request->variant_color;
+                $stocks = $request->variant_stock;
+                $sale_prices = $request->variant_sale_price;
+                $purch_prices = $request->variant_purchase_price;
+                $alerts = $request->variant_alert_qty;
+                $barcodes = $request->variant_barcode;
+                for ($i = 0; $i < count($names); $i++) {
+                    if (!empty($names[$i])) {
+                        $variants[] = [
+                            'name' => $names[$i],
+                            'size' => $sizes[$i] ?? '-',
+                            'color' => $colors[$i] ?? '-',
+                            'stock' => $stocks[$i] ?? 0,
+                            'sale_price' => $sale_prices[$i] ?? 0,
+                            'purch_price' => $purch_prices[$i] ?? 0,
+                            'alert' => $alerts[$i] ?? 0,
+                            'barcode' => $barcodes[$i] ?? '',
+                        ];
+                    }
+                }
+            }
+
             // Create product
             $product = Product::create([
                 'creater_id' => $userId,
@@ -455,7 +587,7 @@ class ProductController extends Controller
                 'brand_id' => $request->brand_id,
                 'model' => $request->model,
                 'image' => $imagePath,
-                'color' => $request->color ? json_encode($request->color) : null,
+                'color' => count($variants) > 0 ? json_encode($variants) : ($request->color ? json_encode($request->color) : null),
                 'purchase_discount_percent' => $request->purchase_discount_percent ?? 0,
                 'sale_discount_percent' => $request->sale_discount_percent ?? 0,
                 'alert_quantity' => $request->alert_quantity,
@@ -666,6 +798,43 @@ class ProductController extends Controller
             $boxesQuantity, $loosePieces, $pieceQuantity,
             $totalM2, $pricePerM2, $purchasePricePerM2, $salePricePerBox, $purchasePricePerPiece, $piecesPerM2) {
 
+            $variants = [];
+            if ($request->has('variant_name')) {
+                $names = $request->variant_name;
+                $sizes = $request->variant_size;
+                $colors = $request->variant_color;
+                $stocks = $request->variant_stock;
+                $sale_prices = $request->variant_sale_price;
+                $purch_prices = $request->variant_purchase_price;
+                $alerts = $request->variant_alert_qty;
+                $barcodes = $request->variant_barcode;
+                for ($i = 0; $i < count($names); $i++) {
+                    if (!empty($names[$i])) {
+                        $variants[] = [
+                            'name' => $names[$i],
+                            'size' => $sizes[$i] ?? '-',
+                            'color' => $colors[$i] ?? '-',
+                            'stock' => $stocks[$i] ?? 0,
+                            'sale_price' => $sale_prices[$i] ?? 0,
+                            'purch_price' => $purch_prices[$i] ?? 0,
+                            'alert' => $alerts[$i] ?? 0,
+                            'barcode' => $barcodes[$i] ?? '',
+                        ];
+                    }
+                }
+            }
+
+            // color update logic
+            $final_color = null;
+            if (count($variants) > 0) {
+                $final_color = json_encode($variants);
+            } else if ($request->has('color')) {
+                $final_color = json_encode($request->color);
+            } else {
+                // keep old color if not submitted
+                $final_color = Product::where('id', $id)->value('color');
+            }
+
             Product::where('id', $id)->update([
                 'creater_id' => $userId,
                 'category_id' => $request->category_id,
@@ -677,6 +846,7 @@ class ProductController extends Controller
                 'brand_id' => $request->brand_id,
                 'model' => $request->model,
                 'image' => $imagePath,
+                'color' => $final_color,
                 'purchase_discount_percent' => $request->purchase_discount_percent ?? 0,
                 'sale_discount_percent' => $request->sale_discount_percent ?? 0,
                 'alert_quantity' => $request->alert_quantity,
@@ -969,5 +1139,50 @@ class ProductController extends Controller
             'is_active' => $product->is_active,
             'message'   => $product->is_active ? 'Product activated successfully.' : 'Product deactivated successfully.',
         ]);
+    }
+
+    /**
+     * Match a sale item to a specific variant based on size and color stored in color field.
+     */
+    private function matchSaleItemToVariant($saleItem, $variant)
+    {
+        $itemColor = $saleItem->color;
+        if (empty($itemColor)) {
+            return false;
+        }
+
+        $itemVariant = [];
+        $b64Decoded = base64_decode($itemColor, true);
+        if ($b64Decoded !== false) {
+            $json = json_decode($b64Decoded, true);
+            if (is_array($json)) {
+                $itemVariant = $json;
+            }
+        }
+        if (empty($itemVariant)) {
+            $json = json_decode($itemColor, true);
+            if (is_array($json)) {
+                $itemVariant = $json;
+            }
+        }
+
+        if (empty($itemVariant)) {
+            // Simple string comparison
+            return strtolower(trim($itemColor)) === strtolower(trim($variant['color'] ?? ''));
+        }
+
+        // Compare color and size
+        $vColor = strtolower(trim($variant['color'] ?? '-'));
+        $vSize = strtolower(trim($variant['size'] ?? '-'));
+
+        $itemVColor = strtolower(trim($itemVariant['color'] ?? ($itemVariant['color_val'] ?? '-')));
+        $itemVSize = strtolower(trim($itemVariant['size'] ?? ($itemVariant['size_val'] ?? '-')));
+
+        if ($vColor === '') $vColor = '-';
+        if ($vSize === '') $vSize = '-';
+        if ($itemVColor === '') $itemVColor = '-';
+        if ($itemVSize === '') $itemVSize = '-';
+
+        return $vColor === $itemVColor && $vSize === $itemVSize;
     }
 }

@@ -15,12 +15,12 @@
                 <div class="card-body">
                     <form id="SaleFilterForm" class="row g-2 align-items-end">
                         <div class="col-md-3">
-                            <label class="form-label">Start Date</label>
-                            <input type="text" name="start_date" id="start_date" class="form-control datepicker-custom">
+                            <label class="form-label">Start Date & Time</label>
+                            <input type="datetime-local" name="start_date" id="start_date" class="form-control">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">End Date</label>
-                            <input type="text" name="end_date" id="end_date" class="form-control datepicker-custom">
+                            <label class="form-label">End Date & Time</label>
+                            <input type="datetime-local" name="end_date" id="end_date" class="form-control">
                         </div>
                         <div class="col-md-2">
                             <button type="button" id="btnSearch" class="btn btn-primary w-100">Search</button>
@@ -44,7 +44,7 @@
                                 <thead class="bg-gray">
                                     <tr>
                                         <th>#</th>
-                                        <th>Date</th>
+                                        <th>Date & Time</th>
                                         <th>Invoice</th>
                                         <th>Customer</th>
                                         <th>Reference</th>
@@ -121,7 +121,7 @@
 
                     html += `<tr>
                     <td>${i+1}</td>
-                    <td>${s.created_at.split(" ")[0]}</td>
+                    <td>${s.created_at}</td>
                     <td>INVSLE-${s.id}</td>
                     <td>${s.customer_name ?? '-'}</td>
                     <td>${s.reference}</td>
@@ -152,10 +152,42 @@
 
     // Ensure DOM is loaded
     $(document).ready(function() {
+        // Initialize default dates based on shop shift (2:00 PM to 12:00 PM next day)
+        let now = new Date();
+        let startDt = new Date();
+        let endDt = new Date();
+
+        if (now.getHours() < 12) {
+            // Before noon: we are in the shift that started yesterday at 2 PM
+            startDt.setDate(now.getDate() - 1);
+            startDt.setHours(14, 0, 0, 0);
+            
+            endDt.setHours(12, 0, 0, 0); // ends today at 12 PM
+        } else {
+            // After noon: the shift started today at 2 PM
+            startDt.setHours(14, 0, 0, 0);
+            
+            endDt.setDate(now.getDate() + 1);
+            endDt.setHours(12, 0, 0, 0); // ends tomorrow at 12 PM
+        }
+
+        function formatDateTimeLocal(date) {
+            let year = date.getFullYear();
+            let month = String(date.getMonth() + 1).padStart(2, '0');
+            let day = String(date.getDate()).padStart(2, '0');
+            let hours = String(date.getHours()).padStart(2, '0');
+            let minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        $('#start_date').val(formatDateTimeLocal(startDt));
+        $('#end_date').val(formatDateTimeLocal(endDt));
+
+        // Auto trigger search
+        $('#btnSearch').trigger('click');
+
         // CSV export
         $(document).on('click', '#btnExportCsv', function() {
-            alert('ok'); // test ho jana chahiye
-
             let csv = [];
             $("#saleReport tr").each(function() {
                 let row = [];

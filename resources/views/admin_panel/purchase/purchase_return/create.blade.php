@@ -344,6 +344,7 @@
                                             value="{{ $item['size_mode'] ?? 'by_pieces' }}">
                                         <input type="hidden" name="pieces_per_m2[]" class="pieces-per-m2"
                                             value="{{ $item['pieces_per_m2'] ?? 0 }}">
+                                        <input type="hidden" name="color[]" value="{{ $item['color'] }}">
 
                                         <td>
                                             <input type="text" class="form-control fw-bold"

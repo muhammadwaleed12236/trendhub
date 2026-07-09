@@ -477,6 +477,7 @@ class PurchaseController extends Controller
                     'item_discount' => $discAmount, // Store calculated amount
                     'qty' => $qty,
                     'line_total' => $lineTotal, // Fixed logic
+                    'color' => $request->color[$i] ?? null, // Save variant details
 
                     // Snapshots
                     'size_mode' => $sizeModes[$i] ?? null,
@@ -1301,6 +1302,7 @@ class PurchaseController extends Controller
                 
                 'unit' => $item->unit ?? 'pc',
                 'discount' => $item->item_discount,
+                'color' => $item->color,
             ];
         }
         
@@ -1411,6 +1413,7 @@ class PurchaseController extends Controller
                     'item_discount' => $itemDisc,
                     'unit' => 'pc', // Default
                     'line_total' => $lineTotal,
+                    'color' => $request->color[$index] ?? null,
                 ]);
 
                 // Update Stock (DECREMENT)

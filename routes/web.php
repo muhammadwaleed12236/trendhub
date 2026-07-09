@@ -176,7 +176,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/customer-payments/{id}', [CustomerController::class, 'destroy_payment'])->name('customer.payments.destroy');
 
     // Vendor Routes
-    Route::get('/vendor', [VendorController::class, 'index'])->middleware('permission:vendors.view')->name('vendors.index');
+    Route::get('/vendor', [VendorController::class,'index'])->middleware('permission:vendors.view')->name('vendors.index');
     Route::post('/vendor/store', [VendorController::class, 'store'])->name('vendors.store.ajax')->middleware('permission:vendors.create|vendors.edit');
     Route::get('/vendor/delete/{id}', [VendorController::class, 'delete'])->middleware('permission:vendors.delete');
     Route::get('/vendors-ledger', [VendorController::class, 'vendors_ledger'])->middleware('permission:vendors.view')->name('vendors-ledger');
@@ -286,6 +286,7 @@ Route::middleware('auth')->group(function () {
     // Route::get('booking/system', [SaleController::class,'booking-system'])->name('booking.index');
     Route::get('sale', [SaleController::class, 'index'])->middleware('permission:sales.view')->name('sale.index');
     Route::get('sale/create', [SaleController::class, 'addsale'])->middleware('permission:sales.create')->name('sale.add');
+    Route::get('pos', [App\Http\Controllers\POSController::class, 'index'])->middleware('permission:sales.create')->name('pos.index');
     Route::get('/products/search', [ProductController::class, 'searchProducts'])->name('products.search');
     Route::get('/search-product-name', [SaleController::class, 'searchpname'])->name('search-product-name');
     Route::post('/sales/store', [SaleController::class, 'store'])->middleware('permission:sales.create')->name('sales.store');
@@ -441,6 +442,11 @@ Route::middleware('auth')->group(function () {
 
     // Checkbook / Cashbook
     Route::get('/checkbook', [\App\Http\Controllers\CheckbookController::class, 'index'])->name('checkbook.index');
+    Route::get('/checkbook/transactions', [\App\Http\Controllers\CheckbookController::class, 'transactions'])->name('checkbook.transactions');
+    Route::post('/day-closing/open', [\App\Http\Controllers\CheckbookController::class, 'openDay'])->name('day-closing.open');
+    Route::post('/day-closing/close', [\App\Http\Controllers\CheckbookController::class, 'closeDay'])->name('day-closing.close');
+    Route::post('/drawer-transaction/store', [\App\Http\Controllers\CheckbookController::class, 'storeDrawerTransaction'])->name('drawer-transaction.store');
+    Route::post('/drawer-transaction/{id}/return', [\App\Http\Controllers\CheckbookController::class, 'returnDrawerTransaction'])->name('drawer-transaction.return');
 
 });
 // Temporary debug route to inspect authenticated user's roles & permissions (remove after use)

@@ -35,7 +35,7 @@
                                     </tr>
                                     <tr>
                                         <td class="fw-bold">Customer:</td>
-                                        <td>{{ $return->customer->name ?? 'N/A' }}</td>
+                                        <td>{{ $return->customer->customer_name ?? $return->customer->name ?? 'N/A' }}</td>
                                     </tr>
                                     <tr>
                                         <td class="fw-bold">Warehouse:</td>
@@ -100,8 +100,33 @@
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
                                             <td>
-                                                <strong>{{ $item->product->product_name ?? 'N/A' }}</strong><br>
-                                                <small class="text-muted">{{ $item->product->product_code ?? '' }}</small>
+                                                <strong>{{ $item->product->item_name ?? $item->product->product_name ?? 'N/A' }}</strong>
+                                                @php
+                                                    $variant = [];
+                                                    if (!empty($item->color)) {
+                                                        $b64Decoded = base64_decode($item->color, true);
+                                                        if ($b64Decoded !== false) {
+                                                            $json = json_decode($b64Decoded, true);
+                                                            if (is_array($json)) {
+                                                                $variant = $json;
+                                                            }
+                                                        }
+                                                        if (empty($variant)) {
+                                                            $json = json_decode($item->color, true);
+                                                            if (is_array($json)) {
+                                                                $variant = $json;
+                                                            }
+                                                        }
+                                                    }
+                                                    $vName = $variant['name'] ?? '';
+                                                    $vSize = $variant['size'] ?? ($variant['size_val'] ?? '-');
+                                                    $vColor = $variant['color'] ?? ($variant['color_val'] ?? '-');
+                                                @endphp
+                                                @if (!empty($vName))
+                                                    <span class="badge bg-light text-dark border ms-1">{{ $vName }} ({{ $vSize }} | {{ $vColor }})</span>
+                                                @endif
+                                                <br>
+                                                <small class="text-muted">{{ $item->product->item_code ?? $item->product->product_code ?? '' }}</small>
                                             </td>
                                             <td class="text-center">{{ number_format($item->boxes, 2) }}</td>
                                             <td class="text-center">{{ $item->loose_pieces }}</td>

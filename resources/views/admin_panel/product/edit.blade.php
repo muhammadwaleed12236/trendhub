@@ -251,30 +251,33 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label-pro">Model / Series</label>
-                                    <input type="text" class="form-control-pro" name="model" value="{{ $product->model }}" placeholder="Optional">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-pro">Colors</label>
-                                    <select class="form-control-pro" name="color[]" id="color-select" multiple="multiple" style="width: 100%">
-                                        @php
-                                            $colors = is_string($product->color) ? json_decode($product->color, true) : $product->color ?? [];
-                                            if (!is_array($colors)) {
-                                                $colors = [];
-                                            }
-                                        @endphp
-                                        <option value="Black" {{ in_array('Black', $colors) ? 'selected' : '' }}>Black</option>
-                                        <option value="White" {{ in_array('White', $colors) ? 'selected' : '' }}>White</option>
-                                        <option value="Red" {{ in_array('Red', $colors) ? 'selected' : '' }}>Red</option>
-                                        <option value="Blue" {{ in_array('Blue', $colors) ? 'selected' : '' }}>Blue</option>
-                                        <option value="Beige" {{ in_array('Beige', $colors) ? 'selected' : '' }}>Beige</option>
-                                        @foreach ($colors as $c)
-                                            @if (!in_array($c, ['Black', 'White', 'Red', 'Blue', 'Beige']))
-                                                <option value="{{ $c }}" selected>{{ $c }}</option>
-                                            @endif
-                                        @endforeach
-                                    </select>
+                                <div class="col-12 mt-3 pt-3 border-top">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="form-label-pro text-primary mb-0">Product Variants (Optional)</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="enableVariantsBtn">+ Add Variants</button>
+                                    </div>
+                                    <div id="variantsContainer" class="d-none">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-sm align-middle mb-1" id="variantsTable">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th style="width: 150px;">Variant Name</th>
+                                                        <th>Size</th>
+                                                        <th>Color</th>
+                                                        <th style="width: 100px;">Stock</th>
+                                                        <th style="width: 100px;">Sale Price</th>
+                                                        <th style="width: 100px;">Purch Price</th>
+                                                        <th style="width: 80px;">Alert</th>
+                                                        <th style="width: 140px;">Barcode</th>
+                                                        <th style="width: 90px; text-align:center;">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="variantsBody">
+                                                    <!-- rows injected by JS -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
 
                             </div>
@@ -616,6 +619,38 @@
             // AJAX Submission
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
+                // --- Sync Variants data to hidden main fields for backend compatibility ---
+                const vStocks = document.querySelectorAll('input[name="variant_stock[]"]');
+                const vSale = document.querySelectorAll('input[name="variant_sale_price[]"]');
+                const vPurch = document.querySelectorAll('input[name="variant_purchase_price[]"]');
+                const vAlert = document.querySelectorAll('input[name="variant_alert_qty[]"]');
+
+                let totalStock = 0;
+                vStocks.forEach(el => totalStock += (parseFloat(el.value) || 0));
+
+                let firstSale = vSale.length > 0 ? (parseFloat(vSale[0].value) || 0) : 0;
+                let firstPurch = vPurch.length > 0 ? (parseFloat(vPurch[0].value) || 0) : 0;
+                let firstAlert = vAlert.length > 0 ? (parseFloat(vAlert[0].value) || 0) : 0;
+
+                const modeEl = document.querySelector('input[name="size_mode"]:checked');
+                const mode = modeEl ? modeEl.value : 'by_pieces';
+                
+                if (vStocks.length > 0) {
+                    if(mode === 'by_cartons') {
+                        document.getElementById('boxes_quantity').value = totalStock;
+                        document.getElementById('pieces_per_box').value = 1;
+                        document.getElementById('loose_pieces').value = 0;
+                        document.getElementById('piece_quantity').value = 0;
+                    } else {
+                        document.getElementById('piece_quantity').value = totalStock;
+                        document.getElementById('boxes_quantity').value = 0;
+                    }
+                    document.getElementById('sale_price_per_box').value = firstSale;
+                    document.getElementById('purchase_price_per_piece').value = firstPurch;
+                    document.getElementById('alert_carton_quantity').value = firstAlert;
+                }
+                // ------------------------------------------------------------------------
+
                 const btn = document.querySelector('button[type="submit"]');
                 const originalContent = btn.innerHTML;
                 btn.innerHTML = '<i class="las la-spinner la-spin"></i> Updating...';
@@ -651,10 +686,7 @@
             const barBtn = document.getElementById('generateBarcodeBtn');
             const barcodeUrl = '{{ route('generate-barcode-image') }}';
             
-            barBtn.addEventListener('click', () => fetch(barcodeUrl).then(r => r.json()).then(d => barIn.value = d.barcode_number));
-
-            // Select2
-            $('#color-select').select2({ placeholder: "Select Colors", tags: true });
+            if(barBtn) barBtn.addEventListener('click', () => fetch(barcodeUrl).then(r => r.json()).then(d => barIn.value = d.barcode_number));
             
             $('#category-dropdown').on('change', function() {
                 var cid = $(this).val();
@@ -703,6 +735,99 @@
             handleQuickAdd('categoryModal', '#category-dropdown, #subcategoryModal select[name="category_id"]');
             handleQuickAdd('subcategoryModal', '#subcategory-dropdown');
             handleQuickAdd('brandModal', 'select[name="brand_id"]');
+
+            // Variants Logic
+            const enableVariantsBtn = document.getElementById('enableVariantsBtn');
+            const variantsContainer = document.getElementById('variantsContainer');
+            const variantsBody = document.getElementById('variantsBody');
+
+            function generateRandomBarcode() {
+                return Math.floor(100000 + Math.random() * 900000).toString();
+            }
+
+            function addVariantRow(v = null) {
+                const tr = document.createElement('tr');
+                const productName = document.querySelector('input[name="product_name"]').value || '';
+                
+                const nameVal = v ? (v.name || '') : productName;
+                const sizeVal = v ? (v.size || '') : '';
+                const colorVal = v ? (v.color || '') : '';
+                const stockVal = v ? (v.stock || 0) : '';
+                const saleVal = v ? (v.sale_price || 0) : '';
+                const purchVal = v ? (v.purch_price || 0) : '';
+                const alertVal = v ? (v.alert || 0) : '';
+                const barcodeVal = v ? (v.barcode || '') : generateRandomBarcode();
+
+                tr.innerHTML = `
+                    <td><input type="text" class="form-control-pro form-control-sm" name="variant_name[]" value="${nameVal}" placeholder="Name"></td>
+                    <td><input type="text" class="form-control-pro form-control-sm" name="variant_size[]" value="${sizeVal}" placeholder="Size"></td>
+                    <td><input type="text" class="form-control-pro form-control-sm" name="variant_color[]" value="${colorVal}" placeholder="Color"></td>
+                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_stock[]" value="${stockVal}" placeholder="0"></td>
+                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_sale_price[]" value="${saleVal}" step="0.01" placeholder="0.00"></td>
+                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_purchase_price[]" value="${purchVal}" step="0.01" placeholder="0.00"></td>
+                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_alert_qty[]" value="${alertVal}" placeholder="0"></td>
+                    <td>
+                        <div class="d-flex">
+                            <input type="text" class="form-control-pro form-control-sm" name="variant_barcode[]" value="${barcodeVal}" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                            <button type="button" class="btn btn-sm btn-light border gen-var-barcode px-2" style="border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0;" title="Generate New"><i class="las la-sync-alt"></i></button>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-success add-var-btn px-2 py-1" title="Add"><i class="las la-check"></i></button>
+                        <button type="button" class="btn btn-danger remove-var-btn px-2 py-1" title="Remove"><i class="las la-times"></i></button>
+                    </td>
+                `;
+                variantsBody.appendChild(tr);
+            }
+
+            enableVariantsBtn.addEventListener('click', function() {
+                if (variantsContainer.classList.contains('d-none')) {
+                    variantsContainer.classList.remove('d-none');
+                    this.innerHTML = '- Remove Variants';
+                    this.classList.replace('btn-outline-primary', 'btn-outline-danger');
+                    if(variantsBody.children.length === 0) addVariantRow();
+                } else {
+                    variantsContainer.classList.add('d-none');
+                    this.innerHTML = '+ Add Variants';
+                    this.classList.replace('btn-outline-danger', 'btn-outline-primary');
+                    variantsBody.innerHTML = ''; // clear all rows
+                }
+            });
+
+            variantsBody.addEventListener('click', function(e) {
+                const addBtn = e.target.closest('.add-var-btn');
+                const remBtn = e.target.closest('.remove-var-btn');
+                const genBtn = e.target.closest('.gen-var-barcode');
+
+                if (addBtn) {
+                    addVariantRow();
+                } else if (remBtn) {
+                    const row = remBtn.closest('tr');
+                    if (variantsBody.children.length > 1) {
+                        row.remove();
+                    } else {
+                        // If it's the last row, clear inputs instead of removing
+                        row.querySelectorAll('input').forEach(inp => inp.value = '');
+                        row.querySelector('input[name="variant_barcode[]"]').value = generateRandomBarcode();
+                    }
+                } else if (genBtn) {
+                    const input = genBtn.closest('td').querySelector('input');
+                    input.value = generateRandomBarcode();
+                }
+            });
+
+            // Initialize existing variants
+            const existingColorStr = `{!! addslashes($product->color ?? 'null') !!}`;
+            try {
+                const parsed = JSON.parse(existingColorStr);
+                if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object') {
+                    // It's the new variants format
+                    enableVariantsBtn.click(); // opens the container
+                    variantsBody.innerHTML = ''; // clear default empty row
+                    parsed.forEach(v => addVariantRow(v));
+                }
+            } catch(e) {}
+
         });
     </script>
 @endsection

@@ -218,7 +218,7 @@
             <span>{{ $sale->created_at->format('d/m/Y h:i A') }}</span>
         </div>
         <div class="meta-info">
-            <span><strong>Deliver To:</strong> {{ Str::limit($sale->customer_relation->customer_name ?? 'Walking Customer', 20) }}</span>
+            <span><strong>Deliver To:</strong> {{ Str::limit($sale->walkin_name ?? ($sale->customer_relation->customer_name ?? 'Walking Customer'), 20) }}</span>
         </div>
         @if($sale->customer_relation?->address)
         <div class="meta-info text-muted">

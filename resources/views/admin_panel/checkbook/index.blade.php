@@ -2,12 +2,10 @@
 
 @section('content')
     <style>
-        /* Premium Page Background */
         body {
             background-color: #f4f7fe;
         }
 
-        /* Minimize left/right spacing as requested */
         .main-content-inner {
             padding-left: 15px !important;
             padding-right: 15px !important;
@@ -17,59 +15,45 @@
             padding-right: 0 !important;
         }
 
-        /* Ultra Premium Container Styling */
-        .premium-card {
-            border: none !important;
-            border-radius: 20px !important;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03) !important;
-            background-color: #ffffff;
-            margin-top: 15px;
+        /* Premium Box Styling */
+        .closing-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.01);
+            transition: all 0.3s ease;
+        }
+
+        .closing-box:hover {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        }
+
+        /* KPI Micro Cards */
+        .kpi-card {
+            border-radius: 16px;
+            padding: 20px;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            position: relative;
             overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        
-        /* Glassmorphism & Clean Filter Panel */
-        .filter-panel {
-            background: #ffffff !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 16px !important;
-            padding: 24px !important;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02) !important;
-            transition: box-shadow 0.3s ease;
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.1);
         }
-        
-        .filter-panel:hover {
-            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.05) !important;
-        }
-        
-        .filter-panel label {
-            font-size: 11px;
-            font-weight: 800 !important;
-            color: #64748b !important;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin-bottom: 8px;
-        }
-        
-        .filter-panel .form-control,
-        .filter-panel .form-select {
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 10px !important;
-            font-weight: 500 !important;
-            color: #1e293b !important;
-            background-color: #f8fafc !important;
-            padding: 10px 14px !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            height: auto !important;
-        }
-        
-        .filter-panel .form-control:focus,
-        .filter-panel .form-select:focus {
-            background-color: #ffffff !important;
-            border-color: #0f172a !important;
-            box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.1) !important;
-        }
-        
-        /* Sleek Black Buttons */
+
+        .kpi-card.opening { background: linear-gradient(135deg, #475569 0%, #1e293b 100%); }
+        .kpi-card.inflows { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
+        .kpi-card.outflows { background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%); }
+        .kpi-card.expected { background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); }
+
+        .kpi-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.85; margin-bottom: 6px; }
+        .kpi-value { font-size: 24px; font-weight: 800; }
+
         .btn-premium-primary {
             background: linear-gradient(135deg, #1e293b, #000000) !important;
             border: none !important;
@@ -78,248 +62,299 @@
             border-radius: 10px !important;
             height: 44px !important;
             padding: 0 24px !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .btn-premium-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2) !important;
         }
-        
-        .btn-premium-secondary {
-            background-color: #ffffff !important;
-            border: 1px solid #cbd5e1 !important;
-            color: #0f172a !important;
+
+        .btn-premium-success {
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            border: none !important;
+            color: #ffffff !important;
             font-weight: 700 !important;
             border-radius: 10px !important;
             height: 44px !important;
             padding: 0 24px !important;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
-        .btn-premium-secondary:hover {
-            background-color: #0f172a !important;
-            color: #ffffff !important;
-            border-color: #0f172a !important;
-            transform: translateY(-1px);
-        }
 
-        /* Modern Spaced Table Styling */
-        .table-responsive {
-            border-radius: 12px !important;
-            box-shadow: 0 0 0 1px #e2e8f0;
+        .btn-premium-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(16, 185, 129, 0.2) !important;
         }
 
         .premium-table {
             border: none !important;
-            margin-bottom: 0 !important;
         }
         
         .premium-table thead th {
-            background-color: #0f172a !important; /* Premium Black Header */
+            background-color: #0f172a !important;
             color: #ffffff !important;
             font-weight: 800 !important;
             text-transform: uppercase;
             font-size: 11px;
             letter-spacing: 0.8px;
-            border-bottom: none !important;
-            border-right: none !important;
-            border-left: none !important;
-            padding: 18px 16px !important;
+            padding: 16px 12px !important;
         }
         
         .premium-table tbody td {
             border-bottom: 1px solid #f1f5f9 !important;
-            border-right: none !important;
-            border-left: none !important;
-            padding: 16px !important;
-            font-size: 13.5px !important;
+            padding: 14px 12px !important;
+            font-size: 13px !important;
             color: #334155 !important;
-            background-color: #ffffff;
-            transition: background-color 0.2s;
-        }
-        
-        .premium-table tbody tr:hover td {
-            background-color: #f8fafc !important;
-        }
-        
-        /* Interactive Summary Cards */
-        .summary-card {
-            border-radius: 20px;
-            padding: 24px;
-            color: #fff;
-            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1;
-            border: 1px solid rgba(255,255,255,0.15);
-        }
-        
-        .summary-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
-            z-index: -1;
-        }
-        
-        .summary-card:hover {
-            transform: translateY(-8px) scale(1.01);
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15), 0 10px 10px -5px rgba(0,0,0,0.1);
         }
 
-        .summary-card.total-in { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
-        .summary-card.total-out { background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%); }
-        .summary-card.net-balance { background: linear-gradient(135deg, #1e293b 0%, #000000 100%); } /* Executive Black */
-        .summary-card.cash-in-hand { background: linear-gradient(135deg, #d97706 0%, #fbbf24 100%); }
-
-        .summary-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; margin-bottom: 6px; }
-        .summary-value { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
-        
-        .summary-icon { 
-            font-size: 50px; 
-            opacity: 0.15; 
-            position: absolute; 
-            right: -10px; 
-            bottom: -15px; 
-            transform: rotate(-15deg); 
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+        .btn-xs {
+            padding: 3px 8px !important;
+            font-size: 11px !important;
+            border-radius: 6px !important;
         }
-
-        .summary-card:hover .summary-icon {
-            transform: rotate(0deg) scale(1.1);
-            opacity: 0.25;
-        }
-
-        /* Title section */
-        .page-title-box h4 { font-size: 22px; letter-spacing: -0.5px; color: #0f172a !important; }
     </style>
 
     <div class="main-content">
         <div class="main-content-inner">
             <div class="container-fluid py-4">
 
-                <div class="d-flex justify-content-between align-items-center mb-4 page-title-box">
+                {{-- Page Header --}}
+                <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h4 class="fw-bolder mb-1 text-dark">Cashbook / Checkbook</h4>
-                        <p class="text-secondary mb-0" style="font-size: 14px;">Real-time view of all cash and bank transactions</p>
+                        <h4 class="fw-bolder mb-1 text-dark">Day & Shift Closing Manager</h4>
+                        <p class="text-secondary mb-0" style="font-size: 14px;">Open, manage drawer flows, and close business days</p>
+                    </div>
+                    <div>
+                        <a href="{{ route('checkbook.transactions') }}" class="btn btn-outline-dark fw-bold d-flex align-items-center" style="height:44px; border-radius:10px;">
+                            <i class="fas fa-history me-2"></i> View Detailed Cashbook Logs
+                        </a>
                     </div>
                 </div>
 
-                {{-- Summary Cards --}}
-                <div class="row mb-4" id="summaryCards">
-                    <div class="col-md-3">
-                        <div class="summary-card total-in mb-3 mb-md-0">
-                            <div>
-                                <div class="summary-title">Total In (Receipts)</div>
-                                <div class="summary-value" id="valTotalIn">{{ number_format($totalIn, 2) }}</div>
+                @if ($activeShift)
+                    {{-- 1. Active Shift KPI Grid --}}
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="kpi-card opening">
+                                <div class="kpi-title">Opening Balance</div>
+                                <div class="kpi-value">{{ number_format($activeShift->opening_balance, 2) }}</div>
                             </div>
-                            <i class="fas fa-arrow-down summary-icon"></i>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card inflows">
+                                <div class="kpi-title">Live Inflows (Sales)</div>
+                                <div class="kpi-value">+{{ number_format($activeShift->inflow_amount + $activeShift->manual_in, 2) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card outflows">
+                                <div class="kpi-title">Live Outflows (Expenses)</div>
+                                <div class="kpi-value">-{{ number_format($activeShift->outflow_amount + $activeShift->manual_out, 2) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card expected">
+                                <div class="kpi-title">Expected Cash</div>
+                                <div class="kpi-value">{{ number_format($activeShift->expected_balance, 2) }}</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="summary-card total-out mb-3 mb-md-0">
-                            <div>
-                                <div class="summary-title">Total Out (Payments)</div>
-                                <div class="summary-value" id="valTotalOut">{{ number_format($totalOut, 2) }}</div>
-                            </div>
-                            <i class="fas fa-arrow-up summary-icon"></i>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="summary-card net-balance mb-3 mb-md-0">
-                            <div>
-                                <div class="summary-title">Net Balance</div>
-                                <div class="summary-value" id="valNetBalance">{{ number_format($netBalance, 2) }}</div>
-                            </div>
-                            <i class="fas fa-balance-scale summary-icon"></i>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="summary-card cash-in-hand mb-3 mb-md-0">
-                            <div>
-                                <div class="summary-title">Total Cash in Hand</div>
-                                <div class="summary-value" id="valCashInHand">{{ number_format($cashInHand, 2) }}</div>
-                            </div>
-                            <i class="fas fa-wallet summary-icon"></i>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="card premium-card">
-                    <div class="card-body p-4">
-                        {{-- AJAX Filter Panel --}}
-                        <div class="card filter-panel mb-4">
-                            <div class="card-body p-0">
-                                <form id="filterForm" class="row g-3 align-items-end" autocomplete="off">
-                                    <div class="col-md-2">
-                                        <label class="form-label mb-1">Period</label>
-                                        <select class="form-select" name="period" id="filter_period">
-                                            <option value="">All Time</option>
-                                            <option value="day">Today</option>
-                                            <option value="week">This Week</option>
-                                            <option value="month">This Month</option>
-                                            <option value="year">This Year</option>
-                                            <option value="custom">Custom Range</option>
+                    {{-- 2. Adjustment / Shortage Alert Box --}}
+                    <div class="closing-box mb-4 bg-light d-flex justify-content-between align-items-center border">
+                        <div>
+                            <span class="text-muted d-block text-uppercase fw-bold mb-1" style="font-size:0.7rem; letter-spacing:0.5px;">Live Adjustment / Difference</span>
+                            <strong class="fs-4 text-dark" id="liveDiffVal">0.00</strong>
+                        </div>
+                        <span id="diffIndicator" class="badge bg-secondary rounded-pill px-4 py-2 fs-6">Balanced</span>
+                    </div>
+
+                    {{-- 3. Drawer Operations & Close Shift Row --}}
+                    <div class="row g-3 mb-4">
+                        <!-- Drawer Operations -->
+                        <div class="col-md-4">
+                            <div class="closing-box h-100">
+                                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-coins text-primary me-2"></i>Add Drawer Transaction</h6>
+                                <form action="{{ route('drawer-transaction.store') }}" method="POST" autocomplete="off">
+                                    @csrf
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1 fw-bold text-secondary" style="font-size:0.75rem;">Transaction Type</label>
+                                        <select name="type" class="form-select text-xs" style="height:40px; border-radius:8px;" required>
+                                            <option value="out">Cash Out (Withdrawal / Pay)</option>
+                                            <option value="in">Cash In (Deposit / Add)</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2 custom-date-group" style="display: none;">
-                                        <label class="form-label mb-1">From Date</label>
-                                        <input type="text" class="form-control datepicker-custom bg-white" name="from_date" id="filter_from_date" placeholder="dd/mm/yyyy">
-                                    </div>
-                                    <div class="col-md-2 custom-date-group" style="display: none;">
-                                        <label class="form-label mb-1">To Date</label>
-                                        <input type="text" class="form-control datepicker-custom bg-white" name="to_date" id="filter_to_date" placeholder="dd/mm/yyyy">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label mb-1">Account</label>
-                                        <select class="form-select" name="account_id" id="filter_account_id">
-                                            <option value="">All Cash/Bank Accounts</option>
-                                            @foreach ($accounts as $acc)
-                                                <option value="{{ $acc->id }}">{{ $acc->title }}</option>
-                                            @endforeach
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1 fw-bold text-secondary" style="font-size:0.75rem;">Category</label>
+                                        <select name="category" class="form-select text-xs" style="height:40px; border-radius:8px;" required>
+                                            <option value="temporary_market">Temporary Market Borrow</option>
+                                            <option value="expense">Direct Expense</option>
+                                            <option value="owner_withdrawal">Owner Withdrawal</option>
+                                            <option value="other">Other</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label mb-1">Type</label>
-                                        <select class="form-select" name="type" id="filter_type">
-                                            <option value="">All (In/Out)</option>
-                                            <option value="in">Money In (Debit)</option>
-                                            <option value="out">Money Out (Credit)</option>
-                                        </select>
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1 fw-bold text-secondary" style="font-size:0.75rem;">Amount <span class="text-danger">*</span></label>
+                                        <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" style="height:40px; border-radius:8px;" required>
                                     </div>
-                                    <div class="col-md-3 d-flex justify-content-end gap-2 mt-3">
-                                        <button type="button" class="btn btn-premium-secondary" id="btnReset">
-                                            <i class="fas fa-undo me-1"></i>Reset
-                                        </button>
-                                        <button type="submit" class="btn btn-premium-primary" id="btnSearch">
-                                            <i class="fas fa-search me-1"></i>Search
-                                        </button>
+                                    <div class="mb-3">
+                                        <label class="form-label mb-1 fw-bold text-secondary" style="font-size:0.75rem;">Description / Person Name</label>
+                                        <input type="text" name="description" class="form-control" placeholder="e.g. Aslam borrow..." style="height:40px; border-radius:8px;">
                                     </div>
+                                    <button type="submit" class="btn btn-premium-primary w-100 fw-bold" style="height:40px; border-radius:8px;"><i class="fas fa-save me-1"></i>Save Transaction</button>
                                 </form>
                             </div>
                         </div>
 
+                        <!-- Current Shift Logs -->
+                        <div class="col-md-4">
+                            <div class="closing-box h-100 d-flex flex-column">
+                                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-list text-secondary me-2"></i>Drawer Logs (This Shift)</h6>
+                                <div class="flex-grow-1" style="max-height: 290px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                                    @forelse($drawerLogs as $log)
+                                        <div class="d-flex justify-content-between align-items-center border-bottom p-2" style="font-size:0.8rem;">
+                                            <div>
+                                                <span class="badge {{ $log->type == 'in' ? 'bg-success' : 'bg-danger' }} me-1" style="font-size:0.6rem; padding: 2px 4px;">
+                                                    {{ $log->type == 'in' ? 'IN' : 'OUT' }}
+                                                </span>
+                                                <strong class="text-dark">{{ number_format($log->amount, 2) }}</strong>
+                                                <div class="text-secondary small mt-0.5" style="font-size: 0.72rem;">
+                                                    {{ str_replace('_', ' ', $log->category) }} - {{ $log->description }}
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                @if($log->status == 'pending')
+                                                    <form action="{{ route('drawer-transaction.return', $log->id) }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-xs btn-success fw-bold text-white"><i class="fas fa-reply me-1"></i>Return</button>
+                                                    </form>
+                                                @elseif($log->status == 'returned')
+                                                    <span class="badge bg-success rounded-pill" style="font-size:0.6rem;">Returned</span>
+                                                @else
+                                                    <span class="badge bg-light text-dark rounded-pill border" style="font-size:0.6rem;">Settled</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="text-muted text-center py-5" style="font-size:0.75rem;">No drawer movements logged in this shift.</div>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Close Day/Shift Form -->
+                        <div class="col-md-4">
+                            <div class="closing-box h-100">
+                                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-lock text-danger me-2"></i>Close Shift</h6>
+                                <form action="{{ route('day-closing.close') }}" method="POST" autocomplete="off">
+                                    @csrf
+                                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                                        <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.65rem;">Opened At</small>
+                                        <strong class="text-dark"><i class="far fa-calendar-alt text-secondary me-1"></i> {{ $activeShift->opened_at->format('d/m/Y h:i A') }}</strong>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label mb-1 fw-bold text-secondary" style="font-size:0.75rem;">Actual Drawer Cash <span class="text-danger">*</span></label>
+                                        <input type="number" step="0.01" class="form-control fw-bold fs-5" name="actual_balance" id="actual_balance" placeholder="0.00" required style="height:44px; border-radius:8px;">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label mb-1 fw-bold text-secondary" style="font-size:0.75rem;">Closing Notes</label>
+                                        <textarea class="form-control" name="remarks" rows="2" placeholder="Describe any shortages or adjustments..." style="border-radius:8px;"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-danger w-100 fw-bold" style="border-radius:10px; height:44px;"><i class="fas fa-power-off me-2"></i>Close Shift & Save</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                @else
+                    {{-- Shift is Closed, show Opening Box --}}
+                    <div class="row mb-4">
+                        <div class="col-md-6 mx-auto">
+                            <div class="closing-box">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="fw-bold text-dark mb-0"><i class="fas fa-store-slash text-danger me-2"></i>Day / Shift Closed</h5>
+                                    <span class="badge bg-danger rounded-pill px-3 py-2">Closed</span>
+                                </div>
+                                <p class="text-muted small mb-4">A shift is not currently active. Specify the starting opening cash to open a new shift and start selling.</p>
+                                
+                                <form action="{{ route('day-closing.open') }}" method="POST" autocomplete="off">
+                                    @csrf
+
+                                    @if($pendingReturns->isNotEmpty())
+                                        <div class="mb-3 p-3 border rounded-3 bg-light">
+                                            <label class="form-label mb-2 fw-bold text-danger d-block" style="font-size:0.75rem;"><i class="fas fa-undo me-1"></i> Pending Market Returns (Select to add to Opening Balance):</label>
+                                            <div style="max-height: 120px; overflow-y: auto;">
+                                                @foreach($pendingReturns as $pr)
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" name="return_ids[]" value="{{ $pr->id }}" id="return_id_{{ $pr->id }}">
+                                                        <label class="form-check-label text-dark fw-semibold" style="font-size: 13px; cursor: pointer;" for="return_id_{{ $pr->id }}">
+                                                            <span class="text-danger fw-bold">{{ number_format($pr->amount, 2) }}</span> - {{ $pr->description }}
+                                                        </label>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <div class="mb-4">
+                                        <label class="form-label mb-1 fw-bold text-secondary" style="font-size:0.75rem;">Opening Cash/Bank Balance <span class="text-danger">*</span></label>
+                                        <input type="number" step="0.01" class="form-control fw-bold fs-5" name="opening_balance" placeholder="0.00" value="0.00" required style="height: 48px; border-radius: 8px;">
+                                    </div>
+                                    <button type="submit" class="btn btn-premium-success w-100 fw-bold" style="border-radius:10px; height:48px;"><i class="fas fa-play me-2"></i>Open New Day/Shift</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                {{-- 4. Date-wise closing history --}}
+                <div class="card premium-card">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="fas fa-history text-secondary me-2"></i>Past Day Closing Records</h5>
                         <div class="table-responsive">
-                            <table id="checkbook-table" class="table table-hover align-middle datanew premium-table" style="width:100%">
+                            <table id="closings-history-table" class="table table-hover align-middle datanew premium-table" style="width:100%">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th class="py-3 ps-3 rounded-start text-secondary fw-semibold text-uppercase small">Date</th>
-                                        <th class="py-3 text-secondary fw-semibold text-uppercase small">Description</th>
-                                        <th class="py-3 text-secondary fw-semibold text-uppercase small">Account</th>
-                                        <th class="py-3 text-secondary fw-semibold text-uppercase small">Source</th>
-                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">In (Debit)</th>
-                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Out (Credit)</th>
-                                        <th class="py-3 pe-3 rounded-end text-secondary fw-semibold text-uppercase small text-end">Running Bal.</th>
+                                        <th class="py-3 ps-3 text-secondary fw-semibold text-uppercase small">Shift Interval</th>
+                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Opening</th>
+                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Inflows</th>
+                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Outflows</th>
+                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Expected</th>
+                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Actual</th>
+                                        <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Adjustment / Diff</th>
+                                        <th class="py-3 pe-3 text-secondary fw-semibold text-uppercase small">Remarks</th>
                                     </tr>
                                 </thead>
-                                <tbody id="checkbookTableBody">
-                                    @include('admin_panel.checkbook.partials.table_body')
+                                <tbody>
+                                    @forelse ($closings as $c)
+                                        <tr>
+                                            <td class="ps-3">
+                                                <div class="fw-bold text-dark" style="font-size:13px;">Opened: {{ $c->opened_at->format('d/m/Y h:i A') }}</div>
+                                                <div class="text-muted mt-1" style="font-size:12px;">Closed: {{ $c->closed_at->format('d/m/Y h:i A') }}</div>
+                                            </td>
+                                            <td class="text-end fw-bold">{{ number_format($c->opening_balance, 2) }}</td>
+                                            <td class="text-end text-success fw-bold">+{{ number_format($c->inflow_amount, 2) }}</td>
+                                            <td class="text-end text-danger fw-bold">-{{ number_format($c->outflow_amount, 2) }}</td>
+                                            <td class="text-end fw-bold">{{ number_format($c->expected_balance, 2) }}</td>
+                                            <td class="text-end fw-bold text-primary">{{ number_format($c->actual_balance, 2) }}</td>
+                                            <td class="text-end">
+                                                @if ($c->difference == 0)
+                                                    <span class="badge bg-success rounded-pill px-2 py-1">0.00 (Balanced)</span>
+                                                @elseif ($c->difference > 0)
+                                                    <span class="badge bg-primary rounded-pill px-2 py-1">+{{ number_format($c->difference, 2) }} (Excess)</span>
+                                                @else
+                                                    <span class="badge bg-danger rounded-pill px-2 py-1">{{ number_format($c->difference, 2) }} (Shortage)</span>
+                                                @endif
+                                            </td>
+                                            <td class="pe-3 text-secondary" style="font-size:13px; max-width:200px; white-space:normal; word-wrap:break-word;">
+                                                {{ $c->remarks ?? '-' }}
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted py-4">No closing history saved yet.</td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -332,85 +367,40 @@
 @endsection
 
 @section('js')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
-            // Toggle custom date range
-            $('#filter_period').on('change', function() {
-                if ($(this).val() === 'custom') {
-                    $('.custom-date-group').show();
+            // Live Difference Calculation
+            $(document).on('input', '#actual_balance', function() {
+                const expected = parseFloat('{{ $activeShift->expected_balance ?? 0 }}') || 0;
+                const actual = parseFloat($(this).val()) || 0;
+                const diff = actual - expected;
+                
+                $('#liveDiffVal').text((diff >= 0 ? '+' : '') + diff.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                
+                const $indicator = $('#diffIndicator');
+                if (diff === 0) {
+                    $indicator.text('Balanced').removeClass().addClass('badge bg-success rounded-pill px-4 py-2 fs-6');
+                } else if (diff > 0) {
+                    $indicator.text('Excess').removeClass().addClass('badge bg-primary rounded-pill px-4 py-2 fs-6');
                 } else {
-                    $('.custom-date-group').hide();
-                    $('#filter_from_date').val('');
-                    $('#filter_to_date').val('');
+                    $indicator.text('Shortage').removeClass().addClass('badge bg-danger rounded-pill px-4 py-2 fs-6');
                 }
             });
 
-            // Function to initialize DataTable
-            function initDataTable() {
-                if ($.fn.DataTable.isDataTable('.datanew')) {
-                    $('.datanew').DataTable().destroy();
-                }
-                $('.datanew').DataTable({
-                    "pageLength": 25,
-                    "order": [], // Let backend handle sorting (date & ID)
-                    "language": {
-                        "search": "",
-                        "searchPlaceholder": "Search transactions..."
-                    },
-                    "dom": "<'row mb-3'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
-                        "<'row'<'col-sm-12'tr>>" +
-                        "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
-                });
+            // Initialize Datatable for Closing Records at bottom
+            if ($.fn.DataTable.isDataTable('.datanew')) {
+                $('.datanew').DataTable().destroy();
             }
-
-            // Initial call
-            initDataTable();
-
-            // Submit form via AJAX
-            $('#filterForm').on('submit', function(e) {
-                e.preventDefault();
-                const $btn = $('#btnSearch');
-                const origHtml = $btn.html();
-                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Searching...');
-
-                let formData = $(this).serialize();
-
-                $.ajax({
-                    url: '{{ route("checkbook.index") }}',
-                    method: 'GET',
-                    data: formData,
-                    success: function(response) {
-                        $btn.prop('disabled', false).html(origHtml);
-                        
-                        // Update Summaries
-                        if(response.summary) {
-                            $('#valTotalIn').text(response.summary.totalIn);
-                            $('#valTotalOut').text(response.summary.totalOut);
-                            $('#valNetBalance').text(response.summary.netBalance);
-                            $('#valCashInHand').text(response.summary.cashInHand);
-                        }
-
-                        // Update Table Data
-                        if ($.fn.DataTable.isDataTable('.datanew')) {
-                            $('.datanew').DataTable().destroy();
-                        }
-                        
-                        $('#checkbookTableBody').html(response.html);
-                        initDataTable();
-                    },
-                    error: function(err) {
-                        $btn.prop('disabled', false).html(origHtml);
-                        Swal.fire('Error', 'Failed to retrieve checkbook data.', 'error');
-                    }
-                });
-            });
-
-            // Reset form
-            $('#btnReset').on('click', function() {
-                $('#filterForm')[0].reset();
-                $('.custom-date-group').hide();
-                $('#filterForm').trigger('submit');
+            $('.datanew').DataTable({
+                "pageLength": 10,
+                "order": [],
+                "language": {
+                    "search": "",
+                    "searchPlaceholder": "Search closings..."
+                },
+                "dom": "<'row mb-3'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+                    "<'row'<'col-sm-12'tr>>" +
+                    "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
             });
         });
     </script>

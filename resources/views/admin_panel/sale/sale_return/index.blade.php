@@ -35,22 +35,22 @@
                                         @foreach ($returns as $return)
                                             @php
                                                 $isPartialReturn =
-                                                    $return->purchase &&
+                                                    $return->sale &&
                                                     $return->total_returned < $return->original_net_amount;
                                                 $isFullReturn =
-                                                    $return->purchase &&
+                                                    $return->sale &&
                                                     $return->total_returned >= $return->original_net_amount;
                                             @endphp
                                             <tr>
                                                 <td>{{ $return->id }}</td>
                                                 <td>
                                                     <strong>{{ $return->return_invoice }}</strong>
-                                                    @if ($return->purchase)
+                                                    @if ($return->sale)
                                                         <br><small class="text-muted">Orig:
-                                                            {{ $return->purchase->invoice_no }}</small>
+                                                            {{ $return->sale->invoice_no }}</small>
                                                     @endif
                                                 </td>
-                                                <td>{{ $return->customer->name ?? 'N/A' }}</td>
+                                                <td>{{ $return->customer->customer_name ?? 'N/A' }}</td>
                                                 <td>{{ $return->warehouse->warehouse_name ?? 'N/A' }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($return->return_date)->format('d/m/Y') }}</td>
 
@@ -61,7 +61,7 @@
 
                                                 {{-- Original Purchase Amount --}}
                                                 <td>
-                                                    @if ($return->purchase)
+                                                    @if ($return->sale)
                                                         {{ number_format($return->original_net_amount, 2) }}
                                                     @else
                                                         <span class="text-muted">N/A</span>
@@ -70,7 +70,7 @@
 
                                                 {{-- Total Returned --}}
                                                 <td class="text-danger">
-                                                    @if ($return->purchase)
+                                                    @if ($return->sale)
                                                         <strong>{{ number_format($return->total_returned, 2) }}</strong>
                                                     @else
                                                         <span class="text-muted">N/A</span>
@@ -79,7 +79,7 @@
 
                                                 {{-- New Net Amount --}}
                                                 <td class="text-success">
-                                                    @if ($return->purchase)
+                                                    @if ($return->sale)
                                                         <strong>{{ number_format($return->new_net_amount, 2) }}</strong>
                                                     @else
                                                         <span class="text-muted">N/A</span>
@@ -88,7 +88,7 @@
 
                                                 {{-- New Due Amount --}}
                                                 <td class="text-warning">
-                                                    @if ($return->purchase)
+                                                    @if ($return->sale)
                                                         <strong>{{ number_format($return->new_due_amount, 2) }}</strong>
                                                     @else
                                                         <span class="text-muted">N/A</span>

@@ -20,7 +20,13 @@ class SaleReturnController extends Controller
     public function showReturnForm($id)
     {
         $sale = Sale::with(['customer_relation', 'items.product.brand'])->findOrFail($id);
-        $accounts = Account::whereIn('head_id', [1, 2])->orderBy('title')->get();
+        $accounts = Account::whereIn('head_id', [1, 2])
+            ->where(function($q) {
+                $q->where('title', 'like', '%cash%')
+                  ->orWhere('title', 'like', '%bank%');
+            })
+            ->orderBy('title')
+            ->get();
         
         // Calculate already returned quantities
         $pastReturns = SaleReturn::where('sale_id', $id)
@@ -42,6 +48,30 @@ class SaleReturnController extends Controller
             $product = $item->product;
             $alreadyReturned = $returnedQtyMap[$item->product_id] ?? 0;
             
+            // Extract variant information from sale item color field
+            $variant = [];
+            if (!empty($item->color)) {
+                $b64Decoded = base64_decode($item->color, true);
+                if ($b64Decoded !== false) {
+                    $json = json_decode($b64Decoded, true);
+                    if (is_array($json)) {
+                        $variant = $json;
+                    }
+                }
+                if (empty($variant)) {
+                    $json = json_decode($item->color, true);
+                    if (is_array($json)) {
+                        $variant = $json;
+                    }
+                }
+            }
+
+            $sizeStr = $variant['size'] ?? ($variant['size_val'] ?? '-');
+            $colorStr = $variant['color'] ?? ($variant['color_val'] ?? '-');
+
+            $item->size_val = $sizeStr;
+            $item->color_val = $colorStr;
+
             // Add product details
             $item->item_name = $product->product_name ?? $product->item_name ?? 'Unknown';
             $item->item_code = $product->product_code ?? $product->item_code ?? '';
@@ -84,18 +114,19 @@ class SaleReturnController extends Controller
     {
         $validated = $request->validate([
             'sale_id' => 'nullable|exists:sales,id',
-            'customer_id' => 'required|exists:customers,id',
+            'customer_id' => 'nullable',
             'warehouse_id' => 'required|exists:warehouses,id',
             'return_date' => 'required|date',
             'product_id' => 'required|array',
             'product_id.*' => 'required|exists:products,id',
+            'color' => 'nullable|array',
             'qty' => 'required|array',
             'qty.*' => 'required|numeric|min:0',
             'price' => 'required|array',
             'price.*' => 'required|numeric|min:0',
-            'item_discount' => 'nullable|array',
+            'item_disc' => 'nullable|array',
             'extra_discount' => 'nullable|numeric|min:0',
-            'remarks' => 'nullable|string',
+            'return_reason' => 'nullable|string',
             'payment_account_id' => 'nullable|array',
             'payment_amount' => 'nullable|array',
         ]);
@@ -109,14 +140,46 @@ class SaleReturnController extends Controller
                 ? 'SR-' . str_pad((int)str_replace('SR-', '', $lastReturn->return_invoice) + 1, 4, '0', STR_PAD_LEFT)
                 : 'SR-0001';
 
+            // Resolve Customer ID (fallback to Walking Customer if empty/null)
+            $customerId = $validated['customer_id'] ?? null;
+            if (!$customerId) {
+                $walkingCustomer = \App\Models\Customer::where('customer_type', 'Walking Customer')->first();
+                if ($walkingCustomer) {
+                    $customerId = $walkingCustomer->id;
+                } else {
+                    $walkingCustomer = \App\Models\Customer::create([
+                        'customer_id' => 'CUST-WALK',
+                        'customer_name' => 'Walking Customer',
+                        'customer_type' => 'Walking Customer',
+                        'mobile' => '-',
+                        'status' => 'active',
+                        'opening_balance' => 0,
+                    ]);
+                    $customerId = $walkingCustomer->id;
+                }
+            }
+
+            // Validate that at least one item has return quantity > 0
+            $hasItems = false;
+            foreach ($request->product_id as $idx => $productId) {
+                $qty = (float) $request->qty[$idx];
+                if ($qty > 0) {
+                    $hasItems = true;
+                    break;
+                }
+            }
+            if (!$hasItems) {
+                throw new \Exception("Please enter a return quantity for at least one item.");
+            }
+
             // Create Sale Return Header
             $return = SaleReturn::create([
                 'sale_id' => $validated['sale_id'] ?? null,
                 'return_invoice' => $nextInvoice,
-                'customer_id' => $validated['customer_id'],
+                'customer_id' => $customerId,
                 'warehouse_id' => $validated['warehouse_id'],
                 'return_date' => $validated['return_date'],
-                'remarks' => $validated['remarks'] ?? null,
+                'remarks' => $validated['return_reason'] ?? null,
                 'status' => 'posted',
             ]);
 
@@ -132,7 +195,7 @@ class SaleReturnController extends Controller
                 if ($qty <= 0) continue;
 
                 $price = (float) $request->price[$idx];
-                $itemDisc = (float) ($request->item_discount[$idx] ?? 0);
+                $itemDisc = (float) ($request->item_disc[$idx] ?? 0);
                 // Get product for PPB and size_mode calculation
                 $product = Product::find($productId);
                 $ppb = $product->pieces_per_box > 0 ? $product->pieces_per_box : 1;
@@ -158,6 +221,7 @@ class SaleReturnController extends Controller
                 SaleReturnItem::create([
                     'sale_return_id' => $return->id,
                     'product_id' => $productId,
+                    'color' => $request->color[$idx] ?? null,
                     'warehouse_id' => $validated['warehouse_id'],
                     'qty' => $qty,
                     'boxes' => $boxes + ($loosePieces / $ppb), // Decimal boxes
@@ -222,6 +286,16 @@ class SaleReturnController extends Controller
             // Handle Refund Payment (Payment Voucher)
             $totalPaid = 0;
             if (!empty($request->payment_account_id)) {
+                // Calculate total refund amount submitted
+                $tempTotalPaid = 0;
+                foreach ($request->payment_amount as $pAmt) {
+                    $tempTotalPaid += (float)$pAmt;
+                }
+                
+                if ($tempTotalPaid > $netAmount) {
+                    throw new \Exception("Refund amount cannot exceed the Net Return Amount of " . number_format($netAmount, 2));
+                }
+
                 $voucherService = app(\App\Services\VoucherService::class);
                 $arId = app(\App\Services\BalanceService::class)->getAccountsReceivableId();
 
@@ -236,7 +310,7 @@ class SaleReturnController extends Controller
                             'date' => $validated['return_date'],
                             'status' => \App\Models\VoucherMaster::STATUS_POSTED,
                             'party_type' => \App\Models\Customer::class,
-                            'party_id' => $validated['customer_id'],
+                            'party_id' => $customerId,
                             'remarks' => "Refund for Return #{$nextInvoice}",
                         ];
 
@@ -320,6 +394,9 @@ class SaleReturnController extends Controller
                 
                 $return->new_net_amount = max(0, $sale->total_net - $totalReturned);
                 $return->total_returned = $totalReturned;
+
+                $originalDue = max(0, (float)$sale->total_net - ((float)$sale->cash + (float)$sale->card));
+                $return->new_due_amount = max(0, $originalDue - $totalReturned);
             }
         });
 

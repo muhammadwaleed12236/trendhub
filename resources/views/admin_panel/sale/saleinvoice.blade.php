@@ -8,7 +8,7 @@
     <!-- Use Bootstrap for grid and utilities -->
     <link href="{{ asset('assets/vendors/bootstrap5/css/bootstrap.min.css') }}" rel="stylesheet">
 
-   
+
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -248,7 +248,7 @@
                         Code: <strong>{{ $sale->customer_relation->customer_id }}</strong>
                     </div>
                     @endif
-                    <div><span class="info-label">Name:</span> <strong>{{ $sale->customer_relation->customer_name ?? 'Walking Customer' }}</strong></div>
+                    <div><span class="info-label">Name:</span> <strong>{{ $sale->walkin_name ?? ($sale->customer_relation->customer_name ?? 'Walking Customer') }}</strong></div>
                     <div><span class="info-label">Address:</span> <span style="font-size:11px;">{{ $sale->customer_relation->address ?? '—' }}</span></div>
                     <div><span class="info-label">Mob:</span> <span style="font-size:11px;">{{ $sale->customer_relation->mobile ?? '—' }}</span></div>
                 </div>
@@ -365,7 +365,7 @@
 
                         <td class="text-center" style="vertical-align: middle;">
                             <div style="font-weight: bold; color: #2c3e50;">
-                              
+
                                 @if ($sizeMode == 'by_pieces')
                                     {{ $totalPieces }} Pcs
                                 @else
@@ -387,14 +387,14 @@
                             @if ($sizeMode == 'by_pieces')
                             <span class="fw-bold">
                             Pieces
-                        </span> 
+                        </span>
                             @elseif ($sizeMode == 'by_cartons')
                             <span class="fw-bold">
                             Cartons
-                        </span> 
+                        </span>
                             @elseif ($sizeMode == 'by_size')
                             <span class="fw-bold">
-                                    
+
                                 {{ number_format($totalM2Line, 4) }}
                             </span> m²
                                 @endif

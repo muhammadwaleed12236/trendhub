@@ -91,7 +91,13 @@ class SaleController extends Controller
         $nextInvoiceNumber = Sale::generateInvoiceNo();
 
         // Filter accounts (Cash/Bank) for Payment Voucher
-        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])->get();
+        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])
+            ->where(function($q) {
+                $q->where('title', 'like', '%cash%')
+                  ->orWhere('title', 'like', '%bank%');
+            })
+            ->orderBy('title')
+            ->get();
 
         return view('admin_panel.sale.add_sale222', compact('warehouse', 'customer', 'nextInvoiceNumber', 'accounts'));
     }
@@ -185,7 +191,13 @@ class SaleController extends Controller
         $items = $this->_getSaleItems($sale);
 
         // Get Cash/Bank accounts for payment voucher
-        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])->orderBy('title')->get();
+        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])
+            ->where(function($q) {
+                $q->where('title', 'like', '%cash%')
+                  ->orWhere('title', 'like', '%bank%');
+            })
+            ->orderBy('title')
+            ->get();
 
         // Calculate return deadline from database settings
         $returnDeadlineDays = \App\Models\SystemSetting::get('return_deadline_days', 30);
@@ -853,7 +865,7 @@ class SaleController extends Controller
         }
         $currentBalance = $previousBalance + $sale->total_net;
 
-        return view('admin_panel.sale.saleinvoice', [
+        return view('admin_panel.sale.salereceipt', [
             'sale' => $sale,
             'saleItems' => $items,
             'previousBalance' => $previousBalance,
@@ -876,7 +888,13 @@ class SaleController extends Controller
         $customer = Customer::all();
         $warehouse = Warehouse::all();
         // Filter accounts (Cash/Bank) for Receipt Voucher
-        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])->orderBy('title')->get();
+        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])
+            ->where(function($q) {
+                $q->where('title', 'like', '%cash%')
+                  ->orWhere('title', 'like', '%bank%');
+            })
+            ->orderBy('title')
+            ->get();
 
         // 3. Reuse nextInvoiceNumber var for current invoice no (view expects this variable name)
         $nextInvoiceNumber = $sale->invoice_no;
@@ -965,25 +983,34 @@ class SaleController extends Controller
 
     private function processSale(Request $request, Sale $sale)
     {
-        // 1. Validation
-        $request->validate([
-            'customer' => 'required|exists:customers,id',
+        $isWalkin = $request->input('is_walkin') == '1';
+
+        $rules = [
             'product_id' => 'required|array|min:1',
             'product_id.*' => 'required|exists:products,id',
             'qty' => 'required|array|min:1',
             'warehouse_id' => 'required|array',
-        ]);
+        ];
 
-        // Prevent duplicate products
-        if (count($request->product_id) !== count(array_unique($request->product_id))) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['product_id' => 'Duplicate products are not allowed in a single sale. Please merge quantities.']);
+        if ($isWalkin) {
+            $rules['walkin_name'] = 'required|string|max:255';
+            $request->merge(['customer' => null]);
+        } else {
+            $rules['customer'] = 'required|exists:customers,id';
         }
+
+        $request->validate($rules);
+
+        // Prevent duplicate products (removed to allow multiple variants of the same product)
+        // if (count($request->product_id) !== count(array_unique($request->product_id))) {
+        //     throw \Illuminate\Validation\ValidationException::withMessages(['product_id' => 'Duplicate products are not allowed in a single sale. Please merge quantities.']);
+        // }
 
         $status = $request->action === 'post' ? 'posted' : 'booked';
 
         // Concurrency Safe Transaction
         try {
-            return DB::transaction(function () use ($request, $sale, $status) {
+            return DB::transaction(function () use ($request, $sale, $status, $isWalkin) {
 
                 // If this is an update to a previously posted sale, rollback its impact first
                 if ($sale->exists && $sale->sale_status === 'posted') {
@@ -993,6 +1020,7 @@ class SaleController extends Controller
             // 2. Prepare Header Data
             $isNew = ! $sale->exists;
             $sale->customer_id = $request->customer;
+            $sale->walkin_name = $isWalkin ? $request->walkin_name : null;
             $sale->reference = $request->reference;
             $sale->total_amount_Words = $request->total_amount_Words; // Consider auto-generating this too?
             $sale->sale_status = $status;
@@ -1148,6 +1176,7 @@ class SaleController extends Controller
                 $saleItem = new SaleItem;
                 $saleItem->sale_id = $sale->id;
                 $saleItem->product_id = $pid;
+                $saleItem->color = $request->color[$index] ?? null;
                 $saleItem->warehouse_id = $warehouses[$index] ?? 1;
                 $saleItem->product_name = $product->item_name; // Store name snapshot
 
@@ -1241,13 +1270,20 @@ class SaleController extends Controller
             return redirect()->route('sale.index')->with('success', 'Sale saved as '.$status);
         });
         } catch (\Exception $e) {
+            $errorMsg = $e->getMessage();
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                $errorMsg = 'Validation Error: ' . implode(', ', collect($e->errors())->flatten()->toArray());
+            } else {
+                \Log::error('Sale Save Error: ' . $errorMsg . "\n" . $e->getTraceAsString());
+            }
+
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'ok' => false,
-                    'message' => $e->getMessage()
+                    'message' => $errorMsg
                 ], 422);
             }
-            return redirect()->back()->withInput()->with('error', $e->getMessage());
+            return redirect()->back()->withInput()->with('error', $errorMsg);
         }
     }
 
@@ -1396,6 +1432,27 @@ class SaleController extends Controller
         // Legacy support wrapper or direct relation
         // Re-implementing correctly based on new structure
         return $sale->items->map(function ($item) {
+            $variant = [];
+            if (!empty($item->color)) {
+                // Try base64 decode first (since frontend sends base64 variant_data in color field)
+                $b64Decoded = base64_decode($item->color, true);
+                if ($b64Decoded !== false) {
+                    $json = json_decode($b64Decoded, true);
+                    if (is_array($json)) {
+                        $variant = $json;
+                    }
+                }
+                // Fallback to normal JSON
+                if (empty($variant)) {
+                    $json = json_decode($item->color, true);
+                    if (is_array($json)) {
+                        $variant = $json;
+                    } else {
+                        $variant = ['color' => $item->color];
+                    }
+                }
+            }
+
             return [
                 'product_id' => $item->product_id,
                 'item_name' => $item->product_name ?? $item->product->item_name ?? 'Item',
@@ -1411,7 +1468,9 @@ class SaleController extends Controller
                 'discount_percent' => (float) $item->discount_percent,
                 'discount_amount' => (float) $item->discount_amount,
                 'total' => (float) $item->total,
-                'color' => json_decode($item->color, true) ?? [],
+                'color_val' => $variant['color'] ?? '',
+                'size_val' => $variant['size'] ?? '',
+                'color' => is_array($variant) ? $variant : [$item->color], // for legacy compatibility
                 'pieces_per_box' => $item->product->pieces_per_box ?? 1,
                 'price_per_piece' => ($item->total_pieces > 0) ? ($item->total / $item->total_pieces) : 0,
                 // Add dimension and m² data from product

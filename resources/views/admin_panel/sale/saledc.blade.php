@@ -239,7 +239,7 @@
                     <div class="info-box-header">Deliver To</div>
                     <div
                         style="font-size: 13px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        {{ $sale->customer_relation->customer_name ?? 'Walking Customer' }}
+                        {{ $sale->walkin_name ?? ($sale->customer_relation->customer_name ?? 'Walking Customer') }}
                     </div>
                     <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px;">
                         {{ $sale->customer_relation->address ?? '' }}</div>

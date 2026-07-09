@@ -55,34 +55,6 @@ class ReportingController extends Controller
         $grandTotalValue = 0;
 
         foreach ($products as $product) {
-
-            // ✅ REAL-TIME balance straight from WarehouseStock
-            $balance = (float) $product->warehouseStocks->sum('total_pieces');
-
-            // Purchased qty & amount (for historical display only)
-            [$purchased, $purchaseAmount] = $this->getPurchasedQtyAndNetAmount($product->id);
-
-            // Sold qty & amount (Net)
-            $saleStats = DB::table('sale_items')
-                ->where('product_id', $product->id)
-                ->selectRaw('COALESCE(SUM(total_pieces),0) as total_qty, COALESCE(SUM(total),0) as total_amount')
-                ->first();
-
-            $sold       = (float) $saleStats->total_qty;
-            $saleAmount = (float) $saleStats->total_amount;
-
-            // Returned qty (from stock movements ref_type SR or SALE_RETURN)
-            $returnedQty = (float) DB::table('stock_movements')
-                ->where('product_id', $product->id)
-                ->whereIn('ref_type', ['SR', 'SALE_RETURN'])
-                ->where('type', 'in')
-                ->sum('qty');
-
-            // Initial (opening) stock = balance - purchased + (sold_net - returned)
-            // But since sold_net already reflects (Gross - Returned), we just need:
-            // balance - purchased + sold_net
-            $initial = max(0, $balance - $purchased + $sold);
-
             // Determine default purchase price per piece
             $productPurchPrice = 0;
             if ($product->size_mode === 'by_size') {
@@ -93,42 +65,212 @@ class ReportingController extends Controller
                 $productPurchPrice = (float) ($product->purchase_price_per_piece ?? 0);
             }
 
-            // Weighted Average Purchase Price
-            $initialAmount  = $initial * $productPurchPrice;
-            $totalQtyIn     = $initial + $purchased;
-            $totalAmountIn  = $initialAmount + $purchaseAmount;
-            $averagePrice   = $totalQtyIn > 0 ? ($totalAmountIn / $totalQtyIn) : $productPurchPrice;
-
-            // Stock value = Live Balance × Avg Purchase Price
-            $stockValue       = $balance * $averagePrice;
-            $grandTotalValue += $stockValue;
-
-            // Cartons / Loose
-            $ppb = (float) ($product->pieces_per_box ?? 1);
-            if ($ppb > 1) {
-                $cartons = floor($balance / $ppb);
-                $loose   = $balance % $ppb;
-            } else {
-                $cartons = '-';
-                $loose   = $balance;
+            // Check if product has variants
+            $parsedVariants = [];
+            if ($product->color) {
+                try {
+                    $decoded = json_decode($product->color, true);
+                    if (is_array($decoded) && count($decoded) > 0 && isset($decoded[0]['name'])) {
+                        $parsedVariants = $decoded;
+                    }
+                } catch (\Exception $e) {}
             }
 
-            $rows[] = [
-                'id'              => $product->id,
-                'item_code'       => $product->item_code,
-                'item_name'       => $product->item_name,
-                'initial_stock'   => $initial,
-                'purchased'       => $purchased,
-                'purchase_amount' => $purchaseAmount,
-                'sold'            => $sold,
-                'sale_amount'     => $saleAmount,
-                'returned_qty'    => $returnedQty,
-                'balance'         => $balance,
-                'cartons'         => $cartons,
-                'loose'           => $loose,
-                'average_price'   => $averagePrice,
-                'stock_value'     => $stockValue,
-            ];
+            if (count($parsedVariants) > 0) {
+                // Fetch all sales and returns for this product to distribute
+                $salesList = DB::table('sale_items')
+                    ->where('product_id', $product->id)
+                    ->select('total_pieces', 'total', 'color')
+                    ->get();
+
+                $returnsList = DB::table('sale_return_items as sri')
+                    ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
+                    ->where('sri.product_id', $product->id)
+                    ->select('sri.qty', 'sri.color', 'sr.sale_id')
+                    ->get();
+
+                // Fetch all approved purchases
+                $purchasesList = DB::table('purchase_items as pi')
+                    ->join('purchases as pur', 'pur.id', '=', 'pi.purchase_id')
+                    ->where('pi.product_id', $product->id)
+                    ->where('pur.status_purchase', 'approved')
+                    ->select('pi.qty as total_pieces', 'pi.line_total', 'pi.color')
+                    ->get();
+
+                // Fetch all purchase returns
+                $purchaseReturnsList = DB::table('purchase_return_items as pri')
+                    ->where('pri.product_id', $product->id)
+                    ->select('pri.qty', 'pri.line_total', 'pri.color')
+                    ->get();
+
+                $saleIds = $returnsList->pluck('sale_id')->unique()->toArray();
+                $saleItemsMap = [];
+                if (!empty($saleIds)) {
+                    $siList = DB::table('sale_items')
+                        ->whereIn('sale_id', $saleIds)
+                        ->where('product_id', $product->id)
+                        ->select('sale_id', 'color')
+                        ->get();
+                    foreach ($siList as $si) {
+                        $saleItemsMap[$si->sale_id][] = $si->color;
+                    }
+                }
+
+                foreach ($parsedVariants as $v) {
+                    $vName = $v['name'] ?? $product->item_name;
+                    $vSize = $v['size'] ?? '-';
+                    $vColor = $v['color'] ?? '-';
+
+                    // Initial stock from variant JSON
+                    $initial = (float) ($v['stock'] ?? 0);
+
+                    // Calculate Purchased for this variant
+                    $purchased = 0;
+                    $purchaseAmount = 0;
+                    foreach ($purchasesList as $pItem) {
+                        if ($this->matchSaleItemToVariant($pItem, $v)) {
+                            $purchased += (float) $pItem->total_pieces;
+                            $purchaseAmount += (float) $pItem->line_total;
+                        }
+                    }
+
+                    // Calculate Purchase Returned for this variant
+                    $pReturned = 0;
+                    $pReturnAmount = 0;
+                    foreach ($purchaseReturnsList as $prItem) {
+                        if ($this->matchSaleItemToVariant($prItem, $v)) {
+                            $pReturned += (float) $prItem->qty;
+                            $pReturnAmount += (float) $prItem->line_total;
+                        }
+                    }
+
+                    // Calculate Sold for this variant
+                    $sold = 0;
+                    $saleAmount = 0;
+                    foreach ($salesList as $sItem) {
+                        if ($this->matchSaleItemToVariant($sItem, $v)) {
+                            $sold += (float) $sItem->total_pieces;
+                            $saleAmount += (float) $sItem->total;
+                        }
+                    }
+
+                    // Calculate Returned for this variant
+                    $returnedQty = 0;
+                    foreach ($returnsList as $rItem) {
+                        $rColor = $rItem->color;
+                        if (empty($rColor)) {
+                            $saleColors = $saleItemsMap[$rItem->sale_id] ?? [];
+                            $rColor = !empty($saleColors) ? $saleColors[0] : '';
+                        }
+                        $rItemCopy = (object)[
+                            'qty' => $rItem->qty,
+                            'color' => $rColor
+                        ];
+                        if ($this->matchSaleItemToVariant($rItemCopy, $v)) {
+                            $returnedQty += (float) $rItem->qty;
+                        }
+                    }
+
+                    // Balance = Initial + Purchased - Sold + Returned - Purchased Returned
+                    $balance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned);
+
+                    // Average Price
+                    $averagePrice = (float) ($v['purch_price'] ?? $productPurchPrice);
+
+                    // Stock value
+                    $stockValue = $balance * $averagePrice;
+                    $grandTotalValue += $stockValue;
+
+                    // Cartons / Loose
+                    $ppb = (float) ($product->pieces_per_box ?? 1);
+                    if ($ppb > 1) {
+                        $cartons = floor($balance / $ppb);
+                        $loose   = $balance % $ppb;
+                    } else {
+                        $cartons = '-';
+                        $loose   = $balance;
+                    }
+
+                    $rows[] = [
+                        'id'              => $product->id,
+                        'item_code'       => $product->item_code,
+                        'item_name'       => $vName . ' (' . $vSize . ' | ' . $vColor . ')',
+                        'initial_stock'   => $initial,
+                        'purchased'       => $purchased,
+                        'purchase_amount' => $purchaseAmount,
+                        'sold'            => $sold,
+                        'sale_amount'     => $saleAmount,
+                        'returned_qty'    => $returnedQty,
+                        'balance'         => $balance,
+                        'cartons'         => $cartons,
+                        'loose'           => $loose,
+                        'average_price'   => $averagePrice,
+                        'stock_value'     => $stockValue,
+                    ];
+                }
+            } else {
+                // Product has no variants: original logic
+                $balance = (float) $product->warehouseStocks->sum('total_pieces');
+
+                // Purchased qty & amount
+                [$purchased, $purchaseAmount] = $this->getPurchasedQtyAndNetAmount($product->id);
+
+                // Sold qty & amount (Net)
+                $saleStats = DB::table('sale_items')
+                    ->where('product_id', $product->id)
+                    ->selectRaw('COALESCE(SUM(total_pieces),0) as total_qty, COALESCE(SUM(total),0) as total_amount')
+                    ->first();
+
+                $sold       = (float) $saleStats->total_qty;
+                $saleAmount = (float) $saleStats->total_amount;
+
+                // Returned qty
+                $returnedQty = (float) DB::table('stock_movements')
+                    ->where('product_id', $product->id)
+                    ->whereIn('ref_type', ['SR', 'SALE_RETURN'])
+                    ->where('type', 'in')
+                    ->sum('qty');
+
+                // Initial (opening) stock
+                $initial = max(0, $balance - $purchased + $sold);
+
+                // Weighted Average Purchase Price
+                $initialAmount  = $initial * $productPurchPrice;
+                $totalQtyIn     = $initial + $purchased;
+                $totalAmountIn  = $initialAmount + $purchaseAmount;
+                $averagePrice   = $totalQtyIn > 0 ? ($totalAmountIn / $totalQtyIn) : $productPurchPrice;
+
+                // Stock value
+                $stockValue       = $balance * $averagePrice;
+                $grandTotalValue += $stockValue;
+
+                // Cartons / Loose
+                $ppb = (float) ($product->pieces_per_box ?? 1);
+                if ($ppb > 1) {
+                    $cartons = floor($balance / $ppb);
+                    $loose   = $balance % $ppb;
+                } else {
+                    $cartons = '-';
+                    $loose   = $balance;
+                }
+
+                $rows[] = [
+                    'id'              => $product->id,
+                    'item_code'       => $product->item_code,
+                    'item_name'       => $product->item_name,
+                    'initial_stock'   => $initial,
+                    'purchased'       => $purchased,
+                    'purchase_amount' => $purchaseAmount,
+                    'sold'            => $sold,
+                    'sale_amount'     => $saleAmount,
+                    'returned_qty'    => $returnedQty,
+                    'balance'         => $balance,
+                    'cartons'         => $cartons,
+                    'loose'           => $loose,
+                    'average_price'   => $averagePrice,
+                    'stock_value'     => $stockValue,
+                ];
+            }
         }
 
         return response()->json([
@@ -165,16 +307,10 @@ class ReportingController extends Controller
         $products = $productsQuery->get();
         $productStats = [];
         $totalGrossProfit = 0;
+        $avgPriceMap = [];
 
         foreach ($products as $product) {
-            // 1. Calculate Weighted Average Purchase Price (Same logic as Stock Report)
-            $initial = (float) DB::table('stock_movements')
-                ->where('product_id', $product->id)
-                ->where('ref_type', 'INIT')
-                ->sum('qty');
-
-            [$purchased, $purchaseAmount] = $this->getPurchasedQtyAndNetAmount($product->id);
-
+            // Determine default purchase price per piece
             $productPurchPrice = 0;
             if ($product->size_mode === 'by_size') {
                 $m2PerPiece = (float) ($product->pieces_per_m2 ?? 0);
@@ -184,58 +320,166 @@ class ReportingController extends Controller
                 $productPurchPrice = (float) ($product->purchase_price_per_piece ?? 0);
             }
 
+            // Calculate overall product average price (for fallback)
+            $initial = (float) DB::table('stock_movements')
+                ->where('product_id', $product->id)
+                ->where('ref_type', 'INIT')
+                ->sum('qty');
+
+            [$purchased, $purchaseAmount] = $this->getPurchasedQtyAndNetAmount($product->id);
+
             $initialAmount = $initial * $productPurchPrice;
             $totalQtyIn = $initial + $purchased;
             $totalAmountIn = $initialAmount + $purchaseAmount;
             $averagePrice = $totalQtyIn > 0 ? ($totalAmountIn / $totalQtyIn) : $productPurchPrice;
+            $avgPriceMap[$product->id] = $averagePrice;
 
-            // 2. Calculate Sales in the period
-            $saleQuery = DB::table('sale_items')
-                ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
-                ->where('sale_items.product_id', $product->id);
-            
-            if ($start && $end) {
-                $saleQuery->whereBetween(DB::raw('DATE(sales.created_at)'), [$start, $end]);
+            // Check if product has variants
+            $parsedVariants = [];
+            if ($product->color) {
+                try {
+                    $decoded = json_decode($product->color, true);
+                    if (is_array($decoded) && count($decoded) > 0 && isset($decoded[0]['name'])) {
+                        $parsedVariants = $decoded;
+                    }
+                } catch (\Exception $e) {}
             }
 
-            if ($customerId && $customerId !== 'all') {
-                $saleQuery->where('sales.customer_id', $customerId);
-            }
+            if (count($parsedVariants) > 0) {
+                // Fetch all sales and returns for this product to distribute
+                $saleQuery = DB::table('sale_items')
+                    ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+                    ->where('sale_items.product_id', $product->id);
+                
+                if ($start && $end) {
+                    $saleQuery->whereBetween(DB::raw('DATE(sales.created_at)'), [$start, $end]);
+                }
+                if ($customerId && $customerId !== 'all') {
+                    $saleQuery->where('sales.customer_id', $customerId);
+                }
+                $salesList = $saleQuery->select('sale_items.total_pieces', 'sale_items.qty', 'sale_items.total', 'sale_items.color')
+                    ->get();
 
-            $saleStats = $saleQuery->selectRaw('COALESCE(SUM(total_pieces),0) as sold_qty_pieces, COALESCE(SUM(qty),0) as sold_qty, COALESCE(SUM(total),0) as sold_amount')
-                ->first();
+                $returnQuery = DB::table('sale_return_items as sri')
+                    ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
+                    ->where('sri.product_id', $product->id);
+                
+                if ($start && $end) {
+                    $returnQuery->whereBetween(DB::raw('DATE(sr.return_date)'), [$start, $end]);
+                }
+                $returnsList = $returnQuery->select('sri.qty', 'sri.color', 'sr.sale_id')
+                    ->get();
 
-            $soldQty = (float) $saleStats->sold_qty;
-            $soldQtyPieces = (float) $saleStats->sold_qty_pieces;
-            $soldAmount = (float) $saleStats->sold_amount;
-            
-            // Calculate Returns for this period
-            $returnQuery = DB::table('stock_movements')
-                ->where('product_id', $product->id)
-                ->whereIn('ref_type', ['SR', 'SALE_RETURN'])
-                ->where('type', 'in');
-            
-            if ($start && $end) {
-                $returnQuery->whereBetween(DB::raw('DATE(created_at)'), [$start, $end]);
-            }
-            $returnedQtyPieces = (float) $returnQuery->sum('qty');
-            $returnedAmount = $returnedQtyPieces * $product->sale_price_per_piece; // Estimated return value
+                $saleIds = $returnsList->pluck('sale_id')->unique()->toArray();
+                $saleItemsMap = [];
+                if (!empty($saleIds)) {
+                    $siList = DB::table('sale_items')
+                        ->whereIn('sale_id', $saleIds)
+                        ->where('product_id', $product->id)
+                        ->select('sale_id', 'color')
+                        ->get();
+                    foreach ($siList as $si) {
+                        $saleItemsMap[$si->sale_id][] = $si->color;
+                    }
+                }
 
-            $costOfGoodsSold = $soldQtyPieces * $averagePrice;
-            $grossProfit = $soldAmount - $costOfGoodsSold;
+                foreach ($parsedVariants as $v) {
+                    $vName = $v['name'] ?? $product->item_name;
+                    $vSize = $v['size'] ?? '-';
+                    $vColor = $v['color'] ?? '-';
 
-            if ($soldQty > 0 || $returnedQtyPieces > 0) {
-                 $productStats[] = [
-                    'item_code' => $product->item_code,
-                    'item_name' => $product->item_name,
-                    'sold_qty' => $soldQty,
-                    'returned_qty' => $returnedQtyPieces,
-                    'revenue' => $soldAmount,
-                    'avg_cost' => $averagePrice,
-                    'cogs' => $costOfGoodsSold,
-                    'profit' => $grossProfit
-                ];
-                $totalGrossProfit += $grossProfit;
+                    $soldQty = 0;
+                    $soldQtyPieces = 0;
+                    $soldAmount = 0;
+                    foreach ($salesList as $sItem) {
+                        if ($this->matchSaleItemToVariant($sItem, $v)) {
+                            $soldQty += (float) $sItem->qty;
+                            $soldQtyPieces += (float) $sItem->total_pieces;
+                            $soldAmount += (float) $sItem->total;
+                        }
+                    }
+
+                    $returnedQtyPieces = 0;
+                    foreach ($returnsList as $rItem) {
+                        $rColor = $rItem->color;
+                        if (empty($rColor)) {
+                            $saleColors = $saleItemsMap[$rItem->sale_id] ?? [];
+                            $rColor = !empty($saleColors) ? $saleColors[0] : '';
+                        }
+                        $rItemCopy = (object)[
+                            'qty' => $rItem->qty,
+                            'color' => $rColor
+                        ];
+                        if ($this->matchSaleItemToVariant($rItemCopy, $v)) {
+                            $returnedQtyPieces += (float) $rItem->qty;
+                        }
+                    }
+
+                    $vAveragePrice = (float) ($v['purch_price'] ?? $productPurchPrice);
+                    $costOfGoodsSold = $soldQtyPieces * $vAveragePrice;
+                    $grossProfit = $soldAmount - $costOfGoodsSold;
+
+                    if ($soldQty > 0 || $returnedQtyPieces > 0) {
+                        $productStats[] = [
+                            'item_code' => $product->item_code,
+                            'item_name' => $vName . ' (' . $vSize . ' | ' . $vColor . ')',
+                            'sold_qty' => $soldQty,
+                            'returned_qty' => $returnedQtyPieces,
+                            'revenue' => $soldAmount,
+                            'avg_cost' => $vAveragePrice,
+                            'cogs' => $costOfGoodsSold,
+                            'profit' => $grossProfit
+                        ];
+                        $totalGrossProfit += $grossProfit;
+                    }
+                }
+            } else {
+                // Product has no variants: original logic
+                $saleQuery = DB::table('sale_items')
+                    ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+                    ->where('sale_items.product_id', $product->id);
+                
+                if ($start && $end) {
+                    $saleQuery->whereBetween(DB::raw('DATE(sales.created_at)'), [$start, $end]);
+                }
+
+                if ($customerId && $customerId !== 'all') {
+                    $saleQuery->where('sales.customer_id', $customerId);
+                }
+
+                $saleStats = $saleQuery->selectRaw('COALESCE(SUM(total_pieces),0) as sold_qty_pieces, COALESCE(SUM(qty),0) as sold_qty, COALESCE(SUM(total),0) as sold_amount')
+                    ->first();
+
+                $soldQty = (float) $saleStats->sold_qty;
+                $soldQtyPieces = (float) $saleStats->sold_qty_pieces;
+                $soldAmount = (float) $saleStats->sold_amount;
+                
+                $returnQuery = DB::table('stock_movements')
+                    ->where('product_id', $product->id)
+                    ->whereIn('ref_type', ['SR', 'SALE_RETURN'])
+                    ->where('type', 'in');
+                
+                if ($start && $end) {
+                    $returnQuery->whereBetween(DB::raw('DATE(created_at)'), [$start, $end]);
+                }
+                $returnedQtyPieces = (float) $returnQuery->sum('qty');
+
+                $costOfGoodsSold = $soldQtyPieces * $averagePrice;
+                $grossProfit = $soldAmount - $costOfGoodsSold;
+
+                if ($soldQty > 0 || $returnedQtyPieces > 0) {
+                     $productStats[] = [
+                        'item_code' => $product->item_code,
+                        'item_name' => $product->item_name,
+                        'sold_qty' => $soldQty,
+                        'returned_qty' => $returnedQtyPieces,
+                        'revenue' => $soldAmount,
+                        'avg_cost' => $averagePrice,
+                        'cogs' => $costOfGoodsSold,
+                        'profit' => $grossProfit
+                    ];
+                    $totalGrossProfit += $grossProfit;
+                }
             }
         }
 
@@ -254,31 +498,6 @@ class ReportingController extends Controller
         $allCustomers = DB::table('customers')->get();
         $customerProfits = [];
 
-        // Build a map of average prices per product (reuse from above)
-        $avgPriceMap = [];
-        foreach ($products as $product) {
-            $initial = (float) DB::table('stock_movements')
-                ->where('product_id', $product->id)
-                ->where('ref_type', 'INIT')
-                ->sum('qty');
-
-            [$purchased, $purchaseAmount] = $this->getPurchasedQtyAndNetAmount($product->id);
-
-            $productPurchPrice = 0;
-            if ($product->size_mode === 'by_size') {
-                $m2PerPiece = (float) ($product->pieces_per_m2 ?? 0);
-                $purchPerM2 = (float) ($product->purchase_price_per_m2 ?? 0);
-                $productPurchPrice = $m2PerPiece * $purchPerM2;
-            } else {
-                $productPurchPrice = (float) ($product->purchase_price_per_piece ?? 0);
-            }
-
-            $initialAmount = $initial * $productPurchPrice;
-            $totalQtyIn = $initial + $purchased;
-            $totalAmountIn = $initialAmount + $purchaseAmount;
-            $avgPriceMap[$product->id] = $totalQtyIn > 0 ? ($totalAmountIn / $totalQtyIn) : $productPurchPrice;
-        }
-
         $balanceService = app(\App\Services\BalanceService::class);
         foreach ($allCustomers as $customer) {
             $custSaleQuery = DB::table('sale_items')
@@ -291,17 +510,59 @@ class ReportingController extends Controller
 
             $custSaleItems = $custSaleQuery->select(
                 'sale_items.product_id', 
+                'sale_items.color',
                 DB::raw('SUM(sale_items.total_pieces) as sold_qty_pieces'), 
                 DB::raw('SUM(sale_items.total) as sold_amount')
             )
-                ->groupBy('sale_items.product_id')
+                ->groupBy('sale_items.product_id', 'sale_items.color')
                 ->get();
 
             $custRevenue = 0;
             $custCogs = 0;
 
             foreach ($custSaleItems as $item) {
-                $avgPrice = $avgPriceMap[$item->product_id] ?? 0;
+                $avgPrice = 0;
+                $product = $products->firstWhere('id', $item->product_id);
+                if ($product) {
+                    $itemColor = $item->color;
+                    $itemVariant = null;
+                    if (!empty($itemColor)) {
+                        $b64Decoded = base64_decode($itemColor, true);
+                        if ($b64Decoded !== false) {
+                            $itemVariant = json_decode($b64Decoded, true);
+                        }
+                        if (empty($itemVariant)) {
+                            $itemVariant = json_decode($itemColor, true);
+                        }
+                    }
+
+                    if (is_array($itemVariant) && isset($itemVariant['color'])) {
+                        $vColor = strtolower(trim($itemVariant['color'] ?? '-'));
+                        $vSize = strtolower(trim($itemVariant['size'] ?? '-'));
+                        if ($vColor === '') $vColor = '-';
+                        if ($vSize === '') $vSize = '-';
+
+                        $decoded = json_decode($product->color, true);
+                        if (is_array($decoded)) {
+                            foreach ($decoded as $v) {
+                                $vC = strtolower(trim($v['color'] ?? '-'));
+                                $vS = strtolower(trim($v['size'] ?? '-'));
+                                if ($vC === '') $vC = '-';
+                                if ($vS === '') $vS = '-';
+
+                                if ($vC === $vColor && $vS === $vSize) {
+                                    $avgPrice = (float) ($v['purch_price'] ?? 0);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if ($avgPrice <= 0) {
+                        $avgPrice = $avgPriceMap[$item->product_id] ?? 0;
+                    }
+                }
+
                 $custRevenue += (float) $item->sold_amount;
                 $custCogs += (float) $item->sold_qty_pieces * $avgPrice;
             }
@@ -419,7 +680,10 @@ class ReportingController extends Controller
             $query = \App\Models\Sale::with(['customer_relation', 'items.product', 'returns']);
 
             if ($start && $end) {
-                $query->whereBetween(DB::raw('DATE(created_at)'), [$start, $end]);
+                $query->whereBetween('created_at', [
+                    \Carbon\Carbon::parse($start)->format('Y-m-d H:i:s'),
+                    \Carbon\Carbon::parse($end)->format('Y-m-d H:i:s')
+                ]);
             }
 
             $sales = $query->orderBy('created_at', 'asc')->get();
@@ -428,7 +692,37 @@ class ReportingController extends Controller
             $transformed = $sales->map(function ($sale) {
                 // Construct comma-separated strings for legacy frontend support
                 $productNames = $sale->items->map(function ($item) {
-                    return $item->product ? $item->product->item_name : 'Unknown';
+                    if (!$item->product) return 'Unknown';
+                    
+                    $vStr = '';
+                    if (!empty($item->color)) {
+                        $itemVariant = [];
+                        $b64Decoded = base64_decode($item->color, true);
+                        if ($b64Decoded !== false) {
+                            $json = json_decode($b64Decoded, true);
+                            if (is_array($json)) {
+                                $itemVariant = $json;
+                            }
+                        }
+                        if (empty($itemVariant)) {
+                            $json = json_decode($item->color, true);
+                            if (is_array($json)) {
+                                $itemVariant = $json;
+                            }
+                        }
+
+                        if (!empty($itemVariant)) {
+                            $sizeVal = $itemVariant['size'] ?? ($itemVariant['size_val'] ?? '');
+                            $colorVal = $itemVariant['color'] ?? ($itemVariant['color_val'] ?? '');
+                            $vParts = array_filter([$sizeVal, $colorVal]);
+                            if (count($vParts) > 0) {
+                                $vStr = ' (' . implode(' | ', $vParts) . ')';
+                            }
+                        } else {
+                            $vStr = ' (' . $item->color . ')';
+                        }
+                    }
+                    return $item->product->item_name . $vStr;
                 })->implode(',');
 
                 // Use SKU or Name as per preference, usually Name for reports
@@ -483,7 +777,38 @@ class ReportingController extends Controller
                          // Robust return display handling both legacy strings and new relation items
                          $retItems = $ret->items;
                          if ($retItems && $retItems->count() > 0) {
-                             $pNames = $retItems->map(fn($i) => $i->product->item_name ?? 'Unknown')->implode(', ');
+                             $pNames = $retItems->map(function($i) {
+                                 if (!$i->product) return 'Unknown';
+                                 
+                                 $vStr = '';
+                                 if (!empty($i->color)) {
+                                     $itemVariant = [];
+                                     $b64Decoded = base64_decode($i->color, true);
+                                     if ($b64Decoded !== false) {
+                                         $json = json_decode($b64Decoded, true);
+                                         if (is_array($json)) {
+                                             $itemVariant = $json;
+                                         }
+                                     }
+                                     if (empty($itemVariant)) {
+                                         $json = json_decode($i->color, true);
+                                         if (is_array($json)) {
+                                             $itemVariant = $json;
+                                         }
+                                     }
+
+                                     if (!empty($itemVariant)) {
+                                         $sizeVal = $itemVariant['size'] ?? ($itemVariant['size_val'] ?? '');
+                                         $colorVal = $itemVariant['color'] ?? ($itemVariant['color_val'] ?? '');
+                                         $vParts = array_filter([$sizeVal, $colorVal]);
+                                         if (count($vParts) > 0) {
+                                             $vStr = ' (' . implode(' | ', $vParts) . ')';
+                                         }
+                                     }
+                                 }
+                                 return $i->product->item_name . $vStr;
+                             })->implode(', ');
+                             
                              $pQtys = $retItems->pluck('qty')->implode(', ');
                              $pTotal = $retItems->sum('line_total');
                          } else {
@@ -1538,5 +1863,50 @@ class ReportingController extends Controller
         "))->first();
 
         return [(float) $result->total_qty, (float) $result->total_net_amount];
+    }
+
+    /**
+     * Match a sale item to a specific variant based on size and color stored in color field.
+     */
+    private function matchSaleItemToVariant($saleItem, $variant)
+    {
+        $itemColor = $saleItem->color;
+        if (empty($itemColor)) {
+            return false;
+        }
+
+        $itemVariant = [];
+        $b64Decoded = base64_decode($itemColor, true);
+        if ($b64Decoded !== false) {
+            $json = json_decode($b64Decoded, true);
+            if (is_array($json)) {
+                $itemVariant = $json;
+            }
+        }
+        if (empty($itemVariant)) {
+            $json = json_decode($itemColor, true);
+            if (is_array($json)) {
+                $itemVariant = $json;
+            }
+        }
+
+        if (empty($itemVariant)) {
+            // Simple string comparison
+            return strtolower(trim($itemColor)) === strtolower(trim($variant['color'] ?? ''));
+        }
+
+        // Compare color and size
+        $vColor = strtolower(trim($variant['color'] ?? '-'));
+        $vSize = strtolower(trim($variant['size'] ?? '-'));
+
+        $itemVColor = strtolower(trim($itemVariant['color'] ?? ($itemVariant['color_val'] ?? '-')));
+        $itemVSize = strtolower(trim($itemVariant['size'] ?? ($itemVariant['size_val'] ?? '-')));
+
+        if ($vColor === '') $vColor = '-';
+        if ($vSize === '') $vSize = '-';
+        if ($itemVColor === '') $itemVColor = '-';
+        if ($itemVSize === '') $itemVSize = '-';
+
+        return $vColor === $itemVColor && $vSize === $itemVSize;
     }
 }

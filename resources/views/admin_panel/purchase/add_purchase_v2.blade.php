@@ -916,6 +916,7 @@
                         <input type="hidden" name="price_per_carton[]" class="hidden-price-per-carton" value="0">
                         <input type="hidden" name="length[]" class="hidden-length" value="">
                         <input type="hidden" name="width[]" class="hidden-width" value="">
+                        <input type="hidden" name="color[]" class="hidden-variant-data" value="">
                     </td>
                     <td><input type="number" class="form-control carton-qty" name="boxes_qty[]" value="0" placeholder="Cartons" min="0"></td>
                     <td><input type="number" class="form-control loose-qty" name="loose_qty[]" value="0" placeholder="Loose Pcs" min="0"></td>
@@ -981,6 +982,7 @@
                     );
                     $row.find('.hidden-length').val(data.length || '');
                     $row.find('.hidden-width').val(data.width || '');
+                    $row.find('.hidden-variant-data').val(data.variant_data || '');
 
                     // Also set visible pack size
                     $row.find('.pack-size').val(data.pieces_per_box || 1);

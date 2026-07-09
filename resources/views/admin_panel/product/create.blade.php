@@ -1,14 +1,14 @@
 @extends('admin_panel.layout.app')
 
 @section('content')
-    {{-- 
+    {{--
         SUCCESS: Horizontal 2-Column Compact Layout Redesign
-        Features: 
+        Features:
         - Left Column: Product Identity & Spec inputs
         - Right Column: live preview stats panel and submit actions
         - Compact size & low scroll footprint.
     --}}
-    
+
     {{-- External Resources --}}
      <link href="{{ asset('assets/vendors/bootstrap5/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/vendors/select2/css/select2.min.css') }}" rel="stylesheet" />
@@ -172,7 +172,7 @@
     </style>
 
     <div class="page-container">
-        
+
         {{-- Page Title --}}
         <div class="d-flex align-items-center justify-content-between mb-3">
             <div class="d-flex align-items-center gap-3">
@@ -190,10 +190,10 @@
             @csrf
 
             <div class="row g-3">
-                
+
                 {{-- MAIN COLUMN: Full Width --}}
                 <div class="col-12">
-                    
+
                     {{-- CARD 1: Identity & Categorization --}}
                     <div class="section-card">
                         <div class="card-header-pro">
@@ -201,23 +201,16 @@
                         </div>
                         <div class="card-body-pro">
                             <div class="row g-3">
-                                
+
                                 {{-- Sub-grid for left content, image on the right --}}
                                 <div class="col-md-9">
                                     <div class="row g-3">
-                                        <div class="col-md-8">
+                                        <div class="col-md-12">
                                             <label class="form-label-pro">Product Name <span class="text-danger">*</span></label>
                                             <input type="text" class="form-control-pro fs-6 fw-bold" name="product_name" required placeholder="e.g. Ceramic Floor Tile 60x60">
                                         </div>
-                                        <div class="col-md-4">
-                                            <label class="form-label-pro">Barcode Auto-Gen</label>
-                                            <div class="d-flex">
-                                                <input type="text" class="form-control-pro" id="barcodeInput" name="barcode_path" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
-                                                <button type="button" class="btn btn-light border" id="generateBarcodeBtn" style="border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; border-top-right-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md);"><i class="las la-magic"></i></button>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="col-md-4">
+
+                                        <div class="col-md-3">
                                             <label class="form-label-pro">Category <span class="text-danger">*</span></label>
                                             <div class="d-flex gap-1">
                                                 <select class="form-select form-control-pro form-select-pro" id="category-dropdown" name="category_id" required>
@@ -229,7 +222,7 @@
                                                 <button type="button" class="btn btn-light border px-2 shadow-sm" data-toggle="modal" data-target="#categoryModal">+</button>
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-3">
                                             <label class="form-label-pro">Sub Category</label>
                                             <div class="d-flex gap-1">
                                                 <select class="form-select form-control-pro form-select-pro" id="subcategory-dropdown" name="sub_category_id">
@@ -238,7 +231,7 @@
                                                 <button type="button" class="btn btn-light border px-2 shadow-sm" data-toggle="modal" data-target="#subcategoryModal">+</button>
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-3">
                                             <label class="form-label-pro">Brand</label>
                                             <div class="d-flex gap-1">
                                                 <select class="form-select form-control-pro form-select-pro" name="brand_id" required>
@@ -249,6 +242,16 @@
                                                 </select>
                                                 <button type="button" class="btn btn-light border px-2 shadow-sm" data-toggle="modal" data-target="#brandModal">+</button>
                                             </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label-pro">Unit</label>
+                                            <select class="form-select form-control-pro form-select-pro fw-bold" name="size_mode" id="unit-dropdown">
+                                                <option value="by_pieces">Pcs</option>
+                                                <option value="by_cartons">Carton</option>
+                                                <option value="by_meter">Meter</option>
+                                                <option value="by_kg">Kg</option>
+                                                <option value="by_gm">Gm</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -267,109 +270,33 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label-pro">Model / Series</label>
-                                    <input type="text" class="form-control-pro" name="model" placeholder="Optional">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label-pro">Colors</label>
-                                    <select class="form-control-pro" name="color[]" id="color-select" multiple="multiple" style="width: 100%">
-                                        <option value="Black">Black</option>
-                                        <option value="White">White</option>
-                                        <option value="Red">Red</option>
-                                        <option value="Blue">Blue</option>
-                                        <option value="Beige">Beige</option>
-                                    </select>
-                                </div>
 
-                            </div>
-                        </div>
-                    </div>
 
-                    {{-- CARD 2: Stock Specifications & Pricing --}}
-                    <div class="section-card">
-                        <div class="card-header-pro d-flex flex-wrap justify-content-between align-items-center gap-3">
-                            <h5 class="card-title-pro"><i class="las la-box-open text-info"></i> Stock & Pricing</h5>
-                            
-                            <div class="d-flex align-items-center flex-wrap gap-3">
-                                <div class="bg-light px-3 py-1 rounded border d-flex gap-3 text-nowrap align-items-center" style="font-size: 0.82rem;">
-                                    <div>
-                                        <span class="text-muted fw-bold">Total Stock:</span>
-                                        <strong class="text-primary fs-6" id="total_stock_display">0</strong> <span class="text-muted small">pcs</span>
+                                <div class="col-12 mt-3 pt-3 border-top">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="form-label-pro text-primary mb-0">Product Variants (Optional)</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="enableVariantsBtn">+ Add Variants</button>
                                     </div>
-                                    <div class="border-start ps-3">
-                                        <span class="text-muted fw-bold">Est. Value:</span>
-                                        <span class="text-success fw-bold">PKR <span id="sale_total_display">0.00</span></span>
-                                    </div>
-                                </div>
-
-                                {{-- Switcher --}}
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <input type="radio" class="btn-check" name="size_mode" id="mode_carton" value="by_cartons" checked>
-                                    <label class="btn btn-outline-primary px-3 fw-bold" for="mode_carton"><i class="las la-box me-1"></i> Carton</label>
-
-                                    <input type="radio" class="btn-check" name="size_mode" id="mode_piece" value="by_pieces">
-                                    <label class="btn btn-outline-primary px-3 fw-bold" for="mode_piece"><i class="las la-puzzle-piece me-1"></i> Piece</label>
-                                    
-                                    {{-- BY SIZE SWITCHER HIDE / COMMENTED --}}
-                                    <input type="radio" class="d-none" name="size_mode" id="mode_size" value="by_size">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-body-pro">
-                            <div class="row g-3">
-                                
-                                {{-- Dynamic Stock Fields --}}
-                                <div class="col-md-12">
-                                    <div class="row g-3">
-                                        {{-- Carton Mode Fields --}}
-                                        <div class="col-md-3 group-by-size">
-                                            <label class="form-label-pro">Pcs / Carton</label>
-                                            <input type="number" class="form-control-pro" name="pieces_per_box" id="pieces_per_box" placeholder="0">
-                                        </div>
-                                        <div class="col-md-3 group-by-size">
-                                            <label class="form-label-pro">In-Stock Cartons</label>
-                                            <input type="number" class="form-control-pro border-primary text-primary fw-bold" name="boxes_quantity" id="boxes_quantity" placeholder="0">
-                                        </div>
-                                        <div class="col-md-3 group-loose">
-                                            <label class="form-label-pro text-warning">Loose Pieces (Extra)</label>
-                                            <input type="number" class="form-control-pro border-warning" name="loose_pieces" id="loose_pieces" placeholder="0">
-                                        </div>
-
-                                        {{-- Piece Mode Fields --}}
-                                        <div class="col-md-6 group-piece-only d-none">
-                                            <label class="form-label-pro text-primary">Total In-Stock Quantity (Pieces)</label>
-                                            <input type="number" class="form-control-pro border-primary text-primary fw-bold" name="piece_quantity" id="piece_quantity" placeholder="0">
-                                        </div>
-
-                                        {{-- Common Alert Quantity --}}
-                                        <div class="col-md-3">
-                                            <label class="form-label-pro text-danger">Low Stock Alert (Cartons)</label>
-                                            <input type="number" class="form-control-pro border-danger" name="alert_carton_quantity" id="alert_carton_quantity" min="0" placeholder="e.g. 5">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Pricing Group --}}
-                                <div class="col-md-12 pt-3 border-top">
-                                    <h6 class="form-label-pro text-primary mb-2">Unit Price Settings (Rs.)</h6>
-                                    <div class="row g-3">
-                                        <div class="col-md-3">
-                                            <label class="form-label-pro text-success">Sale Price <span class="unit-label text-muted fw-normal">(pc)</span></label>
-                                            <input type="number" class="form-control-pro fw-bold text-success" name="sale_price_per_box" id="sale_price_per_box" step="0.01" placeholder="0.00">
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label-pro text-secondary">Purchase Price <span class="unit-label text-muted fw-normal">(pc)</span></label>
-                                            <input type="number" class="form-control-pro text-muted" name="purchase_price_per_piece" id="purchase_price_per_piece" step="0.01" placeholder="0.00">
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label-pro">Sale Disc (%)</label>
-                                            <input type="number" class="form-control-pro" name="sale_discount_percent" step="0.01" value="0">
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label-pro">Purch Disc (%)</label>
-                                            <input type="number" class="form-control-pro" name="purchase_discount_percent" step="0.01" value="0">
+                                    <div id="variantsContainer" class="d-none">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-sm align-middle mb-1" id="variantsTable">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th style="width: 150px;">Variant Name</th>
+                                                        <th>Size</th>
+                                                        <th>Color</th>
+                                                        <th style="width: 100px;">Stock</th>
+                                                        <th style="width: 100px;">Sale Price</th>
+                                                        <th style="width: 100px;">Purch Price</th>
+                                                        <th style="width: 80px;">Alert</th>
+                                                        <th style="width: 140px;">Barcode</th>
+                                                        <th style="width: 90px; text-align:center;">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="variantsBody">
+                                                    <!-- rows injected by JS -->
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </div>
@@ -377,6 +304,8 @@
                             </div>
                         </div>
                     </div>
+
+
 
                     {{-- INLINE ACTIONS ROW --}}
                     <div class="d-flex justify-content-end align-items-center bg-white p-3 rounded shadow-sm border mb-4 gap-2">
@@ -388,12 +317,20 @@
 
 
 
-            {{-- HIDDEN BY-SIZE FORM CONTROLS FOR MIGRATION BACKWARD COMPATIBILITY --}}
+            {{-- HIDDEN FORM CONTROLS FOR BACKEND VALIDATION COMPATIBILITY --}}
             <div style="display:none !important;">
-                <input type="number" name="height" id="height" step="0.01" value="">
-                <input type="number" name="width" id="width" step="0.01" value="">
-                <input type="number" name="price_per_m2" id="price_per_m2" step="0.01" value="">
-                <input type="number" name="purchase_price_per_m2" id="purchase_price_per_m2" step="0.01" value="">
+                <input type="number" name="height" id="height" step="0.01" value="0">
+                <input type="number" name="width" id="width" step="0.01" value="0">
+                <input type="number" name="price_per_m2" id="price_per_m2" step="0.01" value="0">
+                <input type="number" name="purchase_price_per_m2" id="purchase_price_per_m2" step="0.01" value="0">
+
+                <input type="number" name="piece_quantity" id="piece_quantity" value="0">
+                <input type="number" name="pieces_per_box" id="pieces_per_box" value="1">
+                <input type="number" name="boxes_quantity" id="boxes_quantity" value="0">
+                <input type="number" name="loose_pieces" id="loose_pieces" value="0">
+                <input type="number" name="sale_price_per_box" id="sale_price_per_box" step="0.01" value="0">
+                <input type="number" name="purchase_price_per_piece" id="purchase_price_per_piece" step="0.01" value="0">
+                <input type="number" name="alert_carton_quantity" id="alert_carton_quantity" value="0">
             </div>
 
         </form>
@@ -481,108 +418,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('productForm');
-            const modeRadios = document.querySelectorAll('input[name="size_mode"]');
+            const unitDropdown = document.getElementById('unit-dropdown');
 
-            const grpBySize = document.querySelectorAll('.group-by-size');
-            const grpLoose = document.querySelectorAll('.group-loose');
-            const grpPieceOnly = document.querySelectorAll('.group-piece-only');
-
-            function toggleGroup(els, hide) {
-                els.forEach(el => hide ? el.classList.add('d-none') : el.classList.remove('d-none'));
-            }
-
-            function updateMode() {
-                const modeEl = document.querySelector('input[name="size_mode"]:checked');
-                if(!modeEl) return;
-                const mode = modeEl.value;
-
-                // Sync UI Switcher Active State
-                document.querySelectorAll('input[name="size_mode"]').forEach(r => {
-                    const lbl = document.querySelector(`label[for="${r.id}"]`);
-                    if(lbl) {
-                        if(r.checked) {
-                            lbl.classList.remove('btn-outline-primary');
-                            lbl.classList.add('btn-primary');
-                        } else {
-                            lbl.classList.remove('btn-primary');
-                            lbl.classList.add('btn-outline-primary');
-                        }
-                    }
-                });
-
-                // Hide ALL dynamic wrappers
-                toggleGroup(grpBySize, true);
-                toggleGroup(grpLoose, true);
-                toggleGroup(grpPieceOnly, true);
-
-                if (mode === 'by_cartons') {
-                    toggleGroup(grpBySize, false);
-                    toggleGroup(grpLoose, false);
-
-                    setRequired(['pieces_per_box', 'boxes_quantity', 'sale_price_per_box', 'purchase_price_per_piece'], true);
-                    setRequired(['piece_quantity'], false);
-
-                } else if (mode === 'by_pieces') {
-                    toggleGroup(grpPieceOnly, false);
-
-                    setRequired(['piece_quantity', 'sale_price_per_box', 'purchase_price_per_piece'], true);
-                    setRequired(['pieces_per_box', 'boxes_quantity'], false);
-                }
-
-                calculate();
-            }
-
-            function resetInputs() {
-                const idsOrNames = ['pieces_per_box', 'boxes_quantity', 'loose_pieces', 'piece_quantity', 'sale_price_per_box', 'purchase_price_per_piece'];
-                idsOrNames.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.value = '';
-                });
-                calculate();
-            }
-
-            function setRequired(ids, isReq) {
-                ids.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) isReq ? el.setAttribute('required', 'required') : el.removeAttribute('required');
-                });
-            }
-
-            function calculate() {
-                const modeEl = document.querySelector('input[name="size_mode"]:checked');
-                if(!modeEl) return;
-                const mode = modeEl.value;
-
-                const v = (id) => parseFloat(document.getElementById(id)?.value) || 0;
-                let stock = 0;
-                let saleVal = 0;
-
-                if (mode === 'by_cartons') {
-                    stock = (v('pieces_per_box') * v('boxes_quantity')) + v('loose_pieces');
-                    saleVal = stock * v('sale_price_per_box');
-
-                } else if (mode === 'by_pieces') {
-                    stock = v('piece_quantity');
-                    saleVal = stock * v('sale_price_per_box');
-                }
-
-                setText('total_stock_display', stock);
-                setText('sale_total_display', saleVal.toLocaleString(undefined, { minimumFractionDigits: 2 }));
-            }
-
-            function setText(id, val) {
-                const el = document.getElementById(id);
-                if (el) el.innerText = val;
-            }
-
-            // Events
-            modeRadios.forEach(r => r.addEventListener('change', function() {
-                resetInputs(); 
-                updateMode();
-            }));
-            form.querySelectorAll('input').forEach(i => i.addEventListener('input', calculate));
-
-            updateMode();
+            // Removed unused DOM elements and calculation functions for old Stock & Pricing logic.
 
             // Image Handler
             const imgInput = document.getElementById('imageInput');
@@ -614,6 +452,35 @@
             // AJAX Submission
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
+
+                // --- Sync Variants data to hidden main fields for backend compatibility ---
+                const vStocks = document.querySelectorAll('input[name="variant_stock[]"]');
+                const vSale = document.querySelectorAll('input[name="variant_sale_price[]"]');
+                const vPurch = document.querySelectorAll('input[name="variant_purchase_price[]"]');
+                const vAlert = document.querySelectorAll('input[name="variant_alert_qty[]"]');
+
+                let totalStock = 0;
+                vStocks.forEach(el => totalStock += (parseFloat(el.value) || 0));
+
+                let firstSale = vSale.length > 0 ? (parseFloat(vSale[0].value) || 0) : 0;
+                let firstPurch = vPurch.length > 0 ? (parseFloat(vPurch[0].value) || 0) : 0;
+                let firstAlert = vAlert.length > 0 ? (parseFloat(vAlert[0].value) || 0) : 0;
+
+                const mode = unitDropdown ? unitDropdown.value : 'by_pieces';
+                if(mode === 'by_cartons') {
+                    document.getElementById('boxes_quantity').value = totalStock;
+                    document.getElementById('pieces_per_box').value = 1;
+                    document.getElementById('loose_pieces').value = 0;
+                    document.getElementById('piece_quantity').value = 0;
+                } else {
+                    document.getElementById('piece_quantity').value = totalStock;
+                    document.getElementById('boxes_quantity').value = 0;
+                }
+                document.getElementById('sale_price_per_box').value = firstSale;
+                document.getElementById('purchase_price_per_piece').value = firstPurch;
+                document.getElementById('alert_carton_quantity').value = firstAlert;
+                // ------------------------------------------------------------------------
+
                 const btn = document.querySelector('button[type="submit"]');
                 const originalContent = btn.innerHTML;
                 btn.innerHTML = '<i class="las la-spinner la-spin"></i> Saving...';
@@ -645,16 +512,10 @@
             });
 
             // Barcode
-            const barIn = document.getElementById('barcodeInput');
-            const barBtn = document.getElementById('generateBarcodeBtn');
-            const barcodeUrl = '{{ route('generate-barcode-image') }}';
-            
-            if (!barIn.value) fetch(barcodeUrl).then(r => r.json()).then(d => barIn.value = d.barcode_number);
-            barBtn.addEventListener('click', () => fetch(barcodeUrl).then(r => r.json()).then(d => barIn.value = d.barcode_number));
+            // Main barcode generation logic removed as per user request
 
-            // Select2
-            $('#color-select').select2({ placeholder: "Select Colors", tags: true });
-            
+            // Select2 Removed for color-select
+
             $('#category-dropdown').on('change', function() {
                 var cid = $(this).val();
                 if (cid) {
@@ -675,7 +536,7 @@
                     let btn = form.find('button[type="submit"]');
                     let originalText = btn.text();
                     btn.text('Saving...').prop('disabled', true);
-                    
+
                     $.ajax({
                         url: form.attr('action'),
                         method: 'POST',
@@ -702,6 +563,77 @@
             handleQuickAdd('categoryModal', '#category-dropdown, #subcategoryModal select[name="category_id"]');
             handleQuickAdd('subcategoryModal', '#subcategory-dropdown');
             handleQuickAdd('brandModal', 'select[name="brand_id"]');
+
+            // Variants Logic
+            const enableVariantsBtn = document.getElementById('enableVariantsBtn');
+            const variantsContainer = document.getElementById('variantsContainer');
+            const variantsBody = document.getElementById('variantsBody');
+
+            function generateRandomBarcode() {
+                return Math.floor(100000 + Math.random() * 900000).toString();
+            }
+
+            function addVariantRow() {
+                const tr = document.createElement('tr');
+                const productName = document.querySelector('input[name="product_name"]').value || '';
+                const randBarcode = generateRandomBarcode();
+                tr.innerHTML = `
+                    <td><input type="text" class="form-control-pro form-control-sm" name="variant_name[]" value="${productName}" placeholder="Name"></td>
+                    <td><input type="text" class="form-control-pro form-control-sm" name="variant_size[]" placeholder="Size"></td>
+                    <td><input type="text" class="form-control-pro form-control-sm" name="variant_color[]" placeholder="Color"></td>
+                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_stock[]" placeholder="0"></td>
+                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_sale_price[]" step="0.01" placeholder="0.00"></td>
+                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_purchase_price[]" step="0.01" placeholder="0.00"></td>
+                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_alert_qty[]" placeholder="0"></td>
+                    <td>
+                        <div class="d-flex">
+                            <input type="text" class="form-control-pro form-control-sm" name="variant_barcode[]" value="${randBarcode}" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                            <button type="button" class="btn btn-sm btn-light border gen-var-barcode px-2" style="border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0;" title="Generate New"><i class="las la-sync-alt"></i></button>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-success add-var-btn px-2 py-1" title="Add"><i class="las la-check"></i></button>
+                        <button type="button" class="btn btn-danger remove-var-btn px-2 py-1" title="Remove"><i class="las la-times"></i></button>
+                    </td>
+                `;
+                variantsBody.appendChild(tr);
+            }
+
+            enableVariantsBtn.addEventListener('click', function() {
+                if (variantsContainer.classList.contains('d-none')) {
+                    variantsContainer.classList.remove('d-none');
+                    this.innerHTML = '- Remove Variants';
+                    this.classList.replace('btn-outline-primary', 'btn-outline-danger');
+                    if(variantsBody.children.length === 0) addVariantRow();
+                } else {
+                    variantsContainer.classList.add('d-none');
+                    this.innerHTML = '+ Add Variants';
+                    this.classList.replace('btn-outline-danger', 'btn-outline-primary');
+                    variantsBody.innerHTML = ''; // clear all rows
+                }
+            });
+
+            variantsBody.addEventListener('click', function(e) {
+                const addBtn = e.target.closest('.add-var-btn');
+                const remBtn = e.target.closest('.remove-var-btn');
+                const genBtn = e.target.closest('.gen-var-barcode');
+
+                if (addBtn) {
+                    addVariantRow();
+                } else if (remBtn) {
+                    const row = remBtn.closest('tr');
+                    if (variantsBody.children.length > 1) {
+                        row.remove();
+                    } else {
+                        // If it's the last row, clear inputs instead of removing
+                        row.querySelectorAll('input').forEach(inp => inp.value = '');
+                        row.querySelector('input[name="variant_barcode[]"]').value = generateRandomBarcode();
+                    }
+                } else if (genBtn) {
+                    const input = genBtn.closest('td').querySelector('input');
+                    input.value = generateRandomBarcode();
+                }
+            });
         });
     </script>
 @endsection

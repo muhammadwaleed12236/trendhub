@@ -4,7 +4,7 @@
         div.dataTables_wrapper div.dataTables_length select {
             width: 75px !important
         }
-        
+
         /* Bulk Edit Checkbox & Label Alignment */
         .bulk-edit-controls-card .form-check-inline {
             display: inline-flex !important;
@@ -45,7 +45,7 @@
             color: #1e293b;
             font-size: 1.15rem;
         }
-        
+
         /* Filter inputs */
         #filterForm input, #filterForm select {
             border-radius: 6px;
@@ -89,7 +89,7 @@
         #productTable tbody tr:hover {
             background-color: #f8fafc !important;
         }
-        
+
         /* Zoom-in thumbnail preview */
         #productTable img.rounded {
             transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -540,16 +540,11 @@
                         <tr>
                             <th><input type="checkbox" id="selectAll"></th>
                             <th>#</th>
-                            <th>Code</th>
                             <th>Image</th>
-                            <th>Category</th>
-                            <th>Item Name</th>
+                            <th>Item Details</th>
                             <th>Stock</th>
-                            <th>Min Qty (Ctn)</th>
-                            <th>Trade Price</th>
-                            <th>Retail Price</th>
-                            <th>Discount (Pur/Sale)</th>
-                            <th>Brand</th>
+                            <th>Purchase Price</th>
+                            <th>Sale Price</th>
                             <th>Status</th>
                             <th class="text-center">Action</th>
                         </tr>
@@ -559,7 +554,6 @@
                             <tr id="product-row-{{ $product->id }}" class="{{ $product->is_active ? '' : 'table-secondary opacity-75' }}">
                                 <td><input type="checkbox" class="selectProduct" value="{{ $product->id }}"></td>
                                 <td>{{ $key + 1 }}</td>
-                                <td class="fw-bold">{{ $product->item_code }}</td>
                                 <td>
                                     @if ($product->image)
                                         <img src="{{ asset('uploads/products/' . $product->image) }}" alt="Product"
@@ -569,26 +563,12 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <div class="category-view-mode">
-                                        <strong>{{ $product->category_relation->name ?? '-' }}</strong><br>
-                                        <small class="text-muted">{{ $product->sub_category_relation->name ?? '-' }}</small>
-                                    </div>
-                                    <div class="category-edit-mode d-none">
-                                        <select name="products[{{ $product->id }}][category_id]" class="form-select form-select-sm" disabled style="min-width: 120px;">
-                                            <option value="">Select Category</option>
-                                            @foreach ($categories as $cat)
-                                                <option value="{{ $cat->id }}" {{ $product->category_id == $cat->id ? 'selected' : '' }}>
-                                                    {{ $cat->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                                    <strong>{{ $product->item_name }}</strong><br>
+                                    <small class="text-muted">{{ $product->item_code }} | {{ $product->category_relation->name ?? '-' }} | {{ $product->brand->name ?? '-' }}</small>
                                 </td>
-                                <td>{{ $product->item_name }}</td>
                                 @php
                                     $stockPieces = (float) ($product->warehouse_stocks_sum_total_pieces ?? 0);
                                     $ppb = $product->pieces_per_box > 0 ? $product->pieces_per_box : 1;
-                                    
                                     if (($product->size_mode === 'by_cartons' || $product->size_mode === 'by_size') && $ppb > 1) {
                                         $boxes = floor($stockPieces / $ppb);
                                         $loose = $stockPieces % $ppb;
@@ -596,8 +576,6 @@
                                     } else {
                                         $stockDisplay = "{$stockPieces} <small class='text-muted'>Pcs</small>";
                                     }
-
-                                    // Prices based on mode
                                     $tradePrice = 0;
                                     $retailPrice = 0;
                                     if ($product->size_mode === 'by_size') {
@@ -606,77 +584,14 @@
                                         $retailPrice = $m2PerPiece * (float)$product->price_per_m2;
                                     } else {
                                         $tradePrice = (float)$product->purchase_price_per_piece;
-                                        $retailPrice = (float)$product->sale_price_per_piece ?: (float)$product->sale_price_per_box; 
+                                        $retailPrice = (float)$product->sale_price_per_piece ?: (float)$product->sale_price_per_box;
                                     }
                                 @endphp
                                 <td>
                                     <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.85rem;">{!! $stockDisplay !!}</span>
                                 </td>
-                                <td>
-                                    <div class="minqty-view-mode">
-                                        @if($product->alert_carton_quantity !== null)
-                                            @php
-                                                $isLowStock = false;
-                                                if (($product->size_mode === 'by_cartons' || $product->size_mode === 'by_size') && $ppb > 1) {
-                                                    $isLowStock = ($stockPieces / $ppb) < $product->alert_carton_quantity;
-                                                } else {
-                                                    $isLowStock = $stockPieces < $product->alert_carton_quantity;
-                                                }
-                                            @endphp
-                                            <span class="badge bg-light text-dark border px-2 py-1 {{ $isLowStock ? 'text-danger border-danger fw-bold bg-danger-subtle' : '' }}" style="font-size: 0.85rem;">
-                                                {{ $product->alert_carton_quantity }} Ctn
-                                            </span>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </div>
-                                    <div class="minqty-edit-mode d-none">
-                                        <input type="number" step="1" name="products[{{ $product->id }}][alert_carton_quantity]" value="{{ $product->alert_carton_quantity }}" class="form-control form-control-sm" disabled style="max-width: 80px;">
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="trade-price-view-mode">
-                                        Rs. {{ number_format($tradePrice, 2) }} <small class="text-muted">/pc</small>
-                                    </div>
-                                    <div class="trade-price-edit-mode d-none">
-                                        <div class="input-group input-group-sm" style="min-width: 100px;">
-                                            <span class="input-group-text px-1" style="font-size: 0.75rem;">Rs.</span>
-                                            <input type="number" step="0.01" name="products[{{ $product->id }}][purchase_price_per_piece]" value="{{ $product->purchase_price_per_piece }}" class="form-control form-control-sm px-1 fw-semibold text-secondary" disabled>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="retail-price-view-mode">
-                                        Rs. {{ number_format($retailPrice, 2) }} <small class="text-muted">/pc</small>
-                                    </div>
-                                    <div class="retail-price-edit-mode d-none">
-                                        <div class="input-group input-group-sm" style="min-width: 100px;">
-                                            <span class="input-group-text px-1" style="font-size: 0.75rem;">Rs.</span>
-                                            <input type="number" step="0.01" name="products[{{ $product->id }}][sale_price_per_piece]" value="{{ $product->sale_price_per_piece }}" class="form-control form-control-sm px-1 fw-bold text-success" disabled>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="discount-view-mode">
-                                        <div class="d-flex flex-column" style="font-size: 0.85rem; gap: 2px;">
-                                            <span>Pur: <strong class="text-danger">{{ $product->purchase_discount_percent ?? 0 }}%</strong></span>
-                                            <span>Sale: <strong class="text-success">{{ $product->sale_discount_percent ?? 0 }}%</strong></span>
-                                        </div>
-                                    </div>
-                                    <div class="discount-edit-mode d-none">
-                                        <div class="d-flex flex-column gap-1" style="min-width: 90px;">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text px-1 py-0" style="font-size:0.7rem;">P%</span>
-                                                <input type="number" step="0.01" name="products[{{ $product->id }}][purchase_discount_percent]" value="{{ $product->purchase_discount_percent ?? 0 }}" class="form-control form-control-sm px-1 py-0" disabled>
-                                            </div>
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text px-1 py-0" style="font-size:0.7rem;">S%</span>
-                                                <input type="number" step="0.01" name="products[{{ $product->id }}][sale_discount_percent]" value="{{ $product->sale_discount_percent ?? 0 }}" class="form-control form-control-sm px-1 py-0" disabled>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>{{ $product->brand->name ?? '-' }}</td>
+                                <td class="text-secondary">Rs. {{ number_format($tradePrice, 2) }}</td>
+                                <td class="fw-bold text-success">Rs. {{ number_format($retailPrice, 2) }}</td>
                                 <td class="text-center">
                                     @if($product->is_active)
                                         <span class="badge bg-success" id="status-badge-{{ $product->id }}">Active</span>
@@ -685,9 +600,9 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-warning viewProductBtn"
-                                        data-id="{{ $product->id }}">
-                                        View
+                                    <button type="button" class="btn btn-sm btn-info viewProductBtn text-white"
+                                        data-id="{{ $product->id }}" title="View Detail">
+                                        👁 View
                                     </button>
 
                                     @if (auth()->user()->can('products.edit') || auth()->user()->email === 'admin@admin.com')
@@ -708,11 +623,10 @@
                                             data-id="{{ $product->id }}"
                                             data-active="{{ $product->is_active ? '1' : '0' }}"
                                             data-name="{{ $product->item_name }}"
-                                            title="{{ $product->is_active ? 'Deactivate Product' : 'Activate Product' }}">
-                                            {{ $product->is_active ? '🔴 Deactivate' : '🟢 Activate' }}
+                                            title="{{ $product->is_active ? 'Deactivate' : 'Activate' }}">
+                                            {{ $product->is_active ? '🔴' : '🟢' }}
                                         </button>
                                     @endif
-
                                 </td>
                             </tr>
                         @endforeach
@@ -744,241 +658,154 @@
         </div>
     </div>
 
-    <!-- Product Detail View Modal (BS4 Simple 3-Panel) -->
-    <div class="modal fade" id="productViewModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-sm">
 
-                <!-- Header -->
-                <div class="modal-header bg-white border-bottom-0 pb-0">
+
+    <!-- Variant View Modal -->
+    <div class="modal fade" id="productViewModal" tabindex="-1" aria-labelledby="productViewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-bottom bg-white">
                     <div>
-                        <h5 class="modal-title font-weight-bold text-dark" id="view_item_name">Product Name</h5>
-                        <p class="text-muted small mb-0"><i class="las la-barcode"></i> <span
-                                id="view_item_code">CODE</span></p>
+                        <h5 class="modal-title fw-bold text-dark mb-0" id="productViewModalLabel">
+                            <span id="view_item_name">Product</span>
+                        </h5>
+                        <small class="text-muted" id="view_item_subtext">CODE</small>
                     </div>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-
-                <!-- Body -->
-                <div class="modal-body bg-light p-3">
-
-                    <!-- Loading Spinner -->
+                <div class="modal-body p-0">
                     <div id="modalLoadingSpinner" class="text-center py-5 d-none">
                         <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">Loading...</span>
+                            <span class="visually-hidden">Loading...</span>
                         </div>
                     </div>
-
-                    <!-- Main Content -->
-                    <div class="row" id="modalContentRow">
-
-                        <!-- Panel 1: Information -->
-                        <div class="col-md-4 mb-3 mb-md-0">
-                            <div class="card h-100 border-0 shadow-sm rounded">
-                                <div class="card-body p-3">
-                                    <h6 class="text-uppercase text-primary font-weight-bold small mb-3 border-bottom pb-2">
-                                        1. Information</h6>
-
-                                    <div class="text-center mb-3">
-                                        <div class="bg-light rounded d-flex align-items-center justify-content-center mx-auto"
-                                            style="width: 100px; height: 100px; overflow: hidden; border: 1px solid #eee;">
-                                            <img id="view_image_preview" src="" class="img-fluid d-none">
-                                            <div id="view_image_placeholder" class="text-center">
-                                                <i class="las la-image text-muted" style="font-size: 2rem;"></i>
-                                                <small class="d-block text-muted" style="font-size: 10px;">No
-                                                    Image</small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-2">
-                                        <small class="text-muted d-block">Category</small>
-                                        <span class="font-weight-bold text-dark" id="view_cat_sub">-</span>
-                                    </div>
-                                    <div class="mb-2">
-                                        <small class="text-muted d-block">Brand / Model</small>
-                                        <span class="font-weight-bold text-dark" id="view_brand_model">-</span>
-                                    </div>
-                                    <div class="mb-2">
-                                        <small class="text-muted d-block">Colors</small>
-                                        <span class="text-dark" id="view_color" style="font-size: 0.9rem;">-</span>
-                                    </div>
-
-                                    <div class="mb-0 border-top pt-2 mt-2">
-                                        <small class="text-muted d-block">Created On</small>
-                                        <span class="text-dark small" id="view_created_at">-</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Panel 2: Measurement & Stock -->
-                        <div class="col-md-4 mb-3 mb-md-0">
-                            <div class="card h-100 border-0 shadow-sm rounded">
-                                <div class="card-body p-3">
-                                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                                        <h6 class="text-uppercase text-info font-weight-bold small mb-0">2. Measurement
-                                        </h6>
-                                        <span class="badge badge-secondary" id="view_size_mode_badge">Mode</span>
-                                    </div>
-
-                                    <!-- By Size -->
-                                    <div id="sec_by_size" class="d-none">
-                                        <div class="row no-gutters mb-2">
-                                            <div class="col-6 pr-1">
-                                                <small class="text-muted d-block">Dim (HxW)</small>
-                                                <span class="font-weight-bold text-dark" id="view_dimensions">-</span>
-                                            </div>
-                                            <div class="col-6 pl-1">
-                                                <small class="text-muted d-block">m²/Pc</small>
-                                                <span class="font-weight-bold text-dark" id="view_m2_piece">-</span>
-                                            </div>
-                                        </div>
-                                        <div class="bg-light p-2 rounded mb-2 border">
-                                            <div class="d-flex justify-content-between">
-                                                <small class="text-muted">Box Qty</small>
-                                                <strong class="text-dark" id="view_boxes_qty_size">-</strong>
-                                            </div>
-                                            <div class="d-flex justify-content-between">
-                                                <small class="text-muted">Pcs/Box</small>
-                                                <strong class="text-dark" id="view_pcs_box_size">-</strong>
-                                            </div>
-                                        </div>
-                                        <div class="text-center mt-2">
-                                            <small class="text-muted d-block Uppercase">Total Area (m²)</small>
-                                            <div class="h5 font-weight-bold text-info" id="view_total_m2">-</div>
-                                        </div>
-                                    </div>
-
-                                    <!-- By Box/Carton -->
-                                    <div id="sec_packing" class="d-none">
-                                        <div class="row text-center mb-2 mx-0">
-                                            <div class="col-4 px-1">
-                                                <div class="bg-light p-1 rounded border">
-                                                    <small class="d-block" style="font-size: 0.6rem;">PCS/BOX</small>
-                                                    <strong class="text-dark" id="view_pcs_box">-</strong>
-                                                </div>
-                                            </div>
-                                            <div class="col-4 px-1">
-                                                <div class="bg-light p-1 rounded border">
-                                                    <small class="d-block" style="font-size: 0.6rem;">BOXES</small>
-                                                    <strong class="text-primary" id="view_boxes_qty">-</strong>
-                                                </div>
-                                            </div>
-                                            <div class="col-4 px-1">
-                                                <div class="bg-light p-1 rounded border">
-                                                    <small class="d-block" style="font-size: 0.6rem;">LOOSE</small>
-                                                    <strong class="text-warning" id="view_loose_pcs">-</strong>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- By Piece -->
-                                    <div id="sec_by_piece" class="d-none text-center mb-3">
-                                        <div class="alert alert-light border">
-                                            <i class="las la-layer-group text-primary" style="font-size: 1.5rem;"></i>
-                                            <br>
-                                            <span class="text-muted small">Unit Tracking Only</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Total Stock -->
-                                    <div class="mt-auto pt-3 border-top">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <small class="text-muted font-weight-bold">TOTAL PCS</small>
-                                            <span class="h4 mb-0 font-weight-bold text-success"
-                                                id="view_total_stock_qty">0</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-danger font-weight-bold">ALERT QUANTITY (CARTONS)</small>
-                                            <span class="h6 mb-0 font-weight-bold text-danger"
-                                                id="view_alert_quantity">-</span>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Panel 3: Financial -->
-                        <div class="col-md-4">
-                            <div class="card h-100 border-0 shadow-sm rounded">
-                                <div class="card-body p-3">
-                                    <h6 class="text-uppercase text-success font-weight-bold small mb-3 border-bottom pb-2">
-                                        3. Financials</h6>
-
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between mb-1">
-                                            <small class="text-muted font-weight-bold" id="lbl_price_unit">Sale
-                                                Price</small>
-                                            <span class="font-weight-bold text-dark" id="view_price_unit">-</span>
-                                        </div>
-                                        <div class="progress" style="height: 4px;">
-                                            <div class="progress-bar bg-success" style="width: 100%"></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between mb-1">
-                                            <small class="text-muted font-weight-bold" id="lbl_purch_unit">Purch
-                                                Price</small>
-                                            <span class="text-secondary" id="view_purch_unit">-</span>
-                                        </div>
-                                        <div class="progress" style="height: 4px;">
-                                            <div class="progress-bar bg-secondary" style="width: 60%"></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row no-gutters mb-3">
-                                        <div class="col-6 pr-1">
-                                            <div class="bg-light p-2 rounded border">
-                                                <small class="text-muted d-block" style="font-size: 0.75rem;">PURCHASE DISC</small>
-                                                <strong class="text-danger" id="view_purchase_discount" style="font-size: 0.95rem;">0%</strong>
-                                            </div>
-                                        </div>
-                                        <div class="col-6 pl-1">
-                                            <div class="bg-light p-2 rounded border">
-                                                <small class="text-muted d-block" style="font-size: 0.75rem;">SALE DISC</small>
-                                                <strong class="text-success" id="view_sale_discount" style="font-size: 0.95rem;">0%</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="alert alert-success p-2 mb-0 mt-4 mx-0 text-center"
-                                        style="background-color: #d1e7dd; border-color: #badbcc;">
-                                        <small class="d-block text-success font-weight-bold text-uppercase"
-                                            style="font-size: 0.7rem;">Est. Sale Value</small>
-                                        <div class="font-weight-bold text-dark h4 mb-0" id="view_sale_total">-</div>
-                                    </div>
-                                    <div class="text-center mt-2">
-                                        <small class="text-muted">Total Purch: <span id="view_purch_total"
-                                                class="text-danger">-</span></small>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-
+                    <div id="modalContentRow" class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-center" style="font-size: 0.9rem;">
+                            <thead class="table-light text-secondary small text-uppercase">
+                                <tr>
+                                    <th class="text-start ps-3">Variant Name</th>
+                                    <th>Size</th>
+                                    <th>Color</th>
+                                    <th>Stock</th>
+                                    <th>Sale Price</th>
+                                    <th>Purch Price</th>
+                                    <th>Alert</th>
+                                    <th class="text-end pe-3">Barcode</th>
+                                </tr>
+                            </thead>
+                            <tbody id="variantTableBody">
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-
-                <!-- Simple Footer -->
-                <div class="modal-footer border-top-0 py-2 bg-white rounded-bottom">
-                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4"
-                        data-dismiss="modal">Close</button>
+                <div class="modal-footer bg-white py-2">
+                    <button type="button" class="btn btn-secondary btn-sm px-4" data-dismiss="modal">Close</button>
                 </div>
-
             </div>
         </div>
     </div>
 
+    {{-- View Modal JS --}}
+    <script>
+        $(document).on('click', '.viewProductBtn', function() {
+            let productId = $(this).data('id');
+            $('#modalContentRow').addClass('d-none');
+            $('#modalLoadingSpinner').removeClass('d-none');
+            $('#productViewModal').modal('show');
 
+            $.ajax({
+                url: "/productview/" + productId,
+                type: "GET",
+                success: function(product) {
+                    $('#modalLoadingSpinner').addClass('d-none');
+                    $('#modalContentRow').removeClass('d-none');
 
+                    $('#view_item_name').text(product.item_name ?? 'Unknown');
+                    $('#view_item_subtext').text((product.item_code ?? '') + ' | ' + (product.category_relation?.name ?? '') + ' | ' + (product.brand?.name ?? ''));
 
-   
+                    let tbody = $('#variantTableBody');
+                    tbody.empty();
+
+                    let colorList = ['-'];
+                    let variants = [];
+
+                    if (product.color) {
+                        try {
+                            let parsed = JSON.parse(product.color);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                if (typeof parsed[0] === 'object') {
+                                    variants = parsed;
+                                } else {
+                                    colorList = parsed;
+                                }
+                            } else if (typeof parsed === 'string') {
+                                colorList = [parsed];
+                            }
+                        } catch (e) { colorList = [product.color]; }
+                    }
+
+                    let sizeStr = '-';
+                    if (product.size_mode === 'by_size') {
+                        sizeStr = (product.height || 0) + ' x ' + (product.width || 0) + ' cm';
+                    }
+
+                    let stock = product.calculated_total_stock_qty ?? 0;
+                    let alertQtyDefault = (product.alert_carton_quantity != null) ? product.alert_carton_quantity + ' ' : '-';
+                    let salePrice = product.size_mode === 'by_size' ? product.price_per_m2 : (product.sale_price_per_piece || product.sale_price_per_box || 0);
+                    let purchPrice = product.size_mode === 'by_size' ? product.purchase_price_per_m2 : (product.purchase_price_per_piece || 0);
+                    let priceLabel = product.size_mode === 'by_size' ? '/m²' : '/pc';
+
+                    if (variants.length > 0) {
+                        variants.forEach((v, index) => {
+                            let barcode = v.barcode || (product.barcode_path ?? product.item_code);
+                            let colorBadge = (v.color && v.color !== '-') ? `<span class="badge bg-secondary">${v.color}</span>` : '<span class="text-muted">-</span>';
+                            let isLow = v.stock > 0 && v.alert != null && v.stock <= v.alert;
+                            let stockBadge = `<span class="badge ${isLow ? 'bg-danger' : 'bg-success'} bg-opacity-10 text-${isLow ? 'danger' : 'success'} border border-${isLow ? 'danger' : 'success'}-subtle px-2 py-1">${v.stock}</span>`;
+                            let alertQty = (v.alert != null && v.alert != 0) ? v.alert + '' : '-';
+
+                            tbody.append(`
+                                <tr>
+                                    <td class="text-start ps-3 fw-semibold">${v.name || product.item_name}</td>
+                                    <td>${v.size || '-'}</td>
+                                    <td>${colorBadge}</td>
+                                    <td>${stockBadge}</td>
+                                    <td class="fw-bold text-success">Rs. ${parseFloat(v.sale_price||0).toFixed(2)} <small class="text-muted fw-normal">${priceLabel}</small></td>
+                                    <td class="text-muted">Rs. ${parseFloat(v.purch_price||0).toFixed(2)} <small>${priceLabel}</small></td>
+                                    <td><span class="badge bg-light text-danger border">${alertQty}</span></td>
+                                    <td class="text-end pe-3"><code class="bg-light px-2 py-1 rounded border text-dark small">${barcode}</code></td>
+                                </tr>
+                            `);
+                        });
+                    } else {
+                        colorList.forEach((color, index) => {
+                            let barcode = (product.barcode_path ?? product.item_code ?? '') + (index > 0 ? '-' + String(index + 1).padStart(2, '0') : '');
+                            let colorBadge = (color && color !== '-') ? `<span class="badge bg-secondary">${color}</span>` : '<span class="text-muted">-</span>';
+                            let isLow = stock > 0 && product.alert_carton_quantity != null && stock <= product.alert_carton_quantity;
+                            let stockBadge = `<span class="badge ${isLow ? 'bg-danger' : 'bg-success'} bg-opacity-10 text-${isLow ? 'danger' : 'success'} border border-${isLow ? 'danger' : 'success'}-subtle px-2 py-1">${stock}</span>`;
+
+                            tbody.append(`
+                                <tr>
+                                    <td class="text-start ps-3 fw-semibold">${product.item_name}</td>
+                                    <td>${sizeStr}</td>
+                                    <td>${colorBadge}</td>
+                                    <td>${stockBadge}</td>
+                                    <td class="fw-bold text-success">Rs. ${parseFloat(salePrice||0).toFixed(2)} <small class="text-muted fw-normal">${priceLabel}</small></td>
+                                    <td class="text-muted">Rs. ${parseFloat(purchPrice||0).toFixed(2)} <small>${priceLabel}</small></td>
+                                    <td><span class="badge bg-light text-danger border">${alertQtyDefault}</span></td>
+                                    <td class="text-end pe-3"><code class="bg-light px-2 py-1 rounded border text-dark small">${barcode}</code></td>
+                                </tr>
+                            `);
+                        });
+                    }
+                },
+                error: function() {
+                    $('#modalLoadingSpinner').addClass('d-none');
+                    Swal.fire('Error', 'Could not fetch product details.', 'error');
+                }
+            });
+        });
+    </script>
+
     {{-- Toggle Active JS --}}
     <script>
         $(document).on('click', '.toggle-active-btn', function () {
@@ -1339,6 +1166,69 @@
                 });
             });
 
+        });
+    </script>
+
+    {{-- Toggle Active JS --}}
+    <script>
+        $(document).on('click', '.toggle-active-btn', function () {
+            const btn = $(this);
+            const productId = btn.data('id');
+            const isActive = btn.data('active') == '1';
+            const productName = btn.data('name');
+            const actionText = isActive ? 'Deactivate' : 'Activate';
+            const actionIcon = isActive ? 'warning' : 'success';
+
+            Swal.fire({
+                title: actionText + ' Product?',
+                html: `<b>${productName}</b><br><small class="text-muted">${isActive ? 'Product will be hidden from Sale/Purchase forms.' : 'Product will be visible in Sale/Purchase forms.'}</small>`,
+                icon: actionIcon,
+                showCancelButton: true,
+                confirmButtonText: 'Yes, ' + actionText,
+                confirmButtonColor: isActive ? '#dc3545' : '#28a745',
+                cancelButtonText: 'Cancel',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/product/${productId}/toggle-active`,
+                        type: 'POST',
+                        data: { _token: '{{ csrf_token() }}' },
+                        success: function (res) {
+                            if (res.success) {
+                                const row = $(`#product-row-${productId}`);
+                                const badge = $(`#status-badge-${productId}`);
+
+                                if (res.is_active) {
+                                    row.removeClass('table-secondary opacity-75');
+                                    badge.removeClass('bg-danger').addClass('bg-success').text('Active');
+                                    btn.removeClass('btn-outline-success').addClass('btn-outline-danger')
+                                       .text('🔴').data('active', '1')
+                                       .attr('title', 'Deactivate Product');
+                                } else {
+                                    row.addClass('table-secondary opacity-75');
+                                    badge.removeClass('bg-success').addClass('bg-danger').text('Inactive');
+                                    btn.removeClass('btn-outline-danger').addClass('btn-outline-success')
+                                       .text('🟢').data('active', '0')
+                                       .attr('title', 'Activate Product');
+                                }
+
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'top-end',
+                                    icon: 'success',
+                                    title: res.message,
+                                    showConfirmButton: false,
+                                    timer: 2500,
+                                    timerProgressBar: true,
+                                });
+                            }
+                        },
+                        error: function () {
+                            Swal.fire('Error', 'Could not update product status.', 'error');
+                        }
+                    });
+                }
+            });
         });
     </script>
 

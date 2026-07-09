@@ -13,123 +13,26 @@
     <link href="{{ asset('assets/vendors/bootstrap5/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/vendors/select2/css/select2.min.css') }}" rel="stylesheet" />
     <style>
-        /* ================= RESPONSIVE SALES UI ================= */
-
-        /* allow smooth horizontal scroll on small devices */
+        /* ================= ULTRA-COMPACT EXCEL-LIKE UI ================= */
         .table-responsive {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
-
-        /* base table width */
-        .sales-table {
-            min-width: 700px;
-        }
-
-        /* 🔹 DISCOUNT COLUMN – THORI SI BARI */
-        .sales-table td.large-col {
-            min-width: 95px;
-            width: 95px;
-            padding: 4px;
-        }
-
-        /* 🔹 DISCOUNT LAYOUT */
+        .sales-table { min-width: 700px; }
+        .sales-table td.large-col { min-width: 80px; width: 80px; padding: 0 !important; }
         .discount-wrapper {
             position: relative;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 0;
             flex-wrap: nowrap;
         }
-
-        /* 🔹 INPUT – NOT TOO SMALL */
-        .discount-wrapper .discount-value {
-            width: 60px;
-            min-width: 60px;
-            font-size: 0.8rem;
-            padding: 4px 6px;
-        }
-
-        /* 🔹 PLUS ICON – NEAT & SMALL */
-        .discount-wrapper .discount-plus {
-            width: 22px;
-            height: 22px;
-            padding: 0;
-            font-size: 13px;
-            line-height: 1;
-        }
-
-        /* 🔹 DROPDOWN */
-        .discount-wrapper .discount-type {
-            position: absolute;
-            right: 0;
-            top: 115%;
-            width: 65px;
-            font-size: 0.75rem;
-            z-index: 30;
-        }
-
-
-
-        /* ---------- TABLET (<= 992px) ---------- */
-        @media (max-width: 992px) {
-
-            .main-container {
-                max-width: 100%;
-            }
-
-            .sales-table {
-                min-width: 700px;
-            }
-
-            .minw-350 {
-                min-width: 100%;
-            }
-
-        }
-
-        /* ---------- MOBILE (<= 768px) ---------- */
-        @media (max-width: 768px) {
-
-            .header-text {
-                font-size: 1rem;
-            }
-
-            .btn {
-                padding: .35rem .5rem;
-            }
-
-            /* stack header buttons */
-            .d-flex.justify-content-between.align-items-center {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-
-            /* customer + invoice panel full width */
-            .minw-350 {
-                width: 100%;
-            }
-
-            /* reduce input font */
-            .form-control,
-            .form-select {
-                font-size: .8rem;
-            }
-
-        }
-
-        /* ---------- VERY SMALL DEVICES ---------- */
-        @media (max-width: 576px) {
-
-            .sales-table {
-                min-width: 650px;
-            }
-
-            .discount-wrapper .discount-value {
-                min-width: 90px;
-            }
-
-        }
+        .discount-wrapper .discount-value { width: 50px; min-width: 50px; font-size: 0.75rem; padding: 1px 3px; }
+        .discount-wrapper .discount-plus { width: 18px; height: 18px; padding: 0; font-size: 11px; line-height: 1; }
+        .discount-wrapper .discount-type { position: absolute; right: 0; top: 115%; width: 55px; font-size: 0.7rem; z-index: 30; }
+        @media (max-width: 992px) { .main-container { max-width: 100%; } .sales-table { min-width: 700px; } .minw-350 { min-width: 100%; } }
+        @media (max-width: 768px) { .header-text { font-size: 0.85rem; } .btn { padding: .2rem .4rem; } .minw-350 { width: 100%; } .form-control, .form-select { font-size: .75rem; } }
+        @media (max-width: 576px) { .sales-table { min-width: 650px; } .discount-wrapper .discount-value { min-width: 70px; } }
     </style>
     <style>
         /* Premium Customer Card CSS - Refactored 2-row layout */
@@ -242,7 +145,7 @@
             box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15) !important;
         }
 
-        /* 💎 PREMIUM MODERN ERP THEME FOR TRANSACTION ENTRY 💎 */
+        /* 💎 ULTRA-COMPACT EXCEL-LIKE ERP THEME 💎 */
         body {
             background-color: #f8fafc;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -250,67 +153,62 @@
         
         /* Containers & Cards */
         .main-container {
-            border: 2px solid #475569 !important; /* Bold outer border */
-            border-radius: 12px !important;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05) !important;
+            border: 1px solid #94a3b8 !important;
+            border-radius: 4px !important;
+            box-shadow: none !important;
             background-color: #ffffff !important;
-            padding: 24px !important;
-            font-size: .85rem;
-            max-width: 98%;
+            padding: 6px !important;
+            font-size: .78rem;
+            max-width: 100%;
         }
         
         .card-panel {
             background-color: #f8fafc !important;
-            border: 2px solid #cbd5e1 !important; /* Bold panel borders */
-            border-radius: 10px !important;
-            padding: 20px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 3px !important;
+            padding: 6px !important;
             height: 100%;
-            transition: all 0.2s;
-        }
-        
-        .card-panel:hover {
-            border-color: #94a3b8 !important;
         }
         
         .totals-card {
             background-color: #f1f5f9 !important;
-            border: 2px solid #cbd5e1 !important; /* Bold summary borders */
-            border-radius: 10px !important;
-            padding: 20px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 3px !important;
+            padding: 6px !important;
         }
         
-        /* Bold Section Titles */
+        /* Section Titles */
         .section-title {
-            font-weight: 800 !important;
+            font-weight: 700 !important;
             text-transform: uppercase;
-            font-size: 0.8rem !important;
-            letter-spacing: 1px !important;
+            font-size: 0.72rem !important;
+            letter-spacing: 0.5px !important;
             color: #1e293b !important;
-            margin-bottom: 16px !important;
-            border-left: 4px solid #2563eb !important;
-            padding-left: 10px !important;
+            margin-bottom: 4px !important;
+            border-left: 3px solid #2563eb !important;
+            padding-left: 6px !important;
         }
         
-        /* Clean inputs with bold borders */
+        /* Clean inputs - compact */
         .form-control,
         .form-select,
         .select2-container--default .select2-selection--single {
-            border: 2px solid #cbd5e1 !important;
-            border-radius: 8px !important;
-            padding: 6px 12px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 3px !important;
+            padding: 2px 6px !important;
             font-weight: 500 !important;
             color: #1e293b !important;
             background-color: #ffffff !important;
-            transition: all 0.2s ease-in-out !important;
+            transition: all 0.15s ease-in-out !important;
             height: auto !important;
-            font-size: 0.85rem !important;
+            font-size: 0.78rem !important;
         }
         
         .form-control:focus,
         .form-select:focus,
         .select2-container--default.select2-container--focus .select2-selection--single {
             border-color: #2563eb !important;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15) !important;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1) !important;
             outline: none !important;
         }
         
@@ -323,32 +221,31 @@
             cursor: not-allowed !important;
         }
         
-        /* Elegant & Bold Buttons */
+        /* Compact Buttons */
         .btn-action-primary {
             background-color: #2563eb !important;
-            border: 2px solid #1d4ed8 !important;
+            border: 1px solid #1d4ed8 !important;
             color: #ffffff !important;
-            font-weight: 700 !important;
-            border-radius: 8px !important;
-            padding: 8px 20px !important;
-            transition: all 0.2s;
-            font-size: 0.85rem !important;
+            font-weight: 600 !important;
+            border-radius: 3px !important;
+            padding: 4px 12px !important;
+            transition: all 0.15s;
+            font-size: 0.78rem !important;
         }
         .btn-action-primary:hover {
             background-color: #1d4ed8 !important;
-            transform: translateY(-1px);
             color: #ffffff !important;
         }
         
         .btn-action-secondary {
             background-color: #ffffff !important;
-            border: 2px solid #cbd5e1 !important;
+            border: 1px solid #cbd5e1 !important;
             color: #475569 !important;
-            font-weight: 700 !important;
-            border-radius: 8px !important;
-            padding: 8px 20px !important;
-            transition: all 0.2s;
-            font-size: 0.85rem !important;
+            font-weight: 600 !important;
+            border-radius: 3px !important;
+            padding: 4px 12px !important;
+            transition: all 0.15s;
+            font-size: 0.78rem !important;
         }
         .btn-action-secondary:hover {
             background-color: #f1f5f9 !important;
@@ -357,68 +254,70 @@
         
         /* Transaction Grid / Table */
         .table-responsive {
-            border: 1px solid #cbd5e1 !important; /* Elegant outer border */
-            border-radius: 8px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 2px !important;
             overflow-x: auto !important;
             overflow-y: visible !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-            min-height: 200px;
+            box-shadow: none !important;
+            min-height: 100px;
             background-color: #ffffff;
         }
         
         .minw-350 {
-            min-width: 320px;
-            width: 320px;
+            min-width: 280px;
+            width: 280px;
             flex-shrink: 0;
         }
 
         .sales-table {
             border-collapse: collapse !important;
             margin-bottom: 0 !important;
-            min-width: 935px;
+            width: 100%;
+            min-width: 900px;
         }
         
         .sales-table thead th {
-            background-color: #f8fafc !important; /* Light clean header */
+            background-color: #e2e8f0 !important;
             color: #0f172a !important;
             font-weight: 700 !important;
             text-transform: uppercase;
-            font-size: 11px !important;
-            letter-spacing: 0.5px;
-            padding: 10px 8px !important;
-            border: 1px solid #cbd5e1 !important;
-            border-bottom: 2px solid #94a3b8 !important; /* Thick header separator border */
+            font-size: 10px !important;
+            letter-spacing: 0.3px;
+            padding: 3px 4px !important;
+            border: 1px solid #94a3b8 !important;
+            border-bottom: 2px solid #64748b !important;
             vertical-align: middle !important;
             text-align: center;
+            white-space: nowrap;
         }
 
         .sales-table thead th.col-product {
             text-align: left !important;
-            padding-left: 12px !important;
+            padding-left: 4px !important;
         }
         
         .sales-table tbody td {
-            border: 1px solid #cbd5e1 !important; /* Flat interior cell borders */
-            padding: 0 !important; /* Zero padding to let input fill cell completely */
+            border: 1px solid #cbd5e1 !important;
+            padding: 0 !important;
             background-color: #ffffff;
             vertical-align: middle !important;
         }
 
-        /* ⚡ FLAT BORDERLESS GRID INPUTS ⚡ */
+        /* ⚡ FLAT BORDERLESS GRID INPUTS - COMPACT ⚡ */
         .sales-table tbody .form-control,
         .sales-table tbody .form-select {
             border: none !important;
             border-radius: 0 !important;
             box-shadow: none !important;
-            height: 38px !important; /* Uniform height */
+            height: 26px !important;
             margin: 0 !important;
-            padding: 6px 8px !important;
+            padding: 1px 4px !important;
             width: 100% !important;
             background-color: transparent !important;
-            text-align: center; /* Center-align text in grid inputs */
+            text-align: center;
             color: #1e293b !important;
             font-weight: 500 !important;
-            font-size: 0.82rem !important;
+            font-size: 0.76rem !important;
         }
 
         .sales-table tbody td.col-product .form-select {
@@ -426,7 +325,6 @@
             padding-left: 12px !important;
         }
 
-        /* Calculations and Read-Only cells get a neat slate tone background */
         .sales-table tbody .input-readonly,
         .sales-table tbody input[readonly],
         .sales-table tbody select[disabled] {
@@ -436,17 +334,16 @@
             font-weight: 600 !important;
         }
 
-        /* Subtle focus highlight inside cell */
         .sales-table tbody .form-control:focus,
         .sales-table tbody .form-select:focus {
             outline: none !important;
-            background-color: #f8fafc !important;
-            box-shadow: inset 0 0 0 2px #2563eb !important;
+            background-color: #eff6ff !important;
+            box-shadow: inset 0 0 0 1px #2563eb !important;
         }
 
         /* Select2 Specific flat borderless styling */
         .sales-table tbody .select2-container--default .select2-selection--single {
-            height: 38px !important;
+            height: 26px !important;
             padding: 0 !important;
             border: none !important;
             border-radius: 0 !important;
@@ -457,24 +354,24 @@
         }
 
         .sales-table tbody .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 38px !important;
-            padding-left: 12px !important;
-            padding-right: 20px !important;
-            font-size: 0.82rem !important;
+            line-height: 26px !important;
+            padding-left: 4px !important;
+            padding-right: 16px !important;
+            font-size: 0.76rem !important;
             color: #1e293b !important;
             font-weight: 500 !important;
             text-align: left !important;
         }
 
         .sales-table tbody .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 38px !important;
-            right: 8px !important;
+            height: 26px !important;
+            right: 4px !important;
         }
 
         /* Select2 Focus state */
         .sales-table tbody .select2-container--default.select2-container--focus .select2-selection--single {
-            background-color: #f8fafc !important;
-            box-shadow: inset 0 0 0 2px #2563eb !important;
+            background-color: #eff6ff !important;
+            box-shadow: inset 0 0 0 1px #2563eb !important;
         }
 
         /* Elegant flat block layout for discount input + toggle */
@@ -482,7 +379,7 @@
             display: flex !important;
             align-items: stretch !important;
             width: 100% !important;
-            height: 38px !important;
+            height: 26px !important;
             gap: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -495,7 +392,7 @@
             height: 100% !important;
             text-align: center;
             background-color: transparent !important;
-            padding: 6px 8px !important;
+            padding: 1px 3px !important;
         }
 
         .sales-table tbody .discount-wrapper .discount-toggle {
@@ -504,16 +401,15 @@
             background-color: #e2e8f0 !important;
             color: #475569 !important;
             font-weight: 700 !important;
-            font-size: 0.75rem !important;
-            width: 32px !important;
-            min-width: 32px !important;
+            font-size: 0.7rem !important;
+            width: 24px !important;
+            min-width: 24px !important;
             height: 100% !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             padding: 0 !important;
             cursor: pointer !important;
-            transition: background-color 0.2s !important;
         }
 
         .sales-table tbody .discount-wrapper .discount-toggle:hover {
@@ -522,12 +418,13 @@
         }
         
         .sales-table tfoot td {
-            background-color: #f8fafc !important;
-            border: 1px solid #cbd5e1 !important;
-            border-top: 2px solid #94a3b8 !important; /* Thick tfoot separator */
-            padding: 8px 10px !important;
+            background-color: #e2e8f0 !important;
+            border: 1px solid #94a3b8 !important;
+            border-top: 2px solid #64748b !important;
+            padding: 2px 4px !important;
             font-weight: 700 !important;
             color: #0f172a !important;
+            font-size: 0.78rem !important;
         }
         
         /* Row hover */
@@ -535,185 +432,142 @@
             background-color: #f8fafc !important;
         }
         
-        /* Column Widths */
-        .col-product { width: 180px; min-width: 180px; }
-        .col-warehouse { min-width: 130px; }
-        .col-stock { width: 70px; }
-        .col-qty { width: 70px; }
-        .col-price { width: 90px; }
-        .col-disc { width: 90px; }
-        .col-disc-amt { width: 80px; }
-        .col-pieces { width: 80px; }
-        .col-price-p { width: 90px; }
-        .col-price-m2 { width: 90px; }
-        .col-amount { width: 100px; }
-        .col-action { width: 40px; text-align: center; }
+        /* Column Widths - Compact & Full Width */
+        .col-product { width: auto; min-width: 280px; }
+        .col-warehouse { min-width: 100px; }
+        .col-stock { width: 70px; min-width: 70px; }
+        .col-qty { width: 70px; min-width: 70px; }
+        .col-price { width: 85px; min-width: 85px; }
+        .col-disc { width: 90px; min-width: 90px; }
+        .col-disc-amt { width: 80px; min-width: 80px; }
+        .col-pieces { width: 70px; min-width: 70px; }
+        .col-price-p { width: 85px; min-width: 85px; }
+        .col-price-m2 { width: 85px; min-width: 85px; }
+        .col-amount { width: 95px; min-width: 95px; }
+        .col-action { width: 35px; min-width: 35px; text-align: center; }
+        .col-size { width: 75px; min-width: 75px; }
+        .col-color { width: 85px; min-width: 85px; }
 
         /* Invalid cells & inputs */
         .invalid-cell {
             background-color: #fff5f5 !important;
-            border: 2px solid #ef4444 !important;
+            border: 1px solid #ef4444 !important;
         }
         .invalid-select,
         .invalid-input {
             border-color: #ef4444 !important;
             box-shadow: none !important;
         }
-        
         .badge-soft {
             background: #eef2ff;
             color: #3730a3;
             font-weight: 700;
         }
+
+        /* Walk-in Customer Select Alignment */
+        #customerInputWrapper .select2-container--default .select2-selection--single {
+            height: 26px !important;
+            min-height: 26px !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 3px !important;
+            background-color: #ffffff !important;
+        }
+        #customerInputWrapper .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 24px !important;
+            padding-left: 6px !important;
+            font-size: 0.78rem !important;
+            color: #1e293b !important;
+            font-weight: 500 !important;
+        }
+        #customerInputWrapper .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 24px !important;
+            top: 0 !important;
+            right: 2px !important;
+        }
+        #customerInputWrapper .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1) !important;
+        }
     </style>
 
 
 
-    <div class="container-fluid py-2">
-        <div class="main-container bg-white border shadow-sm mx-auto p-2 rounded-3">
+    <div class="container-fluid py-0 px-1">
+        <div class="main-container bg-white border mx-auto">
 
-            <div id="alertBox" class="alert d-none mb-3" role="alert"></div>
+            <div id="alertBox" class="alert d-none mb-1" role="alert" style="padding:4px 8px; font-size:0.78rem;"></div>
 
             <form id="saleForm" autocomplete="off">
                 @csrf
                 <input type="hidden" id="booking_id" name="booking_id" value="">
                 <input type="hidden" id="action" name="action" value="sale">
 
-                {{-- HEADER --}}
-                <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
-                    <div>
-                        <small class="text-secondary" id="entryDateTime">Entry Date_Time: --</small> <br>
-                        <a href="{{ route('sale.index') }}" target="_blank" rel="noopener"
-                            class="btn btn-sm btn-outline-secondary" title="Sales List (opens new tab)">
-                            Sales List
-                        </a>
-                    </div>
-
-
-                    <h2 class="header-text text-secondary fw-bold mb-0">Sales</h2>
-
-
-                    <div class="d-flex align-items-center gap-2">
-                        <small class="text-secondary me-2" id="entryDate">Date: --</small>
-                        <button type="button" class="btn btn-sm btn-success" id="btnHeaderPosted"
-                            disabled>Sale</button>
+                {{-- HEADER - Compact --}}
+                <div class="d-flex justify-content-between align-items-center px-2 py-1 border-bottom" style="min-height:28px;">
+                    <small class="text-secondary" id="entryDateTime" style="font-size:0.72rem;">Entry Date_Time: --</small>
+                    <div class="d-flex align-items-center gap-1">
+                        <small class="text-secondary d-none" id="entryDate" style="font-size:0.72rem;">Date: --</small>
+                        <button type="button" class="btn btn-sm btn-success py-0 px-2" id="btnHeaderPosted"
+                            disabled style="font-size:0.72rem; height:22px; line-height:20px;">Sale</button>
                     </div>
                 </div>
 
                 <!-- HORIZONTAL TOP PANEL -->
-                <div class="p-3 border rounded-3 bg-white mb-3 shadow-sm">
-                    <div class="row align-items-stretch g-3">
+                <div class="p-1 border bg-white mb-1" style="border-radius:3px;">
+                    <div class="row g-1 align-items-end w-100 m-0">
+                        <!-- Invoice No -->
+                        <div class="col-sm-2">
+                            <label class="form-label fw-bold text-secondary mb-0" style="font-size: 0.72rem;">Invoice No.</label>
+                            <input type="text" class="form-control input-readonly" name="Invoice_no"
+                                value="{{ $nextInvoiceNumber }}" readonly style="height: 26px !important;">
+                        </div>
                         
-                        <!-- LEFT SECTION: Inputs (col-lg-7) -->
-                        <div class="col-lg-7 d-flex flex-column justify-content-between">
-                            <!-- Row 1: Invoice metadata -->
-                            <div class="row g-2 align-items-end mb-2">
-                                <div class="col-sm-3">
-                                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 0.82rem;">Invoice No.</label>
-                                    <input type="text" class="form-control input-readonly" name="Invoice_no"
-                                        value="{{ $nextInvoiceNumber }}" readonly style="height: 38px !important;">
-                                </div>
-                                <div class="col-sm-3">
-                                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 0.82rem;">Credit Days</label>
-                                    <input type="number" class="form-control" name="credit_days" placeholder="Days"
-                                        min="0" value="{{ $sale->credit_days ?? '' }}" style="height: 38px !important;">
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <label class="form-label fw-bold text-secondary mb-0" style="font-size: 0.82rem;">Type</label>
-                                        <button type="button" class="btn btn-outline-success py-0 px-2" data-bs-toggle="modal" data-bs-target="#addCustomerModal" title="Add New Customer" style="font-size: 0.75rem; height: 22px; line-height: 20px;">
-                                            <i class="fas fa-plus"></i> Add Customer
-                                        </button>
-                                    </div>
-                                    <div class="toggle-button-group w-100" id="partyTypeGroup">
-                                        <input type="radio" class="btn-check" name="partyType" id="typeCustomers" value="Main Customer" checked>
-                                        <label class="toggle-btn" for="typeCustomers">Customers</label>
-                                        
-                                        <input type="radio" class="btn-check" name="partyType" id="typeWalkin" value="Walking Customer">
-                                        <label class="toggle-btn" for="typeWalkin">Walk-in</label>
+                        <!-- Credit Days -->
+                        <div class="col-sm-1">
+                            <label class="form-label fw-bold text-secondary mb-0" style="font-size: 0.72rem;">Cr. Days</label>
+                            <input type="number" class="form-control" name="credit_days" placeholder="0"
+                                min="0" value="{{ $sale->credit_days ?? '' }}" style="height: 26px !important; padding: 0 4px;">
+                        </div>
+                        
+                        <!-- Date -->
+                        <div class="col-sm-2">
+                            <label class="form-label fw-bold text-secondary mb-0" style="font-size: 0.72rem;">Date:</label>
+                            <input type="text" name="sale_date" class="form-control datepicker-custom" id="displayDateInput" value="{{ date('Y-m-d') }}" style="background-color: #ffffff; height: 26px !important; padding: 0 4px;">
+                        </div>
+                        
+                        <!-- M.Bill -->
+                        <div class="col-sm-2">
+                            <label class="form-label fw-bold text-secondary mb-0" style="font-size: 0.72rem;">M.Bill:</label>
+                            <input type="text" class="form-control" name="reference" id="remarks" placeholder="Remarks" style="height: 26px !important; padding: 0 4px;">
+                        </div>
+                        
+                        <!-- Customer & Walkin Toggle -->
+                        <div class="col-sm-5">
+                            <div class="d-flex justify-content-between align-items-center mb-0">
+                                <label class="form-label fw-bold text-secondary mb-0" style="font-size: 0.72rem;">Customer:</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button" class="btn btn-outline-success py-0 px-1" data-bs-toggle="modal" data-bs-target="#addCustomerModal" title="Add New Customer" style="font-size: 0.68rem; height: 18px; line-height: 16px;">
+                                        <i class="fas fa-plus"></i> New
+                                    </button>
+                                    <div class="form-check form-switch mb-0 d-flex align-items-center" style="min-height: 0; padding-left: 2.5em;">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="walkinToggle" name="is_walkin" value="1" checked style="height: 14px; width: 28px; margin-top:0;">
+                                        <label class="form-check-label fw-bold ms-1" for="walkinToggle" style="color: #6366f1; font-size: 0.72rem; cursor: pointer;">Walk-in</label>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <!-- Row 2: Customer selection, Remarks, Date -->
-                            <div class="row g-2 align-items-end">
-                                <div class="col-sm-4">
-                                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 0.82rem;">M.Bill (Optional):</label>
-                                    <input type="text" class="form-control" name="reference" id="remarks" placeholder="Enter remarks..." style="height: 38px !important;">
-                                </div>
-                                <div class="col-sm-3">
-                                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 0.82rem;">Date:</label>
-                                    <input type="text" name="sale_date" class="form-control datepicker-custom" id="displayDateInput" value="{{ date('Y-m-d') }}" style="background-color: #ffffff; height: 38px !important;">
-                                </div>
-                                <div class="col-sm-5">
-                                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 0.82rem;">Customer:</label>
-                                    <select class="form-select" id="customerSelect" name="customer" style="width:100%">
-                                        <option value=""></option>
-                                    </select>
-                                </div>
+                            <!-- Input Morph Container -->
+                            <div id="customerInputWrapper" style="height: 26px;">
+                                <!-- Walk-in Input -->
+                                <input type="text" class="form-control" name="walkin_name" id="walkinNameInput" value="Walk-in Customer" placeholder="Enter Name..." style="height: 26px !important;">
+                                <!-- Main Customer Select2 -->
+                                <select class="form-select d-none" id="customerSelect" name="customer" style="width:100%">
+                                    <option value=""></option>
+                                </select>
                             </div>
                         </div>
-
-                        <!-- RIGHT SECTION: Premium Horizontal Dark Customer Card Column (col-lg-5) -->
-                        <div class="col-lg-5 d-flex flex-column justify-content-center">
-                            <div class="customer-card-premium p-3" style="min-height: 106px;">
-                                <!-- Top Row: Customer Name and Clear Link -->
-                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid #374151;">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-user-circle text-primary me-2" style="font-size: 1.1rem; color: #a78bfa !important;"></i>
-                                        <span class="fw-bold text-white text-truncate" id="cc_customer_name" style="max-width: 260px; font-size: 0.95rem;">Select Customer</span>
-                                    </div>
-                                    <button id="clearCustomerData" type="button" class="btn btn-link text-secondary p-0 text-decoration-none" style="font-size: 0.75rem; color: #9ca3af !important; transition: color 0.2s;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='#9ca3af'">
-                                        <i class="fas fa-times-circle me-1"></i>Clear
-                                    </button>
-                                </div>
-                                
-                                <!-- Bottom Row: Financial metrics -->
-                                <div class="d-flex align-items-center justify-content-between text-center w-100">
-                                    <!-- Column 1: PREVIOUS BALANCE -->
-                                    <div style="flex: 1; border-right: 1px solid #374151; min-width: 0; padding: 0 4px;">
-                                        <div class="col-title text-center text-truncate">
-                                            <i class="fas fa-history"></i> Prev Bal
-                                        </div>
-                                        <div class="text-center text-truncate">
-                                            <span class="col-value text-danger" id="cc_prev_bal_val">Rs 0</span>
-                                            <span class="col-value-sub text-danger" id="cc_prev_bal_suffix">Dr</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Column 2: CURRENT BILL -->
-                                    <div style="flex: 1; border-right: 1px solid #374151; min-width: 0; padding: 0 4px;">
-                                        <div class="col-title text-center text-truncate">
-                                            <i class="far fa-file-alt"></i> Current
-                                        </div>
-                                        <div class="col-value text-white text-center text-truncate" id="cc_current_bill">
-                                            Rs 0
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Column 3: PAID NOW -->
-                                    <div style="flex: 1; border-right: 1px solid #374151; min-width: 0; padding: 0 4px;">
-                                        <div class="col-title text-center text-truncate" style="color: #10B981 !important;">
-                                            <i class="fas fa-check-square"></i> Paid
-                                        </div>
-                                        <div class="col-value text-success text-center text-truncate" id="cc_paid_now">
-                                            Rs 0
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Column 4: CLOSING BALANCE -->
-                                    <div style="flex: 1; min-width: 0; padding: 0 4px;">
-                                        <div class="col-title text-center text-truncate" style="color: #f87171 !important;">
-                                            <i class="fas fa-dot-circle"></i> Closing
-                                        </div>
-                                        <div class="text-center text-truncate">
-                                            <span class="col-value text-danger" id="cc_closing_bal_val">Rs 0</span>
-                                            <span class="col-value-sub text-danger" id="cc_closing_bal_suffix">Dr</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        
                     </div>
                 </div>
 
@@ -724,14 +578,14 @@
                 <input type="hidden" id="rangeBalance" value="0">
 
                 <!-- Items Section full width -->
-                <div class="p-3 border rounded-3 bg-white shadow-sm mt-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="section-title mb-0">Items</div>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#quickAddProductModal">
-                                <i class="fas fa-plus me-1"></i>Quick Add Product
+                <div class="p-1 border bg-white mt-1" style="border-radius:3px;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div class="section-title mb-0" style="font-size:0.7rem;">Items</div>
+                        <div class="d-flex gap-1">
+                            <button type="button" class="btn btn-outline-success py-0 px-1" data-bs-toggle="modal" data-bs-target="#quickAddProductModal" style="font-size:0.7rem; height:20px; line-height:18px;">
+                                <i class="fas fa-plus me-1"></i>Quick Add
                             </button>
-                            <button type="button" class="btn btn-sm btn-primary" id="btnAdd">Add Row</button>
+                            <button type="button" class="btn btn-primary py-0 px-1" id="btnAdd" style="font-size:0.7rem; height:20px; line-height:18px;">+Row</button>
                         </div>
                     </div>
 
@@ -741,15 +595,16 @@
                                 <tr>
                                     <th class="col-product">Product</th>
                                     <th class="col-stock">Stock</th>
-                                    <th style="width:65px;min-width:65px;">Carton</th>
-                                    <th style="width:70px;min-width:70px;">Loose Pcs</th>
-                                    <th class="col-qty pack-size-col" title="Pieces per Carton">Pcs/Ctn</th>
-                                    <th class="col-pieces boxes-col">Total Pcs</th>
-                                    <th class="col-price-p price-pc-header">Retail Price</th>
-                                    <th class="col-disc">Disc %</th>
-                                    <th class="col-disc-amt">Disc Amt</th>
+                                    <th style="width:70px;min-width:70px;">Qty</th>
+                                    <th style="width:70px;min-width:70px;" class="d-none">Loose</th>
+                                    <th class="col-size">Size</th>
+                                    <th class="col-color">Color</th>
+                                    <th class="col-pieces boxes-col">Pcs</th>
+                                    <th class="col-price-p price-pc-header">Price</th>
+                                    <th class="col-disc">Disc</th>
+                                    <th class="col-disc-amt">D.Amt</th>
                                     <th class="col-amount">Amount</th>
-                                    <th class="col-action">—</th>
+                                    <th class="col-action">×</th>
                                 </tr>
                             </thead>
                             <tbody id="salesTableBody">
@@ -757,8 +612,8 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="9" class="text-end fw-bold">Total:</td>
-                                    <td class="text-end fw-bold"><span id="totalAmount">0.00</span></td>
+                                    <td colspan="9" class="text-end fw-bold" style="font-size:0.76rem;">Total:</td>
+                                    <td class="text-end fw-bold" style="font-size:0.76rem;"><span id="totalAmount">0.00</span></td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -767,101 +622,127 @@
                 </div>
 
                 {{-- Totals + Receipts --}}
-                <div class="row g-3 mt-3">
-                    <div class="col-lg-7">
-                        <div class="section-title mb-2">Receipt Vouchers</div>
-                        <div id="rvWrapper" class="border rounded-3 p-2">
-                            <div class="d-flex gap-2 align-items-center mb-2 rv-row">
-                                <select class="form-select rv-account" name="receipt_account_id[]"
-                                    style="max-width: 320px">
-                                    <option value="" selected disabled>Select account</option>
-                                    @foreach ($accounts as $acc)
-                                        <option value="{{ $acc->id }}">{{ $acc->title }}</option>
-                                    @endforeach
-                                </select>
-                                <input type="text" class="form-control text-end rv-amount" name="receipt_amount[]"
-                                    placeholder="0.00" style="max-width:160px">
-                                <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddRV">Add
-                                    more</button>
+                <div class="row g-2 mt-2 align-items-stretch">
+                    <!-- LEFT SIDE: Receipt Vouchers -->
+                    <div class="col-lg-7" id="receiptVouchersSection">
+                        <div class="card border-0 shadow-sm h-100 rounded-3">
+                            <div class="card-header bg-light border-bottom-0 py-2 d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-secondary text-uppercase" style="font-size:0.7rem; letter-spacing:0.5px;">Receipt Vouchers</span>
+                                <span class="badge bg-primary rounded-pill" style="font-size:0.75rem;">Total: <span id="receiptsTotalBadge">0.00</span></span>
                             </div>
-                            <div class="text-end">
-                                <span class="me-2">Receipts Total:</span>
-                                <span class="fw-bold" id="receiptsTotal">0.00</span>
+                            <div class="card-body p-2 bg-white">
+                                <div id="rvWrapper">
+                                    <div class="d-flex gap-2 align-items-center mb-2 rv-row">
+                                        <select class="form-select form-select-sm rv-account bg-light" name="receipt_account_id[]" style="max-width: 280px; border-radius: 4px;">
+                                            <option value="" disabled>Select account</option>
+                                            @foreach ($accounts as $acc)
+                                                <option value="{{ $acc->id }}" {{ str_contains(strtolower($acc->title), 'cash') ? 'selected' : '' }}>{{ $acc->title }}</option>
+                                            @endforeach
+                                        </select>
+                                        <input type="number" step="0.01" class="form-control form-control-sm text-end rv-amount fw-bold" name="receipt_amount[]" placeholder="0.00" style="max-width:140px; border-radius: 4px;">
+                                        <button type="button" class="btn btn-primary btn-sm px-2 rounded-2 shadow-sm" id="btnAddRV"><i class="fas fa-plus"></i> Add</button>
+                                    </div>
+                                    <div class="text-end d-none">
+                                        <span class="me-2">Receipts Total:</span>
+                                        <span class="fw-bold" id="receiptsTotal">0.00</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-lg-5">
-                        <div class="section-title mb-2">Totals</div>
-                        <div class="totals-card p-3">
-                            <div class="row py-1">
-                                <div class="col-7 text-muted">Total Qty</div>
-                                <div class="col-5 text-end"><span id="tQty">0</span></div>
-                            </div>
-                            <div class="row py-1">
-                                <div class="col-7 text-muted">Invoice Gross (Σ Sales Price × Qty)</div>
-                                <div class="col-5 text-end"><span id="tGross">0.00</span></div>
-                            </div>
-                            <div class="row py-1">
-                                <div class="col-7 text-muted">Line Discount (on Retail)</div>
-                                <div class="col-5 text-end"><span id="tLineDisc">0.00</span></div>
-                            </div>
-                            <div class="row py-1">
-                                <div class="col-7 fw-semibold">Sub-Total</div>
-                                <div class="col-5 text-end fw-semibold"><span id="tSub">0.00</span></div>
-                            </div>
-                            <div class="row py-1">
-                                <div class="col-7">Aditional Discount %</div>
-                                <div class="col-5 text-end">
-                                    <input type="text" class="form-control text-end" name="discountPercent"
-                                        id="discountPercent" value="0" style="max-width:120px; margin-left:auto">
+                    <!-- RIGHT SIDE: Totals -->
+                    <div class="col-lg-5" id="totalsSection">
+                        <div class="card border-0 shadow-sm h-100 rounded-3 overflow-hidden">
+                            <!-- Walk-in View -->
+                            <div id="totalsWalkinView" class="h-100 d-none align-items-center bg-white justify-content-between p-2 gap-2 flex-nowrap" style="overflow-x: auto;">
+                                <!-- Net Total -->
+                                <div class="d-flex align-items-center bg-light px-2 py-1 border rounded gap-1 flex-shrink-0">
+                                    <span class="fw-bold text-secondary" style="font-size:0.78rem;">Net Total:</span>
+                                    <span id="walkinNetTotal" class="fw-bold text-primary mb-0" style="font-size:1rem; line-height:1;">0.00</span>
+                                </div>
+                                
+                                <!-- Discount -->
+                                <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                                    <span class="text-muted fw-semibold" style="font-size:0.78rem;">Disc (Rs):</span>
+                                    <input type="number" class="form-control form-control-sm text-end fw-bold text-danger border-danger" id="walkinDiscountRs" value="0" placeholder="0" style="width: 80px; background-color: #fef2f2; height: 26px !important; padding: 1px 4px;">
+                                </div>
+                                
+                                <!-- Payments -->
+                                <div class="d-flex align-items-center gap-1 px-2 border-start border-end" style="min-width: 320px;">
+                                    <span class="text-muted fw-semibold mb-0 flex-shrink-0" style="font-size:0.78rem;">Payments:</span>
+                                    <div id="walkinReceiptsContainer" class="flex-grow-1 w-100"></div>
+                                </div>
+                                
+                                <!-- Change -->
+                                <div class="d-flex align-items-center gap-1 px-2 flex-shrink-0">
+                                    <span class="fw-bold text-uppercase text-secondary" style="font-size:0.78rem;">Change:</span>
+                                    <span id="walkinChange" class="fw-bold text-warning mb-0" style="font-size:1.1rem; line-height:1;">0.00</span>
                                 </div>
                             </div>
-                            <div class="row py-1">
-                                <div class="col-7 text-muted">Aditional Discount Rs</div>
-                                <div class="col-5 text-end"><span id="tOrderDisc">0.00</span></div>
-                            </div>
-                            <div class="row py-1">
-                                <div class="col-7 fw-bold">Current Bill Total</div>
-                                <div class="col-5 text-end fw-bold"><span id="tCurrentBill">0.00</span></div>
-                            </div>
-                            <div class="row py-1">
-                                <div class="col-7 text-danger">Previous Balance</div>
-                                <div class="col-5 text-end text-danger"><span id="tPrev">0.00</span></div>
-                            </div>
-                            <div class="row py-2">
-                                <div class="col-7 fw-bold text-primary">Payable / Total Balance</div>
-                                <div class="col-5 text-end fw-bold text-primary"><span id="tPayable">0.00</span></div>
+
+                            <!-- Customer View -->
+                            <div id="totalsCustomerView" class="h-100 flex-column bg-light">
+                                <div class="p-2 d-flex flex-column gap-1" style="font-size:0.8rem;">
+                                    <div class="d-flex justify-content-between px-2">
+                                        <span class="text-muted">Total Qty</span>
+                                        <span class="fw-semibold text-dark" id="tQty">0</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between px-2">
+                                        <span class="text-muted">Invoice Gross</span>
+                                        <span class="fw-semibold text-dark" id="tGross">0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between px-2">
+                                        <span class="text-muted">Line Discount</span>
+                                        <span class="fw-semibold text-danger" id="tLineDisc">0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between px-2 py-1 bg-white border rounded shadow-sm my-1">
+                                        <span class="fw-bold">Sub-Total</span>
+                                        <span class="fw-bold text-primary" id="tSub">0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center px-2">
+                                        <span class="text-muted">Add. Discount %</span>
+                                        <input type="number" class="form-control form-control-sm text-end p-1" id="discountPercent" value="0" style="width:80px; height:24px;">
+                                    </div>
+                                    <div class="d-flex justify-content-between px-2">
+                                        <span class="text-muted">Add. Discount Rs</span>
+                                        <span class="fw-semibold text-danger" id="tOrderDisc">0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between px-2 py-1 bg-white border border-primary border-opacity-25 rounded shadow-sm my-1">
+                                        <span class="fw-bold text-primary">Current Bill</span>
+                                        <span class="fw-bold text-primary" id="tCurrentBill">0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between px-2">
+                                        <span class="text-muted">Previous Balance</span>
+                                        <span class="fw-semibold text-danger" id="tPrev">0.00</span>
+                                    </div>
+                                </div>
+                                <div class="mt-auto p-2 bg-dark text-white d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold text-uppercase" style="font-size:0.75rem; letter-spacing:1px;">Payable / Total</span>
+                                    <span class="fs-5 fw-bold" id="tPayable">0.00</span>
+                                </div>
                             </div>
 
                             {{-- hidden mirrors for backend --}}
-                            {{-- Maps to 'total_bill_amount' in DB (SubTotal AFTER line discounts) --}}
                             <input type="hidden" name="subTotal1" id="subTotal1" value="0">
                             <input type="hidden" name="total_subtotal" id="subTotal2" value="0">
-
-                            {{-- Maps to 'total_extradiscount' in DB --}}
                             <input type="hidden" name="total_extra_cost" id="discountAmount" value="0">
-
-                            {{-- Maps to 'total_net' in DB --}}
                             <input type="hidden" name="total_net" id="totalBalance" value="0">
-
-                            {{-- Default values for nullable fields to satisfy controller --}}
                             <input type="hidden" name="cash" value="0">
                             <input type="hidden" name="card" value="0">
-                            <input type="hidden" name="change" value="0">
+                            <input type="hidden" name="change" id="backendChange" value="0">
                         </div>
                     </div>
                 </div>
 
                 {{-- Buttons --}}
-                <div class="d-flex flex-wrap gap-3 justify-content-center p-3 mt-3 border-top">
-                    <button type="button" class="btn btn-action-primary bg-primary border-primary" id="btnSave"><i class="fas fa-bookmark me-2"></i>Booking</button>
-                    <button type="button" class="btn btn-action-primary bg-success border-success" id="btnPosted" disabled><i class="fas fa-check-circle me-2"></i>Sale</button>
-
-                    <button type="button" class="btn btn-action-secondary" id="btnPrint"><i class="fas fa-print me-2"></i>Print A4 Half</button>
-                    <button type="button" class="btn btn-action-secondary" id="btnEstimate"><i class="fas fa-file-invoice me-2"></i>Estimate</button>
-                    <button type="button" class="btn btn-action-secondary" id="btnPrint2"><i class="fas fa-receipt me-2"></i>Print Thermal</button>
-                    <button type="button" class="btn btn-action-secondary" id="btnDcThermal"><i class="fas fa-truck me-2"></i>DC Thermal</button>
+                <div class="d-flex flex-wrap gap-1 justify-content-center py-1 px-2 mt-1 border-top">
+                    <button type="button" class="btn btn-action-primary bg-primary border-primary" id="btnSave"><i class="fas fa-bookmark me-1"></i>Booking</button>
+                    <button type="button" class="btn btn-action-primary bg-success border-success" id="btnPosted" disabled><i class="fas fa-check-circle me-1"></i>Sale</button>
+                    <button type="button" class="btn btn-action-secondary" id="btnPrint"><i class="fas fa-print me-1"></i>A4</button>
+                    <button type="button" class="btn btn-action-secondary" id="btnEstimate"><i class="fas fa-file-invoice me-1"></i>Est</button>
+                    <button type="button" class="btn btn-action-secondary" id="btnPrint2"><i class="fas fa-receipt me-1"></i>Thermal</button>
+                    <button type="button" class="btn btn-action-secondary" id="btnDcThermal"><i class="fas fa-truck me-1"></i>DC</button>
                 </div>
             </form>
         </div>
@@ -1227,6 +1108,9 @@ $(document).ready(function() {
                     return item.customer.customer_id + ' — ' + item.customer.customer_name;
                 }
             });
+
+            // Set initial visibility state of Customer Select / Walk-in input
+            $('#walkinToggle').trigger('change');
 
             // Party type change → reset customer
             $(document).on('change', 'input[name="partyType"]', function() {

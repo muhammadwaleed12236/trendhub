@@ -316,11 +316,13 @@
                         <table class="table table-erp table-hover align-middle">
                             <thead>
                                 <tr>
-                                    <th style="width: 25%;"><i class="fas fa-lock me-1"
+                                    <th style="width: 20%;"><i class="fas fa-lock me-1"
                                             style="font-size: 0.65rem; opacity: 0.6;"></i>Product</th>
-                                    <th style="width: 10%;"><i class="fas fa-lock me-1"
+                                    <th style="width: 8%;">Size</th>
+                                    <th style="width: 8%;">Color</th>
+                                    <th style="width: 8%;"><i class="fas fa-lock me-1"
                                             style="font-size: 0.65rem; opacity: 0.6;"></i>Item Code</th>
-                                    <th style="width: 15%;"><i class="fas fa-lock me-1"
+                                    <th style="width: 12%;"><i class="fas fa-lock me-1"
                                             style="font-size: 0.65rem; opacity: 0.6;"></i>PC per box</th>
                                     <th style="width: 10%;"><i class="fas fa-lock me-1"
                                             style="font-size: 0.65rem; opacity: 0.6;"></i>Purchased Price</th>
@@ -336,6 +338,7 @@
                                 @foreach ($sale->items as $index => $item)
                                     <tr>
                                         <input type="hidden" name="product_id[]" value="{{ $item['product_id'] }}">
+                                        <input type="hidden" name="color[]" value="{{ $item['color'] ?? '' }}">
                                         {{-- Hidden Discount to preserve refund math if needed --}}
                                         <input type="hidden" name="item_disc[]" class="item_disc"
                                             value="{{ $item['discount'] ?? 0 }}">
@@ -350,6 +353,18 @@
                                                 value="{{ $item['item_name'] }}" readonly>
                                             <small class="text-muted d-block ms-2"
                                                 style="font-size: 0.75rem;">{{ $item['brand'] ?? '' }}</small>
+                                        </td>
+
+                                        {{-- Size --}}
+                                        <td>
+                                            <input type="text" class="form-control text-center"
+                                                value="{{ $item['size_val'] ?? '-' }}" readonly>
+                                        </td>
+
+                                        {{-- Color --}}
+                                        <td>
+                                            <input type="text" class="form-control text-center"
+                                                value="{{ $item['color_val'] ?? '-' }}" readonly>
                                         </td>
 
                                         <td><input type="text" class="form-control text-center"
@@ -808,10 +823,8 @@
 
             // Remove row
             $(document).on('click', '.remove-row', function() {
-                if (confirm('Are you sure you want to remove this item from return?')) {
-                    $(this).closest('tr').remove();
-                    recalcSummary();
-                }
+                $(this).closest('tr').remove();
+                recalcSummary();
             });
 
             // Update Partial Return Visual Indicator

@@ -318,6 +318,32 @@
                         $totalM2Line = $m2PerPiece * $totalPieces;
                         $sizeMode = $item->size_mode ?? 'by_pieces';
                     @endphp
+                    @php
+                        $variantInfo = '';
+                        if (!empty($item->color)) {
+                            $decodedColor = base64_decode($item->color, true);
+                            $vData = ($decodedColor !== false) ? json_decode($decodedColor, true) : null;
+                            if (empty($vData)) {
+                                $vData = json_decode($item->color, true);
+                            }
+                            if (!empty($vData)) {
+                                $vColorName = $vData['color'] ?? '';
+                                $vSizeName = $vData['size'] ?? '';
+                                $vParts = [];
+                                if ($vSizeName && $vSizeName !== '-') {
+                                    $vParts[] = $vSizeName;
+                                }
+                                if ($vColorName && $vColorName !== '-') {
+                                    $vParts[] = $vColorName;
+                                }
+                                if (!empty($vParts)) {
+                                    $variantInfo = ' ' . implode(' | ', $vParts);
+                                }
+                            } else {
+                                $variantInfo = ' (' . $item->color . ')';
+                            }
+                        }
+                    @endphp
                     <tr>
                         <td class="text-center" style="vertical-align: middle; font-size: 11px; font-weight: bold;">
                             {{ $item->product->item_code ?? '-' }}
@@ -325,7 +351,7 @@
 
                         <td class="text-start">
                             <div style="font-weight: bold; font-size: 12px; margin-bottom: 2px;">
-                                {{ $item->product->item_name ?? 'Item' }}
+                                {{ $item->product->item_name ?? 'Item' }}{{ $variantInfo }}
                             </div>
 
                             <div style="font-size: 11px; color: #111111ff; line-height: 1.2;">

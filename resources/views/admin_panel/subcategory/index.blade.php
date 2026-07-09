@@ -29,7 +29,7 @@
                                                  <tr>
                                                      <td class="id">{{ $company->id }}</td>
                                                      <td class="name">{{ $company->name }}</td>
-                                                     <td class="name">{{ $company->category->name }}</td>
+                                                     <td class="name">{{ $company->category->name ?? '' }}</td>
                                                      <td>
                                                          @include('admin_panel.partials.action_buttons', [
                                                              'editRoute' => route('store.subcategory'),

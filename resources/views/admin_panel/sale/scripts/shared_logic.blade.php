@@ -121,9 +121,11 @@
   <tr>
     <!-- PRODUCT -->
     <td class="col-product">
-      <select class="form-select product" name="product_id[]" style="width:100%">
+      <select class="form-select product" style="width:100%">
         <option value=""></option>
       </select>
+      <input type="hidden" class="product-id-hidden" name="product_id[]">
+      <input type="hidden" class="variant-data-hidden" name="color[]">
       <input type="hidden" class="item-code-display">
       <input type="hidden" class="size-h">
       <input type="hidden" class="size-w">
@@ -134,21 +136,28 @@
     <td class="col-stock">
       <input type="text" class="form-control stock text-center input-readonly" readonly tabindex="-1">
       <select class="warehouse d-none" name="warehouse_id[]"></select>
+      <input type="hidden" class="variant-stock-value">
     </td>
 
-    <!-- Carton Qty -->
-    <td style="width:80px;min-width:80px;">
-      <input type="number" class="form-control carton-qty text-end" name="carton_qty[]" placeholder="0" min="0" value="0">
+    <!-- Carton Qty (now acts as Qty) -->
+    <td style="width:70px;min-width:70px;">
+      <input type="number" class="form-control carton-qty text-end" name="carton_qty[]" placeholder="" min="0" value="">
     </td>
 
     <!-- Loose Pieces -->
-    <td style="width:80px;min-width:80px;">
-      <input type="number" class="form-control loose-pcs-input text-end" name="loose_qty[]" placeholder="0" min="0" value="0">
+    <td style="width:70px;min-width:70px;" class="d-none">
+      <input type="number" class="form-control loose-pcs-input text-end" name="loose_qty[]" placeholder="" min="0" value="">
     </td>
 
-    <!-- Pack Size (Pieces per Carton, Readonly) -->
-    <td class="col-qty">
-       <input type="text" class="form-control pack-qty text-end input-readonly" name="pack_qty[]" readonly placeholder="1" tabindex="-1" value="1">
+    <!-- Size (Display - readonly) -->
+    <td class="col-size">
+       <input type="text" class="form-control size-display text-center input-readonly" readonly tabindex="-1" placeholder="-">
+       <input type="hidden" class="pack-qty" name="pack_qty[]" value="1">
+    </td>
+
+    <!-- Color (Display - readonly) -->
+    <td class="col-color">
+      <input type="text" class="form-control color-display text-center input-readonly" readonly tabindex="-1" placeholder="-">
     </td>
 
     <!-- Total Pieces (Calculated) -->
@@ -160,9 +169,9 @@
  
     <!-- Price/Piece (EDITABLE) -->
     <td class="col-price-p">
-      <input type="text" class="form-control visible-price text-end" name="visible_price[]" placeholder="0.00">
+      <input type="text" class="form-control visible-price text-end" name="visible_price[]" placeholder="0">
       <input type="hidden" class="price-per-piece" name="price_per_piece[]">
-      <input type="hidden" class="retail-price"> <!-- Hidden retail/box price storage if needed -->
+      <input type="hidden" class="retail-price">
     </td>
 
     <!-- DISCOUNT -->
@@ -287,9 +296,14 @@
                     }
 
                     // Show stock in the visible stock field
-                    const selectedOpt = $whSelect.find(':selected');
-                    const stockDisp = selectedOpt.data('ppb') || 0;
-                    $row.find('.stock').val(stockDisp);
+                    const variantStockVal = $row.find('.variant-stock-value').val();
+                    if (variantStockVal !== '' && variantStockVal !== undefined) {
+                        $row.find('.stock').val(variantStockVal);
+                    } else {
+                        const selectedOpt = $whSelect.find(':selected');
+                        const stockDisp = selectedOpt.data('ppb') || 0;
+                        $row.find('.stock').val(stockDisp);
+                    }
                 } else {
                     $whSelect.html('<option value="">Out of Stock</option>');
                     $row.find('.stock').val('0');
@@ -382,8 +396,17 @@
             tNet += net;
         });
 
-        const orderPct = toNum($('#discountPercent').val());
-        const orderDisc = (tNet * orderPct) / 100;
+        const isWalkin = $('#walkinToggle').length > 0 && $('#walkinToggle').is(':checked');
+        
+        let orderDisc = 0;
+        if (isWalkin) {
+            orderDisc = toNum($('#walkinDiscountRs').val());
+            $('#discountPercent').val(0); // clear percent
+        } else {
+            const orderPct = toNum($('#discountPercent').val());
+            orderDisc = (tNet * orderPct) / 100;
+        }
+
         const prev = toNum($('#previousBalance').val());
         const receipts = toNum($('#receiptsTotal').text());
         const payable = Math.max(0, tNet - orderDisc + prev - receipts);
@@ -400,6 +423,20 @@
 
         // Display current bill total after all discounts
         $('#tCurrentBill').text(currentInvoiceTotal.toFixed(2));
+
+        // Walk-in specific UI updates
+        if (isWalkin) {
+            $('#walkinNetTotal').text(tNet.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            const walkinPaid = receipts;
+            const change = walkinPaid - currentInvoiceTotal;
+            $('#walkinChange').text(change.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $('#backendChange').val(change > 0 ? change.toFixed(2) : 0);
+            if (change >= 0) {
+                $('#walkinChange').removeClass('text-warning text-danger').addClass('text-success');
+            } else {
+                $('#walkinChange').removeClass('text-success text-warning').addClass('text-danger');
+            }
+        }
 
         $('#subTotal1').val(tGross.toFixed(2));
         $('#subTotal2').val(tNet.toFixed(2));
@@ -465,7 +502,7 @@
     function canPost() {
         let ok = false;
         $('#salesTableBody tr').each(function() {
-            const pid = $(this).find('.product').val();
+            const pid = $(this).find('.product-id-hidden').val();
             const cartons = parseInt($(this).find('.carton-qty').val()) || 0;
             const loose   = parseInt($(this).find('.loose-pcs-input').val()) || 0;
             if (pid && (cartons > 0 || loose > 0)) {
@@ -511,7 +548,16 @@
                 },
                 error: function(xhr) {
                     $('#btnSave, #btnHeaderPosted, #btnPosted').prop('disabled', false);
-                    Swal.fire('Error', 'Save error', 'error');
+                    let errMsg = 'Save error';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    } else if (xhr.responseText) {
+                        try {
+                            let resp = JSON.parse(xhr.responseText);
+                            if (resp.message) errMsg = resp.message;
+                        } catch(e) {}
+                    }
+                    Swal.fire('Error', errMsg, 'error');
                     reject(xhr);
                 }
             });
@@ -539,7 +585,16 @@
                 }
             })
             .fail(function(xhr) {
-                Swal.fire('Error', 'Post error', 'error');
+                let errMsg = 'Post error';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errMsg = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    try {
+                        let resp = JSON.parse(xhr.responseText);
+                        if (resp.message) errMsg = resp.message;
+                    } catch(e) {}
+                }
+                Swal.fire('Error', errMsg, 'error');
             });
     }
 
@@ -562,7 +617,7 @@
     function cleanupEmptyRows() {
         $('#salesTableBody tr').each(function() {
             const $r = $(this);
-            const prod = $r.find('.product').val();
+            const prod = $r.find('.product-id-hidden').val();
             const wh = $r.find('.warehouse').val();
             const cartons = parseInt($r.find('.carton-qty').val()) || 0;
             const loose   = parseInt($r.find('.loose-pcs-input').val()) || 0;
@@ -589,24 +644,28 @@
         let firstMessage = null;
         let firstEl = null;
 
-        const partyType = $('input[name="partyType"]:checked').val();
-        if (!partyType) {
-            ok = false;
-            firstMessage = 'Please select Type';
-            firstEl = $('input[name="partyType"]').first();
-            $('#partyTypeGroup').addClass('invalid-cell');
-        } else {
-            $('#partyTypeGroup').removeClass('invalid-cell');
-        }
+        const isWalkin = $('#walkinToggle').is(':checked');
 
-        const cust = $('#customerSelect').val();
-        if (!cust) {
-            ok = false;
-            if (!firstMessage) {
-                firstMessage = 'Please select Party (Customer / Vendor)';
-                firstEl = $('#customerSelect');
+        if (isWalkin) {
+            const walkinName = $('#walkinNameInput').val().trim();
+            if (!walkinName) {
+                ok = false;
+                firstMessage = 'Please enter a Walk-in Customer Name';
+                firstEl = $('#walkinNameInput');
+                markInvalid($('#walkinNameInput'));
+            } else {
+                $('#walkinNameInput').removeClass('is-invalid border-danger');
             }
-            markInvalid($('#customerSelect'));
+        } else {
+            const cust = $('#customerSelect').val();
+            if (!cust) {
+                ok = false;
+                if (!firstMessage) {
+                    firstMessage = 'Please select a Customer';
+                    firstEl = $('#customerSelect');
+                }
+                markInvalid($('#customerSelect'));
+            }
         }
 
         return {
@@ -637,7 +696,7 @@
                 markInvalid($wh);
             }
 
-            if (!$prod.val()) {
+            if (!$prod.val() && !$row.find('.product-id-hidden').val()) {
                 ok = false;
                 if (!firstMessage) {
                     firstMessage = 'Please select Item for row ' + (rowIndex + 1);
@@ -650,7 +709,7 @@
             if (qtyVal <= 0) {
                 ok = false;
                 if (!firstMessage) {
-                    firstMessage = 'Carton Qty یا Loose Pcs ضرور لکھیں (row ' + (rowIndex + 1) + ')';
+                    firstMessage = 'Qty daalen row ' + (rowIndex + 1) + ' mein';
                     firstEl = $cartonQtyInput;
                 }
                 markInvalid($cartonQtyInput);
@@ -724,9 +783,51 @@
 
     /* =========================================
        EVENT BINDINGS
-       ========================================= */
+    ========================================= */
+
+    // Walk-in Toggle Logic
+    $('#walkinToggle').on('change', function() {
+        const isWalkin = $(this).is(':checked');
+        if (isWalkin) {
+            $('#customerSelect').addClass('d-none').next('.select2-container').addClass('d-none');
+            $('#walkinNameInput').removeClass('d-none');
+            
+            $('#receiptVouchersSection').hide();
+            $('#totalsSection').removeClass('col-lg-5').addClass('col-lg-12');
+            $('#totalsCustomerView').addClass('d-none').removeClass('d-flex');
+            $('#totalsWalkinView').removeClass('d-none').addClass('d-flex');
+            $('#rvWrapper').appendTo('#walkinReceiptsContainer');
+        } else {
+            $('#walkinNameInput').addClass('d-none');
+            $('#customerSelect').removeClass('d-none').next('.select2-container').removeClass('d-none');
+            
+            $('#receiptVouchersSection').show();
+            $('#totalsSection').removeClass('col-lg-12').addClass('col-lg-5');
+            $('#totalsWalkinView').addClass('d-none').removeClass('d-flex');
+            $('#totalsCustomerView').removeClass('d-none').addClass('d-flex');
+            $('#rvWrapper').appendTo('#receiptVouchersSection .card-body');
+        }
+        if (typeof updateGrandTotals === 'function') updateGrandTotals();
+    });
+
 
     $(document).ready(function() {
+
+        // Walk-in UI Event Bindings
+        $(document).on('input', '#walkinDiscountRs', function() {
+            updateGrandTotals();
+        });
+        
+        // Ensure rvWrapper is in the right place on load
+        if ($('#walkinToggle').is(':checked')) {
+            $('#rvWrapper').appendTo('#walkinReceiptsContainer');
+            $('#totalsSection').removeClass('col-lg-5').addClass('col-lg-12');
+            $('#receiptVouchersSection').hide();
+            $('#totalsCustomerView').addClass('d-none').removeClass('d-flex');
+            $('#totalsWalkinView').removeClass('d-none').addClass('d-flex');
+        } else {
+            $('#totalsSection').removeClass('col-lg-12').addClass('col-lg-5');
+        }
 
         // Remove invalid classes on input
         $(document).on('input change', 'select, input, textarea', function() {
@@ -734,24 +835,78 @@
         });
 
         // Product change
-        $('#salesTableBody').on('change select2:select', '.product', function(e) {
+        $('#salesTableBody').on('select2:select', '.product', function(e) {
             console.log("product change in shared logic");
-            if (e.type === 'change' && $(this).data('select2')) return;
             if (window.isEditModeLoading) return; // Block during edit load
-            const pid = $(this).val();
-            if (!pid) return;
+            
+            const data = e.params.data;
+            if (!data.id) return;
+            
             const $row = $(this).closest('tr');
-
+            
+            let pid = data.id.toString().split('|')[0];
+            $row.find('.product-id-hidden').val(pid);
+            $row.find('.variant-data-hidden').val(data.variant_data || '');
+            
+            // Parse variant data for size/color display
+            let variantSize = '-';
+            let variantColor = '-';
+            let variantStock = null;
+            if (data.variant_data) {
+                try {
+                    const vd = JSON.parse(atob(data.variant_data));
+                    variantSize = (vd.size && vd.size !== '-') ? vd.size : '-';
+                    variantColor = (vd.color && vd.color !== '-') ? vd.color : '-';
+                    // Prefer vd.current_stock from parsed variant_data (highly reliable), fallback to data.stock or vd.stock
+                    variantStock = vd.current_stock !== undefined ? vd.current_stock : (data.stock !== undefined ? data.stock : (vd.stock !== undefined ? vd.stock : null));
+                } catch(ex) {}
+            }
+            
+            // Set size and color display
+            $row.find('.size-display').val(variantSize);
+            $row.find('.color-display').val(variantColor);
+            
+            // Store variant stock for later use (after warehouse loads)
+            if (variantStock !== null) {
+                $row.find('.variant-stock-value').val(variantStock);
+                $row.find('.stock').val(variantStock);
+            } else {
+                $row.find('.variant-stock-value').val('');
+            }
+            
             loadWarehousesForProduct($row, pid);
-            fetchProductPrice($row, pid);
+            
+            // Set properties directly
+            $row.find('.item-code-display').val(data.sku || '');
+            $row.find('.retail-price').val(data.retail_price || data.trade_price || 0);
+            $row.find('.visible-price').val(data.retail_price || data.trade_price || 0);
+            $row.find('.pack-qty').val(data.pieces_per_box || 1);
+            $row.find('.price-per-piece').val(data.retail_price || data.trade_price || 0);
+            
+            $row.find('.size-h').val(data.height || '-');
+            $row.find('.size-w').val(data.width || '-');
+            $row.find('.size-mode-text').val(data.size_mode || '-');
+            
+            $row.find('.discount-value').val(data.sale_discount_percent || 0);
+            
+            $row.data('size_mode', data.size_mode);
+            $row.data('pieces_per_box', data.pieces_per_box || 1);
+            
+            computeRow($row);
         });
 
-        // Warehouse change -> stock
+        // Warehouse change -> stock (respect variant stock)
         $('#salesTableBody').on('change', '.warehouse', function() {
             const $row = $(this).closest('tr');
-            const stockPieces = $(this).find(':selected').data('ppb') || 0;
-
-            $row.find('.stock').val(stockPieces);
+            const variantStockVal = $row.find('.variant-stock-value').val();
+            
+            // If variant stock exists, use that instead of warehouse total
+            if (variantStockVal !== '' && variantStockVal !== undefined) {
+                $row.find('.stock').val(variantStockVal);
+            } else {
+                const stockPieces = $(this).find(':selected').data('ppb') || 0;
+                $row.find('.stock').val(stockPieces);
+            }
         });
 
         // Inputs -> Calc
@@ -881,6 +1036,24 @@
                     if (v.el.hasClass('js-customer')) v.el.select2?.('open');
                 }
                 return;
+            }
+
+            // Walk-in 100% Payment Validation Check
+            const isWalkin = $('#walkinToggle').is(':checked');
+            const invoiceNet = toNum($('#totalBalance').val());
+            const paidNow = toNum($('#receiptsTotal').text());
+
+            if (isWalkin) {
+                // For walk-in, they must pay 100% upfront (with a small floating point tolerance)
+                if (paidNow < (invoiceNet - 0.05)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: '100% Payment Required',
+                        text: 'Walk-in customers do not have a ledger. You must receive full payment to post this sale.',
+                        confirmButtonColor: '#d33'
+                    });
+                    return;
+                }
             }
 
             // Credit Limit Check

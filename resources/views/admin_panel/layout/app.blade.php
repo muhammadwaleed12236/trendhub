@@ -563,6 +563,10 @@
                                                         <li><a href="{{ url('sale') }}"><i class="fas fa-receipt"></i>
                                                                 Sales</a></li>
                                                     @endcan
+                                                    @can('sales.create')
+                                                        <li><a href="{{ route('pos.index') }}"><i class="fas fa-cash-register"></i>
+                                                                POS System</a></li>
+                                                    @endcan
                                                     @can('customers.view')
                                                         <li><a href="{{ url('customers') }}"><i class="fas fa-user"></i>
                                                                 Customer</a></li>
@@ -710,10 +714,17 @@
                         <!-- Cashbook / Checkbook -->
                         @can('checkbook.view')
                         <li class="nav-item">
-                            <a href="{{ route('checkbook.index') }}" class="nav-link">
+                            <a href="#" class="nav-link">
                                 <i class="menu_icon fas fa-wallet"></i>
                                 <span class="menu-title">Cashbook</span>
+                                <i class="menu-arrow"></i>
                             </a>
+                            <div class="submenu">
+                                <ul class="submenu-item">
+                                    <li><a href="{{ route('checkbook.index') }}"><i class="fas fa-lock"></i> Day Closings</a></li>
+                                    <li><a href="{{ route('checkbook.transactions') }}"><i class="fas fa-history"></i> Cashbook History</a></li>
+                                </ul>
+                            </div>
                         </li>
                         @endcan
 
