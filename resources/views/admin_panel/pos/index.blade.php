@@ -893,7 +893,6 @@
             $list.empty();
             
             cart.forEach((item, index) => {
-                let itemTotal = item.qty * item.price;
                 let html = `
                     <div class="cart-item" data-index="${index}">
                         <div class="cart-item-header">
@@ -906,13 +905,15 @@
                                 <input type="number" class="qty-input cart-qty-val" value="${item.qty}" min="1" max="${item.stock}">
                                 <button type="button" class="qty-btn btn-qty-plus">+</button>
                             </div>
-                            <span class="cart-item-price">Rs ${itemTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <div class="d-flex align-items-center">
+                                <span class="me-1" style="font-size: 13.5px; font-weight: 800; color: #111827;">Rs</span>
+                                <input type="number" name="price_per_piece[]" class="form-control form-control-sm text-end cart-price-val" style="width: 80px; padding: 2px 4px; height: 26px; font-size: 13.5px; font-weight: 800; color: #111827; border: 1px solid #e5e7eb; border-radius: 4px;" value="${item.price}" step="any" min="0">
+                            </div>
                         </div>
                         <!-- Hidden inputs for backend form serialization -->
                         <input type="hidden" name="product_id[]" value="${item.product_id}">
                         <input type="hidden" name="qty[]" value="${item.qty}">
                         <input type="hidden" name="total_pieces[]" value="${item.qty}">
-                        <input type="hidden" name="price_per_piece[]" value="${item.price}">
                         <input type="hidden" name="color[]" value="${item.variantData}">
                     </div>
                 `;
@@ -925,6 +926,16 @@
         }
 
         // Cart Actions: Remove, Quantity Plus, Minus, Manual change
+        $(document).on('input', '.cart-price-val', function() {
+            let index = $(this).closest('.cart-item').data('index');
+            if (cart[index]) {
+                let val = parseFloat($(this).val()) || 0;
+                if (val < 0) val = 0;
+                cart[index].price = val;
+                updateBillSummary();
+            }
+        });
+
         $(document).on('click', '.remove-cart-item', function() {
             let index = $(this).closest('.cart-item').data('index');
             cart.splice(index, 1);
