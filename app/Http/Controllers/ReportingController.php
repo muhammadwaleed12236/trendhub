@@ -290,8 +290,21 @@ class ReportingController extends Controller
 
     public function fetchProfitLoss(Request $request)
     {
-        $start = $request->start_date;
-        $end = $request->end_date;
+        $start = $request->start_date ?: now()->startOfDay()->toDateTimeString();
+        $end = $request->end_date ?: now()->endOfDay()->toDateTimeString();
+
+        if (strlen($start) === 10) {
+            $start .= ' 00:00:00';
+        } elseif (strlen($start) === 16) {
+            $start .= ':00';
+        }
+
+        if (strlen($end) === 10) {
+            $end .= ' 23:59:59';
+        } elseif (strlen($end) === 16) {
+            $end .= ':59';
+        }
+
         $productId = $request->product_id;
         $categoryId = $request->category_id;
         $customerId = $request->customer_id;
@@ -352,7 +365,7 @@ class ReportingController extends Controller
                     ->where('sale_items.product_id', $product->id);
                 
                 if ($start && $end) {
-                    $saleQuery->whereBetween(DB::raw('DATE(sales.created_at)'), [$start, $end]);
+                    $saleQuery->whereBetween('sales.created_at', [$start, $end]);
                 }
                 if ($customerId && $customerId !== 'all') {
                     $saleQuery->where('sales.customer_id', $customerId);
@@ -365,7 +378,7 @@ class ReportingController extends Controller
                     ->where('sri.product_id', $product->id);
                 
                 if ($start && $end) {
-                    $returnQuery->whereBetween(DB::raw('DATE(sr.return_date)'), [$start, $end]);
+                    $returnQuery->whereBetween('sr.created_at', [$start, $end]);
                 }
                 $returnsList = $returnQuery->select('sri.qty', 'sri.color', 'sr.sale_id')
                     ->get();
@@ -440,7 +453,7 @@ class ReportingController extends Controller
                     ->where('sale_items.product_id', $product->id);
                 
                 if ($start && $end) {
-                    $saleQuery->whereBetween(DB::raw('DATE(sales.created_at)'), [$start, $end]);
+                    $saleQuery->whereBetween('sales.created_at', [$start, $end]);
                 }
 
                 if ($customerId && $customerId !== 'all') {
@@ -460,7 +473,7 @@ class ReportingController extends Controller
                     ->where('type', 'in');
                 
                 if ($start && $end) {
-                    $returnQuery->whereBetween(DB::raw('DATE(created_at)'), [$start, $end]);
+                    $returnQuery->whereBetween('created_at', [$start, $end]);
                 }
                 $returnedQtyPieces = (float) $returnQuery->sum('qty');
 
@@ -505,7 +518,7 @@ class ReportingController extends Controller
                 ->where('sales.customer_id', $customer->id);
 
             if ($start && $end) {
-                $custSaleQuery->whereBetween(DB::raw('DATE(sales.created_at)'), [$start, $end]);
+                $custSaleQuery->whereBetween('sales.created_at', [$start, $end]);
             }
 
             $custSaleItems = $custSaleQuery->select(
@@ -771,7 +784,7 @@ class ReportingController extends Controller
                     'total_pieces' => $total_pieces_arr,
                     'per_total' => $totals,
                     'total_net' => $sale->total_net,
-                    'created_at' => $sale->created_at->format('Y-m-d H:i:s'),
+                    'created_at' => $sale->created_at->format('Y-m-d h:i:s A'),
                     'customer_name' => $sale->customer_relation ? $sale->customer_relation->customer_name : 'Walk-in',
                     'returns' => $sale->returns->map(function($ret) {
                          // Robust return display handling both legacy strings and new relation items

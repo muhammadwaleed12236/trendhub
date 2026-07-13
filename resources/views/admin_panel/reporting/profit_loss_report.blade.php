@@ -121,11 +121,11 @@
                 <form id="profitLossForm" class="row g-2 align-items-end">
                     <div class="col-lg-2 col-md-4">
                         <label class="form-label small fw-semibold text-muted mb-1">From</label>
-                        <input type="text" id="start_date" class="form-control form-control-sm datepicker-custom" value="{{ date('Y-m-01') }}">
+                        <input type="text" id="start_date" class="form-control form-control-sm datetimepicker-custom" value="{{ date('Y-m-d 00:00') }}">
                     </div>
                     <div class="col-lg-2 col-md-4">
                         <label class="form-label small fw-semibold text-muted mb-1">To</label>
-                        <input type="text" id="end_date" class="form-control form-control-sm datepicker-custom" value="{{ date('Y-m-t') }}">
+                        <input type="text" id="end_date" class="form-control form-control-sm datetimepicker-custom" value="{{ date('Y-m-d 23:59') }}">
                     </div>
                     <div class="col-lg-2 col-md-4">
                         <label class="form-label small fw-semibold text-muted mb-1">Category</label>
@@ -289,6 +289,14 @@
 <script src="{{ asset('assets/vendors/chartjs/chart.umd.min.js') }}"></script>
 <script>
 $(document).ready(function() {
+    flatpickr('.datetimepicker-custom', {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        altInput: true,
+        altFormat: "d/m/Y h:i K",
+        allowInput: true
+    });
+
     var profitTable = $('#profitTable').DataTable({
         paging: true,
         pageLength: 15,
