@@ -287,7 +287,7 @@
                     </div>
 
                     {{-- CARD 2: Stock Specifications & Pricing --}}
-                    <div class="section-card">
+                    <div class="section-card" style="display:none !important;">
                         <div class="card-header-pro d-flex flex-wrap justify-content-between align-items-center gap-3">
                             <h5 class="card-title-pro"><i class="las la-box-open text-info"></i> Stock & Pricing</h5>
                             

@@ -60,6 +60,11 @@ class ProductController extends Controller
 
     private function upsertStocks(int $productId, float $qtyDelta, int $branchId = 1, int $warehouseId = 1): void
     {
+        // Fallback to first warehouse if the requested one doesn't exist
+        if ($warehouseId === 1 && !\App\Models\Warehouse::find(1)) {
+            $warehouseId = \App\Models\Warehouse::first()->id ?? 1;
+        }
+
         $stock = \App\Models\WarehouseStock::where('warehouse_id', $warehouseId)
             ->where('product_id', $productId)
             ->lockForUpdate()
@@ -635,7 +640,7 @@ class ProductController extends Controller
 
             // Create Warehouse Stock
             WarehouseStock::create([
-                'warehouse_id' => $request->warehouse_id ?? 1, // Default to 1 if not selected
+                'warehouse_id' => $request->warehouse_id ?? (\App\Models\Warehouse::first()->id ?? 1), // Default to first warehouse if not selected
                 'product_id' => $product->id,
                 'quantity' => $boxesQuantity ?? 0,
                 'total_pieces' => $totalStockQty,
@@ -905,7 +910,7 @@ class ProductController extends Controller
                 $warehouseStock->save();
             } else {
                 \App\Models\WarehouseStock::create([
-                    'warehouse_id' => 1,
+                    'warehouse_id' => \App\Models\Warehouse::first()->id ?? 1,
                     'product_id'   => $id,
                     'quantity'     => $boxesQuantity,
                     'total_pieces' => $newTotalPieces,
