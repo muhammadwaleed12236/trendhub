@@ -240,7 +240,32 @@ class HomeController extends Controller
                 ->whereYear('purchase_date', now()->year)
                 ->sum('net_amount');
 
-            $profitThisMonth = max(0, (float)$salesThisMonth - (float)$purchasesThisMonth);
+            // Calculate real profit from sale items (sale price - purch_price from variant JSON)
+            $saleItemsThisMonth = DB::table('sale_items')
+                ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+                ->whereMonth('sales.created_at', now()->month)
+                ->whereYear('sales.created_at', now()->year)
+                ->whereNotIn('sales.sale_status', ['cancelled', 'returned'])
+                ->select('sale_items.price', 'sale_items.color', 'sale_items.total_pieces')
+                ->get();
+
+            $totalCostThisMonth = 0;
+            $totalRevenueThisMonth = 0;
+            foreach ($saleItemsThisMonth as $si) {
+                $qty = (float)($si->total_pieces ?? 1);
+                $salePrice = (float)($si->price ?? 0);
+                $purchPrice = 0;
+                if (!empty($si->color)) {
+                    $decoded = base64_decode($si->color, true);
+                    $json = $decoded ? json_decode($decoded, true) : json_decode($si->color, true);
+                    if (is_array($json)) {
+                        $purchPrice = (float)($json['purch_price'] ?? 0);
+                    }
+                }
+                $totalRevenueThisMonth += $salePrice * $qty;
+                $totalCostThisMonth    += $purchPrice * $qty;
+            }
+            $profitThisMonth = $totalRevenueThisMonth - $totalCostThisMonth;
             $totalReceivables = DB::table('customers')->sum('previous_balance');
 
             return view('admin_panel.dashboard', compact(
