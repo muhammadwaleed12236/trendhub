@@ -230,8 +230,8 @@ class HomeController extends Controller
             }
 
             $salesThisMonth = DB::table('sales')
-                ->whereMonth('sale_date', now()->month)
-                ->whereYear('sale_date', now()->year)
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
                 ->whereNotIn('sale_status', ['cancelled', 'returned'])
                 ->sum('total_net');
 
