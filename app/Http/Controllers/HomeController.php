@@ -229,8 +229,17 @@ class HomeController extends Controller
                     ->values();
             }
 
-            $salesThisMonth = DB::table('sales')->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->sum('total_net');
-            $purchasesThisMonth = DB::table('purchases')->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->sum('net_amount');
+            $salesThisMonth = DB::table('sales')
+                ->whereMonth('sale_date', now()->month)
+                ->whereYear('sale_date', now()->year)
+                ->whereNotIn('sale_status', ['cancelled', 'returned'])
+                ->sum('total_net');
+
+            $purchasesThisMonth = DB::table('purchases')
+                ->whereMonth('purchase_date', now()->month)
+                ->whereYear('purchase_date', now()->year)
+                ->whereNotIn('status_purchase', ['cancelled', 'Returned'])
+                ->sum('net_amount');
             $totalReceivables = DB::table('customers')->sum('previous_balance');
 
             return view('admin_panel.dashboard', compact(
