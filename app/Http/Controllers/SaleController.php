@@ -1287,7 +1287,7 @@ class SaleController extends Controller
         }
     }
 
-    private function handleStockImpact(Sale $sale, $type = 'out')
+    public function handleStockImpact(Sale $sale, $type = 'out')
     {
         // Type: 'out' (Sale Posted), 'in' (Sale Cancelled), 'return' (Returned)
 
@@ -1355,7 +1355,7 @@ class SaleController extends Controller
         }
     }
 
-    private function updateLedger(Sale $sale)
+    public function updateLedger(Sale $sale)
     {
         $customer_id = $sale->customer_id;
         if (! $customer_id) {

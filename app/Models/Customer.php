@@ -45,4 +45,17 @@ class Customer extends Model
             return $this->attributes['previous_balance'] ?? 0;
         }
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) \Illuminate\Support\Str::uuid();
+            }
+            if (!isset($model->is_synced)) {
+                $model->is_synced = 0;
+            }
+        });
+    }
 }

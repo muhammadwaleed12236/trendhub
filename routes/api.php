@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\SyncController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,8 +17,4 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
-// Route::get('sale/customers', [CustomerController::class, 'saleindex'])
-//     ->name('salecustomers.index');
+Route::post('/receive-sync', [SyncController::class, 'receiveSync'])->name('api.receive_sync');

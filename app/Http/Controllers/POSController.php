@@ -122,6 +122,8 @@ class POSController extends Controller
                         'size_val' => $v['size'] ?? '-',
                         'color_val' => $v['color'] ?? '-',
                         'price' => $v['sale_price'] ?? $p->sale_price_per_piece ?? 0,
+                        'wholesale_price' => $v['wholesale_price'] ?? $p->wholesale_price ?? 0,
+                        'weight_per_piece' => $v['weight_per_piece'] ?? $p->weight_per_piece ?? 0,
                         'stock_pieces' => $vBalance,
                         'stock' => $vStockDisplay,
                         'variant_data' => base64_encode($variantJson)
@@ -144,6 +146,8 @@ class POSController extends Controller
                     'size_mode' => $p->size_mode,
                     'pieces_per_box' => $ppb,
                     'price' => $p->sale_price_per_piece ?? 0,
+                    'wholesale_price' => $p->wholesale_price ?? 0,
+                    'weight_per_piece' => $p->weight_per_piece ?? 0,
                     'image' => $p->image ? asset('uploads/products/'.$p->image) : null,
                     'variants' => $variantItems,
                 ];
@@ -166,6 +170,8 @@ class POSController extends Controller
                     'size_mode' => $p->size_mode,
                     'pieces_per_box' => $ppb,
                     'price' => $p->sale_price_per_piece ?? 0,
+                    'wholesale_price' => $p->wholesale_price ?? 0,
+                    'weight_per_piece' => $p->weight_per_piece ?? 0,
                     'image' => $p->image ? asset('uploads/products/'.$p->image) : null,
                     'variants' => [],
                 ];

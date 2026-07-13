@@ -50,4 +50,17 @@ class Sale extends Model
     {
         return $this->hasMany(SaleReturn::class, 'sale_id');
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) \Illuminate\Support\Str::uuid();
+            }
+            if (!isset($model->is_synced)) {
+                $model->is_synced = 0;
+            }
+        });
+    }
 }

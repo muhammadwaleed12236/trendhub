@@ -287,7 +287,9 @@
                                                         <th>Color</th>
                                                         <th style="width: 100px;">Stock</th>
                                                         <th style="width: 100px;">Sale Price</th>
+                                                        <th style="width: 100px;">Wholesale Price</th>
                                                         <th style="width: 100px;">Purch Price</th>
+                                                        <th style="width: 100px;" class="factor-header d-none">Piece Weight (g)</th>
                                                         <th style="width: 80px;">Alert</th>
                                                         <th style="width: 140px;">Barcode</th>
                                                         <th style="width: 90px; text-align:center;">Action</th>
@@ -329,6 +331,8 @@
                 <input type="number" name="boxes_quantity" id="boxes_quantity" value="0">
                 <input type="number" name="loose_pieces" id="loose_pieces" value="0">
                 <input type="number" name="sale_price_per_box" id="sale_price_per_box" step="0.01" value="0">
+                <input type="number" name="wholesale_price" id="wholesale_price" step="0.01" value="0">
+                <input type="number" name="weight_per_piece" id="weight_per_piece" step="0.0001" value="0">
                 <input type="number" name="purchase_price_per_piece" id="purchase_price_per_piece" step="0.01" value="0">
                 <input type="number" name="alert_carton_quantity" id="alert_carton_quantity" value="0">
             </div>
@@ -420,8 +424,6 @@
             const form = document.getElementById('productForm');
             const unitDropdown = document.getElementById('unit-dropdown');
 
-            // Removed unused DOM elements and calculation functions for old Stock & Pricing logic.
-
             // Image Handler
             const imgInput = document.getElementById('imageInput');
             const preview = document.getElementById('preview');
@@ -456,6 +458,8 @@
                 // --- Sync Variants data to hidden main fields for backend compatibility ---
                 const vStocks = document.querySelectorAll('input[name="variant_stock[]"]');
                 const vSale = document.querySelectorAll('input[name="variant_sale_price[]"]');
+                const vWholesale = document.querySelectorAll('input[name="variant_wholesale_price[]"]');
+                const vWeight = document.querySelectorAll('input[name="variant_weight_per_piece[]"]');
                 const vPurch = document.querySelectorAll('input[name="variant_purchase_price[]"]');
                 const vAlert = document.querySelectorAll('input[name="variant_alert_qty[]"]');
 
@@ -463,6 +467,8 @@
                 vStocks.forEach(el => totalStock += (parseFloat(el.value) || 0));
 
                 let firstSale = vSale.length > 0 ? (parseFloat(vSale[0].value) || 0) : 0;
+                let firstWholesale = vWholesale.length > 0 ? (parseFloat(vWholesale[0].value) || 0) : 0;
+                let firstWeight = vWeight.length > 0 ? (parseFloat(vWeight[0].value) || 0) : 0;
                 let firstPurch = vPurch.length > 0 ? (parseFloat(vPurch[0].value) || 0) : 0;
                 let firstAlert = vAlert.length > 0 ? (parseFloat(vAlert[0].value) || 0) : 0;
 
@@ -477,6 +483,8 @@
                     document.getElementById('boxes_quantity').value = 0;
                 }
                 document.getElementById('sale_price_per_box').value = firstSale;
+                document.getElementById('wholesale_price').value = firstWholesale;
+                document.getElementById('weight_per_piece').value = firstWeight;
                 document.getElementById('purchase_price_per_piece').value = firstPurch;
                 document.getElementById('alert_carton_quantity').value = firstAlert;
                 // ------------------------------------------------------------------------
@@ -511,11 +519,6 @@
                 });
             });
 
-            // Barcode
-            // Main barcode generation logic removed as per user request
-
-            // Select2 Removed for color-select
-
             $('#category-dropdown').on('change', function() {
                 var cid = $(this).val();
                 if (cid) {
@@ -528,7 +531,6 @@
                 }
             });
 
-            // Quick Add AJAX Handlers
             function handleQuickAdd(modalId, selectSelector) {
                 $('#' + modalId + ' form').on('submit', function(e) {
                     e.preventDefault();
@@ -564,7 +566,6 @@
             handleQuickAdd('subcategoryModal', '#subcategory-dropdown');
             handleQuickAdd('brandModal', 'select[name="brand_id"]');
 
-            // Variants Logic
             const enableVariantsBtn = document.getElementById('enableVariantsBtn');
             const variantsContainer = document.getElementById('variantsContainer');
             const variantsBody = document.getElementById('variantsBody');
@@ -583,7 +584,9 @@
                     <td><input type="text" class="form-control-pro form-control-sm" name="variant_color[]" placeholder="Color"></td>
                     <td><input type="number" class="form-control-pro form-control-sm" name="variant_stock[]" placeholder="0"></td>
                     <td><input type="number" class="form-control-pro form-control-sm" name="variant_sale_price[]" step="0.01" placeholder="0.00"></td>
+                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_wholesale_price[]" step="0.01" placeholder="0.00"></td>
                     <td><input type="number" class="form-control-pro form-control-sm" name="variant_purchase_price[]" step="0.01" placeholder="0.00"></td>
+                    <td class="factor-col d-none"><input type="number" class="form-control-pro form-control-sm" name="variant_weight_per_piece[]" step="0.0001" placeholder="0.00" value="0"></td>
                     <td><input type="number" class="form-control-pro form-control-sm" name="variant_alert_qty[]" placeholder="0"></td>
                     <td>
                         <div class="d-flex">
@@ -597,7 +600,36 @@
                     </td>
                 `;
                 variantsBody.appendChild(tr);
+                toggleFactorColumns();
             }
+
+            function toggleFactorColumns() {
+                if (!unitDropdown) return;
+                const mode = unitDropdown.value;
+                const showFactor = (mode === 'by_kg' || mode === 'by_meter');
+                
+                const headers = document.querySelectorAll('.factor-header');
+                headers.forEach(h => {
+                    if (showFactor) {
+                        h.classList.remove('d-none');
+                        h.textContent = (mode === 'by_kg') ? 'Piece Weight (g)' : 'Piece Length (m)';
+                    } else {
+                        h.classList.add('d-none');
+                    }
+                });
+                
+                const cols = document.querySelectorAll('.factor-col');
+                cols.forEach(c => {
+                    if (showFactor) {
+                        c.classList.remove('d-none');
+                    } else {
+                        c.classList.add('d-none');
+                        const inp = c.querySelector('input');
+                        if (inp) inp.value = '0';
+                    }
+                });
+            }
+            if (unitDropdown) unitDropdown.addEventListener('change', toggleFactorColumns);
 
             enableVariantsBtn.addEventListener('click', function() {
                 if (variantsContainer.classList.contains('d-none')) {

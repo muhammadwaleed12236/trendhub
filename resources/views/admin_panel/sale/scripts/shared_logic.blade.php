@@ -1,6 +1,7 @@
 
 
 <script>
+    let lastSelectedPriceMode = 'retail';
     /* =========================================
        SHARED SALES LOGIC (Add/Edit)
        ========================================= */
@@ -117,6 +118,11 @@
        ========================================= */
 
     function addNewRow() {
+        const isWholesale = lastSelectedPriceMode === 'wholesale';
+        const btnText = isWholesale ? 'W' : 'R';
+        const btnClass = isWholesale ? 'btn-outline-info' : 'btn-outline-success';
+        const btnTitle = isWholesale ? 'Wholesale Mode' : 'Retail Mode';
+
         const rowHtml = `
   <tr>
     <!-- PRODUCT -->
@@ -169,9 +175,17 @@
  
     <!-- Price/Piece (EDITABLE) -->
     <td class="col-price-p">
-      <input type="text" class="form-control visible-price text-end" name="visible_price[]" placeholder="0">
+      <div class="d-flex align-items-center gap-1">
+        <input type="text" class="form-control visible-price text-end" name="visible_price[]" placeholder="0" style="flex: 1; min-width: 0;">
+        <button type="button" class="btn btn-sm ${btnClass} price-mode-row-toggle px-1 py-0" 
+                data-mode="${lastSelectedPriceMode}" title="${btnTitle}" style="font-size: 0.65rem; height: 24px; min-width: 20px; font-weight: bold;">
+          ${btnText}
+        </button>
+      </div>
       <input type="hidden" class="price-per-piece" name="price_per_piece[]">
       <input type="hidden" class="retail-price">
+      <input type="hidden" class="wholesale-price">
+      <input type="hidden" class="weight-per-piece">
     </td>
 
     <!-- DISCOUNT -->
@@ -223,18 +237,25 @@
 
             // Populate Fields
             // Store retail price (box price) in hidden field and visible if needed
-            $row.find('.retail-price').val(pRes.retail_price || 0);
-            // Visible price logic: usually per piece, but ensure consistent display
-            if (pRes.size_mode == "by_cartons") {
-                $row.find('.visible-price').val(pRes.sale_price_per_piece || pRes.retail_price || 0);
-            } else if (pRes.size_mode == "by_pieces") {
-                $row.find('.visible-price').val(pRes.sale_price_per_piece || pRes.retail_price || 0);
-            } else {
-                $row.find('.visible-price').val(pRes.price_per_m2 || pRes.retail_price || 0);
-            }
+             $row.find('.retail-price').val(pRes.retail_price || 0);
+             $row.find('.wholesale-price').val(pRes.wholesale_price || 0);
+             $row.find('.weight-per-piece').val(pRes.weight_per_piece || 0);
+             
+             let rowMode = $row.find('.price-mode-row-toggle').attr('data-mode') || 'retail';
+             let wsPrice = parseFloat(pRes.wholesale_price) || 0;
+             let rate = (rowMode === 'wholesale' && wsPrice > 0) ? wsPrice : (pRes.retail_price || 0);
 
-            $row.find('.pack-qty').val(pRes.pieces_per_box || 1);
-            $row.find('.price-per-piece').val(pRes.sale_price_per_piece || pRes.price_per_m2 || 0);
+             // Visible price logic: usually per piece, but ensure consistent display
+             if (pRes.size_mode == "by_cartons") {
+                 $row.find('.visible-price').val(pRes.sale_price_per_piece || rate || 0);
+             } else if (pRes.size_mode == "by_pieces" || pRes.size_mode == "by_kg" || pRes.size_mode == "by_gm" || pRes.size_mode == "by_meter") {
+                 $row.find('.visible-price').val(pRes.sale_price_per_piece || rate || 0);
+             } else {
+                 $row.find('.visible-price').val(pRes.price_per_m2 || rate || 0);
+             }
+
+             $row.find('.pack-qty').val(pRes.pieces_per_box || 1);
+             $row.find('.price-per-piece').val($row.find('.visible-price').val() || 0);
 
             $row.find('.size-h').val(pRes.height || '-');
             $row.find('.size-w').val(pRes.width || '-');
@@ -332,7 +353,16 @@
         const loosePcs  = parseInt($row.find('.loose-pcs-input').val()) || 0;
         const totalPiecesFromInputs = (cartonQty * packQty) + loosePcs;
 
+        const weightPerPiece = parseFloat($row.find('.weight-per-piece').val()) || 0;
         let totalPieces = totalPiecesFromInputs;
+        
+        if (weightPerPiece > 0) {
+            if (sizeMode === 'by_kg') {
+                totalPieces = cartonQty * (weightPerPiece / 1000);
+            } else if (sizeMode === 'by_meter') {
+                totalPieces = cartonQty * weightPerPiece;
+            }
+        }
         let displayCalc = totalPieces; // shown in "Total Pcs" column
 
         // Sync hidden qty field (backend uses qty[] as box.loose string OR just pieces)
@@ -344,7 +374,7 @@
         const discType = $row.find('.discount-toggle').data('type');
         let dam = toNum($row.find('.discount-amount').val());
 
-        $row.find('.total-pieces').val(totalPieces);
+        $row.find('.total-pieces').val(weightPerPiece > 0 ? totalPieces.toFixed(4) : totalPieces);
 
         // Price per piece
         let unitPrice = toNum($row.find('.price-per-piece').val());
@@ -355,6 +385,8 @@
         if (sizeMode === 'by_size') {
             gross = m2_per_piece * totalPieces * unitPrice;
             if (!m2_per_piece) gross = 0;
+        } else if (weightPerPiece > 0) {
+            gross = cartonQty * unitPrice;
         } else {
             // by_cartons OR by_pieces: always pieces × price_per_piece
             gross = totalPieces * unitPrice;
@@ -879,9 +911,16 @@
             // Set properties directly
             $row.find('.item-code-display').val(data.sku || '');
             $row.find('.retail-price').val(data.retail_price || data.trade_price || 0);
-            $row.find('.visible-price').val(data.retail_price || data.trade_price || 0);
+            $row.find('.wholesale-price').val(data.wholesale_price || 0);
+            $row.find('.weight-per-piece').val(data.weight_per_piece || 0);
+            
+            let rowMode = $row.find('.price-mode-row-toggle').attr('data-mode') || 'retail';
+            let wsPrice = parseFloat(data.wholesale_price) || 0;
+            let rate = (rowMode === 'wholesale' && wsPrice > 0) ? wsPrice : (data.retail_price || data.trade_price || 0);
+
+            $row.find('.visible-price').val(rate);
             $row.find('.pack-qty').val(data.pieces_per_box || 1);
-            $row.find('.price-per-piece').val(data.retail_price || data.trade_price || 0);
+            $row.find('.price-per-piece').val(rate);
             
             $row.find('.size-h').val(data.height || '-');
             $row.find('.size-w').val(data.width || '-');
@@ -975,6 +1014,33 @@
 
         // Add Row Button
         $('#btnAdd').click(addNewRow);
+
+        // Row Pricing Mode Toggle Handler
+        $(document).on('click', '.price-mode-row-toggle', function() {
+            const $btn = $(this);
+            const $row = $btn.closest('tr');
+            const currentMode = $btn.attr('data-mode') || 'retail';
+            const newMode = currentMode === 'retail' ? 'wholesale' : 'retail';
+            
+            $btn.attr('data-mode', newMode);
+            if (newMode === 'wholesale') {
+                $btn.removeClass('btn-outline-success').addClass('btn-outline-info').text('W').attr('title', 'Wholesale Mode');
+            } else {
+                $btn.removeClass('btn-outline-info').addClass('btn-outline-success').text('R').attr('title', 'Retail Mode');
+            }
+            
+            lastSelectedPriceMode = newMode;
+            
+            let retailPrice = parseFloat($row.find('.retail-price').val()) || 0;
+            let wholesalePrice = parseFloat($row.find('.wholesale-price').val()) || 0;
+            
+            let rate = (newMode === 'wholesale' && wholesalePrice > 0) ? wholesalePrice : retailPrice;
+            $row.find('.visible-price').val(rate);
+            $row.find('.price-per-piece').val(rate);
+            
+            computeRow($row);
+            updateGrandTotals();
+        });
 
         // Enter on any editable input -> compute row, add new row & open product select
         $('#salesTableBody').on('keydown', '.carton-qty, .loose-pcs-input, .discount-value, .discount-amount, .visible-price', function(e) {
