@@ -53,8 +53,9 @@ class SyncController extends Controller
         }
 
         try {
-            // Send payload to cloud via HTTP Client
+            // Send payload to cloud via HTTP Client (withoutVerifying to bypass local SSL errors)
             $response = Http::timeout(60)
+                ->withoutVerifying()
                 ->withHeaders(['X-Sync-Token' => $syncToken])
                 ->post($cloudSyncUrl . '/api/receive-sync', [
                     'customers' => $customers,
