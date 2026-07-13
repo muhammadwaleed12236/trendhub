@@ -19,7 +19,7 @@
             --dash-info-glow: rgba(14, 165, 233, 0.15);
             --dash-purple: #8b5cf6;
             --dash-purple-glow: rgba(139, 92, 246, 0.15);
-            
+
             --dash-bg: #f8fafc;
             --dash-card-bg: rgba(255, 255, 255, 0.9);
             --dash-border: rgba(226, 232, 240, 0.8);
@@ -543,7 +543,7 @@
                 <!-- Welcome Premium Header Card -->
                 <div class="welcome-premium-card">
                     <div class="welcome-premium-content">
-                        <h1 class="welcome-premium-title">Assalam-o-Alaikum, {{ auth()->user()->name ?? 'Admin' }}! 👋</h1>
+                        <h1 class="welcome-premium-title">Welcome Back{{ auth()->user()->name ?? 'Admin' }}! 👋</h1>
                         <p class="welcome-premium-sub">Here is your absolute live business diagnostic dashboard statistics.</p>
                         <div class="welcome-badge-date">
                             <i class="fa fa-calendar-alt"></i>
@@ -1068,7 +1068,7 @@
             const salesCanvas = document.getElementById('chartJsSales');
             if (salesCanvas) {
                 const salesCtx = salesCanvas.getContext('2d');
-                
+
                 // Set custom options for dynamic updates
                 const salesChart = new Chart(salesCtx, {
                     type: 'line',
@@ -1134,7 +1134,7 @@
                         document.querySelectorAll('#salesFilterGroup .filter-tab-btn').forEach(b => b.classList.remove('active'));
                         this.classList.add('active');
                         const mode = this.dataset.filter;
-                        
+
                         salesChart.data.labels = salesStats[mode].categories;
                         salesChart.data.datasets[0].data = salesStats[mode].series[0].data;
                         salesChart.update();
@@ -1148,7 +1148,7 @@
             const purchaseCanvas = document.getElementById('chartJsPurchase');
             if (purchaseCanvas) {
                 const purchaseCtx = purchaseCanvas.getContext('2d');
-                
+
                 const purchaseChart = new Chart(purchaseCtx, {
                     type: 'line',
                     data: {
@@ -1213,7 +1213,7 @@
                         document.querySelectorAll('#purchaseFilterGroup .filter-tab-btn').forEach(b => b.classList.remove('active'));
                         this.classList.add('active');
                         const mode = this.dataset.filter;
-                        
+
                         purchaseChart.data.labels = purchaseStats[mode].categories;
                         purchaseChart.data.datasets[0].data = purchaseStats[mode].series[0].data;
                         purchaseChart.update();
@@ -1379,7 +1379,7 @@
                     btnSync.disabled = true;
                     const originalHtml = btnSync.innerHTML;
                     btnSync.innerHTML = '<i class="fa fa-sync-alt fa-spin me-1"></i> Syncing...';
-                    
+
                     Swal.fire({
                         title: 'Synchronizing...',
                         text: 'Please wait while we sync your local data with the cloud.',
@@ -1400,7 +1400,7 @@
                     .then(data => {
                         btnSync.disabled = false;
                         btnSync.innerHTML = originalHtml;
-                        
+
                         if (data.status === 'success') {
                             Swal.fire({
                                 icon: 'success',
