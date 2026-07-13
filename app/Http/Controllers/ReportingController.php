@@ -370,8 +370,15 @@ class ReportingController extends Controller
                 if ($customerId && $customerId !== 'all') {
                     $saleQuery->where('sales.customer_id', $customerId);
                 }
-                $salesList = $saleQuery->select('sale_items.total_pieces', 'sale_items.qty', 'sale_items.total', 'sale_items.color')
-                    ->get();
+
+                $salesList = $saleQuery->select(
+                    'sale_items.total_pieces',
+                    'sale_items.qty',
+                    'sale_items.total',
+                    'sale_items.color',
+                    'sales.total_extradiscount',
+                    'sales.total_bill_amount'
+                )->get();
 
                 $returnQuery = DB::table('sale_return_items as sri')
                     ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
@@ -408,7 +415,13 @@ class ReportingController extends Controller
                         if ($this->matchSaleItemToVariant($sItem, $v)) {
                             $soldQty += (float) $sItem->qty;
                             $soldQtyPieces += (float) $sItem->total_pieces;
-                            $soldAmount += (float) $sItem->total;
+                            
+                            $itemNet = (float) $sItem->total;
+                            if ($sItem->total_bill_amount > 0 && $sItem->total_extradiscount > 0) {
+                                $proportion = $itemNet / (float) $sItem->total_bill_amount;
+                                $itemNet -= ($sItem->total_extradiscount * $proportion);
+                            }
+                            $soldAmount += $itemNet;
                         }
                     }
 
@@ -460,12 +473,28 @@ class ReportingController extends Controller
                     $saleQuery->where('sales.customer_id', $customerId);
                 }
 
-                $saleStats = $saleQuery->selectRaw('COALESCE(SUM(total_pieces),0) as sold_qty_pieces, COALESCE(SUM(qty),0) as sold_qty, COALESCE(SUM(total),0) as sold_amount')
-                    ->first();
+                $salesList = $saleQuery->select(
+                    'sale_items.total_pieces',
+                    'sale_items.qty',
+                    'sale_items.total',
+                    'sales.total_extradiscount',
+                    'sales.total_bill_amount'
+                )->get();
 
-                $soldQty = (float) $saleStats->sold_qty;
-                $soldQtyPieces = (float) $saleStats->sold_qty_pieces;
-                $soldAmount = (float) $saleStats->sold_amount;
+                $soldQty = 0;
+                $soldQtyPieces = 0;
+                $soldAmount = 0;
+                foreach ($salesList as $sItem) {
+                    $soldQty += (float) $sItem->qty;
+                    $soldQtyPieces += (float) $sItem->total_pieces;
+                    
+                    $itemNet = (float) $sItem->total;
+                    if ($sItem->total_bill_amount > 0 && $sItem->total_extradiscount > 0) {
+                        $proportion = $itemNet / (float) $sItem->total_bill_amount;
+                        $itemNet -= ($sItem->total_extradiscount * $proportion);
+                    }
+                    $soldAmount += $itemNet;
+                }
                 
                 $returnQuery = DB::table('stock_movements')
                     ->where('product_id', $product->id)
@@ -524,11 +553,11 @@ class ReportingController extends Controller
             $custSaleItems = $custSaleQuery->select(
                 'sale_items.product_id', 
                 'sale_items.color',
-                DB::raw('SUM(sale_items.total_pieces) as sold_qty_pieces'), 
-                DB::raw('SUM(sale_items.total) as sold_amount')
-            )
-                ->groupBy('sale_items.product_id', 'sale_items.color')
-                ->get();
+                'sale_items.total_pieces',
+                'sale_items.total',
+                'sales.total_extradiscount',
+                'sales.total_bill_amount'
+            )->get();
 
             $custRevenue = 0;
             $custCogs = 0;
@@ -576,8 +605,14 @@ class ReportingController extends Controller
                     }
                 }
 
-                $custRevenue += (float) $item->sold_amount;
-                $custCogs += (float) $item->sold_qty_pieces * $avgPrice;
+                $itemNet = (float) $item->total;
+                if ($item->total_bill_amount > 0 && $item->total_extradiscount > 0) {
+                    $proportion = $itemNet / (float) $item->total_bill_amount;
+                    $itemNet -= ($item->total_extradiscount * $proportion);
+                }
+
+                $custRevenue += $itemNet;
+                $custCogs += (float) ($item->total_pieces ?? 0) * $avgPrice;
             }
 
             $custProfit = $custRevenue - $custCogs;

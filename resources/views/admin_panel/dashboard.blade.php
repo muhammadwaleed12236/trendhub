@@ -608,18 +608,18 @@
                 <!-- Financial Health Metrics (Accounting-based) -->
                 @if (isset($financialSummary) && !empty($financialSummary))
                     <div class="dash-section-subhead">
-                        <i class="fa fa-wallet"></i> Financial Health (This Month)
+                        <i class="fa fa-wallet"></i> Financial Health (Today)
                     </div>
                     <div class="glass-stat-grid">
-                        <!-- Net Profit -->
+                        <!-- Sales This Month -->
                         <div class="glass-card card-success">
                             <div class="glass-card-header">
-                                <div class="glass-card-icon"><i class="fa fa-chart-line"></i></div>
-                                <span class="glass-card-badge text-success bg-light" style="background:#eefdf5 !important;">Profitability</span>
+                                <div class="glass-card-icon"><i class="fa fa-shopping-cart"></i></div>
+                                <span class="glass-card-badge text-success bg-light" style="background:#eefdf5 !important;">Sales</span>
                             </div>
                             <div>
-                                <div class="glass-card-value">Rs {{ number_format($profitThisMonth, 0) }}</div>
-                                <div class="glass-card-label">Net Profit</div>
+                                <div class="glass-card-value">Rs {{ number_format($salesThisMonth, 0) }}</div>
+                                <div class="glass-card-label">Today's Sales</div>
                             </div>
                         </div>
 
@@ -631,7 +631,7 @@
                             </div>
                             <div>
                                 <div class="glass-card-value">Rs {{ number_format($purchasesThisMonth, 0) }}</div>
-                                <div class="glass-card-label">Purchase</div>
+                                <div class="glass-card-label">Today's Purchase</div>
                             </div>
                         </div>
 
@@ -660,8 +660,64 @@
                         </div>
                     </div>
 
+                    <!-- Profitability & Performance Section -->
+                    <div class="dash-section-subhead" style="margin-top: 2rem;">
+                        <i class="fa fa-chart-pie text-success"></i> Profitability & Performance (Today)
+                    </div>
+                    <div class="dashboard-panels-row" style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 1.5rem; width: 100%;">
+                        <!-- Net Profit Card -->
+                        <div class="panel-card" style="flex: 1; min-width: 320px; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(12px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.3); padding: 1.5rem; display: flex; flex-direction: column;">
+                            <div class="panel-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                                <div class="panel-title" style="font-size: 1.1rem; font-weight: 700; color: #1e293b;">
+                                    <i class="fa fa-wallet text-success" style="margin-right: 0.5rem;"></i> Net Profit Breakdown
+                                </div>
+                            </div>
+                            <div class="panel-body d-flex flex-column align-items-center justify-content-center" style="flex-grow: 1;">
+                                <div class="text-center mb-4">
+                                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 1px;">Net Profit</span>
+                                    <h2 class="fw-bold text-success mt-1" style="font-size: 2.5rem; margin-bottom: 0.25rem;">Rs {{ number_format($profitThisMonth, 0) }}</h2>
+                                    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0;">Net Revenue minus Cost of Goods Sold</p>
+                                </div>
+                                <div style="width: 100%;">
+                                    <div class="d-flex justify-content-between mb-1" style="font-size: 0.85rem; color: #475569;">
+                                        <span>Net Revenue</span>
+                                        <span class="fw-bold">Rs {{ number_format($totalRevenueThisMonth, 0) }}</span>
+                                    </div>
+                                    <div class="progress mb-3" style="height: 6px; border-radius: 3px; background-color: #e2e8f0; overflow: hidden;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%;"></div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between mb-1" style="font-size: 0.85rem; color: #475569;">
+                                        <span>Cost of Goods Sold (COGS)</span>
+                                        <span class="fw-bold">Rs {{ number_format($totalCostThisMonth, 0) }}</span>
+                                    </div>
+                                    @php
+                                        $costPercentage = $totalRevenueThisMonth > 0 ? min(100, round(($totalCostThisMonth / $totalRevenueThisMonth) * 100)) : 0;
+                                    @endphp
+                                    <div class="progress" style="height: 6px; border-radius: 3px; background-color: #e2e8f0; overflow: hidden;">
+                                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ $costPercentage }}%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profitability Chart Card -->
+                        <div class="panel-card" style="flex: 1.5; min-width: 350px; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(12px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.3); padding: 1.5rem; display: flex; flex-direction: column;">
+                            <div class="panel-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                                <div class="panel-title" style="font-size: 1.1rem; font-weight: 700; color: #1e293b;">
+                                    <i class="fa fa-chart-bar text-primary" style="margin-right: 0.5rem;"></i> Revenue vs Cost vs Net Profit
+                                </div>
+                            </div>
+                            <div class="panel-body d-flex align-items-center justify-content-center" style="flex-grow: 1;">
+                                <div style="position: relative; height: 200px; width: 100%;">
+                                    <canvas id="chartJsProfitability"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="dash-section-subhead">
-                        <i class="fa fa-exchange-alt"></i> Cash Flow & Payments
+                        <i class="fa fa-exchange-alt"></i> Cash Flow & Payments (Today)
                     </div>
                     <div class="glass-stat-grid">
                         <!-- Payments Received (In) -->
@@ -672,7 +728,7 @@
                             </div>
                             <div>
                                 <div class="glass-card-value">Rs {{ number_format($paymentInMonth, 0) }}</div>
-                                <div class="glass-card-label">Payment In (This Month)</div>
+                                <div class="glass-card-label">Payment In (Today)</div>
                             </div>
                             <div class="glass-card-footer">
                                 Overall Received: <strong>Rs {{ number_format($paymentInOverall, 0) }}</strong>
@@ -687,7 +743,7 @@
                             </div>
                             <div>
                                 <div class="glass-card-value">Rs {{ number_format($paymentOutMonth, 0) }}</div>
-                                <div class="glass-card-label">Payment Out (This Month)</div>
+                                <div class="glass-card-label">Payment Out (Today)</div>
                             </div>
                             <div class="glass-card-footer">
                                 Overall Settled: <strong>Rs {{ number_format($paymentOutOverall, 0) }}</strong>
@@ -1465,6 +1521,60 @@
                                 callbacks: {
                                     label: context => ` ${context.label}: Rs ${parseFloat(context.raw).toLocaleString()}`
                                 }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ==========================================
+            // 8. PROFITABILITY BAR CHART
+            // ==========================================
+            const profCanvas = document.getElementById('chartJsProfitability');
+            if (profCanvas) {
+                const totalRevenue = parseFloat('{{ $totalRevenueThisMonth }}') || 0;
+                const totalCost = parseFloat('{{ $totalCostThisMonth }}') || 0;
+                const netProfit = parseFloat('{{ $profitThisMonth }}') || 0;
+
+                new Chart(profCanvas.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Revenue', 'Cost', 'Net Profit'],
+                        datasets: [{
+                            data: [totalRevenue, totalCost, netProfit],
+                            backgroundColor: ['#10b981', '#ef4444', '#3b82f6'],
+                            borderRadius: 6,
+                            borderWidth: 0,
+                            barThickness: 35
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                padding: 10,
+                                bodyFont: { family: 'Outfit', size: 12 },
+                                callbacks: {
+                                    label: context => ` Rs ${parseFloat(context.raw).toLocaleString()}`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    font: { family: 'Outfit', size: 10 },
+                                    callback: value => 'Rs ' + parseFloat(value).toLocaleString()
+                                }
+                            },
+                            x: {
+                                grid: { display: false }
                             }
                         }
                     }
