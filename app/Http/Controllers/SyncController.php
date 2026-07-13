@@ -18,7 +18,7 @@ class SyncController extends Controller
      */
     public function syncToCloud(Request $request)
     {
-        $cloudSyncUrl = env('CLOUD_SYNC_URL', 'https://trendhubstore.binsultansweet.com');
+        $cloudSyncUrl = env('CLOUD_SYNC_URL', 'https://haroontraders.binsultansweet.com');
         $syncToken = env('SYNC_TOKEN', 'trendhub_sync_default_token_2026');
 
         // 1. Fetch unsynced customers
