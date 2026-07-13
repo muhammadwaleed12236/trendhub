@@ -615,23 +615,23 @@
                         <div class="glass-card card-success">
                             <div class="glass-card-header">
                                 <div class="glass-card-icon"><i class="fa fa-hand-holding-usd"></i></div>
-                                <span class="glass-card-badge text-success bg-light" style="background:#eefdf5 !important;">Accounting</span>
+                                <span class="glass-card-badge text-success bg-light" style="background:#eefdf5 !important;">Operations</span>
                             </div>
                             <div>
-                                <div class="glass-card-value">Rs {{ number_format($financialSummary['sales'] ?? 0, 0) }}</div>
+                                <div class="glass-card-value">Rs {{ number_format($salesThisMonth, 0) }}</div>
                                 <div class="glass-card-label">Sales Revenue</div>
                             </div>
                         </div>
 
-                        <!-- Purchase Expense -->
+                        <!-- Purchase -->
                         <div class="glass-card card-danger">
                             <div class="glass-card-header">
                                 <div class="glass-card-icon"><i class="fa fa-money-bill-wave"></i></div>
-                                <span class="glass-card-badge text-danger bg-light" style="background:#fff1f2 !important;">Accounting</span>
+                                <span class="glass-card-badge text-danger bg-light" style="background:#fff1f2 !important;">Operations</span>
                             </div>
                             <div>
-                                <div class="glass-card-value">Rs {{ number_format($financialSummary['purchases'] ?? 0, 0) }}</div>
-                                <div class="glass-card-label">Purchase Expenses</div>
+                                <div class="glass-card-value">Rs {{ number_format($purchasesThisMonth, 0) }}</div>
+                                <div class="glass-card-label">Purchase</div>
                             </div>
                         </div>
 
@@ -644,6 +644,18 @@
                             <div>
                                 <div class="glass-card-value">Rs {{ number_format($financialSummary['payables'] ?? 0, 0) }}</div>
                                 <div class="glass-card-label">Total Payables</div>
+                            </div>
+                        </div>
+
+                        <!-- Receivables -->
+                        <div class="glass-card card-primary">
+                            <div class="glass-card-header">
+                                <div class="glass-card-icon"><i class="fa fa-file-invoice-dollar"></i></div>
+                                <span class="glass-card-badge text-primary bg-light" style="background:#eef2ff !important;">Liabilities</span>
+                            </div>
+                            <div>
+                                <div class="glass-card-value">Rs {{ number_format($totalReceivables, 0) }}</div>
+                                <div class="glass-card-label">Total Receivables (Customer Credit)</div>
                             </div>
                         </div>
                     </div>
@@ -869,6 +881,49 @@
                             </div>
                         </div>
                     @endcan
+                </div>
+
+                <!-- Cash Flow Breakdown Panel Card -->
+                <div class="dashboard-panels-row full-width" style="margin-top: 2rem;">
+                    <div class="panel-card">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="fa fa-exchange-alt"></i> Cash Flow & Vouchers Summary (This Month)
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-4 mb-4 mb-md-0 d-flex justify-content-center">
+                                    <div style="position: relative; width: 200px; height: 200px;">
+                                        <canvas id="chartJsCashFlow"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="row">
+                                        <div class="col-6 mb-3">
+                                            <div class="small text-muted mb-1" style="font-weight:600;">Receipts (Money In)</div>
+                                            <h5 class="fw-bold text-success" style="font-size: 1.35rem; font-weight:800;">Rs {{ number_format($paymentInMonth, 2) }}</h5>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="small text-muted mb-1" style="font-weight:600;">Payments (Money Out)</div>
+                                            <h5 class="fw-bold text-danger" style="font-size: 1.35rem; font-weight:800;">Rs {{ number_format($paymentOutMonth, 2) }}</h5>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="small text-muted mb-1" style="font-weight:600;">Total Liquidity</div>
+                                            <h5 class="fw-bold text-primary" style="font-size: 1.35rem; font-weight:800;">Rs {{ number_format($totalCashAndBankBalance, 2) }}</h5>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="small text-muted mb-1" style="font-weight:600;">Monthly Cash Spread</div>
+                                            @php $spread = $paymentInMonth - $paymentOutMonth; @endphp
+                                            <h5 class="fw-bold {{ $spread >= 0 ? 'text-success' : 'text-danger' }}" style="font-size: 1.35rem; font-weight:800;">
+                                                Rs {{ number_format($spread, 2) }}
+                                            </h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Top 10 Products and Customers Premium Analytics Panels -->
@@ -1374,6 +1429,45 @@
                             confirmButtonColor: '#6366f1'
                         });
                     });
+                });
+            }
+
+            // ==========================================
+            // 7. CASH FLOW BREAKDOWN DOUGHNUT
+            // ==========================================
+            const cfCanvas = document.getElementById('chartJsCashFlow');
+            if (cfCanvas) {
+                const paymentIn = parseFloat('{{ $paymentInMonth }}') || 0;
+                const paymentOut = parseFloat('{{ $paymentOutMonth }}') || 0;
+
+                new Chart(cfCanvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Receipts (In)', 'Payments (Out)'],
+                        datasets: [{
+                            data: [paymentIn, paymentOut],
+                            backgroundColor: ['#10b981', '#f43f5e'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff',
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                padding: 10,
+                                bodyFont: { family: 'Outfit', size: 11 },
+                                callbacks: {
+                                    label: context => ` ${context.label}: Rs ${parseFloat(context.raw).toLocaleString()}`
+                                }
+                            }
+                        }
+                    }
                 });
             }
 

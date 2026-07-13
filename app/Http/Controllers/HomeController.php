@@ -229,6 +229,10 @@ class HomeController extends Controller
                     ->values();
             }
 
+            $salesThisMonth = DB::table('sales')->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->sum('total_net');
+            $purchasesThisMonth = DB::table('purchases')->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->sum('net_amount');
+            $totalReceivables = DB::table('customers')->sum('previous_balance');
+
             return view('admin_panel.dashboard', compact(
                 'categoryCount',
                 'subcategoryCount',
@@ -249,7 +253,10 @@ class HomeController extends Controller
                 'topCustomers',
                 'cashAndBankAccounts',
                 'totalCashAndBankBalance',
-                'lowStockProducts'
+                'lowStockProducts',
+                'salesThisMonth',
+                'purchasesThisMonth',
+                'totalReceivables'
             ));
         } else {
             return redirect()->back()->with('error', 'Unauthorized access');
