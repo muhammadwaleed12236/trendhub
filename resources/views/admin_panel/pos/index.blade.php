@@ -670,6 +670,9 @@
                 </button>
             </div>
             <div class="modal-body p-0">
+                <div class="p-2 bg-light border-bottom">
+                    <input type="text" id="variantSearchInput" class="form-control form-control-sm" placeholder="Search variant size / color...">
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
@@ -1127,6 +1130,25 @@
                 }
             });
         });
+        // Variant Search Filter
+        $('#variantSearchInput').on('input', function() {
+            let searchTerm = $(this).val().toLowerCase();
+            $('#variantsModalList tr').each(function() {
+                let variantName = $(this).find('td:first').text().toLowerCase();
+                if (variantName.indexOf(searchTerm) > -1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+        // Clear search when modal opens
+        $('#variantsModal').on('show.bs.modal', function () {
+            $('#variantSearchInput').val('');
+            $('#variantsModalList tr').show();
+        });
+
     });
 </script>
 @endsection
