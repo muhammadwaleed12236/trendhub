@@ -435,6 +435,20 @@
                 window.print();
             }, 500);
         });
+
+        window.onafterprint = function() {
+            setTimeout(() => {
+                try {
+                    if (window.opener) {
+                        window.close();
+                    } else {
+                        window.location.href = "{{ route('pos.index') }}";
+                    }
+                } catch (e) {
+                    window.location.href = "{{ route('pos.index') }}";
+                }
+            }, 500);
+        };
     </script>
 </body>
 
