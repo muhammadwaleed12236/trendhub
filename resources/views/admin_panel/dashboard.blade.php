@@ -611,15 +611,16 @@
                         <i class="fa fa-wallet"></i> Financial Health (This Month)
                     </div>
                     <div class="glass-stat-grid">
-                        <!-- Sales Revenue -->
+                        <!-- Net Profit -->
+                        @php $profitThisMonth = $salesThisMonth - $purchasesThisMonth; @endphp
                         <div class="glass-card card-success">
                             <div class="glass-card-header">
-                                <div class="glass-card-icon"><i class="fa fa-hand-holding-usd"></i></div>
-                                <span class="glass-card-badge text-success bg-light" style="background:#eefdf5 !important;">Operations</span>
+                                <div class="glass-card-icon"><i class="fa fa-chart-line"></i></div>
+                                <span class="glass-card-badge text-success bg-light" style="background:#eefdf5 !important;">Profitability</span>
                             </div>
                             <div>
-                                <div class="glass-card-value">Rs {{ number_format($salesThisMonth, 0) }}</div>
-                                <div class="glass-card-label">Sales Revenue</div>
+                                <div class="glass-card-value">Rs {{ number_format($profitThisMonth, 0) }}</div>
+                                <div class="glass-card-label">Net Profit</div>
                             </div>
                         </div>
 
