@@ -612,7 +612,6 @@
                     </div>
                     <div class="glass-stat-grid">
                         <!-- Net Profit -->
-                        @php $profitThisMonth = $salesThisMonth - $purchasesThisMonth; @endphp
                         <div class="glass-card card-success">
                             <div class="glass-card-header">
                                 <div class="glass-card-icon"><i class="fa fa-chart-line"></i></div>

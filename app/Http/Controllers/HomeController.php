@@ -238,8 +238,9 @@ class HomeController extends Controller
             $purchasesThisMonth = DB::table('purchases')
                 ->whereMonth('purchase_date', now()->month)
                 ->whereYear('purchase_date', now()->year)
-                ->whereNotIn('status_purchase', ['cancelled', 'Returned'])
                 ->sum('net_amount');
+
+            $profitThisMonth = max(0, (float)$salesThisMonth - (float)$purchasesThisMonth);
             $totalReceivables = DB::table('customers')->sum('previous_balance');
 
             return view('admin_panel.dashboard', compact(
@@ -265,6 +266,7 @@ class HomeController extends Controller
                 'lowStockProducts',
                 'salesThisMonth',
                 'purchasesThisMonth',
+                'profitThisMonth',
                 'totalReceivables'
             ));
         } else {
