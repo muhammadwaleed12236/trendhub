@@ -85,6 +85,21 @@
             margin-bottom: 1px;
         }
 
+        .policy-banner {
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 4px 6px;
+            margin: 6px 0 2px 0;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
         .divider {
             border-top: 1px dashed #000;
             margin: 5px 0;
@@ -275,6 +290,8 @@
             @endif
         </div>
         @endif
+
+        <div class="policy-banner">No Return, Only Exchange in 3 days</div>
 
         <div class="divider"></div>
 
