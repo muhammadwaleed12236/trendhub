@@ -151,14 +151,13 @@ class HomeController extends Controller
             }
 
             // ===== PAYMENT IN / OUT STATS =====
-            $now = Carbon::now();
-            $monthStart = $now->copy()->startOfMonth();
-            $monthEnd = $now->copy()->endOfMonth();
+            $todayStart = Carbon::today()->startOfDay();
+            $todayEnd = Carbon::today()->endOfDay();
 
-            // 1. Payment IN (Monthly)
-            $v2ReceiptsMonth = DB::table('voucher_masters')->where('voucher_type', 'receipt')->whereBetween('date', [$monthStart, $monthEnd])->sum('total_amount');
-            $v1ReceiptsMonth = DB::table('receipts_vouchers')->whereBetween('receipt_date', [$monthStart, $monthEnd])->sum('total_amount');
-            $custPaymentsMonth = DB::table('customer_payments')->whereBetween('payment_date', [$monthStart, $monthEnd])->sum('amount');
+            // 1. Payment IN (Today)
+            $v2ReceiptsMonth = DB::table('voucher_masters')->where('voucher_type', 'receipt')->whereBetween('date', [$todayStart, $todayEnd])->sum('total_amount');
+            $v1ReceiptsMonth = DB::table('receipts_vouchers')->whereBetween('receipt_date', [$todayStart, $todayEnd])->sum('total_amount');
+            $custPaymentsMonth = DB::table('customer_payments')->whereBetween('payment_date', [$todayStart, $todayEnd])->sum('amount');
             $paymentInMonth = $v2ReceiptsMonth + $v1ReceiptsMonth + $custPaymentsMonth;
 
             // 2. Payment IN (Overall)
@@ -167,11 +166,11 @@ class HomeController extends Controller
             $custPaymentsAll = DB::table('customer_payments')->sum('amount');
             $paymentInOverall = $v2ReceiptsAll + $v1ReceiptsAll + $custPaymentsAll;
 
-            // 3. Payment OUT (Monthly)
-            $v2PaymentsMonth = DB::table('voucher_masters')->whereIn('voucher_type', ['payment', 'expense'])->whereBetween('date', [$monthStart, $monthEnd])->sum('total_amount');
-            $v1PaymentsMonth = DB::table('payment_vouchers')->whereBetween('receipt_date', [$monthStart, $monthEnd])->sum('total_amount');
-            $v1ExpensesMonth = DB::table('expense_vouchers')->whereBetween('entry_date', [$monthStart, $monthEnd])->sum('total_amount');
-            $vendorPaymentsMonth = DB::table('vendor_payments')->whereBetween('payment_date', [$monthStart, $monthEnd])->sum('amount');
+            // 3. Payment OUT (Today)
+            $v2PaymentsMonth = DB::table('voucher_masters')->whereIn('voucher_type', ['payment', 'expense'])->whereBetween('date', [$todayStart, $todayEnd])->sum('total_amount');
+            $v1PaymentsMonth = DB::table('payment_vouchers')->whereBetween('receipt_date', [$todayStart, $todayEnd])->sum('total_amount');
+            $v1ExpensesMonth = DB::table('expense_vouchers')->whereBetween('entry_date', [$todayStart, $todayEnd])->sum('total_amount');
+            $vendorPaymentsMonth = DB::table('vendor_payments')->whereBetween('payment_date', [$todayStart, $todayEnd])->sum('amount');
             $paymentOutMonth = $v2PaymentsMonth + $v1PaymentsMonth + $v1ExpensesMonth + $vendorPaymentsMonth;
 
             // 4. Payment OUT (Overall)
@@ -229,6 +228,69 @@ class HomeController extends Controller
                     ->values();
             }
 
+            $salesThisMonth = DB::table('sales')
+                ->whereDate('created_at', \Carbon\Carbon::today())
+                ->whereNotIn('sale_status', ['cancelled', 'returned'])
+                ->sum('total_net');
+
+            $purchasesThisMonth = DB::table('purchases')
+                ->whereDate('purchase_date', \Carbon\Carbon::today())
+                ->sum('net_amount');
+
+            // Calculate real profit from sale items (sale price - purch_price from variant JSON)
+            $saleItemsThisMonth = DB::table('sale_items')
+                ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+                ->join('products', 'products.id', '=', 'sale_items.product_id')
+                ->whereDate('sales.created_at', \Carbon\Carbon::today())
+                ->whereNotIn('sales.sale_status', ['cancelled', 'returned'])
+                ->select(
+                    'sale_items.price',
+                    'sale_items.color',
+                    'sale_items.total_pieces',
+                    'sale_items.total',
+                    'sales.total_extradiscount',
+                    'sales.total_bill_amount',
+                    'products.size_mode',
+                    'products.pieces_per_m2',
+                    'products.purchase_price_per_m2',
+                    'products.purchase_price_per_piece'
+                )->get();
+
+            $totalCostThisMonth = 0;
+            $totalRevenueThisMonth = 0;
+            foreach ($saleItemsThisMonth as $si) {
+                $qty = (float)($si->total_pieces ?? 1);
+                $purchPrice = 0;
+                if (!empty($si->color)) {
+                    $decoded = base64_decode($si->color, true);
+                    $json = $decoded ? json_decode($decoded, true) : json_decode($si->color, true);
+                    if (is_array($json)) {
+                        $purchPrice = (float)($json['purch_price'] ?? 0);
+                    }
+                }
+
+                if ($purchPrice <= 0) {
+                    if ($si->size_mode === 'by_size') {
+                        $m2PerPiece = (float) ($si->pieces_per_m2 ?? 0);
+                        $purchPerM2 = (float) ($si->purchase_price_per_m2 ?? 0);
+                        $purchPrice = $m2PerPiece * $purchPerM2;
+                    } else {
+                        $purchPrice = (float) ($si->purchase_price_per_piece ?? 0);
+                    }
+                }
+
+                $itemNet = (float) $si->total;
+                if ($si->total_bill_amount > 0 && $si->total_extradiscount > 0) {
+                    $proportion = $itemNet / (float) $si->total_bill_amount;
+                    $itemNet -= ($si->total_extradiscount * $proportion);
+                }
+
+                $totalRevenueThisMonth += $itemNet;
+                $totalCostThisMonth    += $purchPrice * $qty;
+            }
+            $profitThisMonth = $totalRevenueThisMonth - $totalCostThisMonth;
+            $totalReceivables = DB::table('customers')->sum('previous_balance');
+
             return view('admin_panel.dashboard', compact(
                 'categoryCount',
                 'subcategoryCount',
@@ -249,7 +311,13 @@ class HomeController extends Controller
                 'topCustomers',
                 'cashAndBankAccounts',
                 'totalCashAndBankBalance',
-                'lowStockProducts'
+                'lowStockProducts',
+                'salesThisMonth',
+                'purchasesThisMonth',
+                'profitThisMonth',
+                'totalRevenueThisMonth',
+                'totalCostThisMonth',
+                'totalReceivables'
             ));
         } else {
             return redirect()->back()->with('error', 'Unauthorized access');

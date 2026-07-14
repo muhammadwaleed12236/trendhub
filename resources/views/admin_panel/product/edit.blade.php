@@ -266,7 +266,9 @@
                                                         <th>Color</th>
                                                         <th style="width: 100px;">Stock</th>
                                                         <th style="width: 100px;">Sale Price</th>
+                                                        <th style="width: 100px;">Wholesale Price</th>
                                                         <th style="width: 100px;">Purch Price</th>
+                                                        <th style="width: 100px;" class="factor-header d-none">Piece Weight (g)</th>
                                                         <th style="width: 80px;">Alert</th>
                                                         <th style="width: 140px;">Barcode</th>
                                                         <th style="width: 90px; text-align:center;">Action</th>
@@ -301,16 +303,16 @@
                                     </div>
                                 </div>
 
-                                {{-- Switcher --}}
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <input type="radio" class="btn-check" name="size_mode" id="mode_carton" value="by_cartons" {{ $product->size_mode == 'by_cartons' ? 'checked' : '' }}>
-                                    <label class="btn btn-outline-primary px-3 fw-bold" for="mode_carton"><i class="las la-box me-1"></i> Carton</label>
-
-                                    <input type="radio" class="btn-check" name="size_mode" id="mode_piece" value="by_pieces" {{ $product->size_mode == 'by_pieces' ? 'checked' : '' }}>
-                                    <label class="btn btn-outline-primary px-3 fw-bold" for="mode_piece"><i class="las la-puzzle-piece me-1"></i> Piece</label>
-                                    
-                                    {{-- BY SIZE SWITCHER HIDE / COMMENTED --}}
-                                    <input type="radio" class="d-none" name="size_mode" id="mode_size" value="by_size" {{ $product->size_mode == 'by_size' || !$product->size_mode ? 'checked' : '' }}>
+                                {{-- Unit Select --}}
+                                <div class="col-md-4">
+                                     <label class="form-label-pro">Unit</label>
+                                     <select class="form-select form-control-pro form-select-pro fw-bold" name="size_mode" id="unit-dropdown" style="max-width: 200px;">
+                                         <option value="by_pieces" {{ $product->size_mode == 'by_pieces' ? 'selected' : '' }}>Pcs</option>
+                                         <option value="by_cartons" {{ $product->size_mode == 'by_cartons' ? 'selected' : '' }}>Carton</option>
+                                         <option value="by_meter" {{ $product->size_mode == 'by_meter' ? 'selected' : '' }}>Meter</option>
+                                         <option value="by_kg" {{ $product->size_mode == 'by_kg' ? 'selected' : '' }}>Kg</option>
+                                         <option value="by_gm" {{ $product->size_mode == 'by_gm' ? 'selected' : '' }}>Gm</option>
+                                     </select>
                                 </div>
                             </div>
                         </div>
@@ -353,25 +355,32 @@
                                 <div class="col-md-12 pt-3 border-top">
                                     <h6 class="form-label-pro text-primary mb-2">Unit Price Settings (Rs.)</h6>
                                     <div class="row g-3">
-                                        <div class="col-md-3">
-                                            <label class="form-label-pro text-success">Sale Price <span class="unit-label text-muted fw-normal">(pc)</span></label>
-                                            <input type="number" class="form-control-pro fw-bold text-success" name="sale_price_per_box" id="sale_price_per_box" step="0.01" value="{{ $product->sale_price_per_piece }}" placeholder="0.00">
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label-pro text-secondary">Purchase Price <span class="unit-label text-muted fw-normal">(pc)</span></label>
-                                            <input type="number" class="form-control-pro text-muted" name="purchase_price_per_piece" id="purchase_price_per_piece" step="0.01" value="{{ $product->purchase_price_per_piece }}" placeholder="0.00">
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label-pro">Sale Disc (%)</label>
-                                            <input type="number" class="form-control-pro" name="sale_discount_percent" step="0.01" value="{{ $product->sale_discount_percent ?? 0 }}">
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label-pro">Purch Disc (%)</label>
-                                            <input type="number" class="form-control-pro" name="purchase_discount_percent" step="0.01" value="{{ $product->purchase_discount_percent ?? 0 }}">
-                                        </div>
+                                         <div class="col-md-2">
+                                             <label class="form-label-pro text-success">Sale Price <span class="unit-label text-muted fw-normal">(pc)</span></label>
+                                             <input type="number" class="form-control-pro fw-bold text-success" name="sale_price_per_box" id="sale_price_per_box" step="0.01" value="{{ $product->sale_price_per_piece }}" placeholder="0.00">
+                                         </div>
+                                         <div class="col-md-2">
+                                             <label class="form-label-pro text-info">Wholesale Price <span class="unit-label text-muted fw-normal">(pc)</span></label>
+                                             <input type="number" class="form-control-pro fw-bold text-info" name="wholesale_price" id="wholesale_price" step="0.01" value="{{ $product->wholesale_price ?? 0 }}" placeholder="0.00">
+                                         </div>
+                                         <div class="col-md-2">
+                                             <label class="form-label-pro text-secondary">Purchase Price <span class="unit-label text-muted fw-normal">(pc)</span></label>
+                                             <input type="number" class="form-control-pro text-muted" name="purchase_price_per_piece" id="purchase_price_per_piece" step="0.01" value="{{ $product->purchase_price_per_piece }}" placeholder="0.00">
+                                         </div>
+                                         <div class="col-md-2 factor-col-main d-none">
+                                             <label class="form-label-pro text-warning factor-label">Piece Weight (g)</label>
+                                             <input type="number" class="form-control-pro text-warning" name="weight_per_piece" id="weight_per_piece" step="0.0001" value="{{ $product->weight_per_piece ?? 0 }}" placeholder="0.00">
+                                         </div>
+                                         <div class="col-md-2">
+                                             <label class="form-label-pro">Sale Disc (%)</label>
+                                             <input type="number" class="form-control-pro" name="sale_discount_percent" step="0.01" value="{{ $product->sale_discount_percent ?? 0 }}">
+                                         </div>
+                                         <div class="col-md-2">
+                                             <label class="form-label-pro">Purch Disc (%)</label>
+                                             <input type="number" class="form-control-pro" name="purchase_discount_percent" step="0.01" value="{{ $product->purchase_discount_percent ?? 0 }}">
+                                         </div>
                                     </div>
                                 </div>
-
                             </div>
                         </div>
                     </div>
@@ -392,6 +401,8 @@
             <div style="display:none !important;">
                 <input type="number" name="height" id="height" step="0.01" value="{{ $product->height }}">
                 <input type="number" name="width" id="width" step="0.01" value="{{ $product->width }}">
+                <input type="number" name="wholesale_price" id="wholesale_price_hidden" step="0.01" value="0">
+                <input type="number" name="weight_per_piece" id="weight_per_piece_hidden" step="0.0001" value="0">
                 <input type="number" name="price_per_m2" id="price_per_m2" step="0.01" value="{{ $product->price_per_m2 }}">
                 <input type="number" name="purchase_price_per_m2" id="purchase_price_per_m2" step="0.01" value="{{ $product->purchase_price_per_m2 }}">
             </div>
@@ -481,62 +492,51 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // --- UI Elements ---
+            const unitDropdown = document.getElementById('unit-dropdown');
             const form = document.getElementById('productForm');
-            const modeRadios = document.querySelectorAll('input[name="size_mode"]');
-
+ 
             // Containers
             const grpBySize = document.querySelectorAll('.group-by-size');
             const grpLoose = document.querySelectorAll('.group-loose');
             const grpPieceOnly = document.querySelectorAll('.group-piece-only');
-
+ 
             function toggleGroup(els, hide) {
                 els.forEach(el => hide ? el.classList.add('d-none') : el.classList.remove('d-none'));
             }
-
+ 
             // Labels
             const unitLabels = document.querySelectorAll('.unit-label');
-
+ 
             // --- Logic Update Mode ---
             function updateMode() {
-                const modeEl = document.querySelector('input[name="size_mode"]:checked');
-                if(!modeEl) return;
-                const mode = modeEl.value;
-
-                // Sync UI Switcher labels highlight
-                modeRadios.forEach(r => {
-                    const lbl = document.querySelector(`label[for="${r.id}"]`);
-                    if(lbl) {
-                        if(r.checked) {
-                            lbl.classList.remove('btn-outline-primary');
-                            lbl.classList.add('btn-primary');
-                        } else {
-                            lbl.classList.remove('btn-primary');
-                            lbl.classList.add('btn-outline-primary');
-                        }
-                    }
-                });
-
+                if(!unitDropdown) return;
+                const mode = unitDropdown.value;
+ 
                 // Hide ALL dynamic wrappers
                 toggleGroup(grpBySize, true);
                 toggleGroup(grpLoose, true);
                 toggleGroup(grpPieceOnly, true);
-
+ 
                 if (mode === 'by_cartons') {
                     toggleGroup(grpBySize, false);
                     toggleGroup(grpLoose, false);
-
+                    unitLabels.forEach(l => l.innerText = '(pc)');
+ 
                     setRequired(['pieces_per_box', 'boxes_quantity', 'sale_price_per_box', 'purchase_price_per_piece'], true);
                     setRequired(['piece_quantity'], false);
-
-                } else if (mode === 'by_pieces') {
+ 
+                } else {
                     toggleGroup(grpPieceOnly, false);
-
+                    unitLabels.forEach(l => l.innerText = '(' + (mode === 'by_pieces' ? 'pc' : (mode === 'by_meter' ? 'm' : 'kg')) + ')');
+ 
                     setRequired(['piece_quantity', 'sale_price_per_box', 'purchase_price_per_piece'], true);
                     setRequired(['pieces_per_box', 'boxes_quantity'], false);
                 }
-
+ 
                 calculate();
+                toggleFactorColumns();
             }
+            if (unitDropdown) unitDropdown.addEventListener('change', updateMode);
 
             function setRequired(ids, isReq) {
                 ids.forEach(id => {
@@ -546,9 +546,8 @@
             }
 
             function calculate() {
-                const modeEl = document.querySelector('input[name="size_mode"]:checked');
-                if(!modeEl) return;
-                const mode = modeEl.value;
+                if(!unitDropdown) return;
+                const mode = unitDropdown.value;
 
                 const v = (id) => parseFloat(document.getElementById(id)?.value) || 0;
                 let stock = 0;
@@ -558,7 +557,7 @@
                     stock = (v('pieces_per_box') * v('boxes_quantity')) + v('loose_pieces');
                     saleVal = stock * v('sale_price_per_box');
 
-                } else if (mode === 'by_pieces') {
+                } else {
                     stock = v('piece_quantity');
                     saleVal = stock * v('sale_price_per_box');
                 }
@@ -572,11 +571,47 @@
                 if (el) el.innerText = val;
             }
 
+            function toggleFactorColumns() {
+                if (!unitDropdown) return;
+                const mode = unitDropdown.value;
+                const showFactor = (mode === 'by_kg' || mode === 'by_meter');
+                
+                const headers = document.querySelectorAll('.factor-header');
+                headers.forEach(h => {
+                    if (showFactor) {
+                        h.classList.remove('d-none');
+                        h.textContent = (mode === 'by_kg') ? 'Piece Weight (g)' : 'Piece Length (m)';
+                    } else {
+                        h.classList.add('d-none');
+                    }
+                });
+                
+                const cols = document.querySelectorAll('.factor-col');
+                cols.forEach(c => {
+                    if (showFactor) {
+                        c.classList.remove('d-none');
+                    } else {
+                        c.classList.add('d-none');
+                        const inp = c.querySelector('input');
+                        if (inp) inp.value = '0';
+                    }
+                });
+ 
+                const mainFactorCol = document.querySelector('.factor-col-main');
+                if (mainFactorCol) {
+                    if (showFactor) {
+                        mainFactorCol.classList.remove('d-none');
+                        const lbl = mainFactorCol.querySelector('.factor-label');
+                        if (lbl) lbl.textContent = (mode === 'by_kg') ? 'Piece Weight (g)' : 'Piece Length (m)';
+                    } else {
+                        mainFactorCol.classList.add('d-none');
+                        const inp = mainFactorCol.querySelector('input');
+                        if (inp) inp.value = '0';
+                    }
+                }
+            }
+
             // Events
-            modeRadios.forEach(r => r.addEventListener('change', function() {
-                // Do NOT resetInputs() on edit page - keep pre-saved details intact unless modified!
-                updateMode();
-            }));
             form.querySelectorAll('input').forEach(i => i.addEventListener('input', calculate));
 
             updateMode();
@@ -604,7 +639,6 @@
                 e.stopPropagation();
                 imgInput.value = '';
                 
-                // For Edit: Revert to original if exists
                 @if($product->image)
                     preview.src = "{{ asset('uploads/products/' . $product->image) }}";
                     preview.classList.remove('d-none');
@@ -619,37 +653,43 @@
             // AJAX Submission
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
-                // --- Sync Variants data to hidden main fields for backend compatibility ---
-                const vStocks = document.querySelectorAll('input[name="variant_stock[]"]');
-                const vSale = document.querySelectorAll('input[name="variant_sale_price[]"]');
-                const vPurch = document.querySelectorAll('input[name="variant_purchase_price[]"]');
-                const vAlert = document.querySelectorAll('input[name="variant_alert_qty[]"]');
-
-                let totalStock = 0;
-                vStocks.forEach(el => totalStock += (parseFloat(el.value) || 0));
-
-                let firstSale = vSale.length > 0 ? (parseFloat(vSale[0].value) || 0) : 0;
-                let firstPurch = vPurch.length > 0 ? (parseFloat(vPurch[0].value) || 0) : 0;
-                let firstAlert = vAlert.length > 0 ? (parseFloat(vAlert[0].value) || 0) : 0;
-
-                const modeEl = document.querySelector('input[name="size_mode"]:checked');
-                const mode = modeEl ? modeEl.value : 'by_pieces';
-                
-                if (vStocks.length > 0) {
-                    if(mode === 'by_cartons') {
-                        document.getElementById('boxes_quantity').value = totalStock;
-                        document.getElementById('pieces_per_box').value = 1;
-                        document.getElementById('loose_pieces').value = 0;
-                        document.getElementById('piece_quantity').value = 0;
-                    } else {
-                        document.getElementById('piece_quantity').value = totalStock;
-                        document.getElementById('boxes_quantity').value = 0;
-                    }
-                    document.getElementById('sale_price_per_box').value = firstSale;
-                    document.getElementById('purchase_price_per_piece').value = firstPurch;
-                    document.getElementById('alert_carton_quantity').value = firstAlert;
-                }
-                // ------------------------------------------------------------------------
+                 const vStocks = document.querySelectorAll('input[name="variant_stock[]"]');
+                 const vSale = document.querySelectorAll('input[name="variant_sale_price[]"]');
+                 const vWholesale = document.querySelectorAll('input[name="variant_wholesale_price[]"]');
+                 const vWeight = document.querySelectorAll('input[name="variant_weight_per_piece[]"]');
+                 const vPurch = document.querySelectorAll('input[name="variant_purchase_price[]"]');
+                 const vAlert = document.querySelectorAll('input[name="variant_alert_qty[]"]');
+ 
+                 let totalStock = 0;
+                 vStocks.forEach(el => totalStock += (parseFloat(el.value) || 0));
+ 
+                 let firstSale = vSale.length > 0 ? (parseFloat(vSale[0].value) || 0) : 0;
+                 let firstWholesale = vWholesale.length > 0 ? (parseFloat(vWholesale[0].value) || 0) : 0;
+                 let firstWeight = vWeight.length > 0 ? (parseFloat(vWeight[0].value) || 0) : 0;
+                 let firstPurch = vPurch.length > 0 ? (parseFloat(vPurch[0].value) || 0) : 0;
+                 let firstAlert = vAlert.length > 0 ? (parseFloat(vAlert[0].value) || 0) : 0;
+ 
+                 const mode = unitDropdown ? unitDropdown.value : 'by_pieces';
+                 
+                 if (vStocks.length > 0) {
+                     if(mode === 'by_cartons') {
+                         document.getElementById('boxes_quantity').value = totalStock;
+                         document.getElementById('pieces_per_box').value = 1;
+                         document.getElementById('loose_pieces').value = 0;
+                         document.getElementById('piece_quantity').value = 0;
+                     } else {
+                         document.getElementById('piece_quantity').value = totalStock;
+                         document.getElementById('boxes_quantity').value = 0;
+                     }
+                     document.getElementById('sale_price_per_box').value = firstSale;
+                     document.getElementById('wholesale_price').value = firstWholesale;
+                     document.getElementById('weight_per_piece').value = firstWeight;
+                     document.getElementById('purchase_price_per_piece').value = firstPurch;
+                     document.getElementById('alert_carton_quantity').value = firstAlert;
+                 } else {
+                     document.getElementById('wholesale_price_hidden').value = document.getElementById('wholesale_price').value;
+                     document.getElementById('weight_per_piece_hidden').value = document.getElementById('weight_per_piece').value;
+                 }
 
                 const btn = document.querySelector('button[type="submit"]');
                 const originalContent = btn.innerHTML;
@@ -658,7 +698,7 @@
 
                 const formData = new FormData(form);
                 fetch(form.action, {
-                    method: 'POST', // Method POST because we use _method=PUT in formData
+                    method: 'POST',
                     headers: {'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'},
                     body: formData
                 })
@@ -746,39 +786,44 @@
             }
 
             function addVariantRow(v = null) {
-                const tr = document.createElement('tr');
-                const productName = document.querySelector('input[name="product_name"]').value || '';
-                
-                const nameVal = v ? (v.name || '') : productName;
-                const sizeVal = v ? (v.size || '') : '';
-                const colorVal = v ? (v.color || '') : '';
-                const stockVal = v ? (v.stock || 0) : '';
-                const saleVal = v ? (v.sale_price || 0) : '';
-                const purchVal = v ? (v.purch_price || 0) : '';
-                const alertVal = v ? (v.alert || 0) : '';
-                const barcodeVal = v ? (v.barcode || '') : generateRandomBarcode();
-
-                tr.innerHTML = `
-                    <td><input type="text" class="form-control-pro form-control-sm" name="variant_name[]" value="${nameVal}" placeholder="Name"></td>
-                    <td><input type="text" class="form-control-pro form-control-sm" name="variant_size[]" value="${sizeVal}" placeholder="Size"></td>
-                    <td><input type="text" class="form-control-pro form-control-sm" name="variant_color[]" value="${colorVal}" placeholder="Color"></td>
-                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_stock[]" value="${stockVal}" placeholder="0"></td>
-                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_sale_price[]" value="${saleVal}" step="0.01" placeholder="0.00"></td>
-                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_purchase_price[]" value="${purchVal}" step="0.01" placeholder="0.00"></td>
-                    <td><input type="number" class="form-control-pro form-control-sm" name="variant_alert_qty[]" value="${alertVal}" placeholder="0"></td>
-                    <td>
-                        <div class="d-flex">
-                            <input type="text" class="form-control-pro form-control-sm" name="variant_barcode[]" value="${barcodeVal}" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
-                            <button type="button" class="btn btn-sm btn-light border gen-var-barcode px-2" style="border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0;" title="Generate New"><i class="las la-sync-alt"></i></button>
-                        </div>
-                    </td>
-                    <td class="text-center">
-                        <button type="button" class="btn btn-success add-var-btn px-2 py-1" title="Add"><i class="las la-check"></i></button>
-                        <button type="button" class="btn btn-danger remove-var-btn px-2 py-1" title="Remove"><i class="las la-times"></i></button>
-                    </td>
-                `;
-                variantsBody.appendChild(tr);
-            }
+                 const tr = document.createElement('tr');
+                 const productName = document.querySelector('input[name="product_name"]').value || '';
+                 
+                 const nameVal = v ? (v.name || '') : productName;
+                 const sizeVal = v ? (v.size || '') : '';
+                 const colorVal = v ? (v.color || '') : '';
+                 const stockVal = v ? (v.stock || 0) : '';
+                 const saleVal = v ? (v.sale_price || 0) : '';
+                 const wholesaleVal = v ? (v.wholesale_price || 0) : '';
+                 const weightVal = v ? (v.weight_per_piece || 0) : '';
+                 const purchVal = v ? (v.purch_price || 0) : '';
+                 const alertVal = v ? (v.alert || 0) : '';
+                 const barcodeVal = v ? (v.barcode || '') : generateRandomBarcode();
+ 
+                 tr.innerHTML = `
+                     <td><input type="text" class="form-control-pro form-control-sm" name="variant_name[]" value="${nameVal}" placeholder="Name"></td>
+                     <td><input type="text" class="form-control-pro form-control-sm" name="variant_size[]" value="${sizeVal}" placeholder="Size"></td>
+                     <td><input type="text" class="form-control-pro form-control-sm" name="variant_color[]" value="${colorVal}" placeholder="Color"></td>
+                     <td><input type="number" class="form-control-pro form-control-sm" name="variant_stock[]" value="${stockVal}" placeholder="0"></td>
+                     <td><input type="number" class="form-control-pro form-control-sm" name="variant_sale_price[]" value="${saleVal}" step="0.01" placeholder="0.00"></td>
+                     <td><input type="number" class="form-control-pro form-control-sm" name="variant_wholesale_price[]" value="${wholesaleVal}" step="0.01" placeholder="0.00"></td>
+                     <td><input type="number" class="form-control-pro form-control-sm" name="variant_purchase_price[]" value="${purchVal}" step="0.01" placeholder="0.00"></td>
+                     <td class="factor-col d-none"><input type="number" class="form-control-pro form-control-sm" name="variant_weight_per_piece[]" value="${weightVal}" step="0.0001" placeholder="0.00"></td>
+                     <td><input type="number" class="form-control-pro form-control-sm" name="variant_alert_qty[]" value="${alertVal}" placeholder="0"></td>
+                     <td>
+                         <div class="d-flex">
+                             <input type="text" class="form-control-pro form-control-sm" name="variant_barcode[]" value="${barcodeVal}" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                             <button type="button" class="btn btn-sm btn-light border gen-var-barcode px-2" style="border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0;" title="Generate New"><i class="las la-sync-alt"></i></button>
+                         </div>
+                     </td>
+                     <td class="text-center">
+                         <button type="button" class="btn btn-success add-var-btn px-2 py-1" title="Add"><i class="las la-check"></i></button>
+                         <button type="button" class="btn btn-danger remove-var-btn px-2 py-1" title="Remove"><i class="las la-times"></i></button>
+                     </td>
+                 `;
+                 variantsBody.appendChild(tr);
+                 toggleFactorColumns();
+             }
 
             enableVariantsBtn.addEventListener('click', function() {
                 if (variantsContainer.classList.contains('d-none')) {
@@ -827,7 +872,11 @@
                     parsed.forEach(v => addVariantRow(v));
                 }
             } catch(e) {}
-
+ 
+            // Call updateMode to set initial visible states
+            const form = document.getElementById('productForm');
+            updateMode();
+ 
         });
     </script>
 @endsection

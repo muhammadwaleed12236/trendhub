@@ -9,6 +9,7 @@ use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\SyncController;
 use App\Http\Controllers\InwardgatepassController;
 use App\Http\Controllers\NarrationController;
 use App\Http\Controllers\PermissionController;
@@ -48,6 +49,7 @@ Route::get('/', function () {
 });
 
 Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name('home');
+Route::post('/admin/sync-to-cloud', [SyncController::class, 'syncToCloud'])->middleware('auth')->name('admin.sync_to_cloud');
 
 // Route::get('/adminpage', [HomeController::class, 'adminpage'])->middleware(['auth','admin'])->name('adminpage');
 

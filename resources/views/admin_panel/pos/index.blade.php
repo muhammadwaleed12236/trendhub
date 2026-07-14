@@ -494,6 +494,8 @@
                                  data-name="{{ $product['name'] }}" 
                                  data-sku="{{ $product['sku'] }}" 
                                  data-price="{{ $product['price'] }}"
+                                 data-wholesale-price="{{ $product['wholesale_price'] }}"
+                                 data-weight-per-piece="{{ $product['weight_per_piece'] }}"
                                  data-stock-pieces="{{ $product['stock_pieces'] }}"
                                  data-stock="{{ $product['stock'] }}"
                                  data-pieces-per-box="{{ $product['pieces_per_box'] }}"
@@ -545,7 +547,16 @@
                     
                     <div class="pos-cart-header">
                         <h5>Selected Items</h5>
-                        <span class="cart-count" id="cartCountBadge">0</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="btn-group btn-group-sm" id="posPriceModeToggleGroup" style="height: 20px;">
+                                <input type="radio" class="btn-check" name="pos_price_mode" id="pos_mode_retail" value="retail" checked>
+                                <label class="btn btn-outline-light py-0 px-2" for="pos_mode_retail" style="font-size: 10px; line-height: 18px; border-color: rgba(255,255,255,0.2);">Retail</label>
+
+                                <input type="radio" class="btn-check" name="pos_price_mode" id="pos_mode_wholesale" value="wholesale">
+                                <label class="btn btn-outline-light py-0 px-2" for="pos_mode_wholesale" style="font-size: 10px; line-height: 18px; border-color: rgba(255,255,255,0.2);">Wholesale</label>
+                            </div>
+                            <span class="cart-count" id="cartCountBadge">0</span>
+                        </div>
                     </div>
                     
                     <!-- CART LIST -->
@@ -659,6 +670,9 @@
                 </button>
             </div>
             <div class="modal-body p-0">
+                <div class="p-2 bg-light border-bottom">
+                    <input type="text" id="variantSearchInput" class="form-control form-control-sm" placeholder="Search variant size / color...">
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
@@ -759,10 +773,18 @@
                         desc = 'Standard Variant';
                     }
                     
+                    let retailPrice = parseFloat(v.price) || 0;
+                    let wholesalePrice = parseFloat(v.wholesale_price) || 0;
+                    let weightPerPiece = parseFloat(v.weight_per_piece) || 0;
+                    let activePriceMode = $('input[name="pos_price_mode"]:checked').val() || 'retail';
+                    let price = (activePriceMode === 'wholesale' && wholesalePrice > 0) ? wholesalePrice : retailPrice;
+
                     let row = `
                         <tr data-id="${v.id}" 
                             data-name="${v.name}" 
-                            data-price="${v.price}" 
+                            data-price="${retailPrice}" 
+                            data-wholesale-price="${wholesalePrice}"
+                            data-weight-per-piece="${weightPerPiece}"
                             data-stock-pieces="${v.stock_pieces}"
                             data-size-mode="${sizeMode}"
                             data-pieces-per-box="${piecesPerBox}"
@@ -773,7 +795,7 @@
                                     ${v.stock}
                                 </span>
                             </td>
-                            <td class="text-end fw-bold">Rs ${parseFloat(v.price).toLocaleString()}</td>
+                            <td class="text-end fw-bold">Rs ${price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                             <td class="text-center">
                                 <div class="qty-controls mx-auto" style="width: 100px;">
                                     <button type="button" class="qty-btn modal-qty-minus" ${isOut ? 'disabled' : ''}>-</button>
@@ -796,12 +818,17 @@
                 // Add base product directly
                 let id = $(this).data('id');
                 let name = $(this).data('name');
-                let price = parseFloat($(this).data('price'));
+                let retailPrice = parseFloat($(this).data('price'));
+                let wholesalePrice = parseFloat($(this).data('wholesale-price')) || 0;
+                let weightPerPiece = parseFloat($(this).data('weight-per-piece')) || 0;
                 let stockPieces = parseFloat($(this).data('stock-pieces'));
                 let sizeMode = $(this).data('size-mode');
                 let piecesPerBox = parseFloat($(this).data('pieces-per-box')) || 1;
                 
-                addToCart(id, name, price, stockPieces, 1, sizeMode, piecesPerBox, '');
+                let activePriceMode = $('input[name="pos_price_mode"]:checked').val() || 'retail';
+                let price = (activePriceMode === 'wholesale' && wholesalePrice > 0) ? wholesalePrice : retailPrice;
+                
+                addToCart(id, name, price, stockPieces, 1, sizeMode, piecesPerBox, '', retailPrice, wholesalePrice, weightPerPiece);
             }
         });
 
@@ -823,12 +850,13 @@
             }
         });
 
-        // Add to cart from Modal
         $(document).on('click', '.add-to-cart-modal-btn', function() {
             let $row = $(this).closest('tr');
             let id = $row.data('id');
             let name = $row.data('name');
-            let price = parseFloat($row.data('price'));
+            let retailPrice = parseFloat($row.data('price'));
+            let wholesalePrice = parseFloat($row.data('wholesale-price')) || 0;
+            let weightPerPiece = parseFloat($row.data('weight-per-piece')) || 0;
             let stockPieces = parseFloat($row.data('stock-pieces'));
             let sizeMode = $row.data('size-mode');
             let piecesPerBox = parseFloat($row.data('pieces-per-box')) || 1;
@@ -840,7 +868,10 @@
                 return;
             }
 
-            addToCart(id, name, price, stockPieces, qty, sizeMode, piecesPerBox, variantData);
+            let activePriceMode = $('input[name="pos_price_mode"]:checked').val() || 'retail';
+            let price = (activePriceMode === 'wholesale' && wholesalePrice > 0) ? wholesalePrice : retailPrice;
+
+            addToCart(id, name, price, stockPieces, qty, sizeMode, piecesPerBox, variantData, retailPrice, wholesalePrice, weightPerPiece);
             
             // Show added feedback
             let $btn = $(this);
@@ -851,7 +882,7 @@
         });
 
         // Core addToCart Helper
-        function addToCart(id, name, price, stockPieces, qty, sizeMode, piecesPerBox, variantData) {
+        function addToCart(id, name, price, stockPieces, qty, sizeMode, piecesPerBox, variantData, retailPrice = 0, wholesalePrice = 0, weightPerPiece = 0) {
             let cartItem = cart.find(item => item.id === id);
             if (cartItem) {
                 if (cartItem.qty + qty <= stockPieces) {
@@ -866,6 +897,9 @@
                     product_id: id.toString().split('|')[0],
                     name: name,
                     price: price,
+                    retailPrice: retailPrice || price,
+                    wholesalePrice: wholesalePrice,
+                    weightPerPiece: weightPerPiece,
                     qty: qty,
                     stock: stockPieces,
                     sizeMode: sizeMode,
@@ -893,6 +927,15 @@
             $list.empty();
             
             cart.forEach((item, index) => {
+                let factor = parseFloat(item.weightPerPiece) || 0;
+                let totalPieces = item.qty;
+                if (factor > 0) {
+                    if (item.sizeMode === 'by_kg') {
+                        totalPieces = item.qty * (factor / 1000);
+                    } else if (item.sizeMode === 'by_meter') {
+                        totalPieces = item.qty * factor;
+                    }
+                }
                 let html = `
                     <div class="cart-item" data-index="${index}">
                         <div class="cart-item-header">
@@ -913,7 +956,7 @@
                         <!-- Hidden inputs for backend form serialization -->
                         <input type="hidden" name="product_id[]" value="${item.product_id}">
                         <input type="hidden" name="qty[]" value="${item.qty}">
-                        <input type="hidden" name="total_pieces[]" value="${item.qty}">
+                        <input type="hidden" name="total_pieces[]" value="${totalPieces}">
                         <input type="hidden" name="color[]" value="${item.variantData}">
                     </div>
                 `;
@@ -924,6 +967,20 @@
             $('#btnPOSSubmit').prop('disabled', false);
             updateBillSummary();
         }
+
+        // POS Price Mode change handler
+        $(document).on('change', 'input[name="pos_price_mode"]', function() {
+            let mode = $(this).val();
+            cart.forEach(item => {
+                let wsPrice = parseFloat(item.wholesalePrice) || 0;
+                if (mode === 'wholesale' && wsPrice > 0) {
+                    item.price = wsPrice;
+                } else {
+                    item.price = item.retailPrice;
+                }
+            });
+            renderCart();
+        });
 
         // Cart Actions: Remove, Quantity Plus, Minus, Manual change
         $(document).on('input', '.cart-price-val', function() {
@@ -1073,6 +1130,25 @@
                 }
             });
         });
+        // Variant Search Filter
+        $('#variantSearchInput').on('input', function() {
+            let searchTerm = $(this).val().toLowerCase();
+            $('#variantsModalList tr').each(function() {
+                let variantName = $(this).find('td:first').text().toLowerCase();
+                if (variantName.indexOf(searchTerm) > -1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+        // Clear search when modal opens
+        $('#variantsModal').on('show.bs.modal', function () {
+            $('#variantSearchInput').val('');
+            $('#variantsModalList tr').show();
+        });
+
     });
 </script>
 @endsection

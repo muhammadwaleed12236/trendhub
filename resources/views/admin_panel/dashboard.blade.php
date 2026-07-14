@@ -1,1276 +1,1586 @@
 @extends('admin_panel.layout.app')
 
 @section('content')
+    <!-- Google Fonts import for premium typography -->
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
         :root {
+            --dash-font: 'Outfit', sans-serif;
             --dash-primary: #6366f1;
-            --dash-success: #22c55e;
+            --dash-primary-glow: rgba(99, 102, 241, 0.15);
+            --dash-success: #10b981;
+            --dash-success-glow: rgba(16, 185, 129, 0.15);
             --dash-warning: #f59e0b;
-            --dash-danger: #ef4444;
+            --dash-warning-glow: rgba(245, 158, 11, 0.15);
+            --dash-danger: #f43f5e;
+            --dash-danger-glow: rgba(244, 63, 94, 0.15);
             --dash-info: #0ea5e9;
+            --dash-info-glow: rgba(14, 165, 233, 0.15);
             --dash-purple: #8b5cf6;
+            --dash-purple-glow: rgba(139, 92, 246, 0.15);
+
             --dash-bg: #f8fafc;
-            --dash-card: #ffffff;
-            --dash-border: #e2e8f0;
-            --dash-text: #1e293b;
-            --dash-muted: #64748b;
+            --dash-card-bg: rgba(255, 255, 255, 0.9);
+            --dash-border: rgba(226, 232, 240, 0.8);
+            --dash-text-main: #0f172a;
+            --dash-text-muted: #64748b;
         }
 
-        .dashboard-container {
-            padding: 0;
+        /* Set base styling */
+        .dashboard-body-wrapper {
+            font-family: var(--dash-font);
+            color: var(--dash-text-main);
+            background-color: var(--dash-bg);
+            padding: 1.5rem;
+            min-height: 100vh;
         }
 
-        /* Welcome Section */
-        .welcome-section {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-            border-radius: 20px;
-            padding: 32px 40px;
+        /* Welcome Premium Card */
+        .welcome-premium-card {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border-radius: 24px;
+            padding: 2.5rem;
             color: white;
-            margin-bottom: 28px;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.3);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .welcome-section::before {
+        .welcome-premium-card::before {
             content: '';
             position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 400px;
-            height: 400px;
-            background: rgba(255, 255, 255, 0.1);
+            top: -40%;
+            right: -10%;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
             border-radius: 50%;
+            pointer-events: none;
         }
 
-        .welcome-section::after {
+        .welcome-premium-card::after {
             content: '';
             position: absolute;
-            bottom: -30%;
-            right: 10%;
-            width: 200px;
-            height: 200px;
-            background: rgba(255, 255, 255, 0.08);
+            bottom: -20%;
+            left: 30%;
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
             border-radius: 50%;
+            pointer-events: none;
         }
 
-        .welcome-content {
-            position: relative;
-            z-index: 1;
+        .welcome-premium-title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.5rem;
+            animation: fadeInDown 0.5s ease;
         }
 
-        .welcome-title {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 8px;
+        .welcome-premium-sub {
+            font-size: 1.05rem;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 1.5rem;
+            font-weight: 400;
         }
 
-        .welcome-subtitle {
-            font-size: 1rem;
-            opacity: 0.9;
-            margin-bottom: 20px;
-        }
-
-        .welcome-date {
+        .welcome-badge-date {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 8px 16px;
-            border-radius: 10px;
-            font-size: 0.9rem;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1.25rem;
+            border-radius: 99px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Stats Grid */
-        .stats-grid {
+        /* Glassmorphism Stat Cards */
+        .glass-stat-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 28px;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
 
-        .stat-card {
-            background: var(--dash-card);
-            border-radius: 16px;
-            padding: 24px;
+        .glass-card {
+            background: var(--dash-card-bg);
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 1.5rem;
             border: 1px solid var(--dash-border);
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            border-color: var(--theme-color-hover);
         }
 
-        .stat-card::before {
+        .glass-card::after {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
-            width: 4px;
-            height: 100%;
+            width: 100%;
+            height: 4px;
+            background: var(--theme-gradient);
+            opacity: 0.8;
         }
 
-        .stat-card.primary::before {
-            background: linear-gradient(180deg, #6366f1, #8b5cf6);
+        /* Dynamic Theme Tokens */
+        .card-primary {
+            --theme-gradient: linear-gradient(90deg, #6366f1, #8b5cf6);
+            --theme-color-hover: rgba(99, 102, 241, 0.4);
+            --theme-icon-bg: #eef2ff;
+            --theme-icon-color: #6366f1;
+        }
+        .card-success {
+            --theme-gradient: linear-gradient(90deg, #10b981, #059669);
+            --theme-color-hover: rgba(16, 185, 129, 0.4);
+            --theme-icon-bg: #ecfdf5;
+            --theme-icon-color: #10b981;
+        }
+        .card-danger {
+            --theme-gradient: linear-gradient(90deg, #f43f5e, #e11d48);
+            --theme-color-hover: rgba(244, 63, 94, 0.4);
+            --theme-icon-bg: #fff1f2;
+            --theme-icon-color: #f43f5e;
+        }
+        .card-warning {
+            --theme-gradient: linear-gradient(90deg, #f59e0b, #d97706);
+            --theme-color-hover: rgba(245, 158, 11, 0.4);
+            --theme-icon-bg: #fffbeb;
+            --theme-icon-color: #f59e0b;
+        }
+        .card-info {
+            --theme-gradient: linear-gradient(90deg, #0ea5e9, #0284c7);
+            --theme-color-hover: rgba(14, 165, 233, 0.4);
+            --theme-icon-bg: #f0f9ff;
+            --theme-icon-color: #0ea5e9;
+        }
+        .card-purple {
+            --theme-gradient: linear-gradient(90deg, #8b5cf6, #7c3aed);
+            --theme-color-hover: rgba(139, 92, 246, 0.4);
+            --theme-icon-bg: #faf5ff;
+            --theme-icon-color: #8b5cf6;
         }
 
-        .stat-card.success::before {
-            background: linear-gradient(180deg, #22c55e, #16a34a);
-        }
-
-        .stat-card.warning::before {
-            background: linear-gradient(180deg, #f59e0b, #d97706);
-        }
-
-        .stat-card.danger::before {
-            background: linear-gradient(180deg, #ef4444, #dc2626);
-        }
-
-        .stat-card.info::before {
-            background: linear-gradient(180deg, #0ea5e9, #0284c7);
-        }
-
-        .stat-card.purple::before {
-            background: linear-gradient(180deg, #8b5cf6, #7c3aed);
-        }
-
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
-        }
-
-        .stat-icon {
-            width: 52px;
-            height: 52px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-        }
-
-        .stat-card.primary .stat-icon {
-            background: #eef2ff;
-            color: #6366f1;
-        }
-
-        .stat-card.success .stat-icon {
-            background: #dcfce7;
-            color: #22c55e;
-        }
-
-        .stat-card.warning .stat-icon {
-            background: #fef3c7;
-            color: #f59e0b;
-        }
-
-        .stat-card.danger .stat-icon {
-            background: #fee2e2;
-            color: #ef4444;
-        }
-
-        .stat-card.info .stat-icon {
-            background: #e0f2fe;
-            color: #0ea5e9;
-        }
-
-        .stat-card.purple .stat-icon {
-            background: #f3e8ff;
-            color: #8b5cf6;
-        }
-
-        .stat-trend {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.8rem;
-            padding: 4px 10px;
-            border-radius: 20px;
-        }
-
-        .stat-trend.up {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-
-        .stat-trend.down {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .stat-value {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: var(--dash-text);
-            line-height: 1.2;
-        }
-
-        .stat-label {
-            font-size: 0.85rem;
-            color: var(--dash-muted);
-            margin-top: 4px;
-        }
-
-        /* Chart Cards */
-        .chart-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 28px;
-        }
-
-        .chart-card {
-            background: var(--dash-card);
-            border-radius: 16px;
-            border: 1px solid var(--dash-border);
-            overflow: hidden;
-        }
-
-        .chart-card.full-width {
-            grid-column: span 2;
-        }
-
-        .chart-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--dash-border);
+        .glass-card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 1.25rem;
         }
 
-        .chart-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--dash-text);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .chart-title i {
-            color: var(--dash-primary);
-        }
-
-        .chart-filter {
-            display: flex;
-            gap: 8px;
-        }
-
-        .filter-btn {
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            border: 1px solid var(--dash-border);
-            background: white;
-            color: var(--dash-muted);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .filter-btn:hover,
-        .filter-btn.active {
-            background: var(--dash-primary);
-            color: white;
-            border-color: var(--dash-primary);
-        }
-
-        .chart-body {
-            padding: 24px;
-        }
-
-        /* Quick Actions */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-
-        .action-card {
-            background: var(--dash-card);
-            border: 1px solid var(--dash-border);
-            border-radius: 14px;
-            padding: 20px;
-            text-align: center;
-            transition: all 0.2s;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .action-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);
-            border-color: var(--dash-primary);
-        }
-
-        .action-icon {
+        .glass-card-icon {
             width: 48px;
             height: 48px;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 12px;
-            font-size: 1.2rem;
+            background: var(--theme-icon-bg);
+            color: var(--theme-icon-color);
+            font-size: 1.25rem;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
         }
 
-        .action-card.sales .action-icon {
-            background: #dcfce7;
-            color: #22c55e;
-        }
-
-        .action-card.purchase .action-icon {
-            background: #e0f2fe;
-            color: #0ea5e9;
-        }
-
-        .action-card.products .action-icon {
-            background: #fef3c7;
-            color: #f59e0b;
-        }
-
-        .action-card.hr .action-icon {
-            background: #f3e8ff;
-            color: #8b5cf6;
-        }
-
-        .action-title {
+        .glass-card-badge {
+            font-size: 0.72rem;
             font-weight: 600;
-            color: var(--dash-text);
-            font-size: 0.95rem;
-        }
-
-        .action-desc {
-            font-size: 0.8rem;
-            color: var(--dash-muted);
-            margin-top: 4px;
-        }
-
-        /* Summary Cards Row */
-        .summary-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 28px;
-        }
-
-        .summary-card {
-            background: var(--dash-card);
-            border: 1px solid var(--dash-border);
-            border-radius: 14px;
-            padding: 20px;
-        }
-
-        .summary-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .summary-title {
-            font-size: 0.85rem;
-            color: var(--dash-muted);
+            padding: 4px 10px;
+            border-radius: 99px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
 
-        .summary-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+        .glass-card-value {
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--dash-text-main);
+            margin-bottom: 0.25rem;
+            line-height: 1.2;
+        }
+
+        .glass-card-label {
+            font-size: 0.88rem;
+            color: var(--dash-text-muted);
+            font-weight: 500;
+        }
+
+        .glass-card-footer {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.03);
+            font-size: 0.8rem;
+            color: var(--dash-text-muted);
+        }
+
+        /* Liquidity Card Gradient Override */
+        .glass-card.liquidity-gradient {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            color: white;
+        }
+
+        .glass-card.liquidity-gradient .glass-card-value,
+        .glass-card.liquidity-gradient .glass-card-label,
+        .glass-card.liquidity-gradient .glass-card-footer {
+            color: white;
+        }
+
+        .glass-card.liquidity-gradient .glass-card-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        /* Quick Navigation Action Grid */
+        .action-premium-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-premium-card {
+            background: var(--dash-card-bg);
+            border: 1px solid var(--dash-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.01);
+        }
+
+        .action-premium-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px var(--hover-shadow);
+            border-color: var(--hover-color);
+        }
+
+        .action-premium-card.act-sales {
+            --hover-color: #10b981;
+            --hover-shadow: rgba(16, 185, 129, 0.12);
+            --icon-bg: #ecfdf5;
+            --icon-color: #10b981;
+        }
+
+        .action-premium-card.act-purchase {
+            --hover-color: #0ea5e9;
+            --hover-shadow: rgba(14, 165, 233, 0.12);
+            --icon-bg: #f0f9ff;
+            --icon-color: #0ea5e9;
+        }
+
+        .action-premium-card.act-products {
+            --hover-color: #f59e0b;
+            --hover-shadow: rgba(245, 158, 11, 0.12);
+            --icon-bg: #fffbeb;
+            --icon-color: #f59e0b;
+        }
+
+        .action-premium-card.act-hr {
+            --hover-color: #8b5cf6;
+            --hover-shadow: rgba(139, 92, 246, 0.12);
+            --icon-bg: #faf5ff;
+            --icon-color: #8b5cf6;
+        }
+
+        .action-premium-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            background: var(--icon-bg);
+            color: var(--icon-color);
+            font-size: 1.35rem;
+            margin: 0 auto 1rem;
+            transition: all 0.3s;
         }
 
-        .summary-value {
-            font-size: 1.5rem;
+        .action-premium-card:hover .action-premium-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .action-premium-title {
             font-weight: 700;
-            color: var(--dash-text);
+            font-size: 1rem;
+            color: var(--dash-text-main);
+            margin-bottom: 0.25rem;
         }
 
-        .summary-change {
+        .action-premium-desc {
+            font-size: 0.8rem;
+            color: var(--dash-text-muted);
+            font-weight: 500;
+        }
+
+        /* Dynamic Panel Layout */
+        .dashboard-panels-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-panels-row.full-width {
+            grid-template-columns: 1fr;
+        }
+
+        .panel-card {
+            background: var(--dash-card-bg);
+            border-radius: 24px;
+            border: 1px solid var(--dash-border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.015);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--dash-text-main);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 0.75rem;
+        }
+
+        .panel-title i {
+            color: var(--dash-primary);
+        }
+
+        .panel-body {
+            padding: 2rem;
+            position: relative;
+            flex: 1;
+        }
+
+        /* Filter Switcher Tabs */
+        .filter-tab-group {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 99px;
+            border: 1px solid rgba(0, 0, 0, 0.02);
+        }
+
+        .filter-tab-btn {
+            background: transparent;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 99px;
             font-size: 0.8rem;
-            margin-top: 6px;
+            font-weight: 600;
+            color: var(--dash-text-muted);
+            cursor: pointer;
+            transition: all 0.25s;
         }
 
-        .summary-change.positive {
-            color: #22c55e;
+        .filter-tab-btn:hover {
+            color: var(--dash-text-main);
         }
 
-        .summary-change.negative {
-            color: #ef4444;
+        .filter-tab-btn.active {
+            background: white;
+            color: var(--dash-primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        /* Premium Top List Item Layout */
+        .premium-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            transition: all 0.25s;
+        }
 
-            .chart-section {
+        .premium-list-item:hover {
+            transform: translateX(4px);
+        }
+
+        .premium-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .premium-list-details {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .premium-list-rank {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--dash-text-muted);
+            transition: all 0.3s;
+        }
+
+        .premium-list-item:nth-child(1) .premium-list-rank {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .premium-list-item:nth-child(2) .premium-list-rank {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        .premium-list-item:nth-child(3) .premium-list-rank {
+            background: #ffedd5;
+            color: #ea580c;
+        }
+
+        .premium-list-title {
+            font-weight: 700;
+            color: var(--dash-text-main);
+            font-size: 0.95rem;
+        }
+
+        .premium-list-subtitle {
+            font-size: 0.78rem;
+            color: var(--dash-text-muted);
+            margin-top: 1px;
+        }
+
+        .premium-list-value {
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--dash-primary);
+            text-align: right;
+        }
+
+        /* Section Subheading Styling */
+        .dash-section-subhead {
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--dash-text-muted);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .dash-section-subhead::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Responsive Layout Rules */
+        @media (max-width: 1024px) {
+            .dashboard-panels-row {
                 grid-template-columns: 1fr;
-            }
-
-            .chart-card.full-width {
-                grid-column: span 1;
-            }
-
-            .quick-actions {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .summary-row {
-                grid-template-columns: repeat(2, 1fr);
             }
         }
 
         @media (max-width: 768px) {
-            .stats-grid {
+            .welcome-premium-card {
+                padding: 1.75rem;
+            }
+            .welcome-premium-title {
+                font-size: 1.75rem;
+            }
+            .glass-stat-grid {
                 grid-template-columns: 1fr;
             }
+        }
 
-            .quick-actions {
-                grid-template-columns: 1fr;
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
             }
-
-            .summary-row {
-                grid-template-columns: 1fr;
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
-
-            .welcome-section {
-                padding: 24px;
-            }
-        }
-
-        /* Top 10 Lists Widget */
-        .top-list-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--dash-border);
-        }
-        .top-list-item:last-child {
-            border-bottom: none;
-        }
-        .top-list-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .top-list-rank {
-            font-weight: bold;
-            color: var(--dash-muted);
-            width: 25px;
-            text-align: center;
-        }
-        .top-list-name {
-            font-weight: 600;
-            color: var(--dash-text);
-            margin-bottom: 2px;
-        }
-        .top-list-sub {
-            font-size: 0.8rem;
-            color: var(--dash-muted);
-        }
-        .top-list-val {
-            font-weight: bold;
-            color: var(--dash-primary);
         }
     </style>
 
     <div class="main-content">
-        <div class="main-content-inner" style="padding-left: 15px; padding-right: 15px;">
-            <div class="container-fluid dashboard-container" style="padding: 0;">
+        <div class="main-content-inner dashboard-body-wrapper">
+            <div class="container-fluid" style="padding: 0;">
 
-                <!-- Welcome Section -->
-                <div class="welcome-section">
-                    <div class="welcome-content">
-                        <h1 class="welcome-title">Welcome back, {{ auth()->user()->name ?? 'Admin' }}! 👋</h1>
-                        <p class="welcome-subtitle">Here's what's happening with your business today.</p>
-                        <div class="welcome-date">
+                <!-- Welcome Premium Header Card -->
+                <div class="welcome-premium-card">
+                    <div class="welcome-premium-content">
+                        <h1 class="welcome-premium-title">Welcome Back {{ auth()->user()->name ?? 'Admin' }}! 👋</h1>
+                        <p class="welcome-premium-sub">Here is your absolute live business diagnostic dashboard statistics.</p>
+                        <div class="welcome-badge-date">
                             <i class="fa fa-calendar-alt"></i>
-                            {{ now()->format('d/m/Y') }}
+                            {{ now()->format('l, jS F Y') }}
                         </div>
                     </div>
                 </div>
 
-                <!-- Quick Actions -->
-                <div class="quick-actions">
+                <!-- Sync Alert Banner (Only shown if local environment) -->
+                @if(config('app.env') === 'local')
+                <div class="alert alert-info border-0 rounded-4 p-3 mb-4 d-flex justify-content-between align-items-center shadow-sm" style="background: rgba(99, 102, 241, 0.08); border-left: 5px solid var(--dash-primary) !important;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="glass-card-icon" style="background: var(--dash-primary-glow); color: var(--dash-primary); width:40px; height:40px; border-radius:10px;">
+                            <i class="fa fa-sync-alt"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 fw-bold text-dark" style="font-family: var(--dash-font);">Local Server Offline Sync</h6>
+                            <p class="mb-0 text-muted small" style="font-family: var(--dash-font);">Sync your local sales and customers to the cloud database when online.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary px-4 py-2 fw-bold" id="btnSyncCloud" style="border-radius: 99px; font-size: 0.85rem; font-family: var(--dash-font); box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);">
+                        <i class="fa fa-cloud-upload-alt me-1"></i> Sync to Cloud
+                    </button>
+                </div>
+                @endif
+
+                <!-- Quick Navigation Premium Grid -->
+                <div class="action-premium-grid">
                     @can('sales.create')
-                        <a href="{{ route('sale.index') }}" class="action-card sales">
-                            <div class="action-icon"><i class="fa fa-shopping-cart"></i></div>
-                            <div class="action-title">New Sale</div>
-                            <div class="action-desc">Create invoice</div>
+                        <a href="{{ route('sale.index') }}" class="action-premium-card act-sales">
+                            <div class="action-premium-icon"><i class="fa fa-shopping-cart"></i></div>
+                            <div class="action-premium-title">Create Sale</div>
+                            <div class="action-premium-desc">Issue invoices & POS</div>
                         </a>
                     @endcan
 
                     @can('purchases.create')
-                        <a href="{{ route('Purchase.home') }}" class="action-card purchase">
-                            <div class="action-icon"><i class="fa fa-truck"></i></div>
-                            <div class="action-title">New Purchase</div>
-                            <div class="action-desc">Add stock</div>
+                        <a href="{{ route('Purchase.home') }}" class="action-premium-card act-purchase">
+                            <div class="action-premium-icon"><i class="fa fa-truck"></i></div>
+                            <div class="action-premium-title">Record Purchase</div>
+                            <div class="action-premium-desc">Add product stock</div>
                         </a>
                     @endcan
 
                     @can('products.view')
-                        <a href="{{ route('product') }}" class="action-card products">
-                            <div class="action-icon"><i class="fa fa-box"></i></div>
-                            <div class="action-title">Products</div>
-                            <div class="action-desc">Manage inventory</div>
+                        <a href="{{ route('product') }}" class="action-premium-card act-products">
+                            <div class="action-premium-icon"><i class="fa fa-box"></i></div>
+                            <div class="action-premium-title">Inventory</div>
+                            <div class="action-premium-desc">Manage products</div>
                         </a>
                     @endcan
 
                     @can('hr.employees.view')
-                        <a href="{{ route('hr.employees.index') }}" class="action-card hr">
-                            <div class="action-icon"><i class="fa fa-users"></i></div>
-                            <div class="action-title">HR Module</div>
-                            <div class="action-desc">Manage employees</div>
+                        <a href="{{ route('hr.employees.index') }}" class="action-premium-card act-hr">
+                            <div class="action-premium-icon"><i class="fa fa-users"></i></div>
+                            <div class="action-premium-title">HR Directory</div>
+                            <div class="action-premium-desc">Manage employees</div>
                         </a>
                     @endcan
                 </div>
 
-                <!-- Financial Health (Accounting Based) -->
+                <!-- Financial Health Metrics (Accounting-based) -->
                 @if (isset($financialSummary) && !empty($financialSummary))
-                    <h5 class="mb-3 text-muted"
-                        style="font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                        Financial Health (This Month)
-                    </h5>
-                    <div class="stats-grid mb-4">
-                        <!-- Sales Revenue -->
-                        <div class="stat-card success">
-                            <div class="stat-header">
-                                <div class="stat-icon"><i class="fa fa-hand-holding-usd"></i></div>
-                                <div class="stat-trend up">Accounting</div>
+                    <div class="dash-section-subhead">
+                        <i class="fa fa-wallet"></i> Financial Health (Today)
+                    </div>
+                    <div class="glass-stat-grid">
+                        <!-- Sales This Month -->
+                        <div class="glass-card card-success">
+                            <div class="glass-card-header">
+                                <div class="glass-card-icon"><i class="fa fa-shopping-cart"></i></div>
+                                <span class="glass-card-badge text-success bg-light" style="background:#eefdf5 !important;">Sales</span>
                             </div>
-                            <div class="stat-value">Rs {{ number_format($financialSummary['sales'] ?? 0, 0) }}</div>
-                            <div class="stat-label">Sales Revenue</div>
+                            <div>
+                                <div class="glass-card-value">Rs {{ number_format($salesThisMonth, 0) }}</div>
+                                <div class="glass-card-label">Today's Sales</div>
+                            </div>
                         </div>
 
-                        <!-- Purchase Expense -->
-                        <div class="stat-card danger">
-                            <div class="stat-header">
-                                <div class="stat-icon"><i class="fa fa-money-bill-wave"></i></div>
-                                <div class="stat-trend down">Accounting</div>
+                        <!-- Purchase -->
+                        <div class="glass-card card-danger">
+                            <div class="glass-card-header">
+                                <div class="glass-card-icon"><i class="fa fa-money-bill-wave"></i></div>
+                                <span class="glass-card-badge text-danger bg-light" style="background:#fff1f2 !important;">Operations</span>
                             </div>
-                            <div class="stat-value">Rs {{ number_format($financialSummary['purchases'] ?? 0, 0) }}</div>
-                            <div class="stat-label">Purchase Expenses</div>
+                            <div>
+                                <div class="glass-card-value">Rs {{ number_format($purchasesThisMonth, 0) }}</div>
+                                <div class="glass-card-label">Today's Purchase</div>
+                            </div>
                         </div>
 
-                        <!-- Payables (Money going out) -->
-                        <div class="stat-card warning">
-                            <div class="stat-header">
-                                <div class="stat-icon"><i class="fa fa-file-invoice"></i></div>
-                                <div class="stat-trend">Liabilities</div>
+                        <!-- Payables -->
+                        <div class="glass-card card-warning">
+                            <div class="glass-card-header">
+                                <div class="glass-card-icon"><i class="fa fa-file-invoice"></i></div>
+                                <span class="glass-card-badge text-warning bg-light" style="background:#fffbeb !important;">Liabilities</span>
                             </div>
-                            <div class="stat-value">Rs {{ number_format($financialSummary['payables'] ?? 0, 0) }}</div>
-                            <div class="stat-label">Total Payables (Owe)</div>
+                            <div>
+                                <div class="glass-card-value">Rs {{ number_format($financialSummary['payables'] ?? 0, 0) }}</div>
+                                <div class="glass-card-label">Total Payables</div>
+                            </div>
+                        </div>
+
+                        <!-- Receivables -->
+                        <div class="glass-card card-primary">
+                            <div class="glass-card-header">
+                                <div class="glass-card-icon"><i class="fa fa-file-invoice-dollar"></i></div>
+                                <span class="glass-card-badge text-primary bg-light" style="background:#eef2ff !important;">Liabilities</span>
+                            </div>
+                            <div>
+                                <div class="glass-card-value">Rs {{ number_format($totalReceivables, 0) }}</div>
+                                <div class="glass-card-label">Total Receivables (Customer Credit)</div>
+                            </div>
                         </div>
                     </div>
 
-                    <h5 class="mb-3 text-muted"
-                        style="font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                        Cash Flow Summary (Payments)
-                    </h5>
-                    <div class="stats-grid mb-4">
-                        <!-- Payment In -->
-                        <a href="{{ route('all_recepit_vochers') }}" class="stat-card info text-decoration-none" style="cursor: pointer;">
-                            <div class="stat-header">
-                                <div class="stat-icon"><i class="fa fa-arrow-down"></i></div>
-                                <div class="stat-trend up">This Month</div>
+                    <!-- Profitability & Performance Section -->
+                    <div class="dash-section-subhead" style="margin-top: 2rem;">
+                        <i class="fa fa-chart-pie text-success"></i> Profitability & Performance (Today)
+                    </div>
+                    <div class="dashboard-panels-row" style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 1.5rem; width: 100%;">
+                        <!-- Net Profit Card -->
+                        <div class="panel-card" style="flex: 1; min-width: 320px; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(12px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.3); padding: 1.5rem; display: flex; flex-direction: column;">
+                            <div class="panel-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                                <div class="panel-title" style="font-size: 1.1rem; font-weight: 700; color: #1e293b;">
+                                    <i class="fa fa-wallet text-success" style="margin-right: 0.5rem;"></i> Net Profit Breakdown
+                                </div>
                             </div>
-                            <div class="stat-value">Rs {{ number_format($paymentInMonth, 0) }}</div>
-                            <div class="stat-label">Payment In (Receipts)</div>
-                            <div class="mt-2 pt-2 border-top">
-                                <small class="text-muted">Overall: <strong>Rs {{ number_format($paymentInOverall, 0) }}</strong></small>
+                            <div class="panel-body d-flex flex-column align-items-center justify-content-center" style="flex-grow: 1;">
+                                <div class="text-center mb-4">
+                                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 1px;">Net Profit</span>
+                                    <h2 class="fw-bold text-success mt-1" style="font-size: 2.5rem; margin-bottom: 0.25rem;">Rs {{ number_format($profitThisMonth, 0) }}</h2>
+                                    <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0;">Net Revenue minus Cost of Goods Sold</p>
+                                </div>
+                                <div style="width: 100%;">
+                                    <div class="d-flex justify-content-between mb-1" style="font-size: 0.85rem; color: #475569;">
+                                        <span>Net Revenue</span>
+                                        <span class="fw-bold">Rs {{ number_format($totalRevenueThisMonth, 0) }}</span>
+                                    </div>
+                                    <div class="progress mb-3" style="height: 6px; border-radius: 3px; background-color: #e2e8f0; overflow: hidden;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%;"></div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between mb-1" style="font-size: 0.85rem; color: #475569;">
+                                        <span>Cost of Goods Sold (COGS)</span>
+                                        <span class="fw-bold">Rs {{ number_format($totalCostThisMonth, 0) }}</span>
+                                    </div>
+                                    @php
+                                        $costPercentage = $totalRevenueThisMonth > 0 ? min(100, round(($totalCostThisMonth / $totalRevenueThisMonth) * 100)) : 0;
+                                    @endphp
+                                    <div class="progress" style="height: 6px; border-radius: 3px; background-color: #e2e8f0; overflow: hidden;">
+                                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ $costPercentage }}%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profitability Chart Card -->
+                        <div class="panel-card" style="flex: 1.5; min-width: 350px; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(12px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.3); padding: 1.5rem; display: flex; flex-direction: column;">
+                            <div class="panel-header" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                                <div class="panel-title" style="font-size: 1.1rem; font-weight: 700; color: #1e293b;">
+                                    <i class="fa fa-chart-bar text-primary" style="margin-right: 0.5rem;"></i> Revenue vs Cost vs Net Profit
+                                </div>
+                            </div>
+                            <div class="panel-body d-flex align-items-center justify-content-center" style="flex-grow: 1;">
+                                <div style="position: relative; height: 200px; width: 100%;">
+                                    <canvas id="chartJsProfitability"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dash-section-subhead">
+                        <i class="fa fa-exchange-alt"></i> Cash Flow & Payments (Today)
+                    </div>
+                    <div class="glass-stat-grid">
+                        <!-- Payments Received (In) -->
+                        <a href="{{ route('all_recepit_vochers') }}" class="glass-card card-info text-decoration-none" style="cursor: pointer;">
+                            <div class="glass-card-header">
+                                <div class="glass-card-icon"><i class="fa fa-arrow-down"></i></div>
+                                <span class="glass-card-badge text-info bg-light" style="background:#f0f9ff !important;">Receipts</span>
+                            </div>
+                            <div>
+                                <div class="glass-card-value">Rs {{ number_format($paymentInMonth, 0) }}</div>
+                                <div class="glass-card-label">Payment In (Today)</div>
+                            </div>
+                            <div class="glass-card-footer">
+                                Overall Received: <strong>Rs {{ number_format($paymentInOverall, 0) }}</strong>
                             </div>
                         </a>
 
-                        <!-- Payment Out -->
-                        <a href="{{ route('all_Payment_vochers') }}" class="stat-card danger text-decoration-none" style="cursor: pointer;">
-                            <div class="stat-header">
-                                <div class="stat-icon"><i class="fa fa-arrow-up"></i></div>
-                                <div class="stat-trend down">This Month</div>
+                        <!-- Payments Settled (Out) -->
+                        <a href="{{ route('all_Payment_vochers') }}" class="glass-card card-danger text-decoration-none" style="cursor: pointer;">
+                            <div class="glass-card-header">
+                                <div class="glass-card-icon"><i class="fa fa-arrow-up"></i></div>
+                                <span class="glass-card-badge text-danger bg-light" style="background:#fff1f2 !important;">Payments</span>
                             </div>
-                            <div class="stat-value">Rs {{ number_format($paymentOutMonth, 0) }}</div>
-                            <div class="stat-label">Payment Out (Vendor/Exp)</div>
-                            <div class="mt-2 pt-2 border-top">
-                                <small class="text-muted">Overall: <strong>Rs {{ number_format($paymentOutOverall, 0) }}</strong></small>
+                            <div>
+                                <div class="glass-card-value">Rs {{ number_format($paymentOutMonth, 0) }}</div>
+                                <div class="glass-card-label">Payment Out (Today)</div>
+                            </div>
+                            <div class="glass-card-footer">
+                                Overall Settled: <strong>Rs {{ number_format($paymentOutOverall, 0) }}</strong>
                             </div>
                         </a>
                     </div>
                 @endif
 
-                <!-- Cash & Bank Balances -->
+                <!-- Cash & Bank Ledger Balances -->
                 @if (isset($cashAndBankAccounts) && $cashAndBankAccounts->isNotEmpty())
-                    <h5 class="mb-3 text-muted"
-                        style="font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                        Cash & Bank Balances
-                    </h5>
-                    <div class="stats-grid mb-4">
+                    <div class="dash-section-subhead">
+                        <i class="fa fa-university"></i> Bank & Ledger Liquidity
+                    </div>
+                    <div class="glass-stat-grid">
                         @foreach ($cashAndBankAccounts as $account)
-                            <div class="stat-card {{ strtolower($account->head->name) == 'cash' ? 'primary' : 'purple' }}">
-                                <div class="stat-header">
-                                    <div class="stat-icon">
-                                        <i class="fas {{ strtolower($account->head->name) == 'cash' ? 'fa-wallet' : 'fa-university' }}"></i>
-                                    </div>
-                                    <span class="badge rounded-pill px-2.5 py-1 small fw-bold"
-                                        style="font-size: 0.75rem; background: {{ strtolower($account->head->name) == 'cash' ? '#eef2ff' : '#f3e8ff' }}; color: {{ strtolower($account->head->name) == 'cash' ? '#6366f1' : '#8b5cf6' }};">
-                                        {{ $account->head->name }}
-                                    </span>
+                            @php
+                                $isCash = strtolower($account->head->name) == 'cash';
+                                $themeClass = $isCash ? 'card-primary' : 'card-purple';
+                                $iconName = $isCash ? 'fa-wallet' : 'fa-university';
+                            @endphp
+                            <div class="glass-card {{ $themeClass }}">
+                                <div class="glass-card-header">
+                                    <div class="glass-card-icon"><i class="fas {{ $iconName }}"></i></div>
+                                    <span class="glass-card-badge text-dark bg-light px-2.5 rounded-pill">{{ $account->head->name }}</span>
                                 </div>
-                                <div class="stat-value">Rs {{ number_format($account->current_balance, 2) }}</div>
-                                <div class="stat-label fw-semibold text-dark mt-1">{{ $account->title }}</div>
-                                <div class="mt-2 pt-2 border-top">
-                                    <a href="{{ route('accounts.ledger', $account->id) }}" class="small text-decoration-none text-primary fw-medium">
-                                        View Ledger <i class="fa fa-arrow-right ms-1" style="font-size: 0.8em;"></i>
+                                <div>
+                                    <div class="glass-card-value">Rs {{ number_format($account->current_balance, 2) }}</div>
+                                    <div class="glass-card-label fw-bold text-dark">{{ $account->title }}</div>
+                                </div>
+                                <div class="glass-card-footer d-flex justify-content-between align-items-center">
+                                    <span>Account Balance</span>
+                                    <a href="{{ route('accounts.ledger', $account->id) }}" class="text-decoration-none text-primary fw-bold">
+                                        Ledger <i class="fa fa-arrow-right ms-1"></i>
                                     </a>
                                 </div>
                             </div>
                         @endforeach
 
-                        <!-- Total Cash & Bank Balance Card -->
-                        <div class="stat-card success" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
-                            <div class="stat-header">
-                                <div class="stat-icon" style="background: rgba(255, 255, 255, 0.2); color: white;">
-                                    <i class="fas fa-coins"></i>
-                                </div>
-                                <span class="badge bg-white text-success border-0 px-2 py-1 rounded-pill small fw-bold">
-                                    Total Liquidity
-                                </span>
+                        <!-- Total Liquidity Combined Card -->
+                        <div class="glass-card liquidity-gradient">
+                            <div class="glass-card-header">
+                                <div class="glass-card-icon"><i class="fas fa-coins"></i></div>
+                                <span class="glass-card-badge bg-white text-success rounded-pill fw-bold">Total Cash</span>
                             </div>
-                            <div class="stat-value text-white">Rs {{ number_format($totalCashAndBankBalance, 2) }}</div>
-                            <div class="stat-label text-white-50 fw-semibold mt-1">All Cash & Bank Accounts</div>
-                            <div class="mt-2 pt-2" style="border-top: 1px solid rgba(255, 255, 255, 0.2);">
-                                <span class="small text-white-50">Combined Balance</span>
+                            <div>
+                                <div class="glass-card-value">Rs {{ number_format($totalCashAndBankBalance, 2) }}</div>
+                                <div class="glass-card-label">Combined Cash & Bank Assets</div>
+                            </div>
+                            <div class="glass-card-footer">
+                                Active Liquid Funds
                             </div>
                         </div>
                     </div>
                 @endif
 
-                <!-- Main Stats (Legacy/Ops) -->
-                <div class="stats-grid">
+                <!-- Operations & Performance Summary (Legacy Metrics) -->
+                <div class="dash-section-subhead">
+                    <i class="fa fa-chart-bar"></i> Operations Performance
+                </div>
+                <div class="glass-stat-grid">
                     @can('sales.view')
-                        <div class="stat-card success">
-                            <div class="stat-header">
-                                <div class="stat-icon"><i class="fa fa-shopping-cart"></i></div>
-                                <div class="stat-trend up"><i class="fa fa-arrow-up"></i> Sales</div>
+                        <div class="glass-card card-success">
+                            <div class="glass-card-header">
+                                <div class="glass-card-icon"><i class="fa fa-shopping-cart"></i></div>
+                                <span class="glass-card-badge text-success bg-light" style="background:#ecfdf5 !important;">Performance</span>
                             </div>
-                            <div class="stat-value">Rs {{ number_format($totalSales, 0) }}</div>
-                            <div class="stat-label">Total Sales</div>
+                            <div>
+                                <div class="glass-card-value">Rs {{ number_format($totalSales, 0) }}</div>
+                                <div class="glass-card-label">Total Lifetime Sales</div>
+                            </div>
                         </div>
                     @endcan
 
                     @can('purchases.view')
-                        <div class="stat-card primary">
-                            <div class="stat-header">
-                                <div class="stat-icon"><i class="fa fa-file-invoice-dollar"></i></div>
-                                <div class="stat-trend up"><i class="fa fa-arrow-up"></i> Purchases</div>
+                        <div class="glass-card card-primary">
+                            <div class="glass-card-header">
+                                <div class="glass-card-icon"><i class="fa fa-file-invoice-dollar"></i></div>
+                                <span class="glass-card-badge text-primary bg-light" style="background:#eef2ff !important;">Performance</span>
                             </div>
-                            <div class="stat-value">Rs {{ number_format($totalPurchases, 0) }}</div>
-                            <div class="stat-label">Total Purchases</div>
+                            <div>
+                                <div class="glass-card-value">Rs {{ number_format($totalPurchases, 0) }}</div>
+                                <div class="glass-card-label">Total Lifetime Purchases</div>
+                            </div>
                         </div>
                     @endcan
 
                     @can('sales.returns.view')
-                        <div class="stat-card danger">
-                            <div class="stat-header">
-                                <div class="stat-icon"><i class="fa fa-undo-alt"></i></div>
-                                <div class="stat-trend down"><i class="fa fa-arrow-down"></i> Returns</div>
+                        <div class="glass-card card-danger">
+                            <div class="glass-card-header">
+                                <div class="glass-card-icon"><i class="fa fa-undo-alt"></i></div>
+                                <span class="glass-card-badge text-danger bg-light" style="background:#fff1f2 !important;">Operations</span>
                             </div>
-                            <div class="stat-value">Rs {{ number_format($totalSalesReturns, 0) }}</div>
-                            <div class="stat-label">Sales Returns</div>
+                            <div>
+                                <div class="glass-card-value">Rs {{ number_format($totalSalesReturns, 0) }}</div>
+                                <div class="glass-card-label">Total Sales Returns</div>
+                            </div>
                         </div>
                     @endcan
 
                     @can('purchase.returns.view')
-                        <div class="stat-card warning">
-                            <div class="stat-header">
-                                <div class="stat-icon"><i class="fa fa-undo"></i></div>
-                                <div class="stat-trend down"><i class="fa fa-arrow-down"></i> Returns</div>
+                        <div class="glass-card card-warning">
+                            <div class="glass-card-header">
+                                <div class="glass-card-icon"><i class="fa fa-undo"></i></div>
+                                <span class="glass-card-badge text-warning bg-light" style="background:#fffbeb !important;">Operations</span>
                             </div>
-                            <div class="stat-value">Rs {{ number_format($totalPurchaseReturns, 0) }}</div>
-                            <div class="stat-label">Purchase Returns</div>
+                            <div>
+                                <div class="glass-card-value">Rs {{ number_format($totalPurchaseReturns, 0) }}</div>
+                                <div class="glass-card-label">Total Purchase Returns</div>
+                            </div>
                         </div>
                     @endcan
                 </div>
 
-                <!-- Inventory Summary -->
-                <div class="summary-row">
+                <!-- Database Volume Counts Summary -->
+                <div class="glass-stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
                     @can('categories.view')
-                        <div class="summary-card">
-                            <div class="summary-header">
-                                <span class="summary-title">Categories</span>
-                                <div class="summary-icon" style="background: #eef2ff; color: #6366f1;"><i
-                                        class="fa fa-layer-group"></i></div>
+                        <div class="glass-card card-primary" style="padding: 1.25rem;">
+                            <div class="glass-card-header mb-2">
+                                <span class="text-uppercase fw-bold text-muted" style="font-size:0.75rem;">Categories</span>
+                                <div class="glass-card-icon" style="width:36px; height:36px; font-size:1rem;"><i class="fa fa-layer-group"></i></div>
                             </div>
-                            <div class="summary-value">{{ $categoryCount }}</div>
-                            <div class="summary-change positive"><i class="fa fa-folder"></i> Product groups</div>
+                            <div class="glass-card-value" style="font-size:1.5rem;">{{ $categoryCount }}</div>
                         </div>
                     @endcan
 
                     @can('subcategories.view')
-                        <div class="summary-card">
-                            <div class="summary-header">
-                                <span class="summary-title">Subcategories</span>
-                                <div class="summary-icon" style="background: #dcfce7; color: #22c55e;"><i
-                                        class="fa fa-sitemap"></i></div>
+                        <div class="glass-card card-success" style="padding: 1.25rem;">
+                            <div class="glass-card-header mb-2">
+                                <span class="text-uppercase fw-bold text-muted" style="font-size:0.75rem;">Subcategories</span>
+                                <div class="glass-card-icon" style="width:36px; height:36px; font-size:1rem;"><i class="fa fa-sitemap"></i></div>
                             </div>
-                            <div class="summary-value">{{ $subcategoryCount }}</div>
-                            <div class="summary-change positive"><i class="fa fa-tags"></i> Sub-groups</div>
+                            <div class="glass-card-value" style="font-size:1.5rem;">{{ $subcategoryCount }}</div>
                         </div>
                     @endcan
 
                     @can('products.view')
-                        <div class="summary-card">
-                            <div class="summary-header">
-                                <span class="summary-title">Products</span>
-                                <div class="summary-icon" style="background: #fef3c7; color: #f59e0b;"><i
-                                        class="fa fa-box-open"></i></div>
+                        <div class="glass-card card-warning" style="padding: 1.25rem;">
+                            <div class="glass-card-header mb-2">
+                                <span class="text-uppercase fw-bold text-muted" style="font-size:0.75rem;">Products</span>
+                                <div class="glass-card-icon" style="width:36px; height:36px; font-size:1rem;"><i class="fa fa-box-open"></i></div>
                             </div>
-                            <div class="summary-value">{{ $productCount }}</div>
-                            <div class="summary-change positive"><i class="fa fa-cubes"></i> In inventory</div>
+                            <div class="glass-card-value" style="font-size:1.5rem;">{{ $productCount }}</div>
                         </div>
                     @endcan
 
                     @can('customers.view')
-                        <div class="summary-card">
-                            <div class="summary-header">
-                                <span class="summary-title">Customers</span>
-                                <div class="summary-icon" style="background: #e0f2fe; color: #0ea5e9;"><i
-                                        class="fa fa-users"></i></div>
+                        <div class="glass-card card-info" style="padding: 1.25rem;">
+                            <div class="glass-card-header mb-2">
+                                <span class="text-uppercase fw-bold text-muted" style="font-size:0.75rem;">Customers</span>
+                                <div class="glass-card-icon" style="width:36px; height:36px; font-size:1rem;"><i class="fa fa-users"></i></div>
                             </div>
-                            <div class="summary-value">{{ $customerscount }}</div>
-                            <div class="summary-change positive"><i class="fa fa-user-plus"></i> Registered</div>
+                            <div class="glass-card-value" style="font-size:1.5rem;">{{ $customerscount }}</div>
                         </div>
                     @endcan
                 </div>
 
-                <!-- Charts Section -->
-                <div class="chart-section">
+                <!-- Premium Chart.js Sections -->
+                <div class="dashboard-panels-row" style="margin-top: 2rem;">
                     @can('sales.view')
-                        <div class="chart-card full-width">
-                            <div class="chart-header">
-                                <div class="chart-title">
+                        <div class="panel-card">
+                            <div class="panel-header">
+                                <div class="panel-title">
                                     <i class="fa fa-chart-line"></i> Sales Analytics
                                 </div>
-                                <div class="chart-filter" id="salesFilterBtns">
-                                    <button class="filter-btn active" data-filter="daily">Daily</button>
-                                    <button class="filter-btn" data-filter="weekly">Weekly</button>
-                                    <button class="filter-btn" data-filter="monthly">Monthly</button>
+                                <div class="filter-tab-group" id="salesFilterGroup">
+                                    <button class="filter-tab-btn active" data-filter="daily">Daily</button>
+                                    <button class="filter-tab-btn" data-filter="weekly">Weekly</button>
+                                    <button class="filter-tab-btn" data-filter="monthly">Monthly</button>
                                 </div>
                             </div>
-                            <div class="chart-body">
-                                <div id="salesReportChart" style="height: 350px;"></div>
+                            <div class="panel-body">
+                                <canvas id="chartJsSales" style="max-height: 330px;"></canvas>
                             </div>
                         </div>
                     @endcan
 
                     @can('purchases.view')
-                        <div class="chart-card full-width">
-                            <div class="chart-header">
-                                <div class="chart-title">
+                        <div class="panel-card">
+                            <div class="panel-header">
+                                <div class="panel-title">
                                     <i class="fa fa-chart-area"></i> Purchase Analytics
                                 </div>
-                                <div class="chart-filter" id="purchaseFilterBtns">
-                                    <button class="filter-btn active" data-filter="daily">Daily</button>
-                                    <button class="filter-btn" data-filter="weekly">Weekly</button>
-                                    <button class="filter-btn" data-filter="monthly">Monthly</button>
+                                <div class="filter-tab-group" id="purchaseFilterGroup">
+                                    <button class="filter-tab-btn active" data-filter="daily">Daily</button>
+                                    <button class="filter-tab-btn" data-filter="weekly">Weekly</button>
+                                    <button class="filter-tab-btn" data-filter="monthly">Monthly</button>
                                 </div>
                             </div>
-                            <div class="chart-body">
-                                <div id="purchaseReportChart" style="height: 350px;"></div>
+                            <div class="panel-body">
+                                <canvas id="chartJsPurchase" style="max-height: 330px;"></canvas>
                             </div>
                         </div>
                     @endcan
                 </div>
 
-                <!-- Top 10 Sections -->
+                <!-- Cash Flow Breakdown Panel Card -->
+                <div class="dashboard-panels-row full-width" style="margin-top: 2rem;">
+                    <div class="panel-card">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i class="fa fa-exchange-alt"></i> Cash Flow & Vouchers Summary (This Month)
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-4 mb-4 mb-md-0 d-flex justify-content-center">
+                                    <div style="position: relative; width: 200px; height: 200px;">
+                                        <canvas id="chartJsCashFlow"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="row">
+                                        <div class="col-6 mb-3">
+                                            <div class="small text-muted mb-1" style="font-weight:600;">Receipts (Money In)</div>
+                                            <h5 class="fw-bold text-success" style="font-size: 1.35rem; font-weight:800;">Rs {{ number_format($paymentInMonth, 2) }}</h5>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="small text-muted mb-1" style="font-weight:600;">Payments (Money Out)</div>
+                                            <h5 class="fw-bold text-danger" style="font-size: 1.35rem; font-weight:800;">Rs {{ number_format($paymentOutMonth, 2) }}</h5>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="small text-muted mb-1" style="font-weight:600;">Total Liquidity</div>
+                                            <h5 class="fw-bold text-primary" style="font-size: 1.35rem; font-weight:800;">Rs {{ number_format($totalCashAndBankBalance, 2) }}</h5>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="small text-muted mb-1" style="font-weight:600;">Monthly Cash Spread</div>
+                                            @php $spread = $paymentInMonth - $paymentOutMonth; @endphp
+                                            <h5 class="fw-bold {{ $spread >= 0 ? 'text-success' : 'text-danger' }}" style="font-size: 1.35rem; font-weight:800;">
+                                                Rs {{ number_format($spread, 2) }}
+                                            </h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top 10 Products and Customers Premium Analytics Panels -->
                 @can('sales.view')
-                <div class="chart-section" style="margin-top: 28px;">
-                    <!-- Top Products -->
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <i class="fa fa-fire text-danger" style="color: var(--dash-danger) !important;"></i> Top Products (Qty Sold)
+                    <div class="dashboard-panels-row">
+                        <!-- Top Products -->
+                        <div class="panel-card">
+                            <div class="panel-header">
+                                <div class="panel-title">
+                                    <i class="fa fa-fire text-danger" style="color: var(--dash-danger) !important;"></i> Top Products (Qty Sold)
+                                </div>
                             </div>
-                        </div>
-                        <div class="chart-body" style="padding: 24px;">
-                            @if(isset($topProducts) && count($topProducts) > 0)
-                                <div class="row align-items-center">
-                                    <div class="col-md-6 mb-3 mb-md-0 d-flex justify-content-center">
-                                        <div id="topProductsDonut"></div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div style="max-height: 280px; overflow-y: auto; padding-right: 10px;">
-                                            @php $rank = 1; @endphp
-                                            @foreach($topProducts as $tp)
-                                            <div class="top-list-item">
-                                                <div class="top-list-info">
-                                                    <div class="top-list-rank">#{{ $rank++ }}</div>
-                                                    <div>
-                                                        <div class="top-list-name">{{ $tp->product_name ?: 'Unknown Product' }}</div>
-                                                        <div class="top-list-sub">Revenue: Rs {{ number_format($tp->total_revenue ?? 0) }}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="top-list-val">
-                                                    {{ number_format($tp->total_qty) }} units
-                                                </div>
+                            <div class="panel-body">
+                                @if(isset($topProducts) && count($topProducts) > 0)
+                                    <div class="row align-items-center">
+                                        <div class="col-md-5 mb-4 mb-md-0 d-flex justify-content-center">
+                                            <div style="position: relative; width: 220px; height: 220px;">
+                                                <canvas id="chartJsTopProducts"></canvas>
                                             </div>
-                                            @endforeach
+                                        </div>
+                                        <div class="col-md-7">
+                                            <div style="max-height: 280px; overflow-y: auto; padding-right: 8px;">
+                                                @php $rank = 1; @endphp
+                                                @foreach($topProducts as $tp)
+                                                    <div class="premium-list-item">
+                                                        <div class="premium-list-details">
+                                                            <div class="premium-list-rank">{{ $rank++ }}</div>
+                                                            <div>
+                                                                <div class="premium-list-title">{{ $tp->product_name ?: 'Standard Item' }}</div>
+                                                                <div class="premium-list-subtitle">Rev: Rs {{ number_format($tp->total_revenue ?? 0) }}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="premium-list-value">
+                                                            {{ number_format($tp->total_qty) }} units
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            @else
-                                <div class="text-center text-muted py-4">No product data available yet.</div>
-                            @endif
+                                @else
+                                    <div class="text-center text-muted py-5">No top selling products logged.</div>
+                                @endif
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Top Customers -->
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <i class="fa fa-crown text-warning" style="color: var(--dash-warning) !important;"></i> Top Customers (Sales Vol)
+                        <!-- Top Customers -->
+                        <div class="panel-card">
+                            <div class="panel-header">
+                                <div class="panel-title">
+                                    <i class="fa fa-crown text-warning" style="color: var(--dash-warning) !important;"></i> Top Customers (Sales Vol)
+                                </div>
                             </div>
-                        </div>
-                        <div class="chart-body" style="padding: 24px;">
-                            @if(isset($topCustomers) && count($topCustomers) > 0)
-                                <div class="row align-items-center">
-                                    <div class="col-md-6 mb-3 mb-md-0 d-flex justify-content-center">
-                                        <div id="topCustomersDonut"></div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div style="max-height: 280px; overflow-y: auto; padding-right: 10px;">
-                                            @php $rank = 1; @endphp
-                                            @foreach($topCustomers as $tc)
-                                            <div class="top-list-item">
-                                                <div class="top-list-info">
-                                                    <div class="top-list-rank">#{{ $rank++ }}</div>
-                                                    <div>
-                                                        <div class="top-list-name">{{ $tc->customer_name ?: 'Walk-in Customer' }}</div>
-                                                        <div class="top-list-sub">{{ $tc->total_orders }} orders completed</div>
-                                                    </div>
-                                                </div>
-                                                <div class="top-list-val" style="color: var(--dash-success);">
-                                                    Rs {{ number_format($tc->total_sales) }}
-                                                </div>
+                            <div class="panel-body">
+                                @if(isset($topCustomers) && count($topCustomers) > 0)
+                                    <div class="row align-items-center">
+                                        <div class="col-md-5 mb-4 mb-md-0 d-flex justify-content-center">
+                                            <div style="position: relative; width: 220px; height: 220px;">
+                                                <canvas id="chartJsTopCustomers"></canvas>
                                             </div>
-                                            @endforeach
+                                        </div>
+                                        <div class="col-md-7">
+                                            <div style="max-height: 280px; overflow-y: auto; padding-right: 8px;">
+                                                @php $rank = 1; @endphp
+                                                @foreach($topCustomers as $tc)
+                                                    <div class="premium-list-item">
+                                                        <div class="premium-list-details">
+                                                            <div class="premium-list-rank">{{ $rank++ }}</div>
+                                                            <div>
+                                                                <div class="premium-list-title">{{ $tc->customer_name ?: 'Walk-in Customer' }}</div>
+                                                                <div class="premium-list-subtitle">{{ $tc->total_orders }} orders completed</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="premium-list-value" style="color: var(--dash-success);">
+                                                            Rs {{ number_format($tc->total_sales) }}
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            @else
-                                <div class="text-center text-muted py-4">No customer data available yet.</div>
-                            @endif
+                                @else
+                                    <div class="text-center text-muted py-5">No customer invoice records found.</div>
+                                @endif
+                            </div>
                         </div>
                     </div>
-                </div>
-                </div>
                 @endcan
 
-                {{-- ===== LOW STOCK ALERT SECTION ===== --}}
+                <!-- Low Stock Alarm Section -->
                 @can('products.view')
-                @if(isset($lowStockProducts) && $lowStockProducts->count() > 0)
-                <div class="chart-section  container" style="margin-top: 28px;">
-                    <div class="chart-card full-width">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <i class="fa fa-exclamation-triangle" style="color: #ef4444;"></i>
-                                Low Stock Alert (Cartons)
-                                <span class="badge ms-2" style="background:#fee2e2; color:#dc2626; font-size:0.75rem; font-weight:700; padding:3px 10px; border-radius:20px;">
-                                    {{ $lowStockProducts->count() }} Products
-                                </span>
+                    @if(isset($lowStockProducts) && $lowStockProducts->count() > 0)
+                        <div class="dashboard-panels-row full-width">
+                            <div class="panel-card">
+                                <div class="panel-header">
+                                    <div class="panel-title">
+                                        <i class="fa fa-exclamation-triangle" style="color: #f43f5e;"></i>
+                                        Low Stock Alarm (Cartons)
+                                        <span class="badge ms-2" style="background:#fff1f2; color:#f43f5e; font-size:0.75rem; font-weight:700; padding:4px 12px; border-radius:99px;">
+                                            {{ $lowStockProducts->count() }} Alert Products
+                                        </span>
+                                    </div>
+                                    <a href="{{ route('product') }}?status=active" class="btn btn-sm btn-outline-danger" style="font-size:0.8rem; border-radius:99px; font-weight:600; padding:6px 14px;">
+                                        Manage Inventory <i class="fa fa-arrow-right ms-1"></i>
+                                    </a>
+                                </div>
+                                <div class="panel-body">
+                                    <div style="position: relative; height: 320px; width: 100%;">
+                                        <canvas id="chartJsLowStock"></canvas>
+                                    </div>
+                                </div>
                             </div>
-                            <a href="{{ route('product') }}?status=active" class="btn btn-sm btn-outline-danger" style="font-size:0.78rem;">
-                                View All Products <i class="fa fa-arrow-right ms-1"></i>
-                            </a>
                         </div>
-                        <div class="chart-body" style="padding: 20px 24px;">
-                            <div id="lowStockBarChart" style="height: 300px; width: 100%; margin: 0 auto;"></div>
-                        </div>
-                    </div>
-                </div>
-                @endif
+                    @endif
                 @endcan
 
-        
+            </div>
+        </div>
+    </div>
 
-    <script src="{{ asset('assets/vendors/apexcharts/apexcharts.min.js') }}"></script>
+    <!-- Chart.js and Custom Redesign Script -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            // Raw PHP Data arrays
             const salesStats = @json($salesChartStats);
             const purchaseStats = @json($purchaseChartStats);
-            
             const topProductsData = @json($topProducts ?? []);
             const topCustomersData = @json($topCustomers ?? []);
 
-            // Sales Chart
-            const salesOptions = {
-                chart: {
-                    type: 'area',
-                    height: 350,
-                    toolbar: {
-                        show: false
+            // Helper to build gradients for Chart.js
+            function createChartGradient(ctx, colorStart, colorEnd) {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, colorStart);
+                gradient.addColorStop(1, colorEnd);
+                return gradient;
+            }
+
+            // ==========================================
+            // 1. SALES CHART.JS LINE GRAPH
+            // ==========================================
+            const salesCanvas = document.getElementById('chartJsSales');
+            if (salesCanvas) {
+                const salesCtx = salesCanvas.getContext('2d');
+
+                // Set custom options for dynamic updates
+                const salesChart = new Chart(salesCtx, {
+                    type: 'line',
+                    data: {
+                        labels: salesStats.daily.categories,
+                        datasets: [{
+                            label: 'Sales Revenue',
+                            data: salesStats.daily.series[0].data,
+                            borderColor: '#10b981',
+                            borderWidth: 3,
+                            backgroundColor: createChartGradient(salesCtx, 'rgba(16, 185, 129, 0.25)', 'rgba(16, 185, 129, 0.0)'),
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#10b981',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: '#10b981',
+                            pointHoverBorderColor: '#ffffff',
+                            pointHoverBorderWidth: 2
+                        }]
                     },
-                    fontFamily: 'inherit',
-                    dropShadow: {
-                        enabled: true,
-                        top: 3,
-                        left: 2,
-                        blur: 4,
-                        opacity: 0.1
-                    }
-                },
-                stroke: {
-                    curve: 'smooth',
-                    width: 3
-                },
-                colors: ['#22c55e'],
-                series: salesStats.daily.series,
-                xaxis: {
-                    categories: salesStats.daily.categories,
-                    labels: {
-                        style: {
-                            colors: '#64748b',
-                            fontSize: '12px'
-                        }
-                    },
-                    axisBorder: {
-                        show: false
-                    },
-                    axisTicks: {
-                        show: false
-                    }
-                },
-                yaxis: {
-                    labels: {
-                        style: {
-                            colors: '#64748b',
-                            fontSize: '12px'
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                titleFont: { family: 'Outfit', size: 13, weight: 'bold' },
+                                bodyFont: { family: 'Outfit', size: 12 },
+                                padding: 12,
+                                cornerRadius: 10,
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Rs ' + parseFloat(context.raw).toLocaleString();
+                                    }
+                                }
+                            }
                         },
-                        formatter: val => 'Rs ' + val.toLocaleString()
-                    }
-                },
-                dataLabels: {
-                    enabled: false
-                },
-                markers: {
-                    size: 5,
-                    colors: ['#fff'],
-                    strokeColors: '#22c55e',
-                    strokeWidth: 2,
-                    hover: {
-                        size: 7
-                    }
-                },
-                fill: {
-                    type: "gradient",
-                    gradient: {
-                        shadeIntensity: 1,
-                        opacityFrom: 0.4,
-                        opacityTo: 0.05,
-                        stops: [0, 90, 100]
-                    }
-                },
-                grid: {
-                    borderColor: '#e2e8f0',
-                    strokeDashArray: 4
-                },
-                tooltip: {
-                    theme: "light",
-                    y: {
-                        formatter: val => "Rs " + val.toLocaleString()
-                    }
-                }
-            };
-
-            const salesChart = new ApexCharts(document.querySelector("#salesReportChart"), salesOptions);
-            salesChart.render();
-
-            // Sales Filter
-            document.querySelectorAll('#salesFilterBtns .filter-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('#salesFilterBtns .filter-btn').forEach(b => b
-                        .classList.remove('active'));
-                    this.classList.add('active');
-                    const selected = this.dataset.filter;
-                    salesChart.updateOptions({
-                        series: salesStats[selected].series,
-                        xaxis: {
-                            categories: salesStats[selected].categories
-                        }
-                    });
-                });
-            });
-
-            // Purchase Chart
-            const purchaseOptions = {
-                chart: {
-                    type: 'area',
-                    height: 350,
-                    toolbar: {
-                        show: false
-                    },
-                    fontFamily: 'inherit',
-                    dropShadow: {
-                        enabled: true,
-                        top: 3,
-                        left: 2,
-                        blur: 4,
-                        opacity: 0.1
-                    }
-                },
-                stroke: {
-                    curve: 'smooth',
-                    width: 3
-                },
-                colors: ['#6366f1'],
-                series: purchaseStats.daily.series,
-                xaxis: {
-                    categories: purchaseStats.daily.categories,
-                    labels: {
-                        style: {
-                            colors: '#64748b',
-                            fontSize: '12px'
-                        }
-                    },
-                    axisBorder: {
-                        show: false
-                    },
-                    axisTicks: {
-                        show: false
-                    }
-                },
-                yaxis: {
-                    labels: {
-                        style: {
-                            colors: '#64748b',
-                            fontSize: '12px'
-                        },
-                        formatter: val => 'Rs ' + val.toLocaleString()
-                    }
-                },
-                dataLabels: {
-                    enabled: false
-                },
-                markers: {
-                    size: 5,
-                    colors: ['#fff'],
-                    strokeColors: '#6366f1',
-                    strokeWidth: 2,
-                    hover: {
-                        size: 7
-                    }
-                },
-                fill: {
-                    type: "gradient",
-                    gradient: {
-                        shadeIntensity: 1,
-                        opacityFrom: 0.4,
-                        opacityTo: 0.05,
-                        stops: [0, 90, 100]
-                    }
-                },
-                grid: {
-                    borderColor: '#e2e8f0',
-                    strokeDashArray: 4
-                },
-                tooltip: {
-                    theme: "light",
-                    y: {
-                        formatter: val => "Rs " + val.toLocaleString()
-                    }
-                }
-            };
-
-            const purchaseChart = new ApexCharts(document.querySelector("#purchaseReportChart"), purchaseOptions);
-            purchaseChart.render();
-
-            // Purchase Filter
-            document.querySelectorAll('#purchaseFilterBtns .filter-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('#purchaseFilterBtns .filter-btn').forEach(b => b
-                        .classList.remove('active'));
-                    this.classList.add('active');
-                    const selected = this.dataset.filter;
-                    purchaseChart.updateOptions({
-                        series: purchaseStats[selected].series,
-                        xaxis: {
-                            categories: purchaseStats[selected].categories
-                        }
-                    });
-                });
-            });
-
-            // ===== Top 10 Products Donut Chart =====
-            if (topProductsData.length > 0) {
-                const productNames = topProductsData.map(p => p.product_name || 'Unknown');
-                const productQtys = topProductsData.map(p => parseFloat(p.total_qty) || 0);
-
-                const prodOptions = {
-                    chart: { type: 'donut', height: 300, fontFamily: 'inherit' },
-                    series: productQtys,
-                    labels: productNames,
-                    colors: ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#3b82f6'],
-                    plotOptions: {
-                        pie: {
-                            donut: {
-                                size: '70%',
-                                labels: {
-                                    show: true,
-                                    name: { show: true, fontSize: '12px' },
-                                    value: { show: true, fontSize: '16px', fontWeight: 'bold' },
-                                    total: { show: true, showAlways: true, label: 'Total Sold', fontSize: '14px' }
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { family: 'Outfit', size: 11 }, color: '#64748b' }
+                            },
+                            y: {
+                                grid: { color: 'rgba(0,0,0,0.03)', drawTicks: false },
+                                border: { dash: [4, 4] },
+                                ticks: {
+                                    font: { family: 'Outfit', size: 11 },
+                                    color: '#64748b',
+                                    callback: val => 'Rs ' + val.toLocaleString()
                                 }
                             }
                         }
-                    },
-                    dataLabels: { enabled: false },
-                    stroke: { width: 0 },
-                    legend: { show: false },
-                    tooltip: {
-                        theme: 'light',
-                        y: { formatter: val => val + " units" }
                     }
-                };
-                new ApexCharts(document.querySelector("#topProductsDonut"), prodOptions).render();
+                });
+
+                // Handler for switching intervals
+                document.querySelectorAll('#salesFilterGroup .filter-tab-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.querySelectorAll('#salesFilterGroup .filter-tab-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        const mode = this.dataset.filter;
+
+                        salesChart.data.labels = salesStats[mode].categories;
+                        salesChart.data.datasets[0].data = salesStats[mode].series[0].data;
+                        salesChart.update();
+                    });
+                });
             }
 
-            // ===== Top 10 Customers Donut Chart =====
-            if (topCustomersData.length > 0) {
-                const customerNames = topCustomersData.map(c => c.customer_name || 'Walk-in');
-                const customerSales = topCustomersData.map(c => parseFloat(c.total_sales) || 0);
+            // ==========================================
+            // 2. PURCHASE CHART.JS LINE GRAPH
+            // ==========================================
+            const purchaseCanvas = document.getElementById('chartJsPurchase');
+            if (purchaseCanvas) {
+                const purchaseCtx = purchaseCanvas.getContext('2d');
 
-                const custOptions = {
-                    chart: { type: 'donut', height: 300, fontFamily: 'inherit' },
-                    series: customerSales,
-                    labels: customerNames,
-                    colors: ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444', '#14b8a6', '#6366f1', '#eab308', '#22c55e'],
-                    plotOptions: {
-                        pie: {
-                            donut: {
-                                size: '70%',
-                                labels: {
-                                    show: true,
-                                    name: { show: true, fontSize: '12px' },
-                                    value: { show: true, fontSize: '16px', fontWeight: 'bold', formatter: val => 'Rs ' + val.toLocaleString() },
-                                    total: { show: true, showAlways: true, label: 'Total Rev', fontSize: '14px', formatter: w => {
-                                        return 'Rs ' + w.globals.seriesTotals.reduce((a, b) => a + b, 0).toLocaleString();
-                                    }}
+                const purchaseChart = new Chart(purchaseCtx, {
+                    type: 'line',
+                    data: {
+                        labels: purchaseStats.daily.categories,
+                        datasets: [{
+                            label: 'Purchases',
+                            data: purchaseStats.daily.series[0].data,
+                            borderColor: '#6366f1',
+                            borderWidth: 3,
+                            backgroundColor: createChartGradient(purchaseCtx, 'rgba(99, 102, 241, 0.25)', 'rgba(99, 102, 241, 0.0)'),
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#ffffff',
+                            pointBorderColor: '#6366f1',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: '#6366f1',
+                            pointHoverBorderColor: '#ffffff',
+                            pointHoverBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                titleFont: { family: 'Outfit', size: 13, weight: 'bold' },
+                                bodyFont: { family: 'Outfit', size: 12 },
+                                padding: 12,
+                                cornerRadius: 10,
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Rs ' + parseFloat(context.raw).toLocaleString();
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { family: 'Outfit', size: 11 }, color: '#64748b' }
+                            },
+                            y: {
+                                grid: { color: 'rgba(0,0,0,0.03)', drawTicks: false },
+                                border: { dash: [4, 4] },
+                                ticks: {
+                                    font: { family: 'Outfit', size: 11 },
+                                    color: '#64748b',
+                                    callback: val => 'Rs ' + val.toLocaleString()
                                 }
                             }
                         }
-                    },
-                    dataLabels: { enabled: false },
-                    stroke: { width: 0 },
-                    legend: { show: false },
-                    tooltip: {
-                        theme: 'light',
-                        y: { formatter: val => "Rs " + val.toLocaleString() }
                     }
-                };
-                new ApexCharts(document.querySelector("#topCustomersDonut"), custOptions).render();
+                });
+
+                // Handler for switching intervals
+                document.querySelectorAll('#purchaseFilterGroup .filter-tab-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.querySelectorAll('#purchaseFilterGroup .filter-tab-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        const mode = this.dataset.filter;
+
+                        purchaseChart.data.labels = purchaseStats[mode].categories;
+                        purchaseChart.data.datasets[0].data = purchaseStats[mode].series[0].data;
+                        purchaseChart.update();
+                    });
+                });
             }
 
-            // ===== LOW STOCK HORIZONTAL BAR CHART =====
-            const lowStockEl = document.querySelector('#lowStockBarChart');
-            if (lowStockEl) {
+            // ==========================================
+            // 3. TOP PRODUCTS DOUGHNUT
+            // ==========================================
+            const prodCanvas = document.getElementById('chartJsTopProducts');
+            if (prodCanvas && topProductsData.length > 0) {
+                const prodNames = topProductsData.map(p => p.product_name || 'Standard Item');
+                const prodQtys = topProductsData.map(p => parseFloat(p.total_qty) || 0);
+
+                new Chart(prodCanvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: prodNames,
+                        datasets: [{
+                            data: prodQtys,
+                            backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#3b82f6'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff',
+                            hoverOffset: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '72%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                padding: 10,
+                                bodyFont: { family: 'Outfit', size: 11 },
+                                callbacks: {
+                                    label: context => ` ${context.label}: ${context.raw} units`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ==========================================
+            // 4. TOP CUSTOMERS DOUGHNUT
+            // ==========================================
+            const custCanvas = document.getElementById('chartJsTopCustomers');
+            if (custCanvas && topCustomersData.length > 0) {
+                const custNames = topCustomersData.map(c => c.customer_name || 'Walk-in');
+                const custSales = topCustomersData.map(c => parseFloat(c.total_sales) || 0);
+
+                new Chart(custCanvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: custNames,
+                        datasets: [{
+                            data: custSales,
+                            backgroundColor: ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444', '#14b8a6', '#6366f1', '#eab308', '#22c55e'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff',
+                            hoverOffset: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '72%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                padding: 10,
+                                bodyFont: { family: 'Outfit', size: 11 },
+                                callbacks: {
+                                    label: context => ` ${context.label}: Rs ${parseFloat(context.raw).toLocaleString()}`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ==========================================
+            // 5. LOW STOCK DOUBLE BAR CHART (Chart.js)
+            // ==========================================
+            const lsCanvas = document.getElementById('chartJsLowStock');
+            if (lsCanvas) {
                 const lowStockData = @json($lowStockProducts ?? collect());
                 if (lowStockData.length > 0) {
-                    const lsNames  = lowStockData.map(p => p.item_name ? (p.item_name.length > 22 ? p.item_name.substring(0,22)+'…' : p.item_name) : 'Unknown');
-                    const lsStock  = lowStockData.map(p => parseFloat(p.current_cartons) || 0);
-                    const lsAlert  = lowStockData.map(p => parseFloat(p.alert_carton_quantity) || 0);
-                    const lsColors = lsStock.map(s => s <= 0 ? '#dc2626' : '#f97316');
+                    const lsNames = lowStockData.map(p => p.item_name ? (p.item_name.length > 20 ? p.item_name.substring(0, 20) + '…' : p.item_name) : 'Unknown');
+                    const lsStock = lowStockData.map(p => parseFloat(p.current_cartons) || 0);
+                    const lsAlert = lowStockData.map(p => parseFloat(p.alert_carton_quantity) || 0);
 
-                    const lowStockOptions = {
-                        chart: {
-                            type: 'bar',
-                            height: 300,
-                            toolbar: { show: false },
-                            fontFamily: 'inherit',
+                    const lsCtx = lsCanvas.getContext('2d');
+                    new Chart(lsCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: lsNames,
+                            datasets: [
+                                {
+                                    label: 'Alert Level',
+                                    data: lsAlert,
+                                    backgroundColor: 'rgba(244, 63, 94, 0.85)',
+                                    borderRadius: 6,
+                                    barPercentage: 0.6,
+                                    categoryPercentage: 0.7
+                                },
+                                {
+                                    label: 'Current Stock',
+                                    data: lsStock,
+                                    backgroundColor: 'rgba(99, 102, 241, 0.85)',
+                                    borderRadius: 6,
+                                    barPercentage: 0.6,
+                                    categoryPercentage: 0.7
+                                }
+                            ]
                         },
-                        plotOptions: {
-                            bar: {
-                                horizontal: false,
-                                columnWidth: '40%',
-                                borderRadius: 4,
-                                dataLabels: { position: 'top' }
-                            }
-                        },
-                        colors: ['#3b82f6', '#ef4444'],
-                        series: [
-                            {
-                                name: 'Alert Level',
-                                data: lsAlert
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    labels: { font: { family: 'Outfit', size: 12, weight: 'bold' }, color: '#475569' }
+                                },
+                                tooltip: {
+                                    backgroundColor: '#0f172a',
+                                    padding: 12,
+                                    bodyFont: { family: 'Outfit', size: 12 },
+                                    callbacks: {
+                                        label: context => ` ${context.dataset.label}: ${context.raw} cartons`
+                                    }
+                                }
                             },
-                            {
-                                name: 'Current Stock',
-                                data: lsStock
-                            }
-                        ],
-                        xaxis: {
-                            categories: lsNames,
-                            labels: {
-                                style: { colors: '#64748b', fontSize: '12px' },
-                                trim: true,
-                                maxHeight: 120
-                            }
-                        },
-                        yaxis: {
-                            labels: { 
-                                style: { colors: '#1e293b', fontSize: '11px', fontWeight: 600 },
-                                formatter: val => Math.round(val) + ' ctns'
-                            }
-                        },
-                        dataLabels: {
-                            enabled: true,
-                            offsetY: -20,
-                            style: { fontSize: '10px', colors: ['#64748b'], fontWeight: 600 }
-                        },
-                        stroke: {
-                            show: true,
-                            width: 2,
-                            colors: ['transparent']
-                        },
-                        grid: {
-                            borderColor: '#f1f5f9',
-                            strokeDashArray: 4,
-                            xaxis: { lines: { show: false } },
-                            yaxis: { lines: { show: true } }
-                        },
-                        legend: { 
-                            show: true,
-                            position: 'top',
-                            horizontalAlign: 'right'
-                        },
-                        tooltip: {
-                            theme: 'light',
-                            y: {
-                                formatter: function (val) {
-                                    return val + " ctns"
+                            scales: {
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { font: { family: 'Outfit', size: 11 }, color: '#475569' }
+                                },
+                                y: {
+                                    grid: { color: 'rgba(0,0,0,0.03)' },
+                                    ticks: {
+                                        font: { family: 'Outfit', size: 11 },
+                                        color: '#475569',
+                                        callback: val => val + ' ctns'
+                                    }
                                 }
                             }
                         }
-                    };
-
-                    new ApexCharts(lowStockEl, lowStockOptions).render();
+                    });
                 }
+            }
+
+            // ==========================================
+            // 6. SYNC TO CLOUD HANDLER
+            // ==========================================
+            const btnSync = document.getElementById('btnSyncCloud');
+            if (btnSync) {
+                btnSync.addEventListener('click', function() {
+                    btnSync.disabled = true;
+                    const originalHtml = btnSync.innerHTML;
+                    btnSync.innerHTML = '<i class="fa fa-sync-alt fa-spin me-1"></i> Syncing...';
+
+                    Swal.fire({
+                        title: 'Synchronizing...',
+                        text: 'Please wait while we sync your local data with the cloud.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    fetch('{{ route('admin.sync_to_cloud') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        btnSync.disabled = false;
+                        btnSync.innerHTML = originalHtml;
+
+                        if (data.status === 'success') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Sync Successful',
+                                text: data.message,
+                                confirmButtonColor: '#6366f1'
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Sync Failed',
+                                text: data.message || 'An error occurred during synchronization.',
+                                confirmButtonColor: '#6366f1'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        btnSync.disabled = false;
+                        btnSync.innerHTML = originalHtml;
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Connection Error',
+                            text: 'Could not connect to the local server or cloud database. Please verify internet connection.',
+                            confirmButtonColor: '#6366f1'
+                        });
+                    });
+                });
+            }
+
+            // ==========================================
+            // 7. CASH FLOW BREAKDOWN DOUGHNUT
+            // ==========================================
+            const cfCanvas = document.getElementById('chartJsCashFlow');
+            if (cfCanvas) {
+                const paymentIn = parseFloat('{{ $paymentInMonth }}') || 0;
+                const paymentOut = parseFloat('{{ $paymentOutMonth }}') || 0;
+
+                new Chart(cfCanvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Receipts (In)', 'Payments (Out)'],
+                        datasets: [{
+                            data: [paymentIn, paymentOut],
+                            backgroundColor: ['#10b981', '#f43f5e'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff',
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                padding: 10,
+                                bodyFont: { family: 'Outfit', size: 11 },
+                                callbacks: {
+                                    label: context => ` ${context.label}: Rs ${parseFloat(context.raw).toLocaleString()}`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ==========================================
+            // 8. PROFITABILITY BAR CHART
+            // ==========================================
+            const profCanvas = document.getElementById('chartJsProfitability');
+            if (profCanvas) {
+                const totalRevenue = parseFloat('{{ $totalRevenueThisMonth }}') || 0;
+                const totalCost = parseFloat('{{ $totalCostThisMonth }}') || 0;
+                const netProfit = parseFloat('{{ $profitThisMonth }}') || 0;
+
+                new Chart(profCanvas.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Revenue', 'Cost', 'Net Profit'],
+                        datasets: [{
+                            data: [totalRevenue, totalCost, netProfit],
+                            backgroundColor: ['#10b981', '#ef4444', '#3b82f6'],
+                            borderRadius: 6,
+                            borderWidth: 0,
+                            barThickness: 35
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                padding: 10,
+                                bodyFont: { family: 'Outfit', size: 12 },
+                                callbacks: {
+                                    label: context => ` Rs ${parseFloat(context.raw).toLocaleString()}`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    font: { family: 'Outfit', size: 10 },
+                                    callback: value => 'Rs ' + parseFloat(value).toLocaleString()
+                                }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
             }
 
         });
     </script>
 @endsection
-

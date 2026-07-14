@@ -290,8 +290,21 @@ class ReportingController extends Controller
 
     public function fetchProfitLoss(Request $request)
     {
-        $start = $request->start_date;
-        $end = $request->end_date;
+        $start = $request->start_date ?: now()->startOfDay()->toDateTimeString();
+        $end = $request->end_date ?: now()->endOfDay()->toDateTimeString();
+
+        if (strlen($start) === 10) {
+            $start .= ' 00:00:00';
+        } elseif (strlen($start) === 16) {
+            $start .= ':00';
+        }
+
+        if (strlen($end) === 10) {
+            $end .= ' 23:59:59';
+        } elseif (strlen($end) === 16) {
+            $end .= ':59';
+        }
+
         $productId = $request->product_id;
         $categoryId = $request->category_id;
         $customerId = $request->customer_id;
@@ -352,20 +365,27 @@ class ReportingController extends Controller
                     ->where('sale_items.product_id', $product->id);
                 
                 if ($start && $end) {
-                    $saleQuery->whereBetween(DB::raw('DATE(sales.created_at)'), [$start, $end]);
+                    $saleQuery->whereBetween('sales.created_at', [$start, $end]);
                 }
                 if ($customerId && $customerId !== 'all') {
                     $saleQuery->where('sales.customer_id', $customerId);
                 }
-                $salesList = $saleQuery->select('sale_items.total_pieces', 'sale_items.qty', 'sale_items.total', 'sale_items.color')
-                    ->get();
+
+                $salesList = $saleQuery->select(
+                    'sale_items.total_pieces',
+                    'sale_items.qty',
+                    'sale_items.total',
+                    'sale_items.color',
+                    'sales.total_extradiscount',
+                    'sales.total_bill_amount'
+                )->get();
 
                 $returnQuery = DB::table('sale_return_items as sri')
                     ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
                     ->where('sri.product_id', $product->id);
                 
                 if ($start && $end) {
-                    $returnQuery->whereBetween(DB::raw('DATE(sr.return_date)'), [$start, $end]);
+                    $returnQuery->whereBetween('sr.created_at', [$start, $end]);
                 }
                 $returnsList = $returnQuery->select('sri.qty', 'sri.color', 'sr.sale_id')
                     ->get();
@@ -395,7 +415,13 @@ class ReportingController extends Controller
                         if ($this->matchSaleItemToVariant($sItem, $v)) {
                             $soldQty += (float) $sItem->qty;
                             $soldQtyPieces += (float) $sItem->total_pieces;
-                            $soldAmount += (float) $sItem->total;
+                            
+                            $itemNet = (float) $sItem->total;
+                            if ($sItem->total_bill_amount > 0 && $sItem->total_extradiscount > 0) {
+                                $proportion = $itemNet / (float) $sItem->total_bill_amount;
+                                $itemNet -= ($sItem->total_extradiscount * $proportion);
+                            }
+                            $soldAmount += $itemNet;
                         }
                     }
 
@@ -440,19 +466,35 @@ class ReportingController extends Controller
                     ->where('sale_items.product_id', $product->id);
                 
                 if ($start && $end) {
-                    $saleQuery->whereBetween(DB::raw('DATE(sales.created_at)'), [$start, $end]);
+                    $saleQuery->whereBetween('sales.created_at', [$start, $end]);
                 }
 
                 if ($customerId && $customerId !== 'all') {
                     $saleQuery->where('sales.customer_id', $customerId);
                 }
 
-                $saleStats = $saleQuery->selectRaw('COALESCE(SUM(total_pieces),0) as sold_qty_pieces, COALESCE(SUM(qty),0) as sold_qty, COALESCE(SUM(total),0) as sold_amount')
-                    ->first();
+                $salesList = $saleQuery->select(
+                    'sale_items.total_pieces',
+                    'sale_items.qty',
+                    'sale_items.total',
+                    'sales.total_extradiscount',
+                    'sales.total_bill_amount'
+                )->get();
 
-                $soldQty = (float) $saleStats->sold_qty;
-                $soldQtyPieces = (float) $saleStats->sold_qty_pieces;
-                $soldAmount = (float) $saleStats->sold_amount;
+                $soldQty = 0;
+                $soldQtyPieces = 0;
+                $soldAmount = 0;
+                foreach ($salesList as $sItem) {
+                    $soldQty += (float) $sItem->qty;
+                    $soldQtyPieces += (float) $sItem->total_pieces;
+                    
+                    $itemNet = (float) $sItem->total;
+                    if ($sItem->total_bill_amount > 0 && $sItem->total_extradiscount > 0) {
+                        $proportion = $itemNet / (float) $sItem->total_bill_amount;
+                        $itemNet -= ($sItem->total_extradiscount * $proportion);
+                    }
+                    $soldAmount += $itemNet;
+                }
                 
                 $returnQuery = DB::table('stock_movements')
                     ->where('product_id', $product->id)
@@ -460,7 +502,7 @@ class ReportingController extends Controller
                     ->where('type', 'in');
                 
                 if ($start && $end) {
-                    $returnQuery->whereBetween(DB::raw('DATE(created_at)'), [$start, $end]);
+                    $returnQuery->whereBetween('created_at', [$start, $end]);
                 }
                 $returnedQtyPieces = (float) $returnQuery->sum('qty');
 
@@ -505,17 +547,17 @@ class ReportingController extends Controller
                 ->where('sales.customer_id', $customer->id);
 
             if ($start && $end) {
-                $custSaleQuery->whereBetween(DB::raw('DATE(sales.created_at)'), [$start, $end]);
+                $custSaleQuery->whereBetween('sales.created_at', [$start, $end]);
             }
 
             $custSaleItems = $custSaleQuery->select(
                 'sale_items.product_id', 
                 'sale_items.color',
-                DB::raw('SUM(sale_items.total_pieces) as sold_qty_pieces'), 
-                DB::raw('SUM(sale_items.total) as sold_amount')
-            )
-                ->groupBy('sale_items.product_id', 'sale_items.color')
-                ->get();
+                'sale_items.total_pieces',
+                'sale_items.total',
+                'sales.total_extradiscount',
+                'sales.total_bill_amount'
+            )->get();
 
             $custRevenue = 0;
             $custCogs = 0;
@@ -563,8 +605,14 @@ class ReportingController extends Controller
                     }
                 }
 
-                $custRevenue += (float) $item->sold_amount;
-                $custCogs += (float) $item->sold_qty_pieces * $avgPrice;
+                $itemNet = (float) $item->total;
+                if ($item->total_bill_amount > 0 && $item->total_extradiscount > 0) {
+                    $proportion = $itemNet / (float) $item->total_bill_amount;
+                    $itemNet -= ($item->total_extradiscount * $proportion);
+                }
+
+                $custRevenue += $itemNet;
+                $custCogs += (float) ($item->total_pieces ?? 0) * $avgPrice;
             }
 
             $custProfit = $custRevenue - $custCogs;
@@ -771,7 +819,7 @@ class ReportingController extends Controller
                     'total_pieces' => $total_pieces_arr,
                     'per_total' => $totals,
                     'total_net' => $sale->total_net,
-                    'created_at' => $sale->created_at->format('Y-m-d H:i:s'),
+                    'created_at' => $sale->created_at->format('Y-m-d h:i:s A'),
                     'customer_name' => $sale->customer_relation ? $sale->customer_relation->customer_name : 'Walk-in',
                     'returns' => $sale->returns->map(function($ret) {
                          // Robust return display handling both legacy strings and new relation items
