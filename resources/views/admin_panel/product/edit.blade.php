@@ -874,7 +874,6 @@
             } catch(e) {}
  
             // Call updateMode to set initial visible states
-            const form = document.getElementById('productForm');
             updateMode();
  
         });
