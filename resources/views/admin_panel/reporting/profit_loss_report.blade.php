@@ -318,7 +318,7 @@ $(document).ready(function() {
     var myChart = null;
 
     function fmt(n) {
-        return parseFloat(n).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        return Math.round(parseFloat(n)).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
     }
 
     function fetchReport() {

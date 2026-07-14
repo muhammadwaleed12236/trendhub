@@ -22,11 +22,15 @@
                             <label class="form-label">End Date & Time</label>
                             <input type="datetime-local" name="end_date" id="end_date" class="form-control">
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
+                            <label class="form-label">Search Product / Size / Invoice</label>
+                            <input type="text" id="search_product" class="form-control" placeholder="Search by name, size, invoice...">
+                        </div>
+                        <div class="col-md-1.5">
                             <button type="button" id="btnSearch" class="btn btn-primary w-100">Search</button>
                         </div>
-                        <div class="col-md-4 text-end">
-                            <button type="button" id="btnExportCsv" class="btn btn-danger">Export CSV</button>
+                        <div class="col-md-1.5 text-end">
+                            <button type="button" id="btnExportCsv" class="btn btn-danger w-100">Export CSV</button>
                         </div>
                     </form>
                 </div>
@@ -75,6 +79,7 @@
     $(document).on('click', '#btnSearch', function() {
         let start = $('#start_date').val();
         let end = $('#end_date').val();
+        $('#search_product').val(''); // Clear search input on new range search
 
         $("#loader").show();
         $.ajax({
@@ -119,7 +124,7 @@
                     }
                     grandReturn += returnTotal;
 
-                    html += `<tr>
+                    html += `<tr data-qty="${rowQty}" data-total="${rowTotal}" data-net="${s.total_net}" data-return="${returnTotal}">
                     <td>${i+1}</td>
                     <td>${s.created_at}</td>
                     <td>INVSLE-${s.id}</td>
@@ -135,18 +140,59 @@
                 });
 
                 // Grand total row
-                html += `<tr class="fw-bold">
+                html += `<tr class="fw-bold" id="grandTotalRow">
                 <td colspan="6" class="text-end">Grand Total:</td>
-                <td>${grandQty.toFixed(2)}</td>
+                <td id="grandQty">${grandQty.toFixed(2)}</td>
                 <td>-</td>
-                <td>${grandTotal.toFixed(2)}</td>
-                <td>${grandNet.toFixed(2)}</td>
-                <td>${grandReturn.toFixed(2)}</td>
+                <td id="grandTotal">${grandTotal.toFixed(2)}</td>
+                <td id="grandNet">${grandNet.toFixed(2)}</td>
+                <td id="grandReturn">${grandReturn.toFixed(2)}</td>
             </tr>`;
 
                 $('#saleBody').html(html);
             }
         });
+    });
+
+    // Real-time Search Filter Handler
+    $(document).on('input', '#search_product', function() {
+        let val = $(this).val().toLowerCase();
+
+        $('#saleBody tr').each(function() {
+            // Skip the Grand Total row
+            if ($(this).attr('id') === 'grandTotalRow') {
+                return;
+            }
+
+            let productText = $(this).find('td:eq(5)').text().toLowerCase();
+            let invoiceText = $(this).find('td:eq(2)').text().toLowerCase();
+            let customerText = $(this).find('td:eq(3)').text().toLowerCase();
+            let refText = $(this).find('td:eq(4)').text().toLowerCase();
+
+            if (productText.indexOf(val) > -1 || invoiceText.indexOf(val) > -1 || customerText.indexOf(val) > -1 || refText.indexOf(val) > -1) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+
+        // Recalculate grand totals from visible rows
+        let newQty = 0, newTotal = 0, newNet = 0, newReturn = 0;
+        $('#saleBody tr').each(function() {
+            if ($(this).attr('id') === 'grandTotalRow') return;
+            if ($(this).is(':visible')) {
+                newQty += parseFloat($(this).data('qty')) || 0;
+                newTotal += parseFloat($(this).data('total')) || 0;
+                newNet += parseFloat($(this).data('net')) || 0;
+                newReturn += parseFloat($(this).data('return')) || 0;
+            }
+        });
+
+        // Update grand total elements
+        $('#grandQty').text(newQty.toFixed(2));
+        $('#grandTotal').text(newTotal.toFixed(2));
+        $('#grandNet').text(newNet.toFixed(2));
+        $('#grandReturn').text(newReturn.toFixed(2));
     });
 
 
