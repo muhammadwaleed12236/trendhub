@@ -227,4 +227,99 @@ class POSController extends Controller
 
         return $vColor === $itemVColor && $vSize === $itemVSize;
     }
+
+    public function searchInvoice(Request $request)
+    {
+        $term = trim($request->input('invoice_no'));
+        if (!$term) {
+            return response()->json(['error' => 'Please enter an invoice number.'], 422);
+        }
+
+        $sale = \App\Models\Sale::with(['items.product'])
+            ->where(function($q) use ($term) {
+                $q->where('invoice_no', $term)
+                  ->orWhere('id', $term);
+            })
+            ->whereIn('sale_status', ['posted', 'returned'])
+            ->first();
+
+        if (!$sale) {
+            return response()->json(['error' => 'Invoice not found or is not posted.'], 404);
+        }
+
+        // Calculate already returned quantities
+        $pastReturns = \App\Models\SaleReturn::where('sale_id', $sale->id)->with('items')->get();
+        $returnedQtyMap = []; // Key: product_id + '_' + size + '_' + color
+        foreach ($pastReturns as $sr) {
+            foreach ($sr->items as $srItem) {
+                $variant = [];
+                if (!empty($srItem->color)) {
+                    $b64Decoded = base64_decode($srItem->color, true);
+                    $variant = $b64Decoded ? json_decode($b64Decoded, true) : json_decode($srItem->color, true);
+                }
+                $size = strtolower(trim($variant['size'] ?? ($variant['size_val'] ?? '-')));
+                $color = strtolower(trim($variant['color'] ?? ($variant['color_val'] ?? '-')));
+                $key = $srItem->product_id . '_' . $size . '_' . $color;
+
+                if (!isset($returnedQtyMap[$key])) {
+                    $returnedQtyMap[$key] = 0;
+                }
+                $returnedQtyMap[$key] += $srItem->qty; // total pieces returned
+            }
+        }
+
+        $items = [];
+        foreach ($sale->items as $item) {
+            $variant = [];
+            if (!empty($item->color)) {
+                $b64Decoded = base64_decode($item->color, true);
+                $variant = $b64Decoded ? json_decode($b64Decoded, true) : json_decode($item->color, true);
+            }
+            $size = strtolower(trim($variant['size'] ?? ($variant['size_val'] ?? '-')));
+            $color = strtolower(trim($variant['color'] ?? ($variant['color_val'] ?? '-')));
+            $key = $item->product_id . '_' . $size . '_' . $color;
+
+            $alreadyReturned = $returnedQtyMap[$key] ?? 0;
+            $maxReturnable = max(0, (float)$item->total_pieces - $alreadyReturned);
+
+            if ($maxReturnable <= 0) {
+                continue;
+            }
+
+            // Calculate net unit price (net of items discounts and overall invoice discount share)
+            $lineTotal = (float)$item->total;
+            $discountShare = 0;
+            if ($sale->total_bill_amount > 0 && $sale->total_extradiscount > 0) {
+                $proportion = $lineTotal / (float)$sale->total_bill_amount;
+                $discountShare = $sale->total_extradiscount * $proportion;
+            }
+            
+            $netTotal = max(0, $lineTotal - $discountShare);
+            $netUnitPrice = $item->total_pieces > 0 ? ($netTotal / $item->total_pieces) : 0;
+
+            $items[] = [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'product_name' => $item->product_name,
+                'sku' => $item->product->item_code ?? '',
+                'size' => $variant['size'] ?? ($variant['size_val'] ?? '-'),
+                'color' => $variant['color'] ?? ($variant['color_val'] ?? '-'),
+                'variant_data' => $item->color,
+                'qty_sold' => $item->total_pieces,
+                'already_returned' => $alreadyReturned,
+                'max_returnable' => $maxReturnable,
+                'price_sold' => $item->price_per_piece ?? $item->price ?? 0,
+                'net_unit_price' => round($netUnitPrice, 2),
+                'discount_share_per_piece' => round($discountShare / ($item->total_pieces > 0 ? $item->total_pieces : 1), 2),
+            ];
+        }
+
+        return response()->json([
+            'sale_id' => $sale->id,
+            'invoice_no' => $sale->invoice_no,
+            'customer_name' => $sale->walkin_name ?: ($sale->customer_relation->customer_name ?? 'Walking Customer'),
+            'customer_id' => $sale->customer_id,
+            'items' => $items
+        ]);
+    }
 }

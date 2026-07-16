@@ -289,6 +289,7 @@ Route::middleware('auth')->group(function () {
     Route::get('sale', [SaleController::class, 'index'])->middleware('permission:sales.view')->name('sale.index');
     Route::get('sale/create', [SaleController::class, 'addsale'])->middleware('permission:sales.create')->name('sale.add');
     Route::get('pos', [App\Http\Controllers\POSController::class, 'index'])->middleware('permission:sales.create')->name('pos.index');
+    Route::post('/pos/search-invoice', [App\Http\Controllers\POSController::class, 'searchInvoice'])->middleware('permission:sales.create')->name('pos.search_invoice');
     Route::get('/products/search', [ProductController::class, 'searchProducts'])->name('products.search');
     Route::get('/search-product-name', [SaleController::class, 'searchpname'])->name('search-product-name');
     Route::post('/sales/store', [SaleController::class, 'store'])->middleware('permission:sales.create')->name('sales.store');

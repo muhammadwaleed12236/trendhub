@@ -535,7 +535,6 @@
             }
         }
     </style>
-
     <div class="main-content">
         <div class="main-content-inner dashboard-body-wrapper">
             <div class="container-fluid" style="padding: 0;">
@@ -543,7 +542,7 @@
                 <!-- Welcome Premium Header Card -->
                 <div class="welcome-premium-card">
                     <div class="welcome-premium-content">
-                        <h1 class="welcome-premium-title">Welcome Back {{ auth()->user()->name ?? 'Admin' }}! 👋</h1>
+                    <h1 class="welcome-premium-title"> Welcome Back {{ auth()->user()->name ?? 'Admin' }}! 👋</h1>
                         <p class="welcome-premium-sub">Here is your absolute live business diagnostic dashboard statistics.</p>
                         <div class="welcome-badge-date">
                             <i class="fa fa-calendar-alt"></i>

@@ -1211,6 +1211,94 @@ class SaleController extends Controller
 
             $sale->save();
 
+            // Process returned/exchange items (if any)
+            $returnProductIds = $request->input('return_product_id');
+            if (is_array($returnProductIds) && count($returnProductIds) > 0) {
+                $originalSaleIds = array_filter(array_unique($request->input('original_sale_id') ?? []));
+                
+                foreach ($originalSaleIds as $origSaleId) {
+                    $lastReturn = \App\Models\SaleReturn::orderBy('id', 'desc')->first();
+                    $nextInvoice = $lastReturn 
+                        ? 'SR-' . str_pad((int)str_replace('SR-', '', $lastReturn->return_invoice) + 1, 4, '0', STR_PAD_LEFT)
+                        : 'SR-0001';
+
+                    $returnHeader = \App\Models\SaleReturn::create([
+                        'sale_id' => $origSaleId,
+                        'return_invoice' => $nextInvoice,
+                        'customer_id' => $sale->customer_id ?: null,
+                        'warehouse_id' => 1,
+                        'return_date' => now()->format('Y-m-d'),
+                        'remarks' => 'POS Exchange Return (Sales Invoice #' . $sale->invoice_no . ')',
+                        'status' => 'posted',
+                    ]);
+
+                    $movements = [];
+                    foreach ($returnProductIds as $idx => $rPid) {
+                        if ($request->original_sale_id[$idx] == $origSaleId) {
+                            $rQty = (float)$request->return_qty[$idx];
+                            if ($rQty <= 0) continue;
+
+                            $rPrice = (float)$request->return_price[$idx];
+                            $rColor = $request->return_color[$idx];
+
+                            $rProduct = \App\Models\Product::find($rPid);
+                            $ppb = $rProduct->pieces_per_box > 0 ? $rProduct->pieces_per_box : 1;
+
+                            \App\Models\SaleReturnItem::create([
+                                'sale_return_id' => $returnHeader->id,
+                                'product_id' => $rPid,
+                                'color' => $rColor,
+                                'warehouse_id' => 1,
+                                'qty' => $rQty,
+                                'boxes' => $rQty / $ppb,
+                                'loose_pieces' => $rQty % $ppb,
+                                'price' => $rPrice,
+                                'item_discount' => 0,
+                                'unit' => 'pc',
+                                'line_total' => $rQty * $rPrice,
+                            ]);
+
+                            // Restore stock
+                            $stock = \App\Models\WarehouseStock::where('warehouse_id', 1)
+                                ->where('product_id', $rPid)
+                                ->lockForUpdate()
+                                ->first();
+
+                            if ($stock) {
+                                $newTotalPieces = $stock->total_pieces + $rQty;
+                                $stock->total_pieces = $newTotalPieces;
+                                $stock->quantity = $newTotalPieces / $ppb;
+                                $stock->save();
+                            } else {
+                                \App\Models\WarehouseStock::create([
+                                    'warehouse_id' => 1,
+                                    'product_id' => $rPid,
+                                    'total_pieces' => $rQty,
+                                    'quantity' => $rQty / $ppb,
+                                    'price' => 0
+                                ]);
+                            }
+
+                            // Movement
+                            $movements[] = [
+                                'product_id' => $rPid,
+                                'type' => 'in',
+                                'qty' => $rQty,
+                                'ref_type' => 'SALE_RETURN',
+                                'ref_id' => $returnHeader->id,
+                                'note' => "Exchange Return #{$nextInvoice} on Sale #{$sale->invoice_no}",
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+                        }
+                    }
+
+                    if (!empty($movements)) {
+                        DB::table('stock_movements')->insert($movements);
+                    }
+                }
+            }
+
             // 4. Handle Status Logic
             if ($status === 'posted') {
                 \Log::info('Proceeding to Auto-Receipt & Ledger logic for Sale #'.$sale->invoice_no);

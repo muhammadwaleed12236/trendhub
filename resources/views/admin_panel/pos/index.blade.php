@@ -473,6 +473,19 @@
 
 <div class="main-content">
     <div class="container-fluid p-2">
+        <!-- POS Header Section -->
+        <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-3 shadow-sm">
+            <div>
+                <h4 class="mb-0 fw-bold text-dark"><i class="fas fa-cash-register me-2 text-primary"></i>Point Of Sale (POS)</h4>
+                <small class="text-muted">Process new sales, returns, and product exchanges in one place</small>
+            </div>
+            <div>
+                <button type="button" class="btn btn-danger d-flex align-items-center gap-2 px-3 py-2 fw-bold" id="btnPOSExchangeHeader" style="border-radius: 8px;">
+                    <i class="fas fa-exchange-alt"></i> Exchange / Return Item
+                </button>
+            </div>
+        </div>
+
         <div class="pos-wrapper">
             
             <!-- LEFT PANEL: Products Grid -->
@@ -546,7 +559,12 @@
                     <input type="hidden" name="action" value="post">
                     
                     <div class="pos-cart-header">
-                        <h5>Selected Items</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <h5>Selected Items</h5>
+                            <button type="button" class="btn btn-outline-danger py-0 px-2 btn-sm" id="btnPOSExchange" style="font-size: 10px; line-height: 18px; border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">
+                                <i class="fas fa-exchange-alt"></i> Exchange
+                            </button>
+                        </div>
                         <div class="d-flex align-items-center gap-2">
                             <div class="btn-group btn-group-sm" id="posPriceModeToggleGroup" style="height: 20px;">
                                 <input type="radio" class="btn-check" name="pos_price_mode" id="pos_mode_retail" value="retail" checked>
@@ -577,7 +595,10 @@
                         </div>
                         <div class="summary-row align-items-center">
                             <span>Discount (Rs):</span>
-                            <input type="number" name="total_extra_cost" id="summaryDiscount" class="form-control form-control-sm text-end" value="0" style="width: 100px; height: 26px !important; padding: 2px 8px;">
+                            <div class="d-flex align-items-center gap-1">
+                                <input type="number" name="total_extra_cost" id="summaryDiscount" class="form-control form-control-sm text-end" value="0" style="width: 80px; height: 26px !important; padding: 2px 8px;">
+                                <button type="button" class="btn btn-dark btn-sm py-0 px-2" id="btnDiscountDistribute" style="height: 24px; font-size: 10px; line-height: 20px;" title="Distribute Discount"><i class="fas fa-divide"></i> Distribute</button>
+                            </div>
                         </div>
                         <div class="summary-row payable">
                             <span>Total Payable:</span>
@@ -692,6 +713,117 @@
             </div>
             <div class="modal-footer py-2">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EXCHANGE SEARCH MODAL -->
+<div class="modal fade" id="posExchangeModal" tabindex="-1" aria-labelledby="posExchangeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white py-2">
+                <h5 class="modal-title fs-6" id="posExchangeModalLabel">Product Exchange / Return</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="border: none; background: transparent; font-size: 24px;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-3">
+                <div class="input-group mb-3">
+                    <input type="text" id="exchangeInvoiceNo" class="form-control" placeholder="Enter Invoice Number or Invoice ID (e.g. INV-0010)...">
+                    <button class="btn btn-danger" type="button" id="btnSearchExchangeInvoice"><i class="fas fa-search"></i> Search</button>
+                </div>
+                
+                <div id="exchangeInvoiceDetails" class="d-none border rounded p-3 bg-light mb-3">
+                    <div class="row">
+                        <div class="col-6"><strong>Invoice:</strong> <span id="exchangeInvoiceVal">-</span></div>
+                        <div class="col-6"><strong>Customer:</strong> <span id="exchangeCustomerVal">-</span></div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="exchangeItemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3" style="font-size: 12px;">Product / Variant</th>
+                                <th class="text-center" style="font-size: 12px;">Qty Sold</th>
+                                <th class="text-center" style="font-size: 12px;">Returned</th>
+                                <th class="text-end" style="font-size: 12px;">Net Price</th>
+                                <th class="text-center" style="width: 140px; font-size: 12px;">Qty to Return</th>
+                                <th class="text-center" style="width: 100px; font-size: 12px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="exchangeItemsList">
+                            <tr><td colspan="6" class="text-center text-muted py-3">Enter invoice number to load items.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DISCOUNT DISTRIBUTION MODAL -->
+<div class="modal fade" id="discountDistributeModal" tabindex="-1" aria-labelledby="discountDistributeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white py-2">
+                <h5 class="modal-title fs-6" id="discountDistributeModalLabel">Distribute Discount</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="border: none; background: transparent; font-size: 24px;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold">Total Discount to Distribute (Rs):</label>
+                    <input type="number" id="distributeAmount" class="form-control" min="0" value="0">
+                </div>
+                
+                <div class="form-group mb-3">
+                    <label class="form-label fw-bold">Distribution Method:</label>
+                    <div class="d-flex flex-column gap-2 mt-1">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="distribute_method" id="method_equal" value="equal" checked>
+                            <label class="form-check-label" for="method_equal">
+                                <strong>Equal</strong> (Divide equally among items)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="distribute_method" id="method_proportional" value="proportional">
+                            <label class="form-check-label" for="method_proportional">
+                                <strong>Proportional</strong> (Divide by item total price)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="distribute_method" id="method_manual" value="manual">
+                            <label class="form-check-label" for="method_manual">
+                                <strong>Manual</strong> (Specify discount next to each item)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border rounded p-2 bg-light d-none" id="manualDistributeTableContainer">
+                    <label class="form-label fw-bold mb-1" style="font-size: 11px;">Manual Item Discounts:</label>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <table class="table table-sm align-middle mb-0" style="font-size: 12px;">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th class="text-end" style="width: 100px;">Discount (Rs)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manualDistributeItemsList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnApplyDiscountDistribution">Apply</button>
             </div>
         </div>
     </div>
@@ -936,10 +1068,15 @@
                         totalPieces = item.qty * factor;
                     }
                 }
+                
+                let isRet = item.is_return === true;
+                let itemBg = isRet ? 'background: #fff5f5; border: 1px solid #feb2b2;' : '';
+                let badge = isRet ? '<span class="badge bg-danger me-1">RETURN</span>' : '';
+                
                 let html = `
-                    <div class="cart-item" data-index="${index}">
+                    <div class="cart-item" data-index="${index}" style="${itemBg}">
                         <div class="cart-item-header">
-                            <span class="cart-item-name">${item.name}</span>
+                            <span class="cart-item-name">${badge}${item.name}</span>
                             <span class="cart-item-remove remove-cart-item"><i class="fas fa-trash-alt"></i></span>
                         </div>
                         <div class="cart-item-details">
@@ -948,16 +1085,32 @@
                                 <input type="number" class="qty-input cart-qty-val" value="${item.qty}" min="1" max="${item.stock}">
                                 <button type="button" class="qty-btn btn-qty-plus">+</button>
                             </div>
-                            <div class="d-flex align-items-center">
-                                <span class="me-1" style="font-size: 13.5px; font-weight: 800; color: #111827;">Rs</span>
-                                <input type="number" name="price_per_piece[]" class="form-control form-control-sm text-end cart-price-val" style="width: 80px; padding: 2px 4px; height: 26px; font-size: 13.5px; font-weight: 800; color: #111827; border: 1px solid #e5e7eb; border-radius: 4px;" value="${item.price}" step="any" min="0">
+                            <div class="d-flex flex-column align-items-end gap-1">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-1" style="font-size: 13.5px; font-weight: 800; color: #111827;">Rs</span>
+                                    <input type="number" name="${isRet ? 'return_price_dummy[]' : 'price_per_piece[]'}" class="form-control form-control-sm text-end cart-price-val" style="width: 80px; padding: 2px 4px; height: 26px; font-size: 13.5px; font-weight: 800; color: #111827; border: 1px solid #e5e7eb; border-radius: 4px;" value="${item.price}" step="any" min="0" ${isRet ? 'readonly' : ''}>
+                                </div>
+                                ${!isRet ? `
+                                <div class="d-flex align-items-center">
+                                    <span class="me-1" style="font-size: 10px; color: #4b5563;">Disc (Rs):</span>
+                                    <input type="number" name="item_disc[]" class="form-control form-control-sm text-end cart-item-disc-val" style="width: 60px; padding: 1px 4px; height: 22px; font-size: 11px; border: 1px solid #e5e7eb; border-radius: 4px;" value="${item.discount || 0}" min="0">
+                                    <input type="hidden" name="discount_type[]" value="pkr">
+                                </div>` : ''}
                             </div>
                         </div>
                         <!-- Hidden inputs for backend form serialization -->
-                        <input type="hidden" name="product_id[]" value="${item.product_id}">
-                        <input type="hidden" name="qty[]" value="${item.qty}">
-                        <input type="hidden" name="total_pieces[]" value="${totalPieces}">
-                        <input type="hidden" name="color[]" value="${item.variantData}">
+                        ${isRet ? `
+                            <input type="hidden" name="return_product_id[]" value="${item.product_id}">
+                            <input type="hidden" name="return_qty[]" value="${item.qty}">
+                            <input type="hidden" name="return_price[]" value="${item.price}">
+                            <input type="hidden" name="return_color[]" value="${item.variantData}">
+                            <input type="hidden" name="original_sale_id[]" value="${item.original_sale_id}">
+                        ` : `
+                            <input type="hidden" name="product_id[]" value="${item.product_id}">
+                            <input type="hidden" name="qty[]" value="${item.qty}">
+                            <input type="hidden" name="total_pieces[]" value="${totalPieces}">
+                            <input type="hidden" name="color[]" value="${item.variantData}">
+                        `}
                     </div>
                 `;
                 $list.append(html);
@@ -989,6 +1142,16 @@
                 let val = parseFloat($(this).val()) || 0;
                 if (val < 0) val = 0;
                 cart[index].price = val;
+                updateBillSummary();
+            }
+        });
+
+        $(document).on('input', '.cart-item-disc-val', function() {
+            let index = $(this).closest('.cart-item').data('index');
+            if (cart[index]) {
+                let val = parseFloat($(this).val()) || 0;
+                if (val < 0) val = 0;
+                cart[index].discount = val;
                 updateBillSummary();
             }
         });
@@ -1041,20 +1204,59 @@
 
         function updateBillSummary() {
             let subtotal = 0;
+            let totalReturn = 0;
+            let itemDiscountsSum = 0;
+            
             cart.forEach(item => {
-                subtotal += item.qty * item.price;
+                if (item.is_return === true) {
+                    totalReturn += item.qty * item.price;
+                } else {
+                    subtotal += item.qty * item.price;
+                    itemDiscountsSum += parseFloat(item.discount) || 0;
+                }
             });
             
-            let discount = parseFloat($('#summaryDiscount').val()) || 0;
-            let payable = Math.max(0, subtotal - discount);
+            // Set the global discount input value to the sum of item-level discounts
+            $('#summaryDiscount').val(itemDiscountsSum);
+            
+            let payable = Math.max(0, subtotal - itemDiscountsSum - totalReturn);
             
             $('#summarySubtotal').text('Rs ' + subtotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            
+            // Show return value if there are returned items
+            if (totalReturn > 0) {
+                if ($('#summaryReturnRow').length === 0) {
+                    $('.pos-cart-summary').prepend(`
+                        <div class="summary-row text-danger" id="summaryReturnRow">
+                            <span>Return Value (-):</span>
+                            <span id="summaryReturnVal">Rs 0.00</span>
+                        </div>
+                    `);
+                }
+                $('#summaryReturnVal').text('Rs ' + totalReturn.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            } else {
+                $('#summaryReturnRow').remove();
+            }
+            
             $('#summaryPayable').text('Rs ' + payable.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
             
-            // Received cash and Change
+            // Handle negative payable (Refund to Customer)
+            let netTotal = subtotal - itemDiscountsSum - totalReturn;
+            if (netTotal < 0) {
+                let refundAmt = Math.abs(netTotal);
+                $('#summaryPayable').html(`<span class="text-danger">Refund: Rs ${refundAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`);
+                payable = 0; // Payable is 0, since it's a refund
+                $('#receivedCash').val(0).prop('readonly', true);
+                $('#returnedChange').val(refundAmt.toFixed(2));
+            } else {
+                $('#receivedCash').prop('readonly', false);
+            }
+            
             let received = parseFloat($('#receivedCash').val()) || 0;
             let change = Math.max(0, received - payable);
-            $('#returnedChange').val(change.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            if (netTotal >= 0) {
+                $('#returnedChange').val(change.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            }
             
             // Populating hidden backend mirrors
             $('#backendSubTotal1').val(subtotal.toFixed(2));
@@ -1093,36 +1295,32 @@
                 success: function(response) {
                     $btn.prop('disabled', false).html(origHtml);
                     if (response.ok) {
-                        // Open Invoice receipt in new tab
                         if (response.invoice_url) {
                             window.open(response.invoice_url, '_blank');
                         }
                         
                         Swal.fire({
                             icon: 'success',
-                            title: 'Sale Posted!',
-                            text: 'POS sale checkout completed successfully.',
+                            title: 'Sale Processed!',
+                            text: 'POS checkout / exchange completed successfully.',
                             timer: 1500,
                             showConfirmButton: false
                         }).then(() => {
-                            // Reset POS form and state
                             cart = [];
                             $('#summaryDiscount').val(0);
                             $('#receivedCash').val('');
                             $('#posCheckoutForm')[0].reset();
                             $('#btnToggleWalkin').trigger('click');
                             renderCart();
-                            
-                            // Reload screen stock levels dynamically to show latest counts
                             window.location.reload();
                         });
                     } else {
-                        Swal.fire('Error', response.message || 'Failed to complete sale.', 'error');
+                        Swal.fire('Error', response.message || 'Failed to complete transaction.', 'error');
                     }
                 },
                 error: function(err) {
                     $btn.prop('disabled', false).html(origHtml);
-                    let msg = 'Failed to submit POS sale transaction.';
+                    let msg = 'Failed to submit transaction.';
                     if (err.responseJSON && err.responseJSON.message) {
                         msg = err.responseJSON.message;
                     }
@@ -1130,6 +1328,7 @@
                 }
             });
         });
+
         // Variant Search Filter
         $('#variantSearchInput').on('input', function() {
             let searchTerm = $(this).val().toLowerCase();
@@ -1147,6 +1346,226 @@
         $('#variantsModal').on('show.bs.modal', function () {
             $('#variantSearchInput').val('');
             $('#variantsModalList tr').show();
+        });
+
+        // Discount Distribution Modal Trigger
+        $('#btnDiscountDistribute').on('click', function() {
+            let subtotal = 0;
+            let normalItemsCount = 0;
+            cart.forEach(item => {
+                if (!item.is_return) {
+                    subtotal += item.qty * item.price;
+                    normalItemsCount++;
+                }
+            });
+
+            if (normalItemsCount === 0) {
+                Swal.fire('No Items', 'Please add positive sale items to distribute discount.', 'warning');
+                return;
+            }
+
+            let currentDisc = parseFloat($('#summaryDiscount').val()) || 0;
+            $('#distributeAmount').val(currentDisc);
+            
+            let $manualList = $('#manualDistributeItemsList');
+            $manualList.empty();
+            cart.forEach((item, index) => {
+                if (!item.is_return) {
+                    $manualList.append(`
+                        <tr>
+                            <td>${item.name} <small class="text-muted">(Rs ${item.qty * item.price})</small></td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm text-end manual-dist-item-input" data-index="${index}" value="${item.discount || 0}" min="0" style="height: 24px; padding: 2px 4px;">
+                            </td>
+                        </tr>
+                    `);
+                }
+            });
+
+            $('input[name="distribute_method"]').on('change', function() {
+                if ($(this).val() === 'manual') {
+                    $('#manualDistributeTableContainer').removeClass('d-none');
+                } else {
+                    $('#manualDistributeTableContainer').addClass('d-none');
+                }
+            });
+
+            if ($('input[name="distribute_method"]:checked').val() === 'manual') {
+                $('#manualDistributeTableContainer').removeClass('d-none');
+            } else {
+                $('#manualDistributeTableContainer').addClass('d-none');
+            }
+
+            $('#discountDistributeModal').modal('show');
+        });
+
+        $(document).on('input', '.manual-dist-item-input', function() {
+            let sum = 0;
+            $('.manual-dist-item-input').each(function() {
+                sum += parseFloat($(this).val()) || 0;
+            });
+            $('#distributeAmount').val(sum);
+        });
+
+        $('#btnApplyDiscountDistribution').on('click', function() {
+            let amount = parseFloat($('#distributeAmount').val()) || 0;
+            let method = $('input[name="distribute_method"]:checked').val();
+            
+            let normalItems = cart.filter(item => !item.is_return);
+            let subtotal = normalItems.reduce((sum, item) => sum + (item.qty * item.price), 0);
+
+            if (method === 'equal') {
+                let share = amount / normalItems.length;
+                cart.forEach(item => {
+                    if (!item.is_return) {
+                        item.discount = parseFloat(share.toFixed(2));
+                    }
+                });
+            } else if (method === 'proportional') {
+                if (subtotal > 0) {
+                    cart.forEach(item => {
+                        if (!item.is_return) {
+                            let prop = (item.qty * item.price) / subtotal;
+                            item.discount = parseFloat((amount * prop).toFixed(2));
+                        }
+                    });
+                }
+            } else if (method === 'manual') {
+                $('.manual-dist-item-input').each(function() {
+                    let index = $(this).data('index');
+                    let val = parseFloat($(this).val()) || 0;
+                    if (cart[index]) {
+                        cart[index].discount = val;
+                    }
+                });
+            }
+
+            $('#discountDistributeModal').modal('hide');
+            renderCart();
+        });
+
+        // Exchange Modal toggle
+        $('#btnPOSExchange, #btnPOSExchangeHeader').on('click', function() {
+            $('#exchangeInvoiceNo').val('');
+            $('#exchangeInvoiceDetails').addClass('d-none');
+            $('#exchangeItemsList').html('<tr><td colspan="6" class="text-center text-muted py-3">Enter invoice number to load items.</td></tr>');
+            $('#posExchangeModal').modal('show');
+        });
+
+        // Search Invoice handler
+        $('#btnSearchExchangeInvoice').on('click', function() {
+            let invNo = $('#exchangeInvoiceNo').val().trim();
+            if (!invNo) {
+                Swal.fire('Required', 'Please enter an invoice number.', 'warning');
+                return;
+            }
+
+            let $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+            $.ajax({
+                url: '{{ route("pos.search_invoice") }}',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    invoice_no: invNo
+                },
+                success: function(res) {
+                    $btn.prop('disabled', false).html('<i class="fas fa-search"></i> Search');
+                    $('#exchangeInvoiceVal').text(res.invoice_no);
+                    $('#exchangeCustomerVal').text(res.customer_name);
+                    $('#exchangeInvoiceDetails').removeClass('d-none');
+
+                    let $tbody = $('#exchangeItemsList');
+                    $tbody.empty();
+
+                    if (res.items.length === 0) {
+                        $tbody.html('<tr><td colspan="6" class="text-center text-danger py-3">No returnable items found in this invoice.</td></tr>');
+                        return;
+                    }
+
+                    res.items.forEach(item => {
+                        let desc = `${item.product_name} ${item.size !== '-' ? '(' + item.size + ' | ' + item.color + ')' : ''}`;
+                        $tbody.append(`
+                            <tr data-product-id="${item.product_id}" data-name="${item.product_name}" data-variant-data="${item.variant_data}" data-net-unit-price="${item.net_unit_price}" data-max-returnable="${item.max_returnable}" data-original-sale-id="${res.sale_id}">
+                                <td class="ps-3 fw-bold" style="font-size: 13px;">${desc}</td>
+                                <td class="text-center">${item.qty_sold}</td>
+                                <td class="text-center">${item.already_returned}</td>
+                                <td class="text-end fw-bold">Rs ${item.net_unit_price}</td>
+                                <td class="text-center">
+                                    <input type="number" class="form-control form-control-sm text-center return-qty-input mx-auto" value="1" min="1" max="${item.max_returnable}" style="width: 70px;">
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-danger btn-sm add-exchange-to-cart-btn">Return</button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                },
+                error: function(err) {
+                    $btn.prop('disabled', false).html('<i class="fas fa-search"></i> Search');
+                    let msg = 'Invoice details could not be loaded.';
+                    if (err.responseJSON && err.responseJSON.error) {
+                        msg = err.responseJSON.error;
+                    }
+                    Swal.fire('Error', msg, 'error');
+                }
+            });
+        });
+
+        // Add return item to POS cart
+        $(document).on('click', '.add-exchange-to-cart-btn', function() {
+            let $row = $(this).closest('tr');
+            let productId = $row.data('product-id');
+            let name = $row.data('name');
+            let variantData = $row.data('variant-data');
+            let price = parseFloat($row.data('net-unit-price')) || 0;
+            let maxReturnable = parseFloat($row.data('max-returnable')) || 1;
+            let originalSaleId = $row.data('original-sale-id');
+            let qty = parseFloat($row.find('.return-qty-input').val()) || 1;
+
+            if (qty > maxReturnable) {
+                Swal.fire('Limit Exceeded', `Maximum returnable quantity is ${maxReturnable}.`, 'warning');
+                return;
+            }
+
+            let cartId = 'return_' + productId + '_' + variantData;
+            
+            let cartItem = cart.find(item => item.id === cartId);
+            if (cartItem) {
+                if (cartItem.qty + qty <= maxReturnable) {
+                    cartItem.qty += qty;
+                } else {
+                    cartItem.qty = maxReturnable;
+                    Swal.fire('Limit Exceeded', 'Adjusted to maximum returnable quantity.', 'warning');
+                }
+            } else {
+                cart.push({
+                    id: cartId,
+                    product_id: productId,
+                    name: '[RETURN] ' + name,
+                    price: price,
+                    retailPrice: price,
+                    wholesalePrice: price,
+                    weightPerPiece: 0,
+                    qty: qty,
+                    stock: maxReturnable,
+                    sizeMode: 'by_pieces',
+                    piecesPerBox: 1,
+                    variantData: variantData,
+                    is_return: true,
+                    original_sale_id: originalSaleId,
+                    discount: 0
+                });
+            }
+
+            let $btn = $(this);
+            $btn.removeClass('btn-danger').addClass('btn-success').html('<i class="fas fa-check"></i> Added');
+            setTimeout(() => {
+                $btn.removeClass('btn-success').addClass('btn-danger').html('Return');
+            }, 1000);
+
+            renderCart();
         });
 
     });
