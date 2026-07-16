@@ -723,10 +723,19 @@ class ProductController extends Controller
 
         $totalM2 = 0;
         $totalStockQty = 0;
+        $m2PerPiece = 0;
         $piecesPerM2 = 0; // New: How many pieces fit in 1 m²
 
+        $pricePerM2 = 0;
+        $purchasePricePerM2 = 0;
+
         $salePricePerPiece = 0;
+        $salePricePerBox = 0;
+        $purchasePricePerPiece = 0;
         $purchasePricePerBox = 0;
+
+        $totalPrice = 0;
+        $totalPurchasePrice = 0;
 
         if ($mode === 'by_size') {
             $height = (float) $request->height;
@@ -798,7 +807,8 @@ class ProductController extends Controller
 
         DB::transaction(function () use ($request, $id, $userId, $imagePath, $mode, $height, $width, $piecesPerBox,
             $boxesQuantity, $loosePieces, $pieceQuantity,
-            $totalM2, $pricePerM2, $purchasePricePerM2, $salePricePerBox, $purchasePricePerPiece, $piecesPerM2) {
+            $totalM2, $pricePerM2, $purchasePricePerM2, $salePricePerBox, $purchasePricePerPiece, $piecesPerM2,
+            $salePricePerPiece, $purchasePricePerBox) {
 
             $variants = [];
             if ($request->has('variant_name')) {
