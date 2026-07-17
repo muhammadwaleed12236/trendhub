@@ -264,7 +264,7 @@
                                     <div class="col-md-2 border-start ps-3" id="periodFilterCol">
                                         <label class="form-label mb-1">Period</label>
                                         <select class="form-select" name="period" id="filter_period">
-                                            <option value="">All Time</option>
+                                            <option value="all">All Time</option>
                                             <option value="day" selected>Today</option>
                                             <option value="week">This Week</option>
                                             <option value="month">This Month</option>
@@ -355,7 +355,7 @@
             $('#filter_day_closing_id').on('change', function() {
                 if ($(this).val() !== '') {
                     // Reset and disable period and custom dates
-                    $('#filter_period').val('').trigger('change').prop('disabled', true);
+                    $('#filter_period').val('all').trigger('change').prop('disabled', true);
                     $('#periodFilterCol').css('opacity', '0.5');
                 } else {
                     // Re-enable period filter
