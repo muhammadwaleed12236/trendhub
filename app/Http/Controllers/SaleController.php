@@ -1213,10 +1213,14 @@ class SaleController extends Controller
 
             // Process returned/exchange items (if any)
             $returnProductIds = $request->input('return_product_id');
+            $totalReturnAmountForNet = 0;
             if (is_array($returnProductIds) && count($returnProductIds) > 0) {
                 $originalSaleIds = array_filter(array_unique($request->input('original_sale_id') ?? []));
                 
                 foreach ($originalSaleIds as $origSaleId) {
+                    $origSale = Sale::with('items')->find($origSaleId);
+                    if (!$origSale) continue;
+
                     $lastReturn = \App\Models\SaleReturn::orderBy('id', 'desc')->first();
                     $nextInvoice = $lastReturn 
                         ? 'SR-' . str_pad((int)str_replace('SR-', '', $lastReturn->return_invoice) + 1, 4, '0', STR_PAD_LEFT)
@@ -1233,6 +1237,8 @@ class SaleController extends Controller
                     ]);
 
                     $movements = [];
+                    $saleReturnTotalAmount = 0;
+
                     foreach ($returnProductIds as $idx => $rPid) {
                         if ($request->original_sale_id[$idx] == $origSaleId) {
                             $rQty = (float)$request->return_qty[$idx];
@@ -1241,8 +1247,20 @@ class SaleController extends Controller
                             $rPrice = (float)$request->return_price[$idx];
                             $rColor = $request->return_color[$idx];
 
+                            $origSaleItem = $origSale->items->where('product_id', $rPid)->first();
+                            if (!$origSaleItem || $rQty > $origSaleItem->total_pieces) {
+                                $productName = $origSaleItem->product_name ?? "Product #{$rPid}";
+                                $maxReturnable = $origSaleItem ? $origSaleItem->total_pieces : 0;
+                                throw \Illuminate\Validation\ValidationException::withMessages([
+                                    'return_qty' => "Cannot return {$rQty} pieces of '{$productName}'. Maximum returnable: {$maxReturnable} pieces.",
+                                ]);
+                            }
+
                             $rProduct = \App\Models\Product::find($rPid);
                             $ppb = $rProduct->pieces_per_box > 0 ? $rProduct->pieces_per_box : 1;
+                            $lineTotal = $rQty * $rPrice;
+                            $saleReturnTotalAmount += $lineTotal;
+                            $totalReturnAmountForNet += $lineTotal;
 
                             \App\Models\SaleReturnItem::create([
                                 'sale_return_id' => $returnHeader->id,
@@ -1255,7 +1273,7 @@ class SaleController extends Controller
                                 'price' => $rPrice,
                                 'item_discount' => 0,
                                 'unit' => 'pc',
-                                'line_total' => $rQty * $rPrice,
+                                'line_total' => $lineTotal,
                             ]);
 
                             // Restore stock
@@ -1290,11 +1308,73 @@ class SaleController extends Controller
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ];
+
+                            // Decrement from original Sale Item
+                            $origSaleItem = $origSale->items->where('product_id', $rPid)->first();
+                            if ($origSaleItem) {
+                                $discountPerPiece = $origSaleItem->total_pieces > 0 ? ($origSaleItem->discount_amount / $origSaleItem->total_pieces) : 0;
+                                
+                                $origSaleItem->total_pieces = max(0, $origSaleItem->total_pieces - $rQty);
+                                $origSaleItem->qty = $origSaleItem->total_pieces / $ppb;
+                                $origSaleItem->loose_pieces = $origSaleItem->total_pieces % $ppb;
+                                
+                                $newGross = $origSaleItem->total_pieces * $origSaleItem->price;
+                                $newDiscount = $origSaleItem->total_pieces * $discountPerPiece;
+                                $origSaleItem->discount_amount = $newDiscount;
+                                $origSaleItem->total = max(0, $newGross - $newDiscount);
+                                $origSaleItem->save();
+                            }
                         }
                     }
 
                     if (!empty($movements)) {
                         DB::table('stock_movements')->insert($movements);
+                    }
+
+                    // Recalculate true change based on net payable
+                    $sale->change = $sale->cash - max(0, $sale->total_net - $totalReturnAmountForNet);
+                    $sale->save();
+
+                    // Update Original Sale Header Totals
+                    $allSaleItems = \App\Models\SaleItem::where('sale_id', $origSale->id)->get();
+                    $origSale->total_bill_amount = $allSaleItems->sum('total');
+                    $origSale->total_net = max(0, $origSale->total_bill_amount - ($origSale->total_extradiscount ?? 0));
+                    $origSale->total_items = $allSaleItems->sum('total_pieces');
+                    $origSale->save();
+
+                    // Process Journal Entry for the Sale Return (if not walkin and amounts exist)
+                    if ($saleReturnTotalAmount > 0 && $sale->customer_id) {
+                        try {
+                            $journalService = app(\App\Services\JournalEntryService::class);
+                            $balanceService = app(\App\Services\BalanceService::class);
+                            $arAccountId = $balanceService->getAccountsReceivableId();
+                            $salesAccountId = $balanceService->getSalesRevenueId();
+                            $date = now()->format('Y-m-d');
+                            $customer = \App\Models\Customer::find($sale->customer_id);
+                            
+                            // Debit Sales Return (or Sales Revenue)
+                            $journalService->recordEntry(
+                                clone $returnHeader, // Pass clone to avoid unintended mutability
+                                $salesAccountId,
+                                $saleReturnTotalAmount,
+                                0,
+                                "Sale Return #{$returnHeader->id} - Invoice #{$origSale->invoice_no}",
+                                $date
+                            );
+
+                            // Credit Customer (AR)
+                            $journalService->recordEntry(
+                                clone $returnHeader,
+                                $arAccountId,
+                                0,
+                                $saleReturnTotalAmount,
+                                "Sale Return #{$returnHeader->id} - Invoice #{$origSale->invoice_no}",
+                                $date,
+                                $customer
+                            );
+                        } catch (\Exception $e) {
+                            \Log::error('Exchange Return Ledger Error: '.$e->getMessage());
+                        }
                     }
                 }
             }
@@ -1339,6 +1419,47 @@ class SaleController extends Controller
                         $request->input('receipt_account_id', []),
                         $request->input('receipt_amount', [])
                     );
+
+                    // --- AUTO REFUND (ENTRY 3: IF NET PAYABLE IS NEGATIVE) ---
+                    $totalReturnVal = $totalReturnAmountForNet ?? 0;
+                    $trueNetPayable = $sale->total_net - $totalReturnVal;
+
+                    if ($trueNetPayable < 0 && $totalReturnVal > 0) {
+                        $refundAmt = abs($trueNetPayable);
+                        if ($custForVoucher) {
+                            $journalService->recordEntry(
+                                $sale,
+                                $arAccountId,
+                                $refundAmt,
+                                0,
+                                "Refund for POS Exchange #{$sale->invoice_no}",
+                                $date,
+                                $custForVoucher
+                            );
+
+                            $cashAccountId = $balanceService->getCashAccountId();
+                            $journalService->recordEntry(
+                                $sale,
+                                $cashAccountId,
+                                0,
+                                $refundAmt,
+                                "Refund Paid for POS Exchange #{$sale->invoice_no}",
+                                $date
+                            );
+
+                            // Log refund voucher
+                            \App\Models\CustomerPayment::create([
+                                'customer_id' => $custForVoucher->id,
+                                'admin_or_user_id' => auth()->id(),
+                                'voucher_no' => 'REF-'.$sale->id,
+                                'payment_date' => $date,
+                                'payment_method' => 'Cash',
+                                'amount' => $refundAmt,
+                                'note' => "Refund Paid for POS Exchange #{$sale->invoice_no}",
+                                'type' => 'refund',
+                            ]);
+                        }
+                    }
 
                 } catch (\Exception $e) {
                     \Log::error('Professional Ledger Posting Error: '.$e->getMessage());

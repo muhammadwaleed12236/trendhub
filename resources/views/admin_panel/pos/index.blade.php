@@ -661,7 +661,10 @@
                                     <input type="text" name="walkin_name" id="walkinNameInput" class="pos-input" placeholder="Name" value="Walking Customer">
                                 </div>
                                 <div class="form-group d-none" id="registeredCustomerGroup">
-                                    <label>Customer</label>
+                                    <label class="d-flex justify-content-between align-items-center w-100" style="margin-bottom: 2px;">
+                                        Customer
+                                        <a href="javascript:void(0)" data-toggle="modal" data-target="#newCustomerModal" class="text-primary text-decoration-none" style="font-size: 11px;"><i class="fas fa-plus"></i> New</a>
+                                    </label>
                                     <select class="form-select select2" name="customer" id="customerSelect" style="width: 100%;">
                                         <option value="" selected disabled>Select</option>
                                         @foreach ($customers as $c)
@@ -752,6 +755,42 @@
             <div class="modal-footer py-2">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- NEW CUSTOMER MODAL -->
+<div class="modal fade" id="newCustomerModal" tabindex="-1" aria-labelledby="newCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white py-2">
+                <h5 class="modal-title fs-6" id="newCustomerModalLabel">Create New Customer</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="border: none; background: transparent; font-size: 24px;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="newCustomerForm" autocomplete="off">
+                @csrf
+                <input type="hidden" name="opening_balance" value="0">
+                <div class="modal-body p-3">
+                    <div class="form-group mb-3">
+                        <label>Customer Name <span class="text-danger">*</span></label>
+                        <input type="text" name="customer_name" class="form-control" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Mobile Number <span class="text-danger">*</span></label>
+                        <input type="text" name="mobile" class="form-control" required>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label>Address</label>
+                        <textarea name="address" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="btnSaveNewCustomer">Save Customer</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -878,6 +917,39 @@
         $('#customerSelect').select2({
             width: '100%',
             dropdownParent: $('#registeredCustomerGroup')
+        });
+
+        // New Customer form submission
+        $('#newCustomerForm').on('submit', function(e) {
+            e.preventDefault();
+            let btn = $('#btnSaveNewCustomer');
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+            
+            $.ajax({
+                url: "{{ route('customers.store') }}",
+                type: "POST",
+                data: $(this).serialize(),
+                success: function(response) {
+                    btn.prop('disabled', false).text('Save Customer');
+                    if(response.ok || response.success || (response.data && response.data.id)) {
+                        Swal.fire({ toast:true, position:'top-end', icon:'success', title:'Customer Created', showConfirmButton:false, timer:1500 });
+                        $('#newCustomerModal').modal('hide');
+                        $('#newCustomerForm')[0].reset();
+                        
+                        let customerData = response.data || response.customer || response;
+                        let newOption = new Option(customerData.customer_name, customerData.id, true, true);
+                        $('#customerSelect').append(newOption).trigger('change');
+                    } else {
+                        Swal.fire('Error', 'Failed to create customer.', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    btn.prop('disabled', false).text('Save Customer');
+                    let msg = 'Failed to create customer.';
+                    if(xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                    Swal.fire('Error', msg, 'error');
+                }
+            });
         });
 
         // Toggle Customer Type
