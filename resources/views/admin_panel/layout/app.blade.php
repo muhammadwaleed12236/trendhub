@@ -897,6 +897,27 @@
     {{-- SweetAlert2 JS - Local (all.min.js includes CSS+JS bundled) --}}
     <script src="{{ asset('assets/vendors/sweetalert2/js/sweetalert2.all.min.js') }}"></script>
 
+    <!-- Global Delete Function -->
+    <script>
+        function logoutAndDeleteFunction(button) {
+            var url = button.getAttribute('data-url');
+            var msg = button.getAttribute('data-msg') || "Are you sure you want to delete this?";
+            Swal.fire({
+                title: 'Are you sure?',
+                text: msg,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        }
+    </script>
+
     @yield('js')
 
     <!-- Global SweetAlert Toast/Popup -->
