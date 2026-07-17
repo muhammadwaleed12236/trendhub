@@ -20,7 +20,7 @@ class SaleReturnController extends Controller
     public function showReturnForm($id)
     {
         $sale = Sale::with(['customer_relation', 'items.product.brand'])->findOrFail($id);
-        $accounts = Account::whereIn('head_id', [1, 2])
+        $accounts = Account::whereIn('head_id', [1, 2])->where('status', 1)
             ->where(function($q) {
                 $q->where('title', 'like', '%cash%')
                   ->orWhere('title', 'like', '%bank%');

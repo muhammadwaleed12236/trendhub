@@ -91,7 +91,7 @@ class SaleController extends Controller
         $nextInvoiceNumber = Sale::generateInvoiceNo();
 
         // Filter accounts (Cash/Bank) for Payment Voucher
-        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])
+        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])->where('status', 1)
             ->where(function($q) {
                 $q->where('title', 'like', '%cash%')
                   ->orWhere('title', 'like', '%bank%');
@@ -191,7 +191,7 @@ class SaleController extends Controller
         $items = $this->_getSaleItems($sale);
 
         // Get Cash/Bank accounts for payment voucher
-        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])
+        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])->where('status', 1)
             ->where(function($q) {
                 $q->where('title', 'like', '%cash%')
                   ->orWhere('title', 'like', '%bank%');
@@ -888,7 +888,7 @@ class SaleController extends Controller
         $customer = Customer::all();
         $warehouse = Warehouse::all();
         // Filter accounts (Cash/Bank) for Receipt Voucher
-        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])
+        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])->where('status', 1)
             ->where(function($q) {
                 $q->where('title', 'like', '%cash%')
                   ->orWhere('title', 'like', '%bank%');
@@ -1309,21 +1309,8 @@ class SaleController extends Controller
                                 'updated_at' => now(),
                             ];
 
-                            // Decrement from original Sale Item
-                            $origSaleItem = $origSale->items->where('product_id', $rPid)->first();
-                            if ($origSaleItem) {
-                                $discountPerPiece = $origSaleItem->total_pieces > 0 ? ($origSaleItem->discount_amount / $origSaleItem->total_pieces) : 0;
-                                
-                                $origSaleItem->total_pieces = max(0, $origSaleItem->total_pieces - $rQty);
-                                $origSaleItem->qty = $origSaleItem->total_pieces / $ppb;
-                                $origSaleItem->loose_pieces = $origSaleItem->total_pieces % $ppb;
-                                
-                                $newGross = $origSaleItem->total_pieces * $origSaleItem->price;
-                                $newDiscount = $origSaleItem->total_pieces * $discountPerPiece;
-                                $origSaleItem->discount_amount = $newDiscount;
-                                $origSaleItem->total = max(0, $newGross - $newDiscount);
-                                $origSaleItem->save();
-                            }
+                            // Note: We DO NOT decrement from the original Sale Item.
+                            // A Sale Return is a separate transaction and does not alter the historical Sale Invoice.
                         }
                     }
 

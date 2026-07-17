@@ -183,7 +183,7 @@ class POSController extends Controller
 
         // 3. Fetch all Cash/Bank Accounts
         $cashAndBankHeads = AccountHead::whereIn('name', ['Cash', 'Bank'])->pluck('id');
-        $accounts = Account::whereIn('head_id', $cashAndBankHeads)->orderBy('title')->get();
+        $accounts = Account::whereIn('head_id', $cashAndBankHeads)->where('status', 1)->orderBy('title')->get();
 
         return view('admin_panel.pos.index', compact('posProducts', 'customers', 'accounts'));
     }

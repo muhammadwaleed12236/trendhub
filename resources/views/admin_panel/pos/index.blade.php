@@ -634,7 +634,7 @@
                         <div class="summary-row align-items-center">
                             <span>Discount (Rs):</span>
                             <div class="d-flex align-items-center gap-1">
-                                <input type="number" name="total_extra_cost" id="summaryDiscount" class="form-control form-control-sm text-end" value="0" style="width: 80px; height: 26px !important; padding: 2px 8px;">
+                                <input type="number" id="summaryDiscount" class="form-control form-control-sm text-end bg-light" value="0" style="width: 80px; height: 26px !important; padding: 2px 8px;" readonly>
                                 <button type="button" class="btn btn-dark btn-sm py-0 px-2" id="btnDiscountDistribute" style="height: 24px; font-size: 10px; line-height: 20px;" title="Distribute Discount"><i class="fas fa-divide"></i> Distribute</button>
                             </div>
                         </div>
@@ -1413,8 +1413,8 @@
                             icon: 'success',
                             title: 'Sale Processed!',
                             text: 'POS checkout / exchange completed successfully.',
-                            timer: 1500,
-                            showConfirmButton: false
+                            showConfirmButton: true,
+                            showCloseButton: true
                         }).then(() => {
                             cart = [];
                             $('#summaryDiscount').val(0);
