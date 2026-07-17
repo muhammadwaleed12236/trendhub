@@ -177,7 +177,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
             <div class="d-flex align-items-center gap-3">
                 <a href="{{ route('product') }}" class="btn btn-white border shadow-sm rounded-circle p-0" style="width: 36px; height: 36px; display: grid; place-items: center;">
-                    <i class="las la-arrow-left"></i>
+                    <i class="fas fa-arrow-left"></i>
                 </a>
                 <div>
                     <h5 class="fw-bold mb-0 text-dark">Create Product</h5>
@@ -197,7 +197,7 @@
                     {{-- CARD 1: Identity & Categorization --}}
                     <div class="section-card">
                         <div class="card-header-pro">
-                            <h5 class="card-title-pro"><i class="las la-tag text-primary"></i> Product Identity</h5>
+                            <h5 class="card-title-pro"><i class="fas fa-tag text-primary"></i> Product Identity</h5>
                         </div>
                         <div class="card-body-pro">
                             <div class="row g-3">
@@ -264,7 +264,7 @@
                                         <button type="button" id="clearImageBtn" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 d-none rounded-circle" style="width:20px;height:20px;padding:0;z-index:10; font-size:12px; line-height:1;">&times;</button>
                                         <img id="preview" class="d-none" style="max-height: 100px;">
                                         <div id="uploadPlaceholder" class="text-center p-2">
-                                            <i class="las la-camera fs-3 text-primary"></i>
+                                            <i class="fas fa-camera fs-3 text-primary"></i>
                                             <div class="fw-bold" style="font-size: 11px;">Upload</div>
                                         </div>
                                     </div>
@@ -313,7 +313,7 @@
                     <div class="d-flex justify-content-end align-items-center bg-white p-3 rounded shadow-sm border mb-4 gap-2">
                         <a href="{{ route('product') }}" class="btn btn-outline-secondary px-4 py-2" style="border-radius: var(--radius-md); font-size: 0.9rem;">Cancel</a>
                         <button type="submit" class="btn btn-primary px-5 py-2 fw-bold" style="background: var(--primary); border: none; border-radius: var(--radius-md); font-size: 0.9rem;">
-                            <i class="las la-check-circle me-1"></i> SAVE PRODUCT
+                            <i class="fas fa-check-circle me-1"></i> SAVE PRODUCT
                         </button>
                     </div>
 
@@ -491,7 +491,7 @@
 
                 const btn = document.querySelector('button[type="submit"]');
                 const originalContent = btn.innerHTML;
-                btn.innerHTML = '<i class="las la-spinner la-spin"></i> Saving...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
                 btn.disabled = true;
 
                 const formData = new FormData(form);
@@ -591,12 +591,12 @@
                     <td>
                         <div class="d-flex">
                             <input type="text" class="form-control-pro form-control-sm" name="variant_barcode[]" value="${randBarcode}" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
-                            <button type="button" class="btn btn-sm btn-light border gen-var-barcode px-2" style="border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0;" title="Generate New"><i class="las la-sync-alt"></i></button>
+                            <button type="button" class="btn btn-sm btn-light border gen-var-barcode px-2" style="border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0;" title="Generate New"><i class="fas fa-sync-alt"></i></button>
                         </div>
                     </td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-success add-var-btn px-2 py-1" title="Add"><i class="las la-check"></i></button>
-                        <button type="button" class="btn btn-danger remove-var-btn px-2 py-1" title="Remove"><i class="las la-times"></i></button>
+                        <button type="button" class="btn btn-success add-var-btn px-2 py-1" title="Add"><i class="fas fa-check"></i></button>
+                        <button type="button" class="btn btn-danger remove-var-btn px-2 py-1" title="Remove"><i class="fas fa-times"></i></button>
                     </td>
                 `;
                 variantsBody.appendChild(tr);

@@ -14,7 +14,7 @@ class CheckbookController extends Controller
     {
         // 1. Get all Cash and Bank Accounts
         $cashAndBankHeads = AccountHead::whereIn('name', ['Cash', 'Bank'])->pluck('id');
-        $validAccountIds = Account::whereIn('head_id', $cashAndBankHeads)->pluck('id');
+        $validAccountIds = Account::whereIn('head_id', $cashAndBankHeads)->where('status', 1)->pluck('id');
 
         // Day/Shift Closing Calculations
         $activeShift = \App\Models\DayClosing::where('status', 'open')->first();
@@ -80,7 +80,7 @@ class CheckbookController extends Controller
 
         // 1. Get all Cash and Bank Accounts
         $cashAndBankHeads = AccountHead::whereIn('name', ['Cash', 'Bank'])->pluck('id');
-        $validAccountIds = Account::whereIn('head_id', $cashAndBankHeads)->pluck('id');
+        $validAccountIds = Account::whereIn('head_id', $cashAndBankHeads)->where('status', 1)->pluck('id');
         $accounts = Account::whereIn('id', $validAccountIds)->get();
 
         // 2. Fetch all Day Closings (shifts) to populate filter dropdown
@@ -162,7 +162,7 @@ class CheckbookController extends Controller
 
         // Cash in Hand (Just accounts under "Cash" head) filtered by the selected date/period
         $cashHeadIds = AccountHead::where('name', 'Cash')->pluck('id');
-        $cashAccountIds = Account::whereIn('head_id', $cashHeadIds)->pluck('id');
+        $cashAccountIds = Account::whereIn('head_id', $cashHeadIds)->where('status', 1)->pluck('id');
         
         $cashInHandQuery = JournalEntry::whereIn('account_id', $cashAccountIds);
         
@@ -278,7 +278,7 @@ class CheckbookController extends Controller
 
         // Get Cash/Bank accounts
         $cashAndBankHeads = AccountHead::whereIn('name', ['Cash', 'Bank'])->pluck('id');
-        $validAccountIds = Account::whereIn('head_id', $cashAndBankHeads)->pluck('id');
+        $validAccountIds = Account::whereIn('head_id', $cashAndBankHeads)->where('status', 1)->pluck('id');
 
         $inflow = JournalEntry::whereIn('account_id', $validAccountIds)
             ->where('created_at', '>=', $activeShift->opened_at)
