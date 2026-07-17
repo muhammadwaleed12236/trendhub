@@ -10,7 +10,7 @@
     }
     
     .page-container, .main-panel, .content-wrapper, .main-content-inner, .main-content {
-        height: calc(100vh - 60px) !important;
+        height: calc(100vh - 140px) !important;
         overflow: hidden !important;
         padding-bottom: 0 !important;
         margin-bottom: 0 !important;
@@ -20,11 +20,27 @@
         display: none !important;
     }
     
+    /* SCROLLBAR STYLING */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    
     /* POS LAYOUT WRAPPER */
     .pos-wrapper {
         display: flex;
         gap: 20px;
-        height: calc(100vh - 165px);
+        height: calc(100vh - 260px);
         margin-top: 10px;
         overflow: hidden;
     }
@@ -49,13 +65,14 @@
     
     .pos-search-box input {
         width: 100%;
-        padding: 12px 40px 12px 16px;
+        padding: 14px 40px 14px 20px;
         border: 1px solid #e5e7eb;
-        border-radius: 10px;
+        border-radius: 999px;
         font-size: 14px;
         font-weight: 500;
         background-color: #f9fafb;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
     }
     
     .pos-search-box input:focus {
@@ -90,19 +107,20 @@
     .product-card {
         background: #ffffff;
         border: 1px solid #f3f4f6;
-        border-radius: 12px;
+        border-radius: 16px;
         overflow: hidden;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         flex-direction: column;
         position: relative;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
     
     .product-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.05);
-        border-color: #4f46e5;
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 12px 20px rgba(0,0,0,0.08);
+        border-color: #6366f1;
     }
     
     .product-card-image {
@@ -191,19 +209,24 @@
         flex-direction: column;
         background: #ffffff;
         border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        overflow-y: auto;
+        overflow-x: hidden;
         height: 100%;
         min-height: 0;
+        border: 1px solid rgba(0,0,0,0.02);
+        padding-bottom: 10px;
     }
     
     .pos-cart-header {
-        padding: 10px 15px;
-        background-color: #1f2937;
+        padding: 12px 18px;
+        background: linear-gradient(135deg, #1e293b, #0f172a);
         color: #ffffff;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-shrink: 0;
+        border-bottom: 2px solid #4f46e5;
     }
     
     .pos-cart-header h5 {
@@ -229,6 +252,7 @@
         overflow-y: auto;
         padding: 10px;
         background-color: #f9fafb;
+        min-height: 0;
     }
     
     .cart-empty {
@@ -237,15 +261,25 @@
         align-items: center;
         justify-content: center;
         height: 100%;
-        min-height: 100px;
+        min-height: 150px;
         color: #9ca3af;
-        padding: 15px 0;
+        padding: 30px 15px;
+        background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+        border-radius: 12px;
+        border: 2px dashed #e5e7eb;
+        margin: 10px;
     }
     
     .cart-empty i {
-        font-size: 32px;
-        margin-bottom: 8px;
-        color: #d1d5db;
+        font-size: 48px;
+        margin-bottom: 12px;
+        color: #cbd5e1;
+        transition: transform 0.3s ease;
+    }
+    
+    .cart-empty:hover i {
+        transform: scale(1.1) rotate(-5deg);
+        color: #94a3b8;
     }
     
     .cart-item {
@@ -347,6 +381,7 @@
         background-color: #ffffff;
         border-top: 1px solid #e5e7eb;
         padding: 8px 15px;
+        flex-shrink: 0;
     }
     
     .summary-row {
@@ -371,7 +406,8 @@
     .pos-checkout-section {
         background-color: #ffffff;
         border-top: 1px solid #e5e7eb;
-        padding: 8px 15px;
+        padding: 8px 15px 15px 15px;
+        flex-shrink: 0;
     }
     
     .form-group {
@@ -474,13 +510,15 @@
 <div class="main-content">
     <div class="container-fluid p-2">
         <!-- POS Header Section -->
-        <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-3 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #f1f5f9;">
             <div>
-                <h4 class="mb-0 fw-bold text-dark"><i class="fas fa-cash-register me-2 text-primary"></i>Point Of Sale (POS)</h4>
-                <small class="text-muted">Process new sales, returns, and product exchanges in one place</small>
+                <h4 class="mb-1 fw-bolder" style="color: #1e293b; letter-spacing: -0.5px;">
+                    <i class="fas fa-cash-register me-2" style="color: #4f46e5;"></i>Point Of Sale (POS)
+                </h4>
+                <small class="text-muted fw-medium">Process new sales, returns, and product exchanges in one place</small>
             </div>
             <div>
-                <button type="button" class="btn btn-danger d-flex align-items-center gap-2 px-3 py-2 fw-bold" id="btnPOSExchangeHeader" style="border-radius: 8px;">
+                <button type="button" class="btn d-flex align-items-center gap-2 px-4 py-2 fw-bold text-white shadow-sm transition-all" id="btnPOSExchangeHeader" style="border-radius: 10px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none;">
                     <i class="fas fa-exchange-alt"></i> Exchange / Return Item
                 </button>
             </div>
@@ -553,7 +591,7 @@
             
             <!-- RIGHT PANEL: Cart & Checkout -->
             <div class="pos-cart-panel">
-                <form id="posCheckoutForm" autocomplete="off" style="height: 100%; display: flex; flex-direction: column; margin-bottom: 0; min-height: 0; overflow: hidden;">
+                <form id="posCheckoutForm" autocomplete="off" style="flex: 1; display: flex; flex-direction: column; margin-bottom: 0; min-height: 0; overflow-y: auto; overflow-x: hidden;">
                     @csrf
                     <!-- Store action mirror -->
                     <input type="hidden" name="action" value="post">
