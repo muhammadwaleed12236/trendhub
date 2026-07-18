@@ -287,8 +287,12 @@ class POSController extends Controller
                 $size = strtolower(trim($variant['size'] ?? ($variant['size_val'] ?? '-')));
                 $color = strtolower(trim($variant['color'] ?? ($variant['color_val'] ?? '-')));
                 
-                // For past returns of manual items, product_id is null, so it becomes just _size_color
-                $key = $srItem->product_id . '_' . $size . '_' . $color;
+                // For past returns of manual items, product_id is null, so group by product_name
+                if ($srItem->is_manual) {
+                    $key = 'MANUAL_' . strtolower(trim($srItem->product_name));
+                } else {
+                    $key = $srItem->product_id . '_' . $size . '_' . $color;
+                }
 
                 if (!isset($returnedQtyMap[$key])) {
                     $returnedQtyMap[$key] = 0;
@@ -307,7 +311,11 @@ class POSController extends Controller
             $size = strtolower(trim($variant['size'] ?? ($variant['size_val'] ?? '-')));
             $color = strtolower(trim($variant['color'] ?? ($variant['color_val'] ?? '-')));
             
-            $key = $item->product_id . '_' . $size . '_' . $color;
+            if ($item->is_manual) {
+                $key = 'MANUAL_' . strtolower(trim($item->product_name));
+            } else {
+                $key = $item->product_id . '_' . $size . '_' . $color;
+            }
 
             $alreadyReturned = $returnedQtyMap[$key] ?? 0;
             $maxReturnable = max(0, (float)$item->total_pieces - $alreadyReturned);

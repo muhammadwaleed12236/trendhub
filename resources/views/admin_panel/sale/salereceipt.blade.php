@@ -377,7 +377,7 @@
                         <td style="width: 6%;">{{ $loop->iteration }}</td>
                         <td style="width: 53%;">
                             <span class="item-name">{{ $item['item_name'] }}</span>
-                            @if($variantStr)
+                            @if($variantStr && $variantStr !== '{' && trim($variantStr) !== '')
                                 <span class="item-variant">{{ $variantStr }}</span>
                             @endif
                         </td>
@@ -406,28 +406,35 @@
                     <tr>
                         <td style="width: 6%;">{{ $loop->iteration }}</td>
                         <td style="width: 53%;">
-                            <span class="item-name">{{ $retItem->product->item_name ?? 'Unknown' }}</span>
-                            @php
-                                $retColorStr = '';
-                                if (!empty($retItem->color)) {
-                                    $decoded = base64_decode($retItem->color, true);
-                                    if ($decoded !== false && is_string($decoded) && str_starts_with(trim($decoded), '{')) {
-                                        $parsed = json_decode($decoded, true);
-                                        if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
-                                            $parts = [];
-                                            if (!empty($parsed['size']) && $parsed['size'] !== '-') $parts[] = $parsed['size'];
-                                            if (!empty($parsed['color']) && $parsed['color'] !== '-') $parts[] = $parsed['color'];
-                                            $retColorStr = implode(' | ', $parts);
+                            @if($retItem->is_manual || empty($retItem->product_id))
+                                <span class="item-name">{{ $retItem->product_name }} (Manual)</span>
+                                @if(!empty($retItem->color) && $retItem->color !== '-' && $retItem->color !== '{')
+                                    <span class="item-variant">{{ $retItem->color }}</span>
+                                @endif
+                            @else
+                                <span class="item-name">{{ $retItem->product->item_name ?? 'Unknown' }}</span>
+                                @php
+                                    $retColorStr = '';
+                                    if (!empty($retItem->color)) {
+                                        $decoded = base64_decode($retItem->color, true);
+                                        if ($decoded !== false && is_string($decoded) && str_starts_with(trim($decoded), '{')) {
+                                            $parsed = json_decode($decoded, true);
+                                            if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
+                                                $parts = [];
+                                                if (!empty($parsed['size']) && $parsed['size'] !== '-') $parts[] = $parsed['size'];
+                                                if (!empty($parsed['color']) && $parsed['color'] !== '-') $parts[] = $parsed['color'];
+                                                $retColorStr = implode(' | ', $parts);
+                                            } else {
+                                                $retColorStr = $retItem->color;
+                                            }
                                         } else {
                                             $retColorStr = $retItem->color;
                                         }
-                                    } else {
-                                        $retColorStr = $retItem->color;
                                     }
-                                }
-                            @endphp
-                            @if($retColorStr)
-                                <span class="item-variant">{{ $retColorStr }}</span>
+                                @endphp
+                                @if($retColorStr)
+                                    <span class="item-variant">{{ $retColorStr }}</span>
+                                @endif
                             @endif
                         </td>
                         <td style="width: 10%;" class="text-center">{{ (float)$retItem->qty }}</td>

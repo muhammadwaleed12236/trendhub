@@ -329,12 +329,17 @@
 
                             <div style="font-size: 11px; color: #555; line-height: 1.2;">
                                 @if (!empty($item['color']))
-                                    <span class="badge bg-light text-dark border p-1"
-                                        style="font-size: 9px; line-height:1;">
-                                        @foreach ($item['color'] as $clr)
-                                            {{ $clr }}
-                                        @endforeach
-                                    </span>
+                                    @php
+                                        $validColors = array_filter($item['color'], function($c) { return $c !== '{' && trim($c) !== ''; });
+                                    @endphp
+                                    @if(count($validColors) > 0)
+                                        <span class="badge bg-light text-dark border p-1"
+                                            style="font-size: 9px; line-height:1;">
+                                            @foreach ($validColors as $clr)
+                                                {{ $clr }}
+                                            @endforeach
+                                        </span>
+                                    @endif
                                 @endif
 
                                 @if ($sizeMode == 'by_size')

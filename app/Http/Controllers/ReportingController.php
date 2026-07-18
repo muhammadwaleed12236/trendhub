@@ -579,9 +579,30 @@ class ReportingController extends Controller
                     $soldAmount += $itemNet;
                 }
 
-                // Since we don't store product_name cleanly in sale_return_items, 
-                // and manual products just reverse vendor ledger, we set returned_qty to 0 here for now.
+                $manualRetQuery = DB::table('sale_return_items')
+                    ->join('sale_returns', 'sale_returns.id', '=', 'sale_return_items.sale_return_id')
+                    ->where('sale_return_items.is_manual', 1)
+                    ->where('sale_return_items.product_name', $mName);
+
+                if ($start && $end) {
+                    $manualRetQuery->whereBetween('sale_returns.created_at', [$start, $end]);
+                }
+                if ($customerId && $customerId !== 'all') {
+                    $manualRetQuery->where('sale_returns.customer_id', $customerId);
+                }
+
+                $manualReturns = $manualRetQuery->select(
+                    'sale_return_items.qty',
+                    'sale_return_items.line_total',
+                    'sale_return_items.purchase_price'
+                )->get();
+
                 $returnedQtyPieces = 0;
+                foreach ($manualReturns as $mr) {
+                    $returnedQtyPieces += (float) $mr->qty;
+                    $soldAmount -= (float) $mr->line_total;
+                    $cogs -= ((float) $mr->qty) * ((float) $mr->purchase_price);
+                }
 
                 $grossProfit = $soldAmount - $cogs;
                 $averageCost = $soldQtyPieces > 0 ? ($cogs / $soldQtyPieces) : 0;
@@ -792,6 +813,65 @@ class ReportingController extends Controller
             return $row;
         });
 
+        // Add manual/outsourced purchases
+        $manualQuery = DB::table('sale_items')
+            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->leftJoin('vendors', 'sale_items.vendor_id', '=', 'vendors.id')
+            ->where('sale_items.is_manual', 1)
+            ->select(
+                'sales.created_at as purchase_date',
+                'sales.invoice_no',
+                DB::raw('COALESCE(vendors.name, "Unknown Vendor") as vendor_name'),
+                DB::raw('"MANUAL" as item_code'),
+                DB::raw('CONCAT(sale_items.product_name, " (Outsourced)") as item_name'),
+                'sale_items.qty',
+                DB::raw('"pc" as unit'),
+                'sale_items.purchase_price as price',
+                DB::raw('0 as item_discount'),
+                DB::raw('(sale_items.qty * sale_items.purchase_price) as line_total'),
+                DB::raw('(sale_items.qty * sale_items.purchase_price) as subtotal'),
+                DB::raw('0 as discount'),
+                DB::raw('0 as extra_cost'),
+                DB::raw('(sale_items.qty * sale_items.purchase_price) as net_amount'),
+                DB::raw('(sale_items.qty * sale_items.purchase_price) as paid_amount'), // Assumed fully paid or handled in ledger
+                DB::raw('0 as due_amount')
+            );
+
+        if ($startDate && $endDate) {
+            $manualQuery->whereBetween('sales.created_at', [
+                \Carbon\Carbon::parse($startDate)->startOfDay()->format('Y-m-d H:i:s'),
+                \Carbon\Carbon::parse($endDate)->endOfDay()->format('Y-m-d H:i:s')
+            ]);
+        }
+        if ($vendorId && $vendorId !== 'all') {
+            $manualQuery->where('sale_items.vendor_id', $vendorId);
+        }
+
+        if (!$productId || $productId === 'all') {
+            $manualPurchases = $manualQuery->get();
+            $manualPurchases = $manualPurchases->map(function ($row) {
+                // Check if any returns exist for this manual product in this sale
+                $returns = DB::table('sale_return_items')
+                    ->join('sale_returns', 'sale_returns.id', '=', 'sale_return_items.sale_return_id')
+                    ->where('sale_returns.sale_id', DB::table('sales')->where('invoice_no', $row->invoice_no)->value('id'))
+                    ->where('sale_return_items.is_manual', 1)
+                    ->where('sale_return_items.product_name', str_replace(' (Outsourced)', '', $row->item_name))
+                    ->select(
+                        DB::raw('CONCAT(sale_return_items.product_name, " (Outsourced)") as item_name'),
+                        'sale_return_items.qty',
+                        DB::raw('(sale_return_items.qty * sale_return_items.purchase_price) as line_total')
+                    )
+                    ->get();
+                $row->returns = $returns;
+                return $row;
+            });
+            
+            $rows = $rows->concat($manualPurchases);
+        }
+
+        // Sort by date after merging
+        $rows = $rows->sortBy('purchase_date')->values();
+
         return response()->json([
             'data' => $rows
         ]);
@@ -912,6 +992,9 @@ class ReportingController extends Controller
                          $retItems = $ret->items;
                          if ($retItems && $retItems->count() > 0) {
                              $pNames = $retItems->map(function($i) {
+                                 if ($i->is_manual) {
+                                     return $i->product_name . ' (Manual)';
+                                 }
                                  if (!$i->product) return 'Unknown';
                                  
                                  $vStr = '';

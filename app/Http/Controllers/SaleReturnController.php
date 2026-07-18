@@ -32,7 +32,11 @@ class SaleReturnController extends Controller
         $returnedQtyMap = [];
         foreach ($pastReturns as $sr) {
             foreach ($sr->items as $srItem) {
-                $key = $srItem->product_id . '_' . ($srItem->color ?? '');
+                if ($srItem->is_manual) {
+                    $key = 'MANUAL_' . strtolower(trim($srItem->product_name));
+                } else {
+                    $key = $srItem->product_id . '_' . ($srItem->color ?? '');
+                }
                 if (!isset($returnedQtyMap[$key])) {
                     $returnedQtyMap[$key] = 0;
                 }
@@ -43,7 +47,11 @@ class SaleReturnController extends Controller
         // Format sale items with complete product data
         $sale->items->each(function ($item) use ($returnedQtyMap) {
             $product = $item->product;
-            $key = $item->product_id . '_' . ($item->color ?? '');
+            if ($item->is_manual) {
+                $key = 'MANUAL_' . strtolower(trim($item->product_name));
+            } else {
+                $key = $item->product_id . '_' . ($item->color ?? '');
+            }
             $alreadyReturned = $returnedQtyMap[$key] ?? 0;
             
             // Extract variant information from sale item color field
@@ -133,10 +141,11 @@ class SaleReturnController extends Controller
 
         try {
             // Generate Return Invoice Number
-            $lastReturn = SaleReturn::orderBy('id', 'desc')->first();
-            $nextInvoice = $lastReturn 
-                ? 'SR-' . str_pad((int)str_replace('SR-', '', $lastReturn->return_invoice) + 1, 4, '0', STR_PAD_LEFT)
-                : 'SR-0001';
+            $lastReturnId = SaleReturn::max('id') ?? 0;
+            do {
+                $lastReturnId++;
+                $nextInvoice = 'SR-' . str_pad($lastReturnId, 4, '0', STR_PAD_LEFT);
+            } while (SaleReturn::where('return_invoice', $nextInvoice)->exists());
 
             // Resolve Customer ID (fallback to Walking Customer if empty/null)
             $customerId = $validated['customer_id'] ?? null;

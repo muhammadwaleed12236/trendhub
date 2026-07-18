@@ -1319,6 +1319,10 @@ class SaleController extends Controller
                             \App\Models\SaleReturnItem::create([
                                 'sale_return_id' => $returnHeader->id,
                                 'product_id' => $rIsManual ? null : $rPid,
+                                'is_manual' => $rIsManual ? 1 : 0,
+                                'product_name' => $rIsManual ? $origSaleItem->product_name : null,
+                                'vendor_id' => $rIsManual ? $origSaleItem->vendor_id : null,
+                                'purchase_price' => $rIsManual ? $origSaleItem->purchase_price : null,
                                 'color' => $rColor,
                                 'warehouse_id' => 1,
                                 'qty' => $rQty,
@@ -1813,8 +1817,9 @@ class SaleController extends Controller
             }
 
             return [
+                'is_manual' => $item->is_manual,
                 'product_id' => $item->product_id,
-                'item_name' => $item->product_name ?? $item->product->item_name ?? 'Item',
+                'item_name' => $item->is_manual ? ($item->product_name ?? 'Manual Product') . ' (Manual)' : ($item->product_name ?? $item->product->item_name ?? 'Item'),
                 'item_code' => $item->product->item_code ?? '',
                 'brand' => $item->product->brand->name ?? '',
                 'unit' => $item->product->unit->name ?? '', // Access name if relation exists
