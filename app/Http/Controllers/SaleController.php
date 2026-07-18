@@ -91,11 +91,9 @@ class SaleController extends Controller
         $nextInvoiceNumber = Sale::generateInvoiceNo();
 
         // Filter accounts (Cash/Bank) for Payment Voucher
-        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])->where('status', 1)
-            ->where(function($q) {
-                $q->where('title', 'like', '%cash%')
-                  ->orWhere('title', 'like', '%bank%');
-            })
+        $accounts = \App\Models\Account::whereHas('head', function($q) {
+            $q->whereIn('name', ['Cash', 'Bank']);
+        })->where('status', 1)
             ->orderBy('title')
             ->get();
 
@@ -191,11 +189,9 @@ class SaleController extends Controller
         $items = $this->_getSaleItems($sale);
 
         // Get Cash/Bank accounts for payment voucher
-        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])->where('status', 1)
-            ->where(function($q) {
-                $q->where('title', 'like', '%cash%')
-                  ->orWhere('title', 'like', '%bank%');
-            })
+        $accounts = \App\Models\Account::whereHas('head', function($q) {
+            $q->whereIn('name', ['Cash', 'Bank']);
+        })->where('status', 1)
             ->orderBy('title')
             ->get();
 
@@ -888,11 +884,9 @@ class SaleController extends Controller
         $customer = Customer::all();
         $warehouse = Warehouse::all();
         // Filter accounts (Cash/Bank) for Receipt Voucher
-        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])->where('status', 1)
-            ->where(function($q) {
-                $q->where('title', 'like', '%cash%')
-                  ->orWhere('title', 'like', '%bank%');
-            })
+        $accounts = \App\Models\Account::whereHas('head', function($q) {
+            $q->whereIn('name', ['Cash', 'Bank']);
+        })->where('status', 1)
             ->orderBy('title')
             ->get();
 

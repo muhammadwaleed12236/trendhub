@@ -148,7 +148,9 @@ class PurchaseController extends Controller
         $Vendor = Vendor::get();
         $Warehouse = Warehouse::get();
         // Filter accounts to only show Cash (1) and Bank (2) heads to prevent logic errors
-        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])->where('status', 1)->get();
+        $accounts = \App\Models\Account::whereHas('head', function($q) {
+            $q->whereIn('name', ['Cash', 'Bank']);
+        })->where('status', 1)->orderBy('title')->get();
 
         $lastInvoice = Purchase::latest('id')->value('invoice_no');
         $nextInvoice = $lastInvoice
@@ -912,7 +914,9 @@ class PurchaseController extends Controller
         $Vendor = Vendor::all();
         $Warehouse = Warehouse::all();
         // Filter accounts to only show Cash (1) and Bank (2) heads
-        $accounts = \App\Models\Account::whereIn('head_id', [1, 2])->where('status', 1)->get();
+        $accounts = \App\Models\Account::whereHas('head', function($q) {
+            $q->whereIn('name', ['Cash', 'Bank']);
+        })->where('status', 1)->orderBy('title')->get();
 
         return view('admin_panel.purchase.edit', compact('purchase', 'Vendor', 'Warehouse', 'accounts'));
     }
@@ -1257,7 +1261,9 @@ class PurchaseController extends Controller
     public function showReturnForm($id)
     {
         $purchase = Purchase::with(['vendor', 'warehouse', 'items.product'])->findOrFail($id);
-        $accounts = Account::whereIn('head_id', [1, 2])->where('status', 1)->orderBy('title')->get();
+        $accounts = \App\Models\Account::whereHas('head', function($q) {
+            $q->whereIn('name', ['Cash', 'Bank']);
+        })->where('status', 1)->orderBy('title')->get();
         // Identify max returnable qty: Purchase Qty - Already Returned Qty
         // 1. Get all previous returns for this purchase
         $pastReturns = \App\Models\PurchaseReturn::where('purchase_id', $id)
