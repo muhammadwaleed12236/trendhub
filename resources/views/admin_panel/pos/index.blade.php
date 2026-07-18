@@ -205,6 +205,7 @@
     /* RIGHT PANEL: CART & CHECKOUT */
     .pos-cart-panel {
         width: 400px;
+        flex: 0 0 400px;
         display: flex;
         flex-direction: column;
         background: #ffffff;
@@ -227,6 +228,8 @@
         align-items: center;
         flex-shrink: 0;
         border-bottom: 2px solid #4f46e5;
+        flex-wrap: wrap;
+        gap: 8px;
     }
     
     .pos-cart-header h5 {
@@ -235,6 +238,9 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        white-space: nowrap;
+        color: #ffffff !important;
+        z-index: 10;
     }
     
     .pos-cart-header .cart-count {
@@ -252,7 +258,7 @@
         overflow-y: auto;
         padding: 10px;
         background-color: #f9fafb;
-        min-height: 0;
+        min-height: 220px;
     }
     
     .cart-empty {
@@ -425,12 +431,12 @@
     
     .pos-input {
         width: 100%;
-        padding: 4px 8px;
+        padding: 6px 10px;
         border: 1px solid #e5e7eb;
         border-radius: 6px;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 500;
-        height: 30px;
+        height: 36px;
     }
     
     .pos-input:focus {
@@ -504,6 +510,34 @@
         text-transform: uppercase;
         padding: 5px 12px;
         border-radius: 6px;
+    }
+    
+    /* RESPONSIVE DESIGN */
+    @media (max-width: 991.98px) {
+        .pos-wrapper {
+            flex-direction: column;
+            height: auto !important;
+            overflow: visible;
+        }
+        html, body {
+            overflow: auto !important;
+            height: auto !important;
+        }
+        .page-container, .main-panel, .content-wrapper, .main-content-inner, .main-content {
+            height: auto !important;
+            overflow: visible !important;
+        }
+        .pos-products-panel {
+            min-height: 500px;
+            height: auto;
+        }
+        .pos-cart-panel {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: none;
+            height: auto !important;
+            min-height: 600px;
+        }
     }
 </style>
 
@@ -591,7 +625,7 @@
             
             <!-- RIGHT PANEL: Cart & Checkout -->
             <div class="pos-cart-panel">
-                <form id="posCheckoutForm" autocomplete="off" style="flex: 1; display: flex; flex-direction: column; margin-bottom: 0; min-height: 0; overflow-y: auto; overflow-x: hidden;">
+                <form id="posCheckoutForm" autocomplete="off" style="flex: 1; display: flex; flex-direction: column; margin-bottom: 0;">
                     @csrf
                     <!-- Store action mirror -->
                     <input type="hidden" name="action" value="post">
@@ -678,7 +712,7 @@
                             <div class="col-6">
                                 <div class="form-group">
                                     <label>Payment Account</label>
-                                    <select class="form-select pos-input" name="receipt_account_id[]" required style="height: 30px; padding: 4px 8px; font-size: 12px;">
+                                    <select class="form-select pos-input" name="receipt_account_id[]" required>
                                         @foreach ($accounts as $acc)
                                             <option value="{{ $acc->id }}" {{ str_contains(strtolower($acc->title), 'cash') ? 'selected' : '' }}>{{ $acc->title }}</option>
                                         @endforeach
@@ -692,14 +726,14 @@
                             <div class="col-6">
                                 <div class="form-group">
                                     <label>Received Cash</label>
-                                    <input type="number" name="receipt_amount[]" id="receivedCash" class="pos-input text-end fw-bold" placeholder="0.00" value="" style="height: 30px; padding: 4px 8px;">
+                                    <input type="number" name="receipt_amount[]" id="receivedCash" class="pos-input text-end fw-bold" placeholder="0.00" value="">
                                     <input type="hidden" name="cash" id="backendCash">
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="form-group">
                                     <label>Change</label>
-                                    <input type="text" id="returnedChange" class="pos-input text-end fw-bold bg-light" readonly value="0.00" style="height: 30px; padding: 4px 8px;">
+                                    <input type="text" id="returnedChange" class="pos-input text-end fw-bold bg-light" readonly value="0.00">
                                 </div>
                             </div>
                         </div>
