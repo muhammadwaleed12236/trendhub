@@ -204,6 +204,7 @@ class ReportingController extends Controller
                         'sold'            => $sold,
                         'sale_amount'     => $saleAmount,
                         'returned_qty'    => $returnedQty,
+                        'purch_returned_qty' => $pReturned,
                         'balance'         => $balance,
                         'cartons'         => $cartons,
                         'loose'           => $loose,
@@ -234,8 +235,13 @@ class ReportingController extends Controller
                     ->where('type', 'in')
                     ->sum('qty');
 
+                // Purchase returned qty
+                $pReturned = (float) DB::table('purchase_return_items')
+                    ->where('product_id', $product->id)
+                    ->sum('qty');
+
                 // Initial (opening) stock
-                $initial = max(0, $balance - $purchased + $sold);
+                $initial = max(0, $balance - $purchased + $sold - $returnedQty + $pReturned);
 
                 // Weighted Average Purchase Price
                 $initialAmount  = $initial * $productPurchPrice;
@@ -267,6 +273,7 @@ class ReportingController extends Controller
                     'sold'            => $sold,
                     'sale_amount'     => $saleAmount,
                     'returned_qty'    => $returnedQty,
+                    'purch_returned_qty' => $pReturned,
                     'balance'         => $balance,
                     'cartons'         => $cartons,
                     'loose'           => $loose,

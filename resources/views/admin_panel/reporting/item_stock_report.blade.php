@@ -129,7 +129,8 @@
                                     <th style="width: 6%;">Purchased Qty</th>
                                     <th style="width: 6%;">Purchased Amount</th>
                                     <th style="width: 7%;">Sold Qty</th>
-                                    <th style="width: 7%;">Returned Qty</th>
+                                    <th style="width: 7%;">Sale Returned Qty</th>
+                                    <th style="width: 7%;">Purch Returned Qty</th>
                                     <th style="width: 7%;">Sold Amount</th>
                                     <th style="width: 5%;">Cartons</th>
                                     <th style="width: 5%;">Loose Pcs</th>
@@ -143,7 +144,7 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th colspan="13" class="text-end fw-bold" style="background-color:#f1f5f9;">Grand Stock Value:</th>
+                                    <th colspan="14" class="text-end fw-bold" style="background-color:#f1f5f9;">Grand Stock Value:</th>
                                     <th id="grandStockValue" class="text-end fw-bold text-primary" style="background-color:#f1f5f9;">0.00</th>
                                 </tr>
                             </tfoot>
@@ -212,6 +213,7 @@ $(document).ready(function() {
             { data: 'purchase_amount' },
             { data: 'sold' },
             { data: 'returned_qty' },
+            { data: 'purch_returned_qty' },
             { data: 'sale_amount' },
             { data: 'cartons' },
             { data: 'loose' },
@@ -246,6 +248,7 @@ $(document).ready(function() {
                 purchase_amount: parseFloat(r.purchase_amount).toFixed(2),
                 sold: parseFloat(r.sold).toFixed(2),
                 returned_qty: parseFloat(r.returned_qty).toFixed(2),
+                purch_returned_qty: parseFloat(r.purch_returned_qty).toFixed(2),
                 sale_amount: parseFloat(r.sale_amount).toFixed(2),
                 cartons: r.cartons,
                 loose: parseFloat(r.loose).toFixed(2),
