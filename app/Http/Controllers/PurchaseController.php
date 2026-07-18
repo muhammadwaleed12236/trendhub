@@ -1267,10 +1267,11 @@ class PurchaseController extends Controller
         $returnedQtyMap = [];
         foreach ($pastReturns as $pr) {
             foreach ($pr->items as $prItem) {
-                if (!isset($returnedQtyMap[$prItem->product_id])) {
-                    $returnedQtyMap[$prItem->product_id] = 0;
+                $key = $prItem->product_id . '_' . ($prItem->color ?? '');
+                if (!isset($returnedQtyMap[$key])) {
+                    $returnedQtyMap[$key] = 0;
                 }
-                $returnedQtyMap[$prItem->product_id] += $prItem->qty;
+                $returnedQtyMap[$key] += $prItem->qty;
             }
         }
         
@@ -1278,7 +1279,8 @@ class PurchaseController extends Controller
         $hasReturnableItems = false;
         
         foreach ($purchase->items as $item) {
-            $alreadyReturned = $returnedQtyMap[$item->product_id] ?? 0;
+            $key = $item->product_id . '_' . ($item->color ?? '');
+            $alreadyReturned = $returnedQtyMap[$key] ?? 0;
             $remaining = max(0, $item->qty - $alreadyReturned);
             
             if ($remaining > 0) {

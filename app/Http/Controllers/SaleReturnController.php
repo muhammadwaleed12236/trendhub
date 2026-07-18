@@ -36,17 +36,19 @@ class SaleReturnController extends Controller
         $returnedQtyMap = [];
         foreach ($pastReturns as $sr) {
             foreach ($sr->items as $srItem) {
-                if (!isset($returnedQtyMap[$srItem->product_id])) {
-                    $returnedQtyMap[$srItem->product_id] = 0;
+                $key = $srItem->product_id . '_' . ($srItem->color ?? '');
+                if (!isset($returnedQtyMap[$key])) {
+                    $returnedQtyMap[$key] = 0;
                 }
-                $returnedQtyMap[$srItem->product_id] += $srItem->qty;
+                $returnedQtyMap[$key] += $srItem->qty;
             }
         }
         
         // Format sale items with complete product data
         $sale->items->each(function ($item) use ($returnedQtyMap) {
             $product = $item->product;
-            $alreadyReturned = $returnedQtyMap[$item->product_id] ?? 0;
+            $key = $item->product_id . '_' . ($item->color ?? '');
+            $alreadyReturned = $returnedQtyMap[$key] ?? 0;
             
             // Extract variant information from sale item color field
             $variant = [];
