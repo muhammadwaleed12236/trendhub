@@ -25,11 +25,8 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Product</label>
-                            <select name="product_id" id="product_id" class="form-control">
+                            <select name="product_id" id="product_id" class="form-control select2">
                                 <option value="all">-- All Products --</option>
-                                @foreach($products as $prod)
-                                    <option value="{{ $prod->id }}">{{ $prod->item_code }} - {{ $prod->item_name }}</option>
-                                @endforeach
                             </select>
                         </div>
 
@@ -162,10 +159,44 @@
 
 <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css" />
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
 $(document).ready(function() {
+    $('#product_id').select2({
+        placeholder: "-- All Products --",
+        allowClear: true,
+        width: '100%',
+        ajax: {
+            url: "{{ route('products.search') }}",
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: $.map(data, function (item) {
+                        return {
+                            id: item.id,
+                            text: item.item_code + ' - ' + item.item_name
+                        }
+                    })
+                };
+            },
+            cache: true
+        }
+    });
+
+    // To allow picking "all" when clearing
+    $('#product_id').on('select2:unselect', function (e) {
+        $(this).val('all').trigger('change');
+    });
+
     var stockTable = $('#stockTable').DataTable({
         paging: true,
         searching: true,

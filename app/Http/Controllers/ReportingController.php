@@ -30,10 +30,9 @@ class ReportingController extends Controller
 
     public function item_stock_report()
     {
-        $products = Product::orderBy('item_name')->get();
         $categories = Category::orderBy('name')->get();
 
-        return view('admin_panel.reporting.item_stock_report', compact('products', 'categories'));
+        return view('admin_panel.reporting.item_stock_report', compact('categories'));
     }
 
     // AJAX endpoint to fetch report rows
