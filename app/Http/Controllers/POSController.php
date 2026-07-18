@@ -203,7 +203,14 @@ class POSController extends Controller
         $cashAndBankHeads = AccountHead::whereIn('name', ['Cash', 'Bank'])->pluck('id');
         $accounts = Account::whereIn('head_id', $cashAndBankHeads)->where('status', 1)->orderBy('title')->get();
 
-        return view('admin_panel.pos.index', compact('posProducts', 'customers', 'accounts'));
+        // 4. Fetch all Vendors with balances
+        $balanceService = app(\App\Services\BalanceService::class);
+        $vendors = \App\Models\Vendor::orderBy('name')->get()->map(function($vendor) use ($balanceService) {
+            $vendor->balance = $balanceService->getVendorBalance($vendor->id);
+            return $vendor;
+        });
+
+        return view('admin_panel.pos.index', compact('posProducts', 'customers', 'accounts', 'vendors'));
     }
 
     private function matchSaleItemToVariant($saleItem, $variant)
@@ -277,6 +284,10 @@ class POSController extends Controller
                 }
                 $size = strtolower(trim($variant['size'] ?? ($variant['size_val'] ?? '-')));
                 $color = strtolower(trim($variant['color'] ?? ($variant['color_val'] ?? '-')));
+                $size = strtolower(trim($variant['size'] ?? ($variant['size_val'] ?? '-')));
+                $color = strtolower(trim($variant['color'] ?? ($variant['color_val'] ?? '-')));
+                
+                // For past returns of manual items, product_id is null, so it becomes just _size_color
                 $key = $srItem->product_id . '_' . $size . '_' . $color;
 
                 if (!isset($returnedQtyMap[$key])) {
@@ -295,6 +306,7 @@ class POSController extends Controller
             }
             $size = strtolower(trim($variant['size'] ?? ($variant['size_val'] ?? '-')));
             $color = strtolower(trim($variant['color'] ?? ($variant['color_val'] ?? '-')));
+            
             $key = $item->product_id . '_' . $size . '_' . $color;
 
             $alreadyReturned = $returnedQtyMap[$key] ?? 0;
@@ -318,6 +330,7 @@ class POSController extends Controller
             $items[] = [
                 'id' => $item->id,
                 'product_id' => $item->product_id,
+                'is_manual' => $item->is_manual ? 1 : 0,
                 'product_name' => $item->product_name,
                 'sku' => $item->product->item_code ?? '',
                 'size' => $variant['size'] ?? ($variant['size_val'] ?? '-'),

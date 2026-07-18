@@ -535,6 +535,73 @@ class ReportingController extends Controller
             }
         }
 
+        // 2b. Manual Products P&L
+        $manualSaleQuery = DB::table('sale_items')
+            ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->where('sale_items.is_manual', 1);
+
+        if ($start && $end) {
+            $manualSaleQuery->whereBetween('sales.created_at', [$start, $end]);
+        }
+        if ($customerId && $customerId !== 'all') {
+            $manualSaleQuery->where('sales.customer_id', $customerId);
+        }
+
+        $manualSalesList = $manualSaleQuery->select(
+            'sale_items.product_name',
+            'sale_items.total_pieces',
+            'sale_items.qty',
+            'sale_items.total',
+            'sale_items.purchase_price',
+            'sales.total_extradiscount',
+            'sales.total_bill_amount'
+        )->get();
+
+        if ($manualSalesList->isNotEmpty()) {
+            $manualGrouped = $manualSalesList->groupBy('product_name');
+
+            foreach ($manualGrouped as $mName => $mItems) {
+                $soldQty = 0;
+                $soldQtyPieces = 0;
+                $soldAmount = 0;
+                $cogs = 0;
+
+                foreach ($mItems as $sItem) {
+                    $soldQty += (float) $sItem->qty;
+                    $soldQtyPieces += (float) $sItem->total_pieces;
+                    $cogs += ((float) $sItem->total_pieces) * ((float) $sItem->purchase_price);
+
+                    $itemNet = (float) $sItem->total;
+                    if ($sItem->total_bill_amount > 0 && $sItem->total_extradiscount > 0) {
+                        $proportion = $itemNet / (float) $sItem->total_bill_amount;
+                        $itemNet -= ($sItem->total_extradiscount * $proportion);
+                    }
+                    $soldAmount += $itemNet;
+                }
+
+                // Since we don't store product_name cleanly in sale_return_items, 
+                // and manual products just reverse vendor ledger, we set returned_qty to 0 here for now.
+                $returnedQtyPieces = 0;
+
+                $grossProfit = $soldAmount - $cogs;
+                $averageCost = $soldQtyPieces > 0 ? ($cogs / $soldQtyPieces) : 0;
+
+                if ($soldQty > 0 || $returnedQtyPieces > 0) {
+                     $productStats[] = [
+                        'item_code' => 'MANUAL',
+                        'item_name' => $mName ? $mName . ' (Manual)' : 'Manual Product',
+                        'sold_qty' => $soldQty,
+                        'returned_qty' => $returnedQtyPieces,
+                        'revenue' => $soldAmount,
+                        'avg_cost' => $averageCost,
+                        'cogs' => $cogs,
+                        'profit' => $grossProfit
+                    ];
+                    $totalGrossProfit += $grossProfit;
+                }
+            }
+        }
+
         // 3. Calculate Expenses
         $expenseQueryV1 = DB::table('expense_vouchers');
         $expenseQueryV2 = DB::table('voucher_masters')->where('voucher_type', 'expense');
@@ -562,6 +629,8 @@ class ReportingController extends Controller
 
             $custSaleItems = $custSaleQuery->select(
                 'sale_items.product_id', 
+                'sale_items.is_manual',
+                'sale_items.purchase_price',
                 'sale_items.color',
                 'sale_items.total_pieces',
                 'sale_items.total',
@@ -574,44 +643,49 @@ class ReportingController extends Controller
 
             foreach ($custSaleItems as $item) {
                 $avgPrice = 0;
-                $product = $products->firstWhere('id', $item->product_id);
-                if ($product) {
-                    $itemColor = $item->color;
-                    $itemVariant = null;
-                    if (!empty($itemColor)) {
-                        $b64Decoded = base64_decode($itemColor, true);
-                        if ($b64Decoded !== false) {
-                            $itemVariant = json_decode($b64Decoded, true);
+                
+                if ($item->is_manual) {
+                    $avgPrice = (float) $item->purchase_price;
+                } else {
+                    $product = $products->firstWhere('id', $item->product_id);
+                    if ($product) {
+                        $itemColor = $item->color;
+                        $itemVariant = null;
+                        if (!empty($itemColor)) {
+                            $b64Decoded = base64_decode($itemColor, true);
+                            if ($b64Decoded !== false) {
+                                $itemVariant = json_decode($b64Decoded, true);
+                            }
+                            if (empty($itemVariant)) {
+                                $itemVariant = json_decode($itemColor, true);
+                            }
                         }
-                        if (empty($itemVariant)) {
-                            $itemVariant = json_decode($itemColor, true);
-                        }
-                    }
 
-                    if (is_array($itemVariant) && isset($itemVariant['color'])) {
-                        $vColor = strtolower(trim($itemVariant['color'] ?? '-'));
-                        $vSize = strtolower(trim($itemVariant['size'] ?? '-'));
-                        if ($vColor === '') $vColor = '-';
-                        if ($vSize === '') $vSize = '-';
+                        if (is_array($itemVariant) && isset($itemVariant['color'])) {
+                            $vColor = strtolower(trim($itemVariant['color'] ?? '-'));
+                            $vSize = strtolower(trim($itemVariant['size'] ?? '-'));
+                            if ($vColor === '') $vColor = '-';
+                            if ($vSize === '') $vSize = '-';
 
-                        $decoded = json_decode($product->color, true);
-                        if (is_array($decoded)) {
-                            foreach ($decoded as $v) {
-                                $vC = strtolower(trim($v['color'] ?? '-'));
-                                $vS = strtolower(trim($v['size'] ?? '-'));
-                                if ($vC === '') $vC = '-';
-                                if ($vS === '') $vS = '-';
+                            $decoded = json_decode($product->color, true);
+                            if (is_array($decoded)) {
+                                foreach ($decoded as $v) {
+                                    $vC = strtolower(trim($v['color'] ?? '-'));
+                                    $vS = strtolower(trim($v['size'] ?? '-'));
+                                    if ($vC === '') $vC = '-';
+                                    if ($vS === '') $vS = '-';
 
-                                if ($vC === $vColor && $vS === $vSize) {
-                                    $avgPrice = (float) ($v['purch_price'] ?? 0);
-                                    break;
+                                    if ($vC === $vColor && $vS === $vSize) {
+                                        $avgPrice = (float) ($v['purch_price'] ?? 0);
+                                        break;
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    if ($avgPrice <= 0) {
-                        $avgPrice = $avgPriceMap[$item->product_id] ?? 0;
+                        if ($avgPrice <= 0) {
+                            $avgPrice = $avgPriceMap[$item->product_id] ?? 0;
+                        }
                     }
                 }
 
@@ -750,7 +824,9 @@ class ReportingController extends Controller
             $transformed = $sales->map(function ($sale) {
                 // Construct comma-separated strings for legacy frontend support
                 $productNames = $sale->items->map(function ($item) {
-                    if (!$item->product) return 'Unknown';
+                    if (!$item->product) {
+                        return $item->is_manual ? ($item->product_name ?? 'Manual Product') . ' (Manual)' : 'Unknown';
+                    }
                     
                     $vStr = '';
                     if (!empty($item->color)) {
@@ -785,7 +861,7 @@ class ReportingController extends Controller
 
                 // Use SKU or Name as per preference, usually Name for reports
                 $productCodes = $sale->items->map(function ($item) {
-                    return $item->product ? $item->product->item_code : '-';
+                    return $item->product ? $item->product->item_code : ($item->is_manual ? 'MANUAL' : '-');
                 })->implode(',');
 
                 // Use formatted string for display, and decimal for calculation

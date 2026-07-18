@@ -981,7 +981,7 @@ class SaleController extends Controller
 
         $rules = [
             'product_id' => 'required|array|min:1',
-            'product_id.*' => 'required|exists:products,id',
+            'product_id.*' => 'nullable|exists:products,id',
             'qty' => 'required|array|min:1',
             'warehouse_id' => 'required|array',
         ];
@@ -1089,8 +1089,12 @@ class SaleController extends Controller
             $warehouses = $request->warehouse_id;
             $discounts = $request->item_disc ?? [];
 
+            $manualItemsForLedger = [];
+
             foreach ($productIds as $index => $pid) {
-                if (! $pid) {
+                $isManual = (isset($request->is_manual[$index]) && $request->is_manual[$index] == '1');
+
+                if (! $isManual && ! $pid) {
                     continue;
                 }
 
@@ -1099,52 +1103,77 @@ class SaleController extends Controller
                     continue;
                 }
 
-                $product = Product::findOrFail($pid);
-
-                // USE INPUT PRICE (User might have changed it manually)
-                $inputPrice = (float) ($request->price_per_piece[$index] ?? 0);
-                $dbPrice = $inputPrice > 0 ? $inputPrice : ($product->sale_price_per_piece > 0 ? $product->sale_price_per_piece : 0);
-
-                \Log::info("SaleItem #{$index}: Product {$product->item_name}, InputPrice: {$inputPrice}, FinalPrice: {$dbPrice}");
-
-                $ppb = $product->pieces_per_box > 0 ? $product->pieces_per_box : 1;
-
-                $totalPieces = 0;
-                $loose = (float) ($request->loose_pieces[$index] ?? 0); // Legacy/Fallback
-
-                // Quantity Logic based on Size Mode
-                if ($product->size_mode === 'by_cartons' || $product->size_mode === 'by_size') {
-                    // For Carton/Size modes, Frontend sends 'total_pieces' (Calculated Pieces)
-                    // and 'qty' contains "Box.Loose" string.
-                    $reqTotal = (float) ($request->total_pieces[$index] ?? 0);
-
-                    if ($reqTotal > 0) {
-                        $totalPieces = $reqTotal;
-                    } else {
-                        // Fallback: Parse "Box.Loose" manually if Frontend failed/missing
-                        $qStr = (string) ($quantities[$index] ?? '');
-                        $parts = explode('.', $qStr);
-                        $boxes = (int) ($parts[0] ?? 0);
-                        $l = isset($parts[1]) ? (int) $parts[1] : 0;
-                        $totalPieces = ($boxes * $ppb) + $l;
-                    }
+                if ($isManual) {
+                    $inputPrice = (float) ($request->price_per_piece[$index] ?? 0);
+                    $dbPrice = $inputPrice;
+                    $ppb = 1;
+                    $productName = $request->manual_product_name[$index] ?? 'Manual Product';
+                    $brandId = null;
+                    $unitId = null;
+                    $sizeMode = 'pieces';
+                    
+                    $totalPieces = (float) ($request->total_pieces[$index] ?? 0);
+                    if ($totalPieces <= 0) $totalPieces = $qtyInput;
+                    $loose = 0;
+                    $storedQtyBox = $totalPieces;
+                    
+                    $manualVendorId = $request->manual_vendor_id[$index] ?? null;
+                    $manualPurchasePrice = (float) ($request->manual_purchase_price[$index] ?? 0);
+                    $manualPaymentAmount = (float) ($request->manual_vendor_payment_amount[$index] ?? 0);
+                    $manualAccountId = $request->manual_vendor_account_id[$index] ?? null;
                 } else {
-                    // Start of By Piece
-                    $reqTotal = (float) ($request->total_pieces[$index] ?? 0);
-                    if ($reqTotal > 0) {
-                        $totalPieces = $reqTotal;
-                    } else {
-                        $qStr = (string) ($quantities[$index] ?? '');
-                        $parts = explode('.', $qStr);
-                        $boxes = (int) ($parts[0] ?? 0);
-                        $l = isset($parts[1]) ? (int) $parts[1] : 0;
-                        // For by_pieces, both fields act as plain piece counts in frontend
-                        $totalPieces = $boxes + $l;
-                    }
-                }
+                    $product = Product::findOrFail($pid);
 
-                // Calculate boxes for storage (reverse calculation)
-                $storedQtyBox = $ppb > 0 ? ($totalPieces / $ppb) : 0;
+                    // USE INPUT PRICE (User might have changed it manually)
+                    $inputPrice = (float) ($request->price_per_piece[$index] ?? 0);
+                    $dbPrice = $inputPrice > 0 ? $inputPrice : ($product->sale_price_per_piece > 0 ? $product->sale_price_per_piece : 0);
+
+                    \Log::info("SaleItem #{$index}: Product {$product->item_name}, InputPrice: {$inputPrice}, FinalPrice: {$dbPrice}");
+
+                    $ppb = $product->pieces_per_box > 0 ? $product->pieces_per_box : 1;
+
+                    $totalPieces = 0;
+                    $loose = (float) ($request->loose_pieces[$index] ?? 0); // Legacy/Fallback
+
+                    // Quantity Logic based on Size Mode
+                    if ($product->size_mode === 'by_cartons' || $product->size_mode === 'by_size') {
+                        // For Carton/Size modes, Frontend sends 'total_pieces' (Calculated Pieces)
+                        // and 'qty' contains "Box.Loose" string.
+                        $reqTotal = (float) ($request->total_pieces[$index] ?? 0);
+
+                        if ($reqTotal > 0) {
+                            $totalPieces = $reqTotal;
+                        } else {
+                            // Fallback: Parse "Box.Loose" manually if Frontend failed/missing
+                            $qStr = (string) ($quantities[$index] ?? '');
+                            $parts = explode('.', $qStr);
+                            $boxes = (int) ($parts[0] ?? 0);
+                            $l = isset($parts[1]) ? (int) $parts[1] : 0;
+                            $totalPieces = ($boxes * $ppb) + $l;
+                        }
+                    } else {
+                        // Start of By Piece
+                        $reqTotal = (float) ($request->total_pieces[$index] ?? 0);
+                        if ($reqTotal > 0) {
+                            $totalPieces = $reqTotal;
+                        } else {
+                            $qStr = (string) ($quantities[$index] ?? '');
+                            $parts = explode('.', $qStr);
+                            $boxes = (int) ($parts[0] ?? 0);
+                            $l = isset($parts[1]) ? (int) $parts[1] : 0;
+                            // For by_pieces, both fields act as plain piece counts in frontend
+                            $totalPieces = $boxes + $l;
+                        }
+                    }
+
+                    // Calculate boxes for storage (reverse calculation)
+                    $storedQtyBox = $ppb > 0 ? ($totalPieces / $ppb) : 0;
+                    
+                    $productName = $product->item_name;
+                    $brandId = $product->brand_id;
+                    $unitId = $product->unit_id;
+                    $sizeMode = $product->size_mode;
+                }
 
                 $discount = (float) ($discounts[$index] ?? 0);
                 // 'pkr' means fixed PKR amount;  anything else ('percent' or missing) = percentage
@@ -1169,10 +1198,10 @@ class SaleController extends Controller
 
                 $saleItem = new SaleItem;
                 $saleItem->sale_id = $sale->id;
-                $saleItem->product_id = $pid;
+                $saleItem->product_id = $isManual ? null : $pid;
                 $saleItem->color = $request->color[$index] ?? null;
                 $saleItem->warehouse_id = $warehouses[$index] ?? 1;
-                $saleItem->product_name = $product->item_name; // Store name snapshot
+                $saleItem->product_name = $productName; // Store name snapshot
 
                 $saleItem->qty = $storedQtyBox; // Store as Box equivalent for consistency
                 $saleItem->total_pieces = $totalPieces;
@@ -1184,9 +1213,24 @@ class SaleController extends Controller
                 $saleItem->total = $lineTotal;
 
                 // Meta
-                $saleItem->brand_id = $product->brand_id;
-                $saleItem->unit_id = $product->unit_id;
-                $saleItem->size_mode = $product->size_mode;
+                $saleItem->brand_id = $brandId;
+                $saleItem->unit_id = $unitId;
+                $saleItem->size_mode = $sizeMode;
+
+                if ($isManual) {
+                    $saleItem->is_manual = 1;
+                    $saleItem->vendor_id = $manualVendorId;
+                    $saleItem->purchase_price = $manualPurchasePrice;
+
+                    $manualItemsForLedger[] = [
+                        'vendor_id' => $manualVendorId,
+                        'product_name' => $productName,
+                        'qty' => $totalPieces,
+                        'purchase_price' => $manualPurchasePrice,
+                        'payment_amount' => $manualPaymentAmount,
+                        'account_id' => $manualAccountId,
+                    ];
+                }
 
                 $saleItem->save();
 
@@ -1215,10 +1259,11 @@ class SaleController extends Controller
                     $origSale = Sale::with('items')->find($origSaleId);
                     if (!$origSale) continue;
 
-                    $lastReturn = \App\Models\SaleReturn::orderBy('id', 'desc')->first();
-                    $nextInvoice = $lastReturn 
-                        ? 'SR-' . str_pad((int)str_replace('SR-', '', $lastReturn->return_invoice) + 1, 4, '0', STR_PAD_LEFT)
-                        : 'SR-0001';
+                    $lastReturnId = \App\Models\SaleReturn::max('id') ?? 0;
+                    do {
+                        $lastReturnId++;
+                        $nextInvoice = 'SR-' . str_pad($lastReturnId, 4, '0', STR_PAD_LEFT);
+                    } while (\App\Models\SaleReturn::where('return_invoice', $nextInvoice)->exists());
 
                     $returnHeader = \App\Models\SaleReturn::create([
                         'sale_id' => $origSaleId,
@@ -1233,6 +1278,8 @@ class SaleController extends Controller
                     $movements = [];
                     $saleReturnTotalAmount = 0;
 
+                    $manualVendorReturnsForLedger = [];
+
                     foreach ($returnProductIds as $idx => $rPid) {
                         if ($request->original_sale_id[$idx] == $origSaleId) {
                             $rQty = (float)$request->return_qty[$idx];
@@ -1240,25 +1287,38 @@ class SaleController extends Controller
 
                             $rPrice = (float)$request->return_price[$idx];
                             $rColor = $request->return_color[$idx];
+                            
+                            $rIsManual = isset($request->return_is_manual[$idx]) && $request->return_is_manual[$idx] == '1';
+                            $rSaleItemId = $request->return_sale_item_id[$idx] ?? null;
 
-                            $origSaleItem = $origSale->items->where('product_id', $rPid)->first();
+                            if ($rIsManual) {
+                                $origSaleItem = $origSale->items->where('id', $rSaleItemId)->first();
+                            } else {
+                                $origSaleItem = $origSale->items->where('product_id', $rPid)->first();
+                            }
+
                             if (!$origSaleItem || $rQty > $origSaleItem->total_pieces) {
-                                $productName = $origSaleItem->product_name ?? "Product #{$rPid}";
+                                $productName = $origSaleItem->product_name ?? "Product #" . ($rIsManual ? $rSaleItemId : $rPid);
                                 $maxReturnable = $origSaleItem ? $origSaleItem->total_pieces : 0;
                                 throw \Illuminate\Validation\ValidationException::withMessages([
                                     'return_qty' => "Cannot return {$rQty} pieces of '{$productName}'. Maximum returnable: {$maxReturnable} pieces.",
                                 ]);
                             }
 
-                            $rProduct = \App\Models\Product::find($rPid);
-                            $ppb = $rProduct->pieces_per_box > 0 ? $rProduct->pieces_per_box : 1;
+                            if ($rIsManual) {
+                                $ppb = 1;
+                            } else {
+                                $rProduct = \App\Models\Product::find($rPid);
+                                $ppb = $rProduct && $rProduct->pieces_per_box > 0 ? $rProduct->pieces_per_box : 1;
+                            }
+                            
                             $lineTotal = $rQty * $rPrice;
                             $saleReturnTotalAmount += $lineTotal;
                             $totalReturnAmountForNet += $lineTotal;
 
                             \App\Models\SaleReturnItem::create([
                                 'sale_return_id' => $returnHeader->id,
-                                'product_id' => $rPid,
+                                'product_id' => $rIsManual ? null : $rPid,
                                 'color' => $rColor,
                                 'warehouse_id' => 1,
                                 'qty' => $rQty,
@@ -1270,39 +1330,48 @@ class SaleController extends Controller
                                 'line_total' => $lineTotal,
                             ]);
 
-                            // Restore stock
-                            $stock = \App\Models\WarehouseStock::where('warehouse_id', 1)
-                                ->where('product_id', $rPid)
-                                ->lockForUpdate()
-                                ->first();
-
-                            if ($stock) {
-                                $newTotalPieces = $stock->total_pieces + $rQty;
-                                $stock->total_pieces = $newTotalPieces;
-                                $stock->quantity = $newTotalPieces / $ppb;
-                                $stock->save();
+                            if ($rIsManual) {
+                                $manualVendorReturnsForLedger[] = [
+                                    'vendor_id' => $origSaleItem->vendor_id,
+                                    'product_name' => $origSaleItem->product_name,
+                                    'qty' => $rQty,
+                                    'purchase_price' => $origSaleItem->purchase_price,
+                                ];
                             } else {
-                                \App\Models\WarehouseStock::create([
-                                    'warehouse_id' => 1,
+                                // Restore stock
+                                $stock = \App\Models\WarehouseStock::where('warehouse_id', 1)
+                                    ->where('product_id', $rPid)
+                                    ->lockForUpdate()
+                                    ->first();
+
+                                if ($stock) {
+                                    $newTotalPieces = $stock->total_pieces + $rQty;
+                                    $stock->total_pieces = $newTotalPieces;
+                                    $stock->quantity = $newTotalPieces / $ppb;
+                                    $stock->save();
+                                } else {
+                                    \App\Models\WarehouseStock::create([
+                                        'warehouse_id' => 1,
+                                        'product_id' => $rPid,
+                                        'total_pieces' => $rQty,
+                                        'quantity' => $rQty / $ppb,
+                                        'price' => 0
+                                    ]);
+                                }
+
+                                // Movement
+                                $movements[] = [
                                     'product_id' => $rPid,
-                                    'total_pieces' => $rQty,
-                                    'quantity' => $rQty / $ppb,
-                                    'price' => 0
-                                ]);
+                                    'type' => 'in',
+                                    'qty' => $rQty,
+                                    'ref_type' => 'SALE_RETURN',
+                                    'ref_id' => $returnHeader->id,
+                                    'note' => "Exchange Return #{$nextInvoice} on Sale #{$sale->invoice_no}",
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ];
                             }
-
-                            // Movement
-                            $movements[] = [
-                                'product_id' => $rPid,
-                                'type' => 'in',
-                                'qty' => $rQty,
-                                'ref_type' => 'SALE_RETURN',
-                                'ref_id' => $returnHeader->id,
-                                'note' => "Exchange Return #{$nextInvoice} on Sale #{$sale->invoice_no}",
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ];
-
+                            
                             // Note: We DO NOT decrement from the original Sale Item.
                             // A Sale Return is a separate transaction and does not alter the historical Sale Invoice.
                         }
@@ -1355,6 +1424,46 @@ class SaleController extends Controller
                             );
                         } catch (\Exception $e) {
                             \Log::error('Exchange Return Ledger Error: '.$e->getMessage());
+                        }
+                    }
+
+                    // --- MANUAL PRODUCT VENDOR RETURN LEDGER ---
+                    if (isset($manualVendorReturnsForLedger) && count($manualVendorReturnsForLedger) > 0) {
+                        try {
+                            $journalService = app(\App\Services\JournalEntryService::class);
+                            $balanceService = app(\App\Services\BalanceService::class);
+                            $date = now()->format('Y-m-d');
+                            $purchasesAccount = \App\Models\Account::where('title', 'like', '%Purchase%')->first();
+                            $purchasesAccountId = $purchasesAccount ? $purchasesAccount->id : $balanceService->getSalesRevenueId(); 
+
+                            foreach ($manualVendorReturnsForLedger as $mRetItem) {
+                                $vendor = \App\Models\Vendor::find($mRetItem['vendor_id']);
+                                if (!$vendor) continue;
+
+                                $cogsReturnAmount = $mRetItem['qty'] * $mRetItem['purchase_price'];
+
+                                // Debit Vendor, Credit Purchases/COGS
+                                $journalService->recordEntry(
+                                    clone $returnHeader, 
+                                    $balanceService->getAccountsPayableId(),
+                                    $cogsReturnAmount,
+                                    0,
+                                    "Manual Purchase Return for POS Sale Exchange #{$sale->invoice_no} ({$mRetItem['product_name']})",
+                                    $date,
+                                    $vendor
+                                );
+
+                                $journalService->recordEntry(
+                                    clone $returnHeader,
+                                    $purchasesAccountId, 
+                                    0,
+                                    $cogsReturnAmount,
+                                    "Manual Purchase Return for POS Sale Exchange #{$sale->invoice_no} ({$mRetItem['product_name']})",
+                                    $date
+                                );
+                            }
+                        } catch (\Exception $e) {
+                            \Log::error('Exchange Return Vendor Ledger Error: '.$e->getMessage());
                         }
                     }
                 }
@@ -1442,6 +1551,61 @@ class SaleController extends Controller
                         }
                     }
 
+                    // --- MANUAL PRODUCT VENDOR LEDGER ---
+                    if (isset($manualItemsForLedger) && count($manualItemsForLedger) > 0) {
+                        $purchasesAccount = \App\Models\Account::where('title', 'like', '%Purchase%')->first();
+                        $purchasesAccountId = $purchasesAccount ? $purchasesAccount->id : $balanceService->getSalesRevenueId(); 
+
+                        foreach ($manualItemsForLedger as $mItem) {
+                            $vendor = \App\Models\Vendor::find($mItem['vendor_id']);
+                            if (!$vendor) continue;
+
+                            $cogsAmount = $mItem['qty'] * $mItem['purchase_price'];
+
+                            // 1. Purchase (Vendor Payable)
+                            $journalService->recordEntry(
+                                clone $sale, // Clone to avoid overriding attributes
+                                $purchasesAccountId,
+                                $cogsAmount,
+                                0,
+                                "Manual Purchase for POS Sale #{$sale->invoice_no} ({$mItem['product_name']})",
+                                $date
+                            );
+
+                            $journalService->recordEntry(
+                                clone $sale,
+                                $balanceService->getAccountsPayableId(), 
+                                0,
+                                $cogsAmount,
+                                "Manual Purchase for POS Sale #{$sale->invoice_no} ({$mItem['product_name']})",
+                                $date,
+                                $vendor
+                            );
+
+                            // 2. Vendor Payment (if paid)
+                            if ($mItem['payment_amount'] > 0 && $mItem['account_id']) {
+                                $journalService->recordEntry(
+                                    clone $sale,
+                                    $balanceService->getAccountsPayableId(),
+                                    $mItem['payment_amount'],
+                                    0,
+                                    "Payment for Manual Purchase - POS Sale #{$sale->invoice_no}",
+                                    $date,
+                                    $vendor
+                                );
+
+                                $journalService->recordEntry(
+                                    clone $sale,
+                                    $mItem['account_id'],
+                                    0,
+                                    $mItem['payment_amount'],
+                                    "Payment for Manual Purchase - POS Sale #{$sale->invoice_no}",
+                                    $date
+                                );
+                            }
+                        }
+                    }
+
                 } catch (\Exception $e) {
                     \Log::error('Professional Ledger Posting Error: '.$e->getMessage());
                 }
@@ -1487,6 +1651,11 @@ class SaleController extends Controller
         }
 
         foreach ($sale->items as $item) {
+            // Outsourced / Manual products do not affect warehouse stock
+            if ($item->is_manual) {
+                continue;
+            }
+
             $stock = WarehouseStock::where('product_id', $item->product_id)
                 ->where('warehouse_id', $item->warehouse_id)
                 ->lockForUpdate() // LOCK ROW
@@ -1679,21 +1848,15 @@ class SaleController extends Controller
     {
         $maxAttempts = 100;
         $attempt = 0;
+        
+        $lastId = \App\Models\Sale::max('id') ?? 0;
 
         do {
-            $lastSale = Sale::orderBy('id', 'desc')->first();
-
-            if (! $lastSale || ! $lastSale->invoice_no) {
-                $invoiceNo = 'INV-0001';
-            } else {
-                // Extract numeric part
-                $lastNumber = (int) str_replace('INV-', '', $lastSale->invoice_no);
-                // Increment + format
-                $invoiceNo = 'INV-'.str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-            }
+            $lastId++;
+            $invoiceNo = 'INV-'.str_pad($lastId, 4, '0', STR_PAD_LEFT);
 
             // Check if this invoice number already exists
-            $exists = Sale::where('invoice_no', $invoiceNo)->exists();
+            $exists = \App\Models\Sale::where('invoice_no', $invoiceNo)->exists();
 
             if (! $exists) {
                 return $invoiceNo;

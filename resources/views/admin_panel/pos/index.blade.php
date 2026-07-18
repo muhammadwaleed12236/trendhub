@@ -551,7 +551,10 @@
                 </h4>
                 <small class="text-muted fw-medium">Process new sales, returns, and product exchanges in one place</small>
             </div>
-            <div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn d-flex align-items-center gap-2 px-4 py-2 fw-bold text-white shadow-sm transition-all" id="btnManualProductModal" data-toggle="modal" data-target="#manualProductModal" style="border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+                    <i class="fas fa-plus"></i> Manual Product
+                </button>
                 <button type="button" class="btn d-flex align-items-center gap-2 px-4 py-2 fw-bold text-white shadow-sm transition-all" id="btnPOSExchangeHeader" style="border-radius: 10px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none;">
                     <i class="fas fa-exchange-alt"></i> Exchange / Return Item
                 </button>
@@ -940,6 +943,106 @@
         </div>
     </div>
 </div>
+
+<!-- Manual Product Modal -->
+<div class="modal fade" id="manualProductModal" tabindex="-1" aria-labelledby="manualProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white py-2">
+                <h5 class="modal-title fs-6" id="manualProductModalLabel">Add Manual Product (Outsourced)</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="border: none; background: transparent; font-size: 24px;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Vendor *</label>
+                        <select class="form-control" id="manual_vendor_id">
+                            <option value="">Select Vendor</option>
+                            @foreach($vendors as $vendor)
+                                <option value="{{ $vendor->id }}" data-balance="{{ $vendor->balance }}">{{ $vendor->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Product Name *</label>
+                        <input type="text" id="manual_product_name" class="form-control" placeholder="e.g. Red Shirt">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Size</label>
+                        <input type="text" id="manual_size" class="form-control" placeholder="Optional">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Color</label>
+                        <input type="text" id="manual_color" class="form-control" placeholder="Optional">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Quantity *</label>
+                        <input type="number" id="manual_qty" class="form-control" value="1" min="1">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Purchase Price *</label>
+                        <input type="number" id="manual_purchase_price" class="form-control" min="0" step="0.01">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Sale Price *</label>
+                        <input type="number" id="manual_sale_price" class="form-control" min="0" step="0.01">
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-12 mb-2">
+                        <small class="text-muted"><i class="fas fa-info-circle"></i> If paying the vendor immediately, enter the amount below. Otherwise, leave as 0 to keep the balance outstanding in the Vendor Ledger.</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Payment Amount (to Vendor)</label>
+                        <input type="number" id="manual_vendor_payment_amount" class="form-control" value="0" min="0" step="0.01">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Payment Account</label>
+                        <select class="form-control" id="manual_vendor_account_id">
+                            @foreach($accounts as $acc)
+                                <option value="{{ $acc->id }}">{{ $acc->title }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Live Summary Box -->
+                <div class="row mt-3" id="manual_vendor_summary_box" style="display: none;">
+                    <div class="col-md-12">
+                        <div class="p-3 border rounded bg-light">
+                            <h6 class="fw-bold mb-2">Vendor Ledger Summary</h6>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Previous Balance:</span>
+                                <span id="v_prev_bal" class="fw-bold">0.00</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1 text-danger">
+                                <span>+ Current Purchase (Payable):</span>
+                                <span id="v_curr_purch">0.00</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span>- Current Paid:</span>
+                                <span id="v_curr_paid">0.00</span>
+                            </div>
+                            <hr class="my-1">
+                            <div class="d-flex justify-content-between">
+                                <strong>New Balance:</strong>
+                                <strong id="v_new_bal">0.00</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success btn-sm" id="btnAddToManualCart">Add to Cart</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('js')
@@ -1158,6 +1261,113 @@
             }, 1000);
         });
 
+        // Live Vendor Summary for Manual Product Modal
+        function updateVendorSummary() {
+            let vendorId = $('#manual_vendor_id').val();
+            let $summaryBox = $('#manual_vendor_summary_box');
+            
+            if (!vendorId) {
+                $summaryBox.hide();
+                return;
+            }
+            
+            $summaryBox.show();
+            let prevBal = parseFloat($('#manual_vendor_id option:selected').data('balance')) || 0;
+            let qty = parseInt($('#manual_qty').val()) || 1;
+            let purchase_price = parseFloat($('#manual_purchase_price').val()) || 0;
+            let currentPurchase = qty * purchase_price;
+            let currentPaid = parseFloat($('#manual_vendor_payment_amount').val()) || 0;
+            
+            let newBal = prevBal + currentPurchase - currentPaid;
+            
+            $('#v_prev_bal').text(prevBal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $('#v_curr_purch').text(currentPurchase.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $('#v_curr_paid').text(currentPaid.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $('#v_new_bal').text(newBal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            
+            // Color code new balance
+            if (newBal > 0) {
+                $('#v_new_bal').removeClass('text-success').addClass('text-danger'); // Owe vendor
+            } else if (newBal < 0) {
+                $('#v_new_bal').removeClass('text-danger').addClass('text-success'); // Vendor owes us
+            } else {
+                $('#v_new_bal').removeClass('text-danger text-success');
+            }
+        }
+
+        $('#manual_vendor_id, #manual_qty, #manual_purchase_price, #manual_vendor_payment_amount').on('input change', updateVendorSummary);
+        
+        $('#manualProductModal').on('show.bs.modal', function () {
+            updateVendorSummary();
+        });
+
+        $('#btnAddToManualCart').on('click', function() {
+            let vendor_id = $('#manual_vendor_id').val();
+            let product_name = $('#manual_product_name').val().trim();
+            let size = $('#manual_size').val().trim();
+            let color = $('#manual_color').val().trim();
+            let qty = parseInt($('#manual_qty').val()) || 1;
+            let purchase_price = parseFloat($('#manual_purchase_price').val());
+            let sale_price = parseFloat($('#manual_sale_price').val());
+            let payment_amount = parseFloat($('#manual_vendor_payment_amount').val()) || 0;
+            let account_id = $('#manual_vendor_account_id').val();
+
+            if (!vendor_id) { Swal.fire('Validation Error', 'Please select a vendor.', 'error'); return; }
+            if (!product_name) { Swal.fire('Validation Error', 'Please enter a product name.', 'error'); return; }
+            if (qty < 1) { Swal.fire('Validation Error', 'Quantity must be at least 1.', 'error'); return; }
+            if (isNaN(purchase_price) || purchase_price < 0) { Swal.fire('Validation Error', 'Please enter a valid purchase price.', 'error'); return; }
+            if (isNaN(sale_price) || sale_price < 0) { Swal.fire('Validation Error', 'Please enter a valid sale price.', 'error'); return; }
+            if (payment_amount > 0 && !account_id) { Swal.fire('Validation Error', 'Please select a payment account for the vendor payment.', 'error'); return; }
+
+            // Construct variant string
+            let variantObj = {};
+            if (color) variantObj.color = color;
+            if (size) variantObj.size = size;
+            let variantData = Object.keys(variantObj).length > 0 ? JSON.stringify(variantObj) : '';
+            
+            let displayName = product_name;
+            if (size || color) {
+                let parts = [];
+                if (size) parts.push(size);
+                if (color) parts.push(color);
+                displayName += ` (${parts.join(' | ')})`;
+            }
+
+            let id = 'manual_' + Date.now();
+            
+            cart.push({
+                id: id,
+                product_id: '',
+                name: displayName,
+                price: sale_price,
+                retailPrice: sale_price,
+                wholesalePrice: sale_price,
+                weightPerPiece: 0,
+                qty: qty,
+                stock: 999999, // Infinite stock for manual items
+                sizeMode: 'pieces',
+                piecesPerBox: 1,
+                variantData: variantData,
+                is_manual: 1,
+                vendor_id: vendor_id,
+                purchase_price: purchase_price,
+                vendor_payment_amount: payment_amount,
+                vendor_account_id: account_id
+            });
+            
+            renderCart();
+            
+            // Close modal & Reset
+            $('#manualProductModal').modal('hide');
+            $('#manual_product_name').val('');
+            $('#manual_size').val('');
+            $('#manual_color').val('');
+            $('#manual_qty').val(1);
+            $('#manual_purchase_price').val('');
+            $('#manual_sale_price').val('');
+            $('#manual_vendor_payment_amount').val(0);
+        });
+
         // Core addToCart Helper
         function addToCart(id, name, price, stockPieces, qty, sizeMode, piecesPerBox, variantData, retailPrice = 0, wholesalePrice = 0, weightPerPiece = 0) {
             let cartItem = cart.find(item => item.id === id);
@@ -1245,16 +1455,24 @@
                         </div>
                         <!-- Hidden inputs for backend form serialization -->
                         ${isRet ? `
-                            <input type="hidden" name="return_product_id[]" value="${item.product_id}">
+                            <input type="hidden" name="return_sale_item_id[]" value="${item.sale_item_id}">
+                            <input type="hidden" name="return_product_id[]" value="${item.product_id || ''}">
                             <input type="hidden" name="return_qty[]" value="${item.qty}">
                             <input type="hidden" name="return_price[]" value="${item.price}">
                             <input type="hidden" name="return_color[]" value="${item.variantData}">
+                            <input type="hidden" name="return_is_manual[]" value="${item.is_manual ? 1 : 0}">
                             <input type="hidden" name="original_sale_id[]" value="${item.original_sale_id}">
                         ` : `
                             <input type="hidden" name="product_id[]" value="${item.product_id}">
                             <input type="hidden" name="qty[]" value="${item.qty}">
                             <input type="hidden" name="total_pieces[]" value="${totalPieces}">
                             <input type="hidden" name="color[]" value="${item.variantData}">
+                            <input type="hidden" name="is_manual[]" value="${item.is_manual ? 1 : 0}">
+                            <input type="hidden" name="manual_vendor_id[]" value="${item.vendor_id || ''}">
+                            <input type="hidden" name="manual_product_name[]" value="${item.is_manual ? item.name : ''}">
+                            <input type="hidden" name="manual_purchase_price[]" value="${item.purchase_price || 0}">
+                            <input type="hidden" name="manual_vendor_payment_amount[]" value="${item.vendor_payment_amount || 0}">
+                            <input type="hidden" name="manual_vendor_account_id[]" value="${item.vendor_account_id || ''}">
                         `}
                     </div>
                 `;
@@ -1644,7 +1862,7 @@
                     res.items.forEach(item => {
                         let desc = `${item.product_name} ${item.size !== '-' ? '(' + item.size + ' | ' + item.color + ')' : ''}`;
                         $tbody.append(`
-                            <tr data-product-id="${item.product_id}" data-name="${item.product_name}" data-variant-data="${item.variant_data}" data-net-unit-price="${item.net_unit_price}" data-max-returnable="${item.max_returnable}" data-original-sale-id="${res.sale_id}">
+                            <tr data-sale-item-id="${item.id}" data-is-manual="${item.is_manual}" data-product-id="${item.product_id || ''}" data-name="${item.product_name}" data-variant-data="${item.variant_data}" data-net-unit-price="${item.net_unit_price}" data-max-returnable="${item.max_returnable}" data-original-sale-id="${res.sale_id}">
                                 <td class="ps-3 fw-bold" style="font-size: 13px;">${desc}</td>
                                 <td class="text-center">${item.qty_sold}</td>
                                 <td class="text-center">${item.already_returned}</td>
@@ -1673,6 +1891,8 @@
         // Add return item to POS cart
         $(document).on('click', '.add-exchange-to-cart-btn', function() {
             let $row = $(this).closest('tr');
+            let saleItemId = $row.data('sale-item-id');
+            let isManual = parseInt($row.data('is-manual')) || 0;
             let productId = $row.data('product-id');
             let name = $row.data('name');
             let variantData = $row.data('variant-data');
@@ -1686,7 +1906,7 @@
                 return;
             }
 
-            let cartId = 'return_' + productId + '_' + variantData;
+            let cartId = 'return_' + (isManual ? 'manual_' + saleItemId : productId) + '_' + variantData;
             
             let cartItem = cart.find(item => item.id === cartId);
             if (cartItem) {
@@ -1711,6 +1931,8 @@
                     piecesPerBox: 1,
                     variantData: variantData,
                     is_return: true,
+                    is_manual: isManual,
+                    sale_item_id: saleItemId,
                     original_sale_id: originalSaleId,
                     discount: 0
                 });
