@@ -260,10 +260,33 @@
                         $totalPieces = (int) $item->qty;
                         $boxes = $piecesPerBox > 1 ? floor($totalPieces / $piecesPerBox) : 0;
                         $loosePieces = $piecesPerBox > 1 ? $totalPieces % $piecesPerBox : $totalPieces;
+                        
+                        $colorStr = '';
+                        if (!empty($item->color)) {
+                            $decoded = base64_decode($item->color, true);
+                            if ($decoded !== false && is_string($decoded) && str_starts_with(trim($decoded), '{')) {
+                                $parsed = json_decode($decoded, true);
+                                if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
+                                    $parts = [];
+                                    if (!empty($parsed['size']) && $parsed['size'] !== '-') $parts[] = $parsed['size'];
+                                    if (!empty($parsed['color']) && $parsed['color'] !== '-') $parts[] = $parsed['color'];
+                                    $colorStr = implode(' | ', $parts);
+                                } else {
+                                    $colorStr = $item->color;
+                                }
+                            } else {
+                                $colorStr = $item->color;
+                            }
+                        }
                     @endphp
                     <tr>
                         <td class="text-start">
-                            <div style="font-weight: bold; font-size: 12px;">{{ $product->item_name ?? 'Item' }}</div>
+                            <div style="font-weight: bold; font-size: 12px;">
+                                {{ $product->item_name ?? 'Item' }}
+                                @if($colorStr)
+                                    <span style="font-weight: normal; font-size: 11px;"> ({{ $colorStr }})</span>
+                                @endif
+                            </div>
                             <small class="text-muted">{{ $product->item_code ?? '' }}</small>
                         </td>
 

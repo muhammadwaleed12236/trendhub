@@ -1293,9 +1293,31 @@ class PurchaseController extends Controller
                  $hasReturnableItems = true;
             }
             
+            $itemName = optional($item->product)->item_name ?? 'Unknown Product';
+            $colorStr = '';
+            if (!empty($item->color)) {
+                $decoded = base64_decode($item->color, true);
+                if ($decoded !== false && is_string($decoded) && str_starts_with(trim($decoded), '{')) {
+                    $parsed = json_decode($decoded, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
+                        $parts = [];
+                        if (!empty($parsed['size']) && $parsed['size'] !== '-') $parts[] = $parsed['size'];
+                        if (!empty($parsed['color']) && $parsed['color'] !== '-') $parts[] = $parsed['color'];
+                        $colorStr = implode(' | ', $parts);
+                    } else {
+                        $colorStr = $item->color;
+                    }
+                } else {
+                    $colorStr = $item->color;
+                }
+            }
+            if ($colorStr) {
+                $itemName .= ' (' . $colorStr . ')';
+            }
+            
             $purchaseItems[] = [
                 'product_id' => $item->product_id,
-                'item_name' => optional($item->product)->item_name ?? 'Unknown Product',
+                'item_name' => $itemName,
                 'brand' => optional(optional($item->product)->brand)->name ?? '',
                 'item_code' => optional($item->product)->item_code ?? '',
                 // Fix: Prioritize Product Master PPB to ensure correct Frontend Box calculation

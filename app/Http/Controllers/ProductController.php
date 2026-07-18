@@ -130,19 +130,28 @@ class ProductController extends Controller
 
                 $returnsList = DB::table('sale_return_items as sri')
                     ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
-                    ->leftJoin('sale_items as si', function($join) {
-                        $join->on('si.sale_id', '=', 'sr.sale_id')
-                             ->on('si.product_id', '=', 'sri.product_id');
-                    })
                     ->where('sri.product_id', $p->id)
-                    ->select('sri.qty', 'si.color')
+                    ->select('sri.qty', 'sri.color', 'sr.sale_id')
                     ->get();
 
-                // Fetch all approved purchases
+                $saleIds = $returnsList->pluck('sale_id')->unique()->toArray();
+                $saleItemsMap = [];
+                if (!empty($saleIds)) {
+                    $siList = DB::table('sale_items')
+                        ->whereIn('sale_id', $saleIds)
+                        ->where('product_id', $p->id)
+                        ->select('sale_id', 'color')
+                        ->get();
+                    foreach ($siList as $si) {
+                        $saleItemsMap[$si->sale_id][] = $si->color;
+                    }
+                }
+
+                // Fetch all approved/returned purchases
                 $purchasesList = DB::table('purchase_items as pi')
                     ->join('purchases as pur', 'pur.id', '=', 'pi.purchase_id')
                     ->where('pi.product_id', $p->id)
-                    ->where('pur.status_purchase', 'approved')
+                    ->whereIn('pur.status_purchase', ['approved', 'Returned', 'Partial'])
                     ->select('pi.qty as total_pieces', 'pi.color')
                     ->get();
 
@@ -187,7 +196,16 @@ class ProductController extends Controller
                     // Calculate Returned variant qty
                     $returnedQty = 0;
                     foreach ($returnsList as $rItem) {
-                        if ($this->matchSaleItemToVariant($rItem, $v)) {
+                        $rColor = $rItem->color;
+                        if (empty($rColor)) {
+                            $saleColors = $saleItemsMap[$rItem->sale_id] ?? [];
+                            $rColor = !empty($saleColors) ? $saleColors[0] : '';
+                        }
+                        $rItemCopy = (object)[
+                            'qty' => $rItem->qty,
+                            'color' => $rColor
+                        ];
+                        if ($this->matchSaleItemToVariant($rItemCopy, $v)) {
                             $returnedQty += (float) $rItem->qty;
                         }
                     }

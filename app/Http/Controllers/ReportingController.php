@@ -88,11 +88,11 @@ class ReportingController extends Controller
                     ->select('sri.qty', 'sri.color', 'sr.sale_id')
                     ->get();
 
-                // Fetch all approved purchases
+                // Fetch all approved/returned purchases
                 $purchasesList = DB::table('purchase_items as pi')
                     ->join('purchases as pur', 'pur.id', '=', 'pi.purchase_id')
                     ->where('pi.product_id', $product->id)
-                    ->where('pur.status_purchase', 'approved')
+                    ->whereIn('pur.status_purchase', ['approved', 'Returned', 'Partial'])
                     ->select('pi.qty as total_pieces', 'pi.line_total', 'pi.color')
                     ->get();
 
@@ -1903,7 +1903,7 @@ class ReportingController extends Controller
         $query = DB::table('purchase_items')
             ->join('purchases', 'purchases.id', '=', 'purchase_items.purchase_id')
             ->where('purchase_items.product_id', $productId)
-            ->whereIn('purchases.status_purchase', ['approved', 'posted']);
+            ->whereIn('purchases.status_purchase', ['approved', 'posted', 'Returned', 'Partial']);
 
         if (!empty($dateFilter) && isset($dateFilter['before'])) {
             $query->where('purchases.purchase_date', '<=', $dateFilter['before']);
