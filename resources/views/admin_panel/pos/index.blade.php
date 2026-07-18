@@ -668,7 +668,7 @@
                         <div class="summary-row align-items-center">
                             <span>Discount (Rs):</span>
                             <div class="d-flex align-items-center gap-1">
-                                <input type="number" id="summaryDiscount" class="form-control form-control-sm text-end bg-light" value="0" style="width: 80px; height: 26px !important; padding: 2px 8px;" readonly>
+                                <input type="number" id="summaryDiscount" class="form-control form-control-sm text-end bg-light" value="0" style="width: 80px; height: 26px !important; padding: 2px 8px;">
                                 <button type="button" class="btn btn-dark btn-sm py-0 px-2" id="btnDiscountDistribute" style="height: 24px; font-size: 10px; line-height: 20px;" title="Distribute Discount"><i class="fas fa-divide"></i> Distribute</button>
                             </div>
                         </div>
@@ -742,6 +742,7 @@
                         <input type="hidden" name="subTotal1" id="backendSubTotal1" value="0">
                         <input type="hidden" name="total_subtotal" id="backendSubTotal2" value="0">
                         <input type="hidden" name="total_net" id="backendTotalNet" value="0">
+                        <input type="hidden" name="total_extra_cost" id="backendExtraDiscount" value="0">
                         <input type="hidden" name="warehouse_id[]" id="backendWarehouseId" value="1">
                         
                         <button type="submit" class="btn-checkout" id="btnPOSSubmit" disabled>
@@ -1346,6 +1347,8 @@
             updateBillSummary();
         });
 
+        let lastItemDiscountsSum = 0;
+
         function updateBillSummary() {
             let subtotal = 0;
             let totalReturn = 0;
@@ -1360,10 +1363,20 @@
                 }
             });
             
-            // Set the global discount input value to the sum of item-level discounts
-            $('#summaryDiscount').val(itemDiscountsSum);
+            let typedDiscount = parseFloat($('#summaryDiscount').val()) || 0;
             
-            let payable = Math.max(0, subtotal - itemDiscountsSum - totalReturn);
+            // If item discounts changed since last calculation, adjust the total discount box to reflect this change
+            if (itemDiscountsSum !== lastItemDiscountsSum) {
+                typedDiscount += (itemDiscountsSum - lastItemDiscountsSum);
+                if (typedDiscount < 0) typedDiscount = 0;
+                $('#summaryDiscount').val(typedDiscount.toFixed(2));
+                lastItemDiscountsSum = itemDiscountsSum;
+            }
+            
+            let extraDiscount = typedDiscount - itemDiscountsSum;
+            $('#backendExtraDiscount').val(extraDiscount.toFixed(2));
+            
+            let payable = Math.max(0, subtotal - typedDiscount - totalReturn);
             
             $('#summarySubtotal').text('Rs ' + subtotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
             
