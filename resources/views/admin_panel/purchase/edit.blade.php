@@ -445,7 +445,31 @@
                                                 } elseif ($sizeMode == 'by_cartons') {
                                                     $unitLabel = '(carton)';
                                                 } else {
-                                                    $unitLabel = '(piece)';
+                                                }
+
+                                                $variantInfo = '';
+                                                if (!empty($item->color)) {
+                                                    $decodedColor = base64_decode($item->color, true);
+                                                    $vData = ($decodedColor !== false) ? json_decode($decodedColor, true) : null;
+                                                    if (!$vData) {
+                                                        $vData = json_decode($item->color, true);
+                                                    }
+                                                    if (is_array($vData)) {
+                                                        $vColorName = $vData['color'] ?? '';
+                                                        $vSize = $vData['size'] ?? '';
+                                                        $vParts = [];
+                                                        if ($vColorName && $vColorName !== '-') {
+                                                            $vParts[] = $vColorName;
+                                                        }
+                                                        if ($vSize && $vSize !== '-') {
+                                                            $vParts[] = $vSize;
+                                                        }
+                                                        if (!empty($vParts)) {
+                                                            $variantInfo = ' (' . implode(' | ', $vParts) . ')';
+                                                        }
+                                                    } else {
+                                                        $variantInfo = ' (' . $item->color . ')';
+                                                    }
                                                 }
                                             @endphp
                                             <tr data-sizemode="{{ $sizeMode }}"
@@ -454,7 +478,7 @@
                                                     <select class="form-select product-select2" name="product_id[]">
                                                         <option value="{{ $item->product_id }}" selected>
                                                             {{ $item->product->item_name }}
-                                                            ({{ $item->product->item_code }})
+                                                            ({{ $item->product->item_code }}){{ $variantInfo }}
                                                         </option>
                                                     </select>
                                                     {{-- Snapshots --}}
@@ -468,6 +492,8 @@
                                                         value="{{ $item->length }}">
                                                     <input type="hidden" name="width[]" class="hidden-width"
                                                         value="{{ $item->width }}">
+                                                    <input type="hidden" name="color[]" class="hidden-variant-data"
+                                                        value="{{ $item->color ?? '' }}">
                                                     </td>
                                                 <td>
                                                     <input type="number" class="form-control carton-qty" name="boxes_qty[]"

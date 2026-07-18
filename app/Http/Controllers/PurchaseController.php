@@ -1010,6 +1010,7 @@ class PurchaseController extends Controller
                     'item_discount' => $discAmount, // Store calculated amount
                     'qty' => $qty,
                     'line_total' => $lineTotal,
+                    'color' => $request->color[$i] ?? null,
 
                     // Snapshots
                     'size_mode' => $sizeModes[$i] ?? null,
