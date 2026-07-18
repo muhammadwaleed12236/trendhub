@@ -389,6 +389,56 @@
             </tbody>
         </table>
 
+        @php
+            $exchangeReturn = \App\Models\SaleReturn::with('items.product')->where('remarks', 'LIKE', '%Invoice #'.$sale->invoice_no.'%')->first();
+            $exchangeReturnedAmount = 0;
+            if ($exchangeReturn) {
+                $exchangeReturnedAmount = $exchangeReturn->items->sum('line_total');
+            }
+        @endphp
+
+        @if($exchangeReturn && $exchangeReturn->items->count() > 0)
+        <div class="divider" style="border-top: 1px dashed #000; margin: 4px 0;"></div>
+        <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px; color: #000;">Returned Items:</div>
+        <table class="items-table" style="margin-bottom: 4px;">
+            <tbody>
+                @foreach ($exchangeReturn->items as $retItem)
+                    <tr>
+                        <td style="width: 6%;">{{ $loop->iteration }}</td>
+                        <td style="width: 53%;">
+                            <span class="item-name">{{ $retItem->product->item_name ?? 'Unknown' }}</span>
+                            @php
+                                $retColorStr = '';
+                                if (!empty($retItem->color)) {
+                                    $decoded = base64_decode($retItem->color, true);
+                                    if ($decoded !== false && is_string($decoded) && str_starts_with(trim($decoded), '{')) {
+                                        $parsed = json_decode($decoded, true);
+                                        if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
+                                            $parts = [];
+                                            if (!empty($parsed['size']) && $parsed['size'] !== '-') $parts[] = $parsed['size'];
+                                            if (!empty($parsed['color']) && $parsed['color'] !== '-') $parts[] = $parsed['color'];
+                                            $retColorStr = implode(' | ', $parts);
+                                        } else {
+                                            $retColorStr = $retItem->color;
+                                        }
+                                    } else {
+                                        $retColorStr = $retItem->color;
+                                    }
+                                }
+                            @endphp
+                            @if($retColorStr)
+                                <span class="item-variant">{{ $retColorStr }}</span>
+                            @endif
+                        </td>
+                        <td style="width: 10%;" class="text-center">{{ (float)$retItem->qty }}</td>
+                        <td style="width: 13%;" class="text-end">{{ number_format($retItem->price, 0) }}</td>
+                        <td style="width: 18%;" class="text-end">-{{ number_format($retItem->line_total, 0) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+        @endif
+
         <!-- Totals -->
         <div class="totals-section">
             <div class="tot-row">
@@ -403,9 +453,24 @@
                 </div>
             @endif
 
+            @if ($exchangeReturnedAmount > 0)
+                <div class="tot-row">
+                    <span>Return Value:</span>
+                    <span>- {{ number_format($exchangeReturnedAmount, 0) }}</span>
+                </div>
+            @endif
+
+            @php
+                $finalPayable = $sale->total_net - $exchangeReturnedAmount;
+            @endphp
             <div class="tot-row grand-total">
-                <span>TOTAL PAYABLE:</span>
-                <span>{{ number_format($sale->total_net, 0) }}</span>
+                @if($finalPayable < 0)
+                    <span>REFUND TO CUSTOMER:</span>
+                    <span>{{ number_format(abs($finalPayable), 0) }}</span>
+                @else
+                    <span>TOTAL PAYABLE:</span>
+                    <span>{{ number_format($finalPayable, 0) }}</span>
+                @endif
             </div>
         </div>
 

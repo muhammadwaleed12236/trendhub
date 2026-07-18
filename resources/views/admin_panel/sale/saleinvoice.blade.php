@@ -430,6 +430,74 @@
             </tbody>
         </table>
 
+        @php
+            $exchangeReturn = \App\Models\SaleReturn::with('items.product')->where('remarks', 'LIKE', '%Invoice #'.$sale->invoice_no.'%')->first();
+            $exchangeReturnedAmount = 0;
+            if ($exchangeReturn) {
+                $exchangeReturnedAmount = $exchangeReturn->items->sum('line_total');
+            }
+        @endphp
+
+        @if($exchangeReturn && $exchangeReturn->items->count() > 0)
+        <div class="mt-3">
+            <h6 class="fw-bold mb-2">Returned Items (Exchange)</h6>
+            <table class="items-table">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="text-start" style="width: 5%">S.</th>
+                        <th class="text-start" style="width: 38%">Description</th>
+                        <th class="text-center" style="width: 14%">Qty</th>
+                        <th class="text-center" style="width: 10%">UOM</th>
+                        <th class="text-end" style="width: 10%">Price</th>
+                        <th class="text-end" style="width: 10%">Disc</th>
+                        <th class="text-end" style="width: 13%">Net Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($exchangeReturn->items as $retItem)
+                        <tr>
+                            <td class="text-start">{{ $loop->iteration }}</td>
+                            <td class="text-start">
+                                <div style="font-weight: bold; font-size: 12px; margin-bottom: 2px;">
+                                    {{ $retItem->product->item_name ?? 'Unknown' }}
+                                </div>
+                                @php
+                                    $retColorStr = '';
+                                    if (!empty($retItem->color)) {
+                                        $decoded = base64_decode($retItem->color, true);
+                                        if ($decoded !== false && is_string($decoded) && str_starts_with(trim($decoded), '{')) {
+                                            $parsed = json_decode($decoded, true);
+                                            if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
+                                                $parts = [];
+                                                if (!empty($parsed['size']) && $parsed['size'] !== '-') $parts[] = $parsed['size'];
+                                                if (!empty($parsed['color']) && $parsed['color'] !== '-') $parts[] = $parsed['color'];
+                                                $retColorStr = implode(' | ', $parts);
+                                            } else {
+                                                $retColorStr = $retItem->color;
+                                            }
+                                        } else {
+                                            $retColorStr = $retItem->color;
+                                        }
+                                    }
+                                @endphp
+                                @if($retColorStr)
+                                    <div style="font-size: 11px; color: #555;">
+                                        <span class="badge bg-light text-dark border p-1" style="font-size: 9px;">{{ $retColorStr }}</span>
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="text-center fw-bold">{{ (float)$retItem->qty }} Pcs</td>
+                            <td class="text-center fw-bold">Pieces</td>
+                            <td class="text-end">{{ number_format($retItem->price, 2) }}</td>
+                            <td class="text-end text-muted">—</td>
+                            <td class="text-end fw-bold">-{{ number_format($retItem->line_total, 2) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+
         <!-- Footer -->
         <div class="row mt-2">
             <div class="col-7">
@@ -480,6 +548,25 @@
                         </tr>
                         @endif
 
+                        @if ($exchangeReturnedAmount > 0)
+                        <tr>
+                            <td class="text-muted">Return Value</td>
+                            <td class="text-end text-danger">- {{ number_format($exchangeReturnedAmount, 2) }}</td>
+                        </tr>
+                        @endif
+
+                        @php
+                            $finalPayable = $netBill - $exchangeReturnedAmount;
+                        @endphp
+                        <tr>
+                            <td class="fw-bold text-dark fs-6" style="border-top: 2px solid #34495e; padding-top: 8px;">
+                                {{ $finalPayable < 0 ? 'Refund To Customer' : 'Net Payable' }}
+                            </td>
+                            <td class="text-end fw-bold text-dark fs-6" style="border-top: 2px solid #34495e; padding-top: 8px;">
+                                {{ number_format(abs($finalPayable), 2) }}
+                            </td>
+                        </tr>
+
                         @if (round(abs($previousBalance), 2) > 0)
                             <tr style="border-bottom: 2px solid #eee;">
                                 <td class="text-muted">Prev Bal</td>
@@ -488,36 +575,18 @@
                                     <small>{{ $previousBalance >= 0 ? 'Dr' : 'Cr' }}</small>
                                 </td>
                             </tr>
-                            <tr>
-                                <td>Current Bill</td>
-                                <td class="text-end">
-                                    {{ number_format($netBill, 2) }}
-                                </td>
-                            </tr>
-                            <tr class="total-row" style="background-color: #e9ecef;">
-                                <td>Total</td>
-                                <td class="text-end">
-                                    {{ number_format(abs($previousBalance + $netBill), 2) }}
-                                    <small>{{ ($previousBalance + $netBill) >= 0 ? 'Dr' : 'Cr' }}</small>
-                                </td>
-                            </tr>
-                        @else
-                            <tr class="total-row" style="background-color: #e9ecef;">
-                                <td>Total Bill</td>
-                                <td class="text-end">
-                                    {{ number_format($netBill, 2) }}
-                                </td>
-                            </tr>
                         @endif
                         <tr>
                             <td>Paid</td>
                             <td class="text-end text-success">{{ number_format($paidAmount, 2) }}</td>
                         </tr>
-                        <tr style="border-top: 2px solid var(--primary-color);">
-                            <td class="fw-bold">Closing Bal</td>
-                            <td class="text-end fw-bold {{ $finalBal > 0 ? 'text-danger' : 'text-success' }}">
-                                {{ number_format(abs($finalBal), 2) }}
-                                <small>{{ $finalBal >= 0 ? 'Dr' : 'Cr' }}</small>
+                        @php
+                            $finalBal = $previousBalance + $finalPayable - $paidAmount;
+                        @endphp
+                        <tr class="closing-bal">
+                            <td class="fw-bold text-dark py-2">Closing Balance</td>
+                            <td class="text-end fw-bold text-dark py-2">
+                                {{ number_format(abs($finalBal), 2) }} <span class="text-muted" style="font-size: 11px;">{{ $finalBal >= 0 ? 'Dr' : 'Cr' }}</span>
                             </td>
                         </tr>
                     </table>
