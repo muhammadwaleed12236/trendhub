@@ -946,19 +946,21 @@
 
 <!-- Manual Product Modal -->
 <div class="modal fade" id="manualProductModal" tabindex="-1" aria-labelledby="manualProductModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white py-2">
-                <h5 class="modal-title fs-6" id="manualProductModalLabel">Add Manual Product (Outsourced)</h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="border: none; background: transparent; font-size: 24px;">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border: none; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden;">
+            <div class="modal-header py-3" style="background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+                <h5 class="modal-title fs-5 text-dark fw-bold d-flex align-items-center" id="manualProductModalLabel">
+                    <i class="fas fa-box me-2 text-primary"></i> Add Manual Product (Outsourced)
+                </h5>
+                <button type="button" class="close text-secondary" data-dismiss="modal" aria-label="Close" style="border: none; background: transparent; font-size: 24px; outline: none;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <div class="row">
+                <div class="row g-3">
                     <div class="col-md-12 mb-3">
-                        <label class="form-label fw-bold">Vendor *</label>
-                        <select class="form-control" id="manual_vendor_id">
+                        <label class="form-label text-dark fw-semibold small">Vendor <span class="text-danger">*</span></label>
+                        <select class="form-control" id="manual_vendor_id" style="border-radius: 4px; border: 1px solid #ced4da;">
                             <option value="">Select Vendor</option>
                             @foreach($vendors as $vendor)
                                 <option value="{{ $vendor->id }}" data-balance="{{ $vendor->balance }}">{{ $vendor->name }}</option>
@@ -966,42 +968,54 @@
                         </select>
                     </div>
                     <div class="col-md-12 mb-3">
-                        <label class="form-label fw-bold">Product Name *</label>
-                        <input type="text" id="manual_product_name" class="form-control" placeholder="e.g. Red Shirt">
+                        <label class="form-label text-dark fw-semibold small">Product Name <span class="text-danger">*</span></label>
+                        <input type="text" id="manual_product_name" class="form-control" placeholder="e.g. Red Shirt" style="border-radius: 4px; border: 1px solid #ced4da;">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Size</label>
-                        <input type="text" id="manual_size" class="form-control" placeholder="Optional">
+                        <label class="form-label text-dark fw-semibold small">Size</label>
+                        <input type="text" id="manual_size" class="form-control" placeholder="Optional" style="border-radius: 4px; border: 1px solid #ced4da;">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Color</label>
-                        <input type="text" id="manual_color" class="form-control" placeholder="Optional">
+                        <label class="form-label text-dark fw-semibold small">Color</label>
+                        <input type="text" id="manual_color" class="form-control" placeholder="Optional" style="border-radius: 4px; border: 1px solid #ced4da;">
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold">Quantity *</label>
-                        <input type="number" id="manual_qty" class="form-control" value="1" min="1">
+                        <label class="form-label text-dark fw-semibold small">Quantity <span class="text-danger">*</span></label>
+                        <input type="number" id="manual_qty" class="form-control text-center" value="1" min="1" style="border-radius: 4px; border: 1px solid #ced4da;">
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold">Purchase Price *</label>
-                        <input type="number" id="manual_purchase_price" class="form-control" min="0" step="0.01">
+                        <label class="form-label text-dark fw-semibold small">Purchase Price <span class="text-danger">*</span></label>
+                        <div class="input-group" style="border-radius: 4px; border: 1px solid #ced4da; overflow: hidden;">
+                            <span class="input-group-text bg-light text-secondary border-0" style="border-right: 1px solid #ced4da !important;">Rs</span>
+                            <input type="number" id="manual_purchase_price" class="form-control border-0" min="0" step="0.01">
+                        </div>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold">Sale Price *</label>
-                        <input type="number" id="manual_sale_price" class="form-control" min="0" step="0.01">
+                        <label class="form-label text-dark fw-semibold small">Sale Price <span class="text-danger">*</span></label>
+                        <div class="input-group" style="border-radius: 4px; border: 1px solid #ced4da; overflow: hidden;">
+                            <span class="input-group-text bg-light text-secondary border-0" style="border-right: 1px solid #ced4da !important;">Rs</span>
+                            <input type="number" id="manual_sale_price" class="form-control border-0" min="0" step="0.01">
+                        </div>
                     </div>
                 </div>
                 <hr>
-                <div class="row">
+                <div class="row g-3">
                     <div class="col-md-12 mb-2">
-                        <small class="text-muted"><i class="fas fa-info-circle"></i> If paying the vendor immediately, enter the amount below. Otherwise, leave as 0 to keep the balance outstanding in the Vendor Ledger.</small>
+                        <div class="d-flex align-items-center py-2 text-secondary small">
+                            <i class="fas fa-info-circle me-2 text-primary"></i>
+                            <span>If paying the vendor immediately, enter the amount below. Otherwise, leave as 0 to keep the balance outstanding in the Vendor Ledger.</span>
+                        </div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Payment Amount (to Vendor)</label>
-                        <input type="number" id="manual_vendor_payment_amount" class="form-control" value="0" min="0" step="0.01">
+                        <label class="form-label text-dark fw-semibold small">Payment Amount (to Vendor)</label>
+                        <div class="input-group" style="border-radius: 4px; border: 1px solid #ced4da; overflow: hidden;">
+                            <span class="input-group-text bg-light text-secondary border-0" style="border-right: 1px solid #ced4da !important;">Rs</span>
+                            <input type="number" id="manual_vendor_payment_amount" class="form-control border-0" value="0" min="0" step="0.01">
+                        </div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Payment Account</label>
-                        <select class="form-control" id="manual_vendor_account_id">
+                        <label class="form-label text-dark fw-semibold small">Payment Account</label>
+                        <select class="form-control" id="manual_vendor_account_id" style="border-radius: 4px; border: 1px solid #ced4da;">
                             @foreach($accounts as $acc)
                                 <option value="{{ $acc->id }}">{{ $acc->title }}</option>
                             @endforeach
@@ -1012,33 +1026,41 @@
                 <!-- Live Summary Box -->
                 <div class="row mt-3" id="manual_vendor_summary_box" style="display: none;">
                     <div class="col-md-12">
-                        <div class="p-3 border rounded bg-light">
-                            <h6 class="fw-bold mb-2">Vendor Ledger Summary</h6>
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>Previous Balance:</span>
-                                <span id="v_prev_bal" class="fw-bold">0.00</span>
+                        <div class="p-3" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px;">
+                            <div class="d-flex align-items-center mb-3 pb-2" style="border-bottom: 1px solid #dee2e6;">
+                                <i class="fas fa-file-invoice fs-5 text-secondary me-2"></i>
+                                <h6 class="fw-bold mb-0 text-dark">Vendor Ledger Summary</h6>
                             </div>
-                            <div class="d-flex justify-content-between mb-1 text-danger">
-                                <span>+ Current Purchase (Payable):</span>
-                                <span id="v_curr_purch">0.00</span>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-secondary small">Previous Balance</span>
+                                <span id="v_prev_bal" class="fw-medium text-dark">0.00</span>
                             </div>
-                            <div class="d-flex justify-content-between mb-2 text-success">
-                                <span>- Current Paid:</span>
-                                <span id="v_curr_paid">0.00</span>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-secondary small">Current Purchase (Payable)</span>
+                                <span id="v_curr_purch" class="fw-medium text-danger">+ 0.00</span>
                             </div>
-                            <hr class="my-1">
-                            <div class="d-flex justify-content-between">
-                                <strong>New Balance:</strong>
-                                <strong id="v_new_bal">0.00</strong>
+                            
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-secondary small">Current Paid</span>
+                                <span id="v_curr_paid" class="fw-medium text-success">- 0.00</span>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between pt-2 mt-2" style="border-top: 1px solid #dee2e6;">
+                                <strong class="text-dark small">New Balance</strong>
+                                <strong id="v_new_bal" class="text-dark">0.00</strong>
                             </div>
                         </div>
                     </div>
                 </div>
 
             </div>
-            <div class="modal-footer bg-light py-2">
-                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-success btn-sm" id="btnAddToManualCart">Add to Cart</button>
+            <div class="modal-footer py-2" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6;">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm px-4" id="btnAddToManualCart">
+                    Add to Cart
+                </button>
             </div>
         </div>
     </div>
