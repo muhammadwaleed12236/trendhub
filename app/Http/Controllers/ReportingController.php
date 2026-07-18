@@ -173,8 +173,12 @@ class ReportingController extends Controller
                     // Balance = Initial + Purchased - Sold + Returned - Purchased Returned
                     $balance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned);
 
-                    // Average Price
-                    $averagePrice = (float) ($v['purch_price'] ?? $productPurchPrice);
+                    // Weighted Average Purchase Price
+                    $vPurchPrice = (float) ($v['purch_price'] ?? $productPurchPrice);
+                    $initialAmount = $initial * $vPurchPrice;
+                    $totalQtyIn = $initial + $purchased;
+                    $totalAmountIn = $initialAmount + $purchaseAmount;
+                    $averagePrice = $totalQtyIn > 0 ? ($totalAmountIn / $totalQtyIn) : $vPurchPrice;
 
                     // Stock value
                     $stockValue = $balance * $averagePrice;
