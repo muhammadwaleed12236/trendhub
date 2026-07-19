@@ -690,9 +690,9 @@
                         </div>
                         <input type="hidden" name="is_walkin" id="isWalkinInput" value="1">
                         
-                        <div class="row g-2">
+                        <div class="row g-2 mb-2">
                             <!-- Customer Selection -->
-                            <div class="col-6">
+                            <div class="col-12">
                                 <div class="form-group" id="walkinNameGroup">
                                     <label>Customer Name</label>
                                     <input type="text" name="walkin_name" id="walkinNameInput" class="pos-input" placeholder="Name" value="Walking Customer">
@@ -710,36 +710,71 @@
                                     </select>
                                 </div>
                             </div>
-                            
-                            <!-- Payment Account -->
-                            <div class="col-6">
-                                <div class="form-group">
-                                    <label>Payment Account</label>
-                                    <select class="form-select pos-input" name="receipt_account_id[]" required>
-                                        @foreach ($accounts as $acc)
-                                            <option value="{{ $acc->id }}" {{ str_contains(strtolower($acc->title), 'cash') ? 'selected' : '' }}>{{ $acc->title }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
                         </div>
                         
-                        <!-- Cash Received & Change -->
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <div class="form-group">
-                                    <label>Received Cash</label>
-                                    <input type="number" name="receipt_amount[]" id="receivedCash" class="pos-input text-end fw-bold" placeholder="0.00" value="">
+                        <!-- Payments Section -->
+                        <div class="payments-wrapper mb-2" style="border: 1px solid #ced4da; padding: 10px; border-radius: 6px; background-color: #f8f9fa;">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid #dee2e6;">
+                                <label class="mb-0 fw-bold small text-secondary">PAYMENTS</label>
+                                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btnAddSplitPayment" style="font-size: 11px;">
+                                    <i class="fas fa-plus"></i> Split
+                                </button>
+                            </div>
+                            
+                            <div id="paymentRowsContainer">
+                                <div class="row g-2 payment-row mb-2">
+                                    <div class="col-7">
+                                        <label class="small text-secondary mb-1">Payment Account</label>
+                                        <select class="form-select pos-input payment-account" name="receipt_account_id[]" required>
+                                            @foreach ($accounts as $acc)
+                                                <option value="{{ $acc->id }}" {{ str_contains(strtolower($acc->title), 'cash') ? 'selected' : '' }}>{{ $acc->title }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-5">
+                                        <label class="small text-secondary mb-1">Received</label>
+                                        <input type="number" name="receipt_amount[]" class="pos-input text-end fw-bold receipt-amount" placeholder="0.00" value="">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-2">
+                            
+                            <!-- Change Calculation -->
+                            <div class="row g-2 align-items-center">
+                                <div class="col-6 text-end">
+                                    <span class="small text-secondary fw-semibold">Total Received:</span><br>
+                                    <span class="small text-secondary fw-semibold">Change:</span>
+                                </div>
+                                <div class="col-6">
+                                    <input type="text" id="totalReceivedDisplay" class="pos-input text-end fw-bold border-0 bg-transparent mb-1 p-0" readonly value="0.00">
+                                    <input type="text" id="returnedChange" class="pos-input text-end fw-bold text-success bg-light" readonly value="0.00">
                                     <input type="hidden" name="cash" id="backendCash">
                                 </div>
                             </div>
-                            <div class="col-6">
-                                <div class="form-group">
-                                    <label>Change</label>
-                                    <input type="text" id="returnedChange" class="pos-input text-end fw-bold bg-light" readonly value="0.00">
+                        </div>
+
+                        <!-- Hidden template for split payments -->
+                        <div id="paymentRowTemplate" style="display: none;">
+                            <div class="row g-2 payment-row mb-2">
+                                <div class="col-6">
+                                    <select class="form-select pos-input payment-account" name="receipt_account_id[]" required disabled>
+                                        @foreach ($accounts as $acc)
+                                            <option value="{{ $acc->id }}">{{ $acc->title }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <input type="number" name="receipt_amount[]" class="pos-input text-end fw-bold receipt-amount" placeholder="0.00" disabled>
+                                </div>
+                                <div class="col-2 d-flex align-items-center">
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-payment p-1 w-100">
+                                        <i class="fas fa-times"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
+
                         
                         <!-- Hidden values for backend submission -->
                         <input type="hidden" name="subTotal1" id="backendSubTotal1" value="0">
@@ -1699,8 +1734,27 @@
             renderCart();
         });
 
+        // Split Payments Logic
+        $('#btnAddSplitPayment').on('click', function() {
+            let $template = $('#paymentRowTemplate .payment-row').clone();
+            // enable inputs inside the clone
+            $template.find('select, input').prop('disabled', false);
+            $('#paymentRowsContainer').append($template);
+        });
+
+        $(document).on('click', '.btn-remove-payment', function() {
+            if ($('#paymentRowsContainer .payment-row').length > 1) {
+                $(this).closest('.payment-row').remove();
+                updateBillSummary();
+            } else {
+                // If it's the last row, just clear it
+                $(this).closest('.payment-row').find('.receipt-amount').val('');
+                updateBillSummary();
+            }
+        });
+
         // Live Discount and Cash calculation
-        $('#summaryDiscount, #receivedCash').on('input', function() {
+        $(document).on('input', '#summaryDiscount, .receipt-amount', function() {
             updateBillSummary();
         });
 
@@ -1754,20 +1808,26 @@
             
             $('#summaryPayable').text('Rs ' + payable.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
             
+            // Calculate Total Received from all payment rows
+            let totalReceived = 0;
+            $('.receipt-amount:not(:disabled)').each(function() {
+                totalReceived += parseFloat($(this).val()) || 0;
+            });
+            $('#totalReceivedDisplay').val(totalReceived.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            
             // Handle negative payable (Refund to Customer)
             let netTotal = subtotal - itemDiscountsSum - totalReturn;
             if (netTotal < 0) {
                 let refundAmt = Math.abs(netTotal);
                 $('#summaryPayable').html(`<span class="text-danger">Refund: Rs ${refundAmt.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`);
                 payable = 0; // Payable is 0, since it's a refund
-                $('#receivedCash').val(0).prop('readonly', true);
+                $('.receipt-amount:not(:disabled)').val(0).prop('readonly', true);
                 $('#returnedChange').val(refundAmt.toFixed(2));
             } else {
-                $('#receivedCash').prop('readonly', false);
+                $('.receipt-amount:not(:disabled)').prop('readonly', false);
             }
             
-            let received = parseFloat($('#receivedCash').val()) || 0;
-            let change = Math.max(0, received - payable);
+            let change = Math.max(0, totalReceived - payable);
             if (netTotal >= 0) {
                 $('#returnedChange').val(change.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
             }
@@ -1776,7 +1836,7 @@
             $('#backendSubTotal1').val(subtotal.toFixed(2));
             $('#backendSubTotal2').val(subtotal.toFixed(2));
             $('#backendTotalNet').val(payable.toFixed(2));
-            $('#backendCash').val(received.toFixed(2));
+            $('#backendCash').val(totalReceived.toFixed(2));
         }
 
         // Form Submit
@@ -1786,7 +1846,7 @@
             // Validate Cash Received (Avoid checkout without payment unless registered)
             let isWalkin = $('#isWalkinInput').val() === '1';
             let payable = parseFloat($('#backendTotalNet').val()) || 0;
-            let received = parseFloat($('#receivedCash').val()) || 0;
+            let received = parseFloat($('#backendCash').val()) || 0;
             
             if (isWalkin && received < payable) {
                 Swal.fire('Incomplete Payment', 'Walk-in customer must pay the full bill amount.', 'warning');
@@ -1822,7 +1882,12 @@
                         }).then(() => {
                             cart = [];
                             $('#summaryDiscount').val(0);
-                            $('#receivedCash').val('');
+                            
+                            // Reset payment rows
+                            let $firstRow = $('#paymentRowsContainer .payment-row').first();
+                            $firstRow.find('.receipt-amount').val('');
+                            $('#paymentRowsContainer').empty().append($firstRow);
+
                             $('#posCheckoutForm')[0].reset();
                             $('#btnToggleWalkin').trigger('click');
                             renderCart();
