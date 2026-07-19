@@ -273,6 +273,7 @@ class PurchaseController extends Controller
                     'color' => $colorStr,
                     'sale_price' => (float) $sPrices[$i],
                     'wholesale_price' => (float) $sPrices[$i],
+                    'purch_price' => (float) $pPrices[$i],
                     'weight_per_piece' => 0,
                     'stock' => 0
                 ];
