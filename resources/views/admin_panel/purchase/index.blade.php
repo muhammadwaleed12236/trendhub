@@ -229,6 +229,10 @@
                         </a>
 
                         @can('purchases.create')
+                            <a class="btn btn-success px-4 shadow-sm fw-medium align-items-center gap-2 animate__animated animate__fadeIn me-2"
+                                href="{{ route('purchase.quick_create') }}">
+                                <i class="fas fa-bolt"></i> Quick Purchase
+                            </a>
                             <a class="btn btn-primary px-4 shadow-sm fw-medium align-items-center gap-2 animate__animated animate__fadeIn"
                                 href="{{ route('add_purchase') }}">
                                 <i class="fas fa-plus"></i> Add Purchase

@@ -160,6 +160,201 @@ class PurchaseController extends Controller
         // Return new V2 view
         return view('admin_panel.purchase.add_purchase_v2', compact('Vendor', 'Warehouse', 'Purchase', 'accounts', 'nextInvoice'));
     }
+    public function quickCreate()
+    {
+        $Vendor = Vendor::get();
+        $Warehouse = Warehouse::get();
+        $accounts = \App\Models\Account::whereHas('head', function($q) {
+            $q->whereIn('name', ['Cash', 'Bank']);
+        })->where('status', 1)->orderBy('title')->get();
+        
+        $categories = \App\Models\Category::get();
+
+        $balanceService = app(\App\Services\BalanceService::class);
+        $vendorBalances = [];
+        foreach ($Vendor as $v) {
+            $vendorBalances[$v->id] = $balanceService->getVendorBalance($v->id);
+        }
+
+        return view('admin_panel.purchase.quick_create', compact('Vendor', 'Warehouse', 'accounts', 'categories', 'vendorBalances'));
+    }
+
+    public function quickStore(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'vendor_id' => 'nullable',
+                'new_vendor_name' => 'nullable|string',
+                'opening_balance' => 'nullable|numeric',
+                'category_id' => 'required',
+                'sub_category_id' => 'nullable',
+                'base_product_name' => 'required|string',
+                'payment_account_id' => 'nullable|exists:accounts,id',
+                'payment_amount' => 'nullable|numeric|min:0',
+                
+                'variant_size' => 'required|array|min:1',
+                'variant_color' => 'required|array|min:1',
+                'qty' => 'required|array|min:1',
+                'qty.*' => 'required|numeric|min:1',
+                'purchase_price' => 'required|array',
+                'purchase_price.*' => 'required|numeric|min:0',
+                'sale_price' => 'required|array',
+                'sale_price.*' => 'required|numeric|min:0',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'errors' => $e->errors(), 'message' => 'Validation Error'], 422);
+            }
+            throw $e;
+        }
+
+        $purchase = DB::transaction(function () use ($validated, $request) {
+            // 1. Resolve Vendor
+            $vendorId = $validated['vendor_id'];
+            if (!$vendorId && !empty($validated['new_vendor_name'])) {
+                $vendor = Vendor::create([
+                    'name' => $validated['new_vendor_name'],
+                    'status' => 1
+                ]);
+                $vendorId = $vendor->id;
+
+                if (!empty($validated['opening_balance']) && $validated['opening_balance'] != 0) {
+                    \App\Models\VendorLedger::create([
+                        'vendor_id' => $vendorId,
+                        'admin_or_user_id' => auth()->id() ?? 1,
+                        'previous_balance' => 0,
+                        'opening_balance' => 0,
+                        'closing_balance' => (float)$validated['opening_balance']
+                    ]);
+                }
+            }
+
+            // 2. Create Header
+            $lastInvoice = Purchase::latest('id')->value('invoice_no');
+            $nextInvoice = $lastInvoice
+                ? 'PUR-'.str_pad(((int) preg_replace('/[^0-9]/', '', $lastInvoice)) + 1, 3, '0', STR_PAD_LEFT)
+                : 'PUR-001';
+
+            $purchase = Purchase::create([
+                'branch_id' => 1,
+                'warehouse_id' => 1, // Default warehouse
+                'vendor_id' => $vendorId,
+                'purchase_date' => now(),
+                'invoice_no' => $nextInvoice,
+                'note' => 'Quick Purchase: ' . $validated['base_product_name'],
+                'subtotal' => 0,
+                'discount' => 0,
+                'extra_cost' => 0,
+                'net_amount' => 0,
+                'paid_amount' => 0,
+                'due_amount' => 0,
+                'status_purchase' => 'approved',
+            ]);
+
+            $subtotal = 0;
+            $baseName = $validated['base_product_name'];
+            $sizes = $request->variant_size;
+            $colors = $request->variant_color;
+            $qtys = $validated['qty'];
+            $pPrices = $validated['purchase_price'];
+            $sPrices = $validated['sale_price'];
+
+            // 3. Build Variant JSON array for single Product
+            $variantsArray = [];
+            foreach ($sizes as $i => $sizeStr) {
+                $qty = (float) $qtys[$i];
+                if ($qty <= 0) continue;
+                
+                $colorStr = $colors[$i];
+                
+                $variantsArray[] = [
+                    'name' => $baseName, // Ensure name is set for POS display
+                    'size' => $sizeStr,
+                    'color' => $colorStr,
+                    'sale_price' => (float) $sPrices[$i],
+                    'wholesale_price' => (float) $sPrices[$i],
+                    'weight_per_piece' => 0,
+                    'stock' => 0
+                ];
+            }
+
+            // Create ONE master Product
+            $lastProduct = Product::orderBy('id', 'desc')->first();
+            $nextCode = $lastProduct ? ('ITEM-'.str_pad($lastProduct->id + 1, 4, '0', STR_PAD_LEFT)) : 'ITEM-0001';
+
+            $product = Product::create([
+                'item_name' => $baseName,
+                'category_id' => $validated['category_id'] ?? null,
+                'sub_category_id' => $validated['sub_category_id'] ?? null,
+                'color' => json_encode($variantsArray), // Store variants here!
+                'item_code' => $nextCode,
+                'purchase_price_per_piece' => (float) ($pPrices[0] ?? 0),
+                'sale_price_per_piece' => (float) ($sPrices[0] ?? 0),
+                'size_mode' => 'pieces',
+                'total_m2' => 0,
+                'is_active' => 1
+            ]);
+
+            // 4. Create Purchase Items linking to the single master Product
+            foreach ($sizes as $i => $sizeStr) {
+                $qty = (float) $qtys[$i];
+                $pPrice = (float) $pPrices[$i];
+                if ($qty <= 0) continue;
+
+                $colorStr = $colors[$i];
+                $lineTotal = $qty * $pPrice;
+
+                // Create Purchase Item
+                PurchaseItem::create([
+                    'purchase_id' => $purchase->id,
+                    'product_id' => $product->id, // All point to the same master product
+                    'price' => $pPrice,
+                    'qty' => $qty,
+                    'line_total' => $lineTotal,
+                    // Store variant info in color field for the PurchaseItem as JSON
+                    'color' => json_encode(['size' => $sizeStr, 'color' => $colorStr]), 
+                    'size_mode' => 'pieces',
+                    'pieces_per_box' => 1,
+                ]);
+
+                $subtotal += $lineTotal;
+            }
+
+            $purchase->update([
+                'subtotal' => $subtotal,
+                'net_amount' => $subtotal,
+                'due_amount' => $subtotal,
+            ]);
+
+            // 4. Approve (Stock + Ledgers)
+            $purchase->load('items');
+            $this->approvePurchase($purchase);
+
+            // 5. Payment
+            if (!empty($validated['payment_account_id']) && $validated['payment_amount'] > 0) {
+                try {
+                    $transactionService = app(\App\Services\TransactionService::class);
+                    $transactionService->createPaymentForPurchase(
+                        $purchase,
+                        [$validated['payment_account_id']],
+                        [$validated['payment_amount']]
+                    );
+                } catch (\Exception $e) {}
+            }
+
+            return $purchase;
+        });
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Quick Purchase saved successfully!',
+                'redirect_url' => route('Purchase.home'),
+            ]);
+        }
+
+        return redirect()->route('Purchase.home')->with('success', 'Quick Purchase saved successfully!');
+    }
 
     private function approvePurchase(Purchase $purchase)
     {
