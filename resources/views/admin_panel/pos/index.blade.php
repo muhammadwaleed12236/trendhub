@@ -968,33 +968,58 @@
                         </select>
                     </div>
                     <div class="col-md-12 mb-3">
-                        <label class="form-label text-dark fw-semibold small">Product Name <span class="text-danger">*</span></label>
-                        <input type="text" id="manual_product_name" class="form-control" placeholder="e.g. Red Shirt" style="border-radius: 4px; border: 1px solid #ced4da;">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-dark fw-semibold small">Size</label>
-                        <input type="text" id="manual_size" class="form-control" placeholder="Optional" style="border-radius: 4px; border: 1px solid #ced4da;">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-dark fw-semibold small">Color</label>
-                        <input type="text" id="manual_color" class="form-control" placeholder="Optional" style="border-radius: 4px; border: 1px solid #ced4da;">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label text-dark fw-semibold small">Quantity <span class="text-danger">*</span></label>
-                        <input type="number" id="manual_qty" class="form-control text-center" value="1" min="1" style="border-radius: 4px; border: 1px solid #ced4da;">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label text-dark fw-semibold small">Purchase Price <span class="text-danger">*</span></label>
-                        <div class="input-group" style="border-radius: 4px; border: 1px solid #ced4da; overflow: hidden;">
-                            <span class="input-group-text bg-light text-secondary border-0" style="border-right: 1px solid #ced4da !important;">Rs</span>
-                            <input type="number" id="manual_purchase_price" class="form-control border-0" min="0" step="0.01">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-2">
+                                <label class="form-label text-dark fw-semibold small mb-1">Product Name <span class="text-danger">*</span></label>
+                                <input type="text" id="manual_product_name" class="form-control form-control-sm" placeholder="e.g. Red Shirt" style="border-radius: 4px; border: 1px solid #ced4da;">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label text-dark fw-semibold small mb-1">Size</label>
+                                <input type="text" id="manual_size" class="form-control form-control-sm" placeholder="Optional" style="border-radius: 4px; border: 1px solid #ced4da;">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label text-dark fw-semibold small mb-1">Color</label>
+                                <input type="text" id="manual_color" class="form-control form-control-sm" placeholder="Optional" style="border-radius: 4px; border: 1px solid #ced4da;">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label text-dark fw-semibold small mb-1">Quantity <span class="text-danger">*</span></label>
+                                <input type="number" id="manual_qty" class="form-control form-control-sm text-center" value="1" min="1" style="border-radius: 4px; border: 1px solid #ced4da;">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label text-dark fw-semibold small mb-1">Purchase (Rs)<span class="text-danger">*</span></label>
+                                <input type="number" id="manual_purchase_price" class="form-control form-control-sm text-end" min="0" step="0.01" style="border-radius: 4px; border: 1px solid #ced4da;" placeholder="0.00">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label text-dark fw-semibold small mb-1">Sale (Rs)<span class="text-danger">*</span></label>
+                                <input type="number" id="manual_sale_price" class="form-control form-control-sm text-end" min="0" step="0.01" style="border-radius: 4px; border: 1px solid #ced4da;" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="text-end mt-2">
+                            <button type="button" class="btn btn-sm btn-success fw-bold px-3" id="btnAddManualItemInner">
+                                <i class="fas fa-plus me-1"></i> Add Item to Sale
+                            </button>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label text-dark fw-semibold small">Sale Price <span class="text-danger">*</span></label>
-                        <div class="input-group" style="border-radius: 4px; border: 1px solid #ced4da; overflow: hidden;">
-                            <span class="input-group-text bg-light text-secondary border-0" style="border-right: 1px solid #ced4da !important;">Rs</span>
-                            <input type="number" id="manual_sale_price" class="form-control border-0" min="0" step="0.01">
+                    
+                    <div class="col-md-12 mb-3">
+                        <div class="table-responsive" style="max-height: 200px; border: 1px solid #dee2e6; border-radius: 4px;">
+                            <table class="table table-sm table-hover mb-0" style="font-size: 0.85rem;">
+                                <thead style="background-color: #f8f9fa;">
+                                    <tr>
+                                        <th class="text-secondary fw-semibold">ITEM</th>
+                                        <th class="text-center text-secondary fw-semibold" style="width: 60px;">QTY</th>
+                                        <th class="text-end text-secondary fw-semibold" style="width: 90px;">PURCHASE</th>
+                                        <th class="text-end text-secondary fw-semibold" style="width: 90px;">SALE</th>
+                                        <th class="text-end text-secondary fw-semibold" style="width: 90px;">PROFIT</th>
+                                        <th style="width: 40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="manualItemsList">
+                                    <tr id="manualNoItemsRow">
+                                        <td colspan="6" class="text-center text-muted py-3">No items added yet.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -1058,8 +1083,8 @@
             </div>
             <div class="modal-footer py-2" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6;">
                 <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary btn-sm px-4" id="btnAddToManualCart">
-                    Add to Cart
+                <button type="button" class="btn btn-primary btn-sm px-4" id="btnConfirmManualCart">
+                    Confirm & Add All to POS
                 </button>
             </div>
         </div>
@@ -1072,6 +1097,7 @@
 <script>
     $(document).ready(function() {
         let cart = [];
+        let manualModalCart = [];
         
         // Init Select2 for customer
         $('#customerSelect').select2({
@@ -1295,9 +1321,12 @@
             
             $summaryBox.show();
             let prevBal = parseFloat($('#manual_vendor_id option:selected').data('balance')) || 0;
-            let qty = parseInt($('#manual_qty').val()) || 1;
+            
+            let innerCartPurchase = manualModalCart.reduce((sum, item) => sum + (item.qty * item.purchase_price), 0);
+            
+            let qty = parseInt($('#manual_qty').val()) || 0;
             let purchase_price = parseFloat($('#manual_purchase_price').val()) || 0;
-            let currentPurchase = qty * purchase_price;
+            let currentPurchase = innerCartPurchase + (qty * purchase_price);
             let currentPaid = parseFloat($('#manual_vendor_payment_amount').val()) || 0;
             
             let newBal = prevBal + currentPurchase - currentPaid;
@@ -1320,10 +1349,48 @@
         $('#manual_vendor_id, #manual_qty, #manual_purchase_price, #manual_vendor_payment_amount').on('input change', updateVendorSummary);
         
         $('#manualProductModal').on('show.bs.modal', function () {
+            manualModalCart = []; // reset inner cart on open
+            renderManualModalCart();
             updateVendorSummary();
         });
 
-        $('#btnAddToManualCart').on('click', function() {
+        function renderManualModalCart() {
+            let $tbody = $('#manualItemsList');
+            $tbody.empty();
+            
+            if (manualModalCart.length === 0) {
+                $tbody.append('<tr id="manualNoItemsRow"><td colspan="6" class="text-center text-muted py-3">No items added yet.</td></tr>');
+                return;
+            }
+            
+            manualModalCart.forEach((item, index) => {
+                let profit = (item.sale_price - item.purchase_price) * item.qty;
+                let tr = `
+                    <tr>
+                        <td class="align-middle fw-medium text-dark">${item.name}</td>
+                        <td class="align-middle text-center fw-bold text-dark">${item.qty}</td>
+                        <td class="align-middle text-end">${item.purchase_price.toFixed(2)}</td>
+                        <td class="align-middle text-end">${item.sale_price.toFixed(2)}</td>
+                        <td class="align-middle text-end ${profit >= 0 ? 'text-success' : 'text-danger'}">${profit.toFixed(2)}</td>
+                        <td class="align-middle text-end">
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-manual-item" data-index="${index}" style="padding: 2px 6px;">
+                                <i class="fas fa-trash-alt" style="font-size: 10px;"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                $tbody.append(tr);
+            });
+        }
+
+        $(document).on('click', '.remove-manual-item', function() {
+            let index = $(this).data('index');
+            manualModalCart.splice(index, 1);
+            renderManualModalCart();
+            updateVendorSummary();
+        });
+
+        $('#btnAddManualItemInner').on('click', function() {
             let vendor_id = $('#manual_vendor_id').val();
             let product_name = $('#manual_product_name').val().trim();
             let size = $('#manual_size').val().trim();
@@ -1331,15 +1398,12 @@
             let qty = parseInt($('#manual_qty').val()) || 1;
             let purchase_price = parseFloat($('#manual_purchase_price').val());
             let sale_price = parseFloat($('#manual_sale_price').val());
-            let payment_amount = parseFloat($('#manual_vendor_payment_amount').val()) || 0;
-            let account_id = $('#manual_vendor_account_id').val();
 
-            if (!vendor_id) { Swal.fire('Validation Error', 'Please select a vendor.', 'error'); return; }
+            if (!vendor_id) { Swal.fire('Validation Error', 'Please select a vendor first.', 'error'); return; }
             if (!product_name) { Swal.fire('Validation Error', 'Please enter a product name.', 'error'); return; }
             if (qty < 1) { Swal.fire('Validation Error', 'Quantity must be at least 1.', 'error'); return; }
             if (isNaN(purchase_price) || purchase_price < 0) { Swal.fire('Validation Error', 'Please enter a valid purchase price.', 'error'); return; }
             if (isNaN(sale_price) || sale_price < 0) { Swal.fire('Validation Error', 'Please enter a valid sale price.', 'error'); return; }
-            if (payment_amount > 0 && !account_id) { Swal.fire('Validation Error', 'Please select a payment account for the vendor payment.', 'error'); return; }
 
             // Construct variant string
             let variantObj = {};
@@ -1355,9 +1419,9 @@
                 displayName += ` (${parts.join(' | ')})`;
             }
 
-            let id = 'manual_' + Date.now();
+            let id = 'manual_' + Date.now() + Math.floor(Math.random() * 1000);
             
-            cart.push({
+            manualModalCart.push({
                 id: id,
                 product_id: '',
                 name: displayName,
@@ -1373,20 +1437,73 @@
                 is_manual: 1,
                 vendor_id: vendor_id,
                 purchase_price: purchase_price,
-                vendor_payment_amount: payment_amount,
-                vendor_account_id: account_id
+                sale_price: sale_price // keep for profit calc
             });
             
-            renderCart();
+            renderManualModalCart();
             
-            // Close modal & Reset
-            $('#manualProductModal').modal('hide');
+            // Clear inputs for next item
             $('#manual_product_name').val('');
             $('#manual_size').val('');
             $('#manual_color').val('');
             $('#manual_qty').val(1);
             $('#manual_purchase_price').val('');
             $('#manual_sale_price').val('');
+            
+            updateVendorSummary();
+        });
+
+        $('#btnConfirmManualCart').on('click', function() {
+            if (manualModalCart.length === 0) {
+                Swal.fire('Empty', 'Please add at least one item first.', 'warning');
+                return;
+            }
+            
+            let payment_amount = parseFloat($('#manual_vendor_payment_amount').val()) || 0;
+            let account_id = $('#manual_vendor_account_id').val();
+            
+            if (payment_amount > 0 && !account_id) { 
+                Swal.fire('Validation Error', 'Please select a payment account for the vendor payment.', 'error'); 
+                return; 
+            }
+            
+            // Loop through all items and push to POS cart
+            manualModalCart.forEach(item => {
+                // Apply the vendor payment ONLY to the first item (or distribute it). 
+                // Currently, the existing logic stored it per item. We can just attach it to the first manual item so it's recorded once.
+                let itemPayment = 0;
+                let itemAccount = null;
+                if (item === manualModalCart[0]) {
+                    itemPayment = payment_amount;
+                    itemAccount = account_id;
+                }
+                
+                cart.push({
+                    id: item.id,
+                    product_id: item.product_id,
+                    name: item.name,
+                    price: item.price,
+                    retailPrice: item.retailPrice,
+                    wholesalePrice: item.wholesalePrice,
+                    weightPerPiece: item.weightPerPiece,
+                    qty: item.qty,
+                    stock: item.stock,
+                    sizeMode: item.sizeMode,
+                    piecesPerBox: item.piecesPerBox,
+                    variantData: item.variantData,
+                    is_manual: item.is_manual,
+                    vendor_id: item.vendor_id,
+                    purchase_price: item.purchase_price,
+                    vendor_payment_amount: itemPayment,
+                    vendor_account_id: itemAccount
+                });
+            });
+            
+            renderCart();
+            
+            // Close modal & Reset
+            $('#manualProductModal').modal('hide');
+            manualModalCart = [];
             $('#manual_vendor_payment_amount').val(0);
         });
 
