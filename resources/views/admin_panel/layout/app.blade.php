@@ -530,6 +530,11 @@
                                                                     class="fas fa-shopping-cart"></i> Purchase</a>
                                                         </li>
                                                     @endcan
+                                                    @can('purchase_pos.create')
+                                                        <li><a href="{{ route('purchase-pos.index') }}"><i
+                                                                    class="fas fa-cash-register"></i> Purchase POS</a>
+                                                        </li>
+                                                    @endcan
                                                 </ul>
                                             </div>
                                         @endcanany
