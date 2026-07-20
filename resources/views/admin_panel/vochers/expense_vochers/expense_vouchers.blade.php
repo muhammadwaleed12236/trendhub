@@ -282,12 +282,17 @@
                                 <tbody>
                                     <tr>
                                         <td>
-                                            <select name="row_account_id[]" class="rv-input rowAccountCategory" required>
-                                                <option value="" disabled selected>Select Category</option>
-                                                @foreach ($expenseCategories as $cat)
-                                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                                @endforeach
-                                            </select>
+                                            <div class="d-flex align-items-center">
+                                                <select name="row_account_id[]" class="rv-input rowAccountCategory flex-grow-1" required>
+                                                    <option value="" disabled selected>Select Category</option>
+                                                    @foreach ($expenseCategories as $cat)
+                                                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <a href="javascript:void(0)" data-toggle="modal" data-target="#newExpenseCategoryModal" class="btn btn-primary btn-sm ms-2" title="Add New Category" style="padding: 0.35rem 0.5rem; border-radius: 4px;">
+                                                    <i class="bi bi-plus-lg"></i>
+                                                </a>
+                                            </div>
                                         </td>
                                         <td>
                                             <input type="text" name="narration_text[]" class="rv-input" placeholder="e.g. Rent payment, office repair...">
@@ -336,6 +341,39 @@
         </div>
     </div>
 @endsection
+
+    <!-- New Expense Category Modal -->
+    <div class="modal fade" id="newExpenseCategoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fs-6">Create New Expense Category</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="newExpenseCategoryForm">
+                    @csrf
+                    <div class="modal-body p-4">
+                        <div class="form-group mb-3">
+                            <label class="form-label text-secondary fw-bold" style="font-size: 12px;">CATEGORY NAME <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Utility Bills, Travel" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="form-label text-secondary fw-bold" style="font-size: 12px;">CODE (Optional)</label>
+                            <input type="text" name="code" class="form-control" placeholder="e.g. UTIL-01">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label text-secondary fw-bold" style="font-size: 12px;">DESCRIPTION</label>
+                            <textarea name="description" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="btnSaveNewCategory">Save Category</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
 @section('js')
     <script>
@@ -415,15 +453,18 @@
 
             // Add Row
             $('#addNewRow').on('click', function() {
+                let optionsHtml = $('.rowAccountCategory').first().html();
                 let newRow = `
                 <tr>
                     <td>
-                        <select name="row_account_id[]" class="rv-input rowAccountCategory" required>
-                            <option value="" disabled selected>Select Category</option>
-                            @foreach ($expenseCategories as $cat)
-                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                            @endforeach
-                        </select>
+                        <div class="d-flex align-items-center">
+                            <select name="row_account_id[]" class="rv-input rowAccountCategory flex-grow-1" required>
+                                ${optionsHtml}
+                            </select>
+                            <a href="javascript:void(0)" data-toggle="modal" data-target="#newExpenseCategoryModal" class="btn btn-primary btn-sm ms-2" title="Add New Category" style="padding: 0.35rem 0.5rem; border-radius: 4px;">
+                                <i class="bi bi-plus-lg"></i>
+                            </a>
+                        </div>
                     </td>
                     <td>
                         <input type="text" name="narration_text[]" class="rv-input" placeholder="e.g. Rent payment, office repair...">
@@ -438,6 +479,7 @@
                 </tr>
             `;
                 $('#voucherTable tbody').append(newRow);
+                $('#voucherTable tbody tr:last-child .rowAccountCategory').val('');
             });
 
             // Remove Row
@@ -454,6 +496,45 @@
                     e.preventDefault();
                     $('#addNewRow').click();
                 }
+            });
+
+            // Handle New Expense Category AJAX Submission
+            $('#newExpenseCategoryForm').on('submit', function(e) {
+                e.preventDefault();
+                let btn = $('#btnSaveNewCategory');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+                
+                $.ajax({
+                    url: "{{ route('expense_categories.store') }}",
+                    type: "POST",
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        btn.prop('disabled', false).text('Save Category');
+                        if(response.success && response.category) {
+                            Swal.fire({ toast:true, position:'top-end', icon:'success', title:'Category Created', showConfirmButton:false, timer:1500 });
+                            $('#newExpenseCategoryModal').modal('hide');
+                            $('#newExpenseCategoryForm')[0].reset();
+                            
+                            // Append new option to all existing dropdowns and select it on the last one or empty ones
+                            let newCat = response.category;
+                            let newOptionHtml = `<option value="${newCat.id}">${newCat.name}</option>`;
+                            $('.rowAccountCategory').each(function() {
+                                $(this).append(newOptionHtml);
+                                if (!$(this).val()) {
+                                    $(this).val(newCat.id).trigger('change');
+                                }
+                            });
+                        } else {
+                            Swal.fire('Error', response.message || 'Failed to create Category.', 'error');
+                        }
+                    },
+                    error: function(xhr) {
+                        btn.prop('disabled', false).text('Save Category');
+                        let msg = 'Failed to create Category.';
+                        if(xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                        Swal.fire('Error', msg, 'error');
+                    }
+                });
             });
         });
     </script>

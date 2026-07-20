@@ -43,11 +43,19 @@ class ExpenseCategoryController extends Controller
             ]);
         }
 
-        ExpenseCategory::create([
+        $newCategory = ExpenseCategory::create([
             'name' => $request->name,
             'code' => $request->code,
             'description' => $request->description,
         ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'category' => $newCategory,
+                'message' => 'Expense Category Created Successfully'
+            ]);
+        }
 
         return response()->json([
             'success'  => 'Expense Category Created Successfully',
