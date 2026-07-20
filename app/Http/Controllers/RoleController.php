@@ -14,6 +14,10 @@ class RoleController extends Controller
      public function index()
     {
         $roles = Role::orderBy('name',"ASC")->get();
+        
+        // Ensure purchase_pos.create permission exists automatically (so no live migration is needed)
+        Permission::firstOrCreate(['name' => 'purchase_pos.create']);
+        
         $allPermissions  = Permission::all();
         return view('admin_panel.roles.role', compact(['roles', 'allPermissions']));
     }
