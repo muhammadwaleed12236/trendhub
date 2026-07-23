@@ -3,184 +3,347 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="{{ asset('assets/vendors/bootstrap-icons/css/bootstrap-icons.min.css') }}">
 
-   
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
         :root {
-            --rv-primary: #0b5a2b; /* Premium deep green theme */
-            --rv-bg: #f8fafc;
-            --rv-border: #e2e8f0;
-            --rv-text: #1e293b;
-            --rv-muted: #64748b;
+            --primary: #0f172a;
+            --primary-hover: #334155;
+            --secondary: #f1f5f9;
+            --secondary-hover: #e2e8f0;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #94a3b8;
+            --border-hover: #64748b;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --danger: #ef4444;
+            --danger-bg: #fef2f2;
+            --success: #10b981;
+            --success-bg: #ecfdf5;
+            --radius-md: 8px;
+            --radius-lg: 12px;
         }
 
-        .rv-card {
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
-            border: 1px solid var(--rv-border);
-            padding: 24px;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
         }
 
-        .rv-header {
+        /* Layout & Cards */
+        .erp-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            padding: 32px 40px;
+            margin-bottom: 24px;
+        }
+
+        .erp-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 2px solid var(--rv-border);
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
         }
 
-        .rv-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--rv-text);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .rv-title i {
-            color: var(--rv-primary);
-            background: #ecfdf5;
-            padding: 8px 10px;
-            border-radius: 10px;
-        }
-
-        .rv-section-label {
-            font-size: 0.78rem;
+        .erp-title {
+            font-size: 1.5rem;
             font-weight: 600;
-            color: var(--rv-primary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin: 16px 0 8px 0;
+            color: var(--text-main);
+            margin: 0;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
         }
-        .rv-section-label::after {
+        
+        .erp-title i {
+            color: var(--accent);
+            background: #eff6ff;
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin: 32px 0 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .section-title i {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+        .section-title::after {
             content: '';
             flex: 1;
             height: 1px;
-            background: var(--rv-border);
+            background: var(--border);
+            margin-left: 8px;
         }
 
-        .rv-label {
-            font-size: 0.72rem;
-            font-weight: 700;
+        /* Form Controls */
+        .form-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--rv-muted);
-            margin-bottom: 4px;
+            letter-spacing: 0.02em;
         }
 
-        .rv-input {
-            background: #fff;
-            border: 1px solid var(--rv-border);
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 0.9rem;
-            color: var(--rv-text);
+        .form-control, .form-select {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            font-size: 0.95rem;
+            color: var(--text-main);
             transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.01);
             width: 100%;
-        }
-        .rv-input:focus {
-            border-color: var(--rv-primary);
-            box-shadow: 0 0 0 3px rgba(11,90,43,0.1);
-            outline: none;
-        }
-        .rv-input::placeholder { color: #cbd5e1; }
-
-        select.rv-input {
             appearance: none;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 0.5rem center;
+        }
+        
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.75rem center;
             background-repeat: no-repeat;
-            background-size: 1.5em 1.5em;
+            background-size: 1em 1em;
             padding-right: 2.5rem;
         }
-
-        .rv-table {
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid var(--rv-border);
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            outline: none;
         }
-        .rv-table thead th {
-            background: #1e293b;
-            color: #fff;
-            font-size: 0.78rem;
+        
+        .form-control:hover:not(:focus):not([readonly]),
+        .form-select:hover:not(:focus):not([readonly]) {
+            border-color: var(--border-hover);
+        }
+
+        .form-control[readonly] {
+            background-color: #f8fafc;
+            color: var(--text-muted);
+            border-color: var(--border);
+            cursor: not-allowed;
+        }
+
+        .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        /* Status Card (Balance) */
+        .balance-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+        }
+        .balance-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
-            padding: 10px 12px;
-            text-align: center;
-            border: none;
+            letter-spacing: 0.02em;
         }
-        .rv-table tbody td {
-            padding: 8px 10px;
-            vertical-align: middle;
-            border-color: var(--rv-border);
-        }
-        .rv-table tfoot td {
-            padding: 10px 12px;
-            background: #f1f5f9;
+        .balance-value {
+            font-size: 1.1rem;
             font-weight: 700;
         }
+        .balance-dr .balance-value { color: var(--danger); }
+        .balance-cr .balance-value { color: var(--success); }
+        .balance-dr { background: var(--danger-bg); border-color: #fecaca; }
+        .balance-cr { background: var(--success-bg); border-color: #a7f3d0; }
 
-        .btn-rv-primary {
-            background: var(--rv-primary);
-            color: #fff;
+        /* Buttons */
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
             border: none;
-            border-radius: 8px;
-            padding: 10px 28px;
-            font-weight: 600;
+            border-radius: var(--radius-md);
+            padding: 10px 24px;
+            font-weight: 500;
             font-size: 0.95rem;
-            box-shadow: 0 2px 5px rgba(11,90,43,0.3);
             transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 3px rgba(37,99,235,0.3);
+            cursor: pointer;
         }
-        .btn-rv-primary:hover {
-            background: #084320;
-            color: #fff;
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
             transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(11,90,43,0.4);
         }
 
-        .btn-rv-secondary {
-            background: #f1f5f9;
-            color: var(--rv-text);
-            border: 1px solid var(--rv-border);
-            border-radius: 8px;
-            padding: 8px 20px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        .btn-rv-secondary:hover { background: #e2e8f0; color: var(--rv-text); }
-
-        .btn-rv-add {
-            background: #ecfdf5;
-            color: #0b5a2b;
-            border: 1px dashed #0b5a2b;
-            border-radius: 8px;
-            padding: 6px 16px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-        .btn-rv-add:hover { background: #d1fae5; }
-
-        .balance-badge {
-            display: inline-block;
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-weight: 700;
+        .btn-secondary {
+            background-color: var(--surface);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 10px 20px;
+            font-weight: 500;
             font-size: 0.95rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            cursor: pointer;
         }
-        .balance-dr { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
-        .balance-cr { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
+        .btn-secondary:hover {
+            background-color: var(--secondary);
+            border-color: var(--border-hover);
+            color: var(--text-main);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--accent);
+            border: 1px dashed var(--border-hover);
+            border-radius: var(--radius-md);
+            padding: 12px 24px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            justify-content: center;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+        .btn-outline:hover {
+            background-color: #eff6ff;
+            border-color: var(--accent);
+        }
+        
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            background: var(--secondary);
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .btn-icon:hover {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+        .btn-icon.danger {
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+        .btn-icon.danger:hover {
+            background: #fee2e2;
+        }
+
+        /* Table Design */
+        .table-wrapper {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        
+        .erp-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .erp-table th {
+            background-color: var(--secondary);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .erp-table td {
+            padding: 12px 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .erp-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .erp-table tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        /* Summary Box */
+        .summary-box-wrapper {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+        .summary-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            width: 350px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .summary-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            border: none;
+            background: transparent;
+            text-align: right;
+            width: 150px;
+            padding: 0;
+        }
+        .summary-value:focus {
+            outline: none;
+        }
+        
+        /* Grid spacing */
+        .row-gap-3 { row-gap: 24px; }
+        
+        .text-end { text-align: right !important; }
+        .text-center { text-align: center !important; }
     </style>
 
     <div class="main-content">
         <div class="main-content-inner" style="padding: 10px;">
-            <div class="container-fluid p-0">
+            <div class="container-fluid p-0" style="max-width: 1200px; margin: 0 auto;">
 
                 @if (session('success'))
                     <div class="alert alert-success alert-dismissible fade show" style="border-radius: 10px;">
@@ -198,144 +361,143 @@
                 <form action="{{ route('store_expense_vochers') }}" method="POST" id="expenseForm">
                     @csrf
 
-                    <div class="rv-card">
+                    <div class="erp-card">
                         <!-- Header -->
-                        <div class="rv-header">
-                            <div class="rv-title">
+                        <div class="erp-header">
+                            <h2 class="erp-title">
                                 <i class="bi bi-wallet2"></i> Expense Voucher
-                            </div>
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('all_expense_vochers') }}" class="btn btn-rv-secondary">
-                                    <i class="bi bi-list-ul me-1"></i> All Expenses
+                            </h2>
+                            <div class="d-flex gap-3">
+                                <a href="{{ route('all_expense_vochers') }}" class="btn-secondary">
+                                    <i class="bi bi-list-ul"></i> All Expenses
                                 </a>
-                                <button type="submit" class="btn btn-rv-primary">
-                                    <i class="bi bi-check-lg me-1"></i> Save Voucher
+                                <button type="submit" class="btn-primary">
+                                    <i class="bi bi-check2"></i> Save Voucher
                                 </button>
                             </div>
                         </div>
 
                         <!-- Row 1: Voucher Info -->
-                        <div class="rv-section-label">Voucher Details</div>
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-2">
-                                <label class="rv-label">Voucher No</label>
-                                <input type="text" class="rv-input" style="background: #f1f5f9;" name="evid"
-                                    value="{{ $nextRvid }}" readonly>
+                        <div class="section-title">
+                            <i class="bi bi-info-circle"></i> Voucher Details
+                        </div>
+                        <div class="row row-gap-3 mb-4">
+                            <div class="col-md-3 col-lg-2">
+                                <label class="form-label">Voucher No</label>
+                                <input type="text" class="form-control" name="evid" value="{{ $nextRvid }}" readonly>
                             </div>
-                            <div class="col-md-2">
-                                <label class="rv-label">Entry Date</label>
-                                <input type="date" name="entry_date" class="rv-input"
-                                    value="{{ now()->toDateString() }}">
+                            <div class="col-md-3 col-lg-2">
+                                <label class="form-label">Entry Date</label>
+                                <input type="date" name="entry_date" class="form-control" value="{{ now()->toDateString() }}">
                             </div>
-                            <div class="col-md-2">
-                                <label class="rv-label">Reference / Cheque #</label>
-                                <input type="text" name="ref_no_header" class="rv-input" placeholder="e.g. Chq-848492">
+                            <div class="col-md-6 col-lg-3">
+                                <label class="form-label">Reference / Cheque #</label>
+                                <input type="text" name="ref_no_header" class="form-control" placeholder="e.g. Chq-848492">
                             </div>
-                            <div class="col-md-6">
-                                <label class="rv-label">Global Remarks <small class="text-muted fw-normal">(Optional)</small></label>
-                                <input type="text" name="remarks" class="rv-input" id="remarks" placeholder="General description of payment...">
+                            <div class="col-md-12 col-lg-5">
+                                <label class="form-label">Global Remarks <span class="text-lowercase text-muted fw-normal" style="text-transform:none;">(optional)</span></label>
+                                <input type="text" name="remarks" class="form-control" id="remarks" placeholder="General description of payment...">
                             </div>
                         </div>
 
-                        <!-- Row 2: Paid From (Source of Funds) -->
-                        <div class="rv-section-label">Paid From (Source)</div>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-3">
-                                <label class="rv-label">Payment Source Type</label>
-                                <select name="vendor_type" class="rv-input" id="partyType">
+                        <!-- Row 2: Paid From -->
+                        <div class="section-title">
+                            <i class="bi bi-bank"></i> Paid From (Source)
+                        </div>
+                        <div class="row row-gap-3 mb-5 align-items-end">
+                            <div class="col-md-4 col-lg-3">
+                                <label class="form-label">Payment Source Type</label>
+                                <select name="vendor_type" class="form-select" id="partyType">
                                     <option value="" disabled selected>Select Type</option>
                                     @foreach ($AccountHeads as $head)
                                         <option value="{{ $head->id }}">{{ $head->name }}</option>
                                     @endforeach
-                                    <!-- <option value="vendor">Vendor</option>
-                                    <option value="customer">Customer</option> -->
                                 </select>
                             </div>
-                            <div class="col-md-4">
-                                <label class="rv-label">Account / Party</label>
-                                <select name="vendor_id" class="rv-input" id="partyId" required>
+                            <div class="col-md-5 col-lg-4">
+                                <label class="form-label">Account / Party</label>
+                                <select name="vendor_id" class="form-select" id="partyId" required>
                                     <option disabled selected>Select Account</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <label class="rv-label">Account Code / Phone</label>
-                                <input type="text" name="tel" id="tel" class="rv-input" style="background: #f1f5f9;" readonly>
+                            <div class="col-md-3 col-lg-2">
+                                <label class="form-label">Account Code / Phone</label>
+                                <input type="text" name="tel" id="tel" class="form-control" readonly>
                             </div>
-                            <div class="col-md-3">
-                                <label class="rv-label">Current Balance</label>
-                                <div id="balanceDisplay" class="balance-badge balance-dr p-2 text-center" style="width:100%;">0.00 Dr</div>
+                            <div class="col-md-12 col-lg-3">
+                                <div id="balanceContainer" class="balance-card">
+                                    <span class="balance-label">Current Balance</span>
+                                    <span id="balanceDisplay" class="balance-value">0.00 <span style="font-size: 0.8em">Dr</span></span>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Expense Rows -->
-                        <div class="rv-section-label">Expense Allocation</div>
-                        <div class="rv-table">
-                            <table class="table table-bordered align-middle mb-0" id="voucherTable">
+                        <!-- Expense Allocation -->
+                        <div class="section-title">
+                            <i class="bi bi-list-columns-reverse"></i> Expense Allocation
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="erp-table" id="voucherTable">
                                 <thead>
                                     <tr>
-                                        <th style="width: 40%;">Expense Category</th>
-                                        <th style="width: 35%;">Remarks / Description</th>
-                                        <th style="width: 18%;">Amount (Rs.)</th>
-                                        <th style="width: 7%;">Action</th>
+                                        <th style="width: 35%;">Expense Category</th>
+                                        <th style="width: 40%;">Remarks / Description</th>
+                                        <th style="width: 18%;" class="text-end">Amount (Rs.)</th>
+                                        <th style="width: 7%;" class="text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
                                         <td>
-                                            <div class="d-flex align-items-center">
-                                                <select name="row_account_id[]" class="rv-input rowAccountCategory flex-grow-1" required>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <select name="row_account_id[]" class="form-select rowAccountCategory" required>
                                                     <option value="" disabled selected>Select Category</option>
                                                     @foreach ($expenseCategories as $cat)
                                                         <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                                                     @endforeach
                                                 </select>
-                                                <a href="javascript:void(0)" data-toggle="modal" data-target="#newExpenseCategoryModal" class="btn btn-primary btn-sm ms-2" title="Add New Category" style="padding: 0.35rem 0.5rem; border-radius: 4px;">
+                                                <a href="javascript:void(0)" data-toggle="modal" data-target="#newExpenseCategoryModal" class="btn-icon" title="Add New Category">
                                                     <i class="bi bi-plus-lg"></i>
                                                 </a>
                                             </div>
                                         </td>
                                         <td>
-                                            <input type="text" name="narration_text[]" class="rv-input" placeholder="e.g. Rent payment, office repair...">
-                                            {{-- Hidden parameters for backward compatibility --}}
+                                            <input type="text" name="narration_text[]" class="form-control" placeholder="e.g. Rent payment, office repair...">
                                             <input type="hidden" name="narration_id[]" value="">
                                         </td>
                                         <td>
-                                            <input type="number" name="amount[]" step="0.01"
-                                                class="rv-input text-end fw-bold amount" placeholder="0.00"
-                                                style="font-size: 1rem;" required>
+                                            <input type="number" name="amount[]" step="0.01" class="form-control text-end fw-bold amount" placeholder="0.00" required>
                                         </td>
                                         <td class="text-center">
-                                            <button type="button" class="btn btn-outline-danger btn-sm removeRow" title="Remove">
+                                            <button type="button" class="btn-icon danger removeRow" title="Remove">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </td>
                                     </tr>
                                 </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colspan="2" class="text-end fw-bold" style="font-size: 1rem;">Total Expense Amount:</td>
-                                        <td>
-                                            <input type="text" name="total_amount"
-                                                class="rv-input text-end fw-bold" id="totalAmount" readonly
-                                                value="0.00" style="background: #f0fdf4; border-color: #86efac; font-size: 1.1rem; color: #16a34a;">
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
                             </table>
                         </div>
 
-                        <button type="button" class="btn btn-rv-add mt-3" id="addNewRow">
-                            <i class="bi bi-plus-circle me-1"></i> Add Another Expense Category
+                        <button type="button" class="btn-outline" id="addNewRow">
+                            <i class="bi bi-plus-circle"></i> Add Another Expense Category
                         </button>
 
-                        {{-- Hidden fields for backward compatibility --}}
+                        <div class="summary-box-wrapper">
+                            <div class="summary-box">
+                                <span class="summary-label">Total Expense Amount</span>
+                                <div class="d-flex align-items-center">
+                                    <span class="text-muted" style="font-weight: 600; font-size: 1.2rem; margin-right: 4px;">Rs.</span>
+                                    <input type="text" name="total_amount" class="summary-value" id="totalAmount" readonly value="0.00">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Hidden fields --}}
                         <input type="hidden" name="reference_no[]" value="">
                         <input type="hidden" name="discount_value[]" value="0">
                         <input type="hidden" name="rate[]" value="0">
 
-                    </div><!-- /rv-card -->
-
+                    </div>
                 </form>
             </div>
         </div>
@@ -368,7 +530,7 @@
                     </div>
                     <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="btnSaveNewCategory">Save Category</button>
+                        <button type="submit" class="btn btn-primary" id="btnSaveNewCategory" style="background:var(--accent); color:white; padding:8px 20px; border-radius:8px; border:none;">Save Category</button>
                     </div>
                 </form>
             </div>
@@ -427,14 +589,15 @@
             });
 
             function updateBalance(bal) {
+                let $container = $('#balanceContainer');
                 let $badge = $('#balanceDisplay');
                 let formatted = Math.abs(bal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 if (bal >= 0) {
-                    $badge.removeClass('balance-cr').addClass('balance-dr');
-                    $badge.html(formatted + ' <small>Dr</small>');
+                    $container.removeClass('balance-cr').addClass('balance-dr');
+                    $badge.html(formatted + ' <span style="font-size: 0.8em">Dr</span>');
                 } else {
-                    $badge.removeClass('balance-dr').addClass('balance-cr');
-                    $badge.html(formatted + ' <small>Cr</small>');
+                    $container.removeClass('balance-dr').addClass('balance-cr');
+                    $badge.html(formatted + ' <span style="font-size: 0.8em">Cr</span>');
                 }
             }
 
@@ -457,24 +620,24 @@
                 let newRow = `
                 <tr>
                     <td>
-                        <div class="d-flex align-items-center">
-                            <select name="row_account_id[]" class="rv-input rowAccountCategory flex-grow-1" required>
+                        <div class="d-flex align-items-center gap-2">
+                            <select name="row_account_id[]" class="form-select rowAccountCategory" required>
                                 ${optionsHtml}
                             </select>
-                            <a href="javascript:void(0)" data-toggle="modal" data-target="#newExpenseCategoryModal" class="btn btn-primary btn-sm ms-2" title="Add New Category" style="padding: 0.35rem 0.5rem; border-radius: 4px;">
+                            <a href="javascript:void(0)" data-toggle="modal" data-target="#newExpenseCategoryModal" class="btn-icon" title="Add New Category">
                                 <i class="bi bi-plus-lg"></i>
                             </a>
                         </div>
                     </td>
                     <td>
-                        <input type="text" name="narration_text[]" class="rv-input" placeholder="e.g. Rent payment, office repair...">
+                        <input type="text" name="narration_text[]" class="form-control" placeholder="e.g. Rent payment, office repair...">
                         <input type="hidden" name="narration_id[]" value="">
                     </td>
                     <td>
-                        <input type="number" name="amount[]" step="0.01" class="rv-input text-end fw-bold amount" placeholder="0.00" style="font-size: 1rem;" required>
+                        <input type="number" name="amount[]" step="0.01" class="form-control text-end fw-bold amount" placeholder="0.00" required>
                     </td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm removeRow"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn-icon danger removeRow" title="Remove"><i class="bi bi-trash"></i></button>
                     </td>
                 </tr>
             `;
