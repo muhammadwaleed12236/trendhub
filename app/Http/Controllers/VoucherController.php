@@ -368,7 +368,7 @@ class VoucherController extends Controller
     {
         $narrations = \App\Models\Narration::where('expense_head', 'Receipts Voucher')
             ->pluck('narration', 'id');
-        $AccountHeads = AccountHead::get();
+        $AccountHeads = AccountHead::whereIn('name', ['Cash', 'bank', 'cash', 'Bank'])->get();
 
         // echo "<pre>";
         // print_r($AccountHeads) ;
@@ -537,7 +537,7 @@ class VoucherController extends Controller
     {
         $narrations = \App\Models\Narration::where('expense_head', 'Payment voucher')
             ->pluck('narration', 'id');
-        $AccountHeads = AccountHead::get();
+        $AccountHeads = AccountHead::whereIn('name', ['Cash', 'bank', 'cash', 'Bank'])->get();
         // echo"<pre>";
         // print_r($AccountHeads);
         // echo"</pre>";
@@ -1005,7 +1005,7 @@ class VoucherController extends Controller
         $narrations = \App\Models\Narration::where('expense_head', 'Expense voucher')
             ->pluck('narration', 'id');
         $expenseCategories = \App\Models\ExpenseCategory::orderBy('name')->get();
-        $AccountHeads = AccountHead::get();
+        $AccountHeads = AccountHead::whereIn('name', ['Cash', 'bank', 'cash', 'Bank'])->get();
 
         // Last RVID nikalna
         $lastVoucher = \App\Models\ExpenseVoucher::latest('id')->first();
