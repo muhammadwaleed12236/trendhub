@@ -240,14 +240,16 @@ class HomeController extends Controller
             // Calculate real profit from sale items (sale price - purch_price from variant JSON)
             $saleItemsThisMonth = DB::table('sale_items')
                 ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
-                ->join('products', 'products.id', '=', 'sale_items.product_id')
+                ->leftJoin('products', 'products.id', '=', 'sale_items.product_id')
                 ->whereDate('sales.created_at', \Carbon\Carbon::today())
-                ->whereNotIn('sales.sale_status', ['cancelled', 'returned'])
+                ->where('sales.sale_status', '!=', 'cancelled')
                 ->select(
                     'sale_items.price',
                     'sale_items.color',
                     'sale_items.total_pieces',
                     'sale_items.total',
+                    'sale_items.is_manual',
+                    'sale_items.purchase_price as manual_purchase_price',
                     'sales.total_extradiscount',
                     'sales.total_bill_amount',
                     'products.size_mode',
@@ -260,22 +262,27 @@ class HomeController extends Controller
             $totalRevenueThisMonth = 0;
             foreach ($saleItemsThisMonth as $si) {
                 $qty = (float)($si->total_pieces ?? 1);
-                $purchPrice = 0;
-                if (!empty($si->color)) {
-                    $decoded = base64_decode($si->color, true);
-                    $json = $decoded ? json_decode($decoded, true) : json_decode($si->color, true);
-                    if (is_array($json)) {
-                        $purchPrice = (float)($json['purch_price'] ?? 0);
+                
+                if ($si->is_manual) {
+                    $purchPrice = (float) $si->manual_purchase_price;
+                } else {
+                    $purchPrice = 0;
+                    if (!empty($si->color)) {
+                        $decoded = base64_decode($si->color, true);
+                        $json = $decoded ? json_decode($decoded, true) : json_decode($si->color, true);
+                        if (is_array($json)) {
+                            $purchPrice = (float)($json['purch_price'] ?? 0);
+                        }
                     }
-                }
 
-                if ($purchPrice <= 0) {
-                    if ($si->size_mode === 'by_size') {
-                        $m2PerPiece = (float) ($si->pieces_per_m2 ?? 0);
-                        $purchPerM2 = (float) ($si->purchase_price_per_m2 ?? 0);
-                        $purchPrice = $m2PerPiece * $purchPerM2;
-                    } else {
-                        $purchPrice = (float) ($si->purchase_price_per_piece ?? 0);
+                    if ($purchPrice <= 0) {
+                        if ($si->size_mode === 'by_size') {
+                            $m2PerPiece = (float) ($si->pieces_per_m2 ?? 0);
+                            $purchPerM2 = (float) ($si->purchase_price_per_m2 ?? 0);
+                            $purchPrice = $m2PerPiece * $purchPerM2;
+                        } else {
+                            $purchPrice = (float) ($si->purchase_price_per_piece ?? 0);
+                        }
                     }
                 }
 
@@ -287,6 +294,53 @@ class HomeController extends Controller
 
                 $totalRevenueThisMonth += $itemNet;
                 $totalCostThisMonth    += $purchPrice * $qty;
+            }
+
+            // Accurately deduct any returned items today
+            $saleReturnsThisMonth = DB::table('sale_return_items')
+                ->join('sale_returns', 'sale_returns.id', '=', 'sale_return_items.sale_return_id')
+                ->leftJoin('products', 'products.id', '=', 'sale_return_items.product_id')
+                ->whereDate('sale_returns.created_at', \Carbon\Carbon::today())
+                ->select(
+                    'sale_return_items.qty',
+                    'sale_return_items.line_total',
+                    'sale_return_items.color',
+                    'sale_return_items.is_manual',
+                    'sale_return_items.purchase_price as manual_purchase_price',
+                    'products.size_mode',
+                    'products.pieces_per_m2',
+                    'products.purchase_price_per_m2',
+                    'products.purchase_price_per_piece'
+                )->get();
+
+            foreach ($saleReturnsThisMonth as $sr) {
+                $qty = (float)($sr->qty ?? 1);
+                
+                if ($sr->is_manual) {
+                    $purchPrice = (float) $sr->manual_purchase_price;
+                } else {
+                    $purchPrice = 0;
+                    if (!empty($sr->color)) {
+                        $decoded = base64_decode($sr->color, true);
+                        $json = $decoded ? json_decode($decoded, true) : json_decode($sr->color, true);
+                        if (is_array($json)) {
+                            $purchPrice = (float)($json['purch_price'] ?? 0);
+                        }
+                    }
+
+                    if ($purchPrice <= 0) {
+                        if ($sr->size_mode === 'by_size') {
+                            $m2PerPiece = (float) ($sr->pieces_per_m2 ?? 0);
+                            $purchPerM2 = (float) ($sr->purchase_price_per_m2 ?? 0);
+                            $purchPrice = $m2PerPiece * $purchPerM2;
+                        } else {
+                            $purchPrice = (float) ($sr->purchase_price_per_piece ?? 0);
+                        }
+                    }
+                }
+
+                $totalRevenueThisMonth -= (float) $sr->line_total;
+                $totalCostThisMonth    -= $purchPrice * $qty;
             }
             $profitThisMonth = $totalRevenueThisMonth - $totalCostThisMonth;
             $totalReceivables = DB::table('customers')->sum('previous_balance');

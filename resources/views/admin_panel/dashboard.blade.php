@@ -1540,6 +1540,7 @@
                     data: {
                         labels: ['Revenue', 'Cost', 'Net Profit'],
                         datasets: [{
+                            label: 'Amount',
                             data: [totalRevenue, totalCost, netProfit],
                             backgroundColor: ['#10b981', '#ef4444', '#3b82f6'],
                             borderRadius: 6,
@@ -1550,6 +1551,7 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        legend: { display: false },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
@@ -1563,6 +1565,7 @@
                         },
                         scales: {
                             y: {
+                                beginAtZero: true,
                                 grid: {
                                     color: 'rgba(0, 0, 0, 0.05)',
                                     drawBorder: false
