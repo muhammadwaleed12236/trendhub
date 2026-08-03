@@ -56,6 +56,9 @@ class PermissionRoleUserSeeder extends Seeder
                 }
             }
 
+            Permission::firstOrCreate(['name' => 'website-settings.view']);
+            Permission::firstOrCreate(['name' => 'website-settings.edit']);
+
             // Create roles
             $admin = Role::firstOrCreate(['name' => 'admin']);
             $manager = Role::firstOrCreate(['name' => 'manager']);

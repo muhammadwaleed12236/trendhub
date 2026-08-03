@@ -451,6 +451,22 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings', [App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
 
+    // Website Settings
+    Route::get('/website-settings', [App\Http\Controllers\WebsiteSettingsController::class, 'index'])->middleware('permission:website-settings.view')->name('website_settings.index');
+    Route::post('/website-settings', [App\Http\Controllers\WebsiteSettingsController::class, 'update'])->middleware('permission:website-settings.edit')->name('website_settings.update');
+    Route::post('/website-settings/categories', [App\Http\Controllers\WebsiteSettingsController::class, 'updateCategories'])->middleware('permission:website-settings.edit')->name('website_settings.categories.update');
+
+    // Web Orders
+    Route::get('/web-orders', [App\Http\Controllers\WebOrderController::class, 'index'])->name('web_orders.index');
+    Route::get('/web-orders/{id}', [App\Http\Controllers\WebOrderController::class, 'show'])->name('web_orders.show');
+    Route::post('/web-orders/{id}/status', [App\Http\Controllers\WebOrderController::class, 'updateStatus'])->name('web_orders.status');
+
+    // Web Products (Quick Manage)
+    Route::get('/web-products', [App\Http\Controllers\WebProductController::class, 'index'])->name('web_products.index');
+    Route::post('/web-products/ajax-update', [App\Http\Controllers\WebProductController::class, 'updateAjax'])->name('web_products.update_ajax');
+    Route::get('/web-products/{id}/settings', [App\Http\Controllers\WebProductController::class, 'getWebSettings'])->name('web_products.get_settings');
+    Route::post('/web-products/{id}/settings', [App\Http\Controllers\WebProductController::class, 'updateWebSettings'])->name('web_products.update_settings');
+
     // Return Policy Settings
     Route::get('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'returnSettings'])->name('settings.return-policy');
     Route::post('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'updateReturnSettings'])->name('settings.return-policy.update');

@@ -838,6 +838,24 @@
                             </li>
                         @endif
 
+                        <!-- Website Management -->
+                        @if (auth()->check() && (auth()->user()->email === 'admin@admin.com' || auth()->user()->hasRole('Super Admin')))
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <i class="menu_icon fas fa-globe"></i>
+                                    <span class="menu-title">Website Control</span>
+                                    <i class="menu-arrow"></i>
+                                </a>
+                                <div class="submenu">
+                                    <ul class="submenu-item">
+                                        <li><a href="{{ route('website_settings.index') }}"><i class="fa-solid fa-cogs"></i> Website Settings</a></li>
+                                        <li><a href="{{ route('web_products.index') }}"><i class="fa-solid fa-box"></i> Web Products</a></li>
+                                        <li><a href="{{ route('web_orders.index') }}"><i class="fa-solid fa-shopping-cart"></i> Web Orders</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                        @endif
+
                     </ul>
                 </div>
             </div>
