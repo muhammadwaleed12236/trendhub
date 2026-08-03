@@ -8,4 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class Coupon extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'code',
+        'type',
+        'value',
+        'min_spend',
+        'max_uses',
+        'uses',
+        'is_active',
+    ];
 }

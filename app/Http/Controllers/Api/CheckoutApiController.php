@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\EcommerceOrder;
 use App\Models\EcommerceOrderItem;
 use App\Models\Product;
+use App\Models\Coupon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -13,6 +14,50 @@ use Illuminate\Support\Str;
 
 class CheckoutApiController extends Controller
 {
+    public function validateCoupon(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'coupon_code' => 'required|string',
+            'cart_total' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $coupon = Coupon::where('code', $request->coupon_code)->where('is_active', true)->first();
+
+        if (!$coupon) {
+            return response()->json(['status' => 'error', 'message' => 'Invalid or inactive coupon code']);
+        }
+
+        if ($coupon->max_uses !== null && $coupon->uses >= $coupon->max_uses) {
+            return response()->json(['status' => 'error', 'message' => 'Coupon usage limit reached']);
+        }
+
+        if ($coupon->min_spend !== null && $request->cart_total < $coupon->min_spend) {
+            return response()->json(['status' => 'error', 'message' => 'Minimum spend of ' . $coupon->min_spend . ' required for this coupon']);
+        }
+
+        $discountAmount = 0;
+        if ($coupon->type === 'fixed') {
+            $discountAmount = $coupon->value;
+        } elseif ($coupon->type === 'percent') {
+            $discountAmount = ($request->cart_total * $coupon->value) / 100;
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'discount_amount' => $discountAmount,
+            'type' => $coupon->type,
+            'value' => $coupon->value
+        ]);
+    }
+
     public function placeOrder(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -27,6 +72,7 @@ class CheckoutApiController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.size' => 'nullable|string',
             'items.*.color' => 'nullable|string',
+            'coupon_code' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -65,7 +111,22 @@ class CheckoutApiController extends Controller
 
             // Simple delivery calculations (e.g. Free above 10,000, else Rs. 250)
             $deliveryCharges = $subtotal >= 10000 ? 0 : 250;
-            $discount = 0; // Future coupon support
+            $discount = 0; 
+            
+            $appliedCouponCode = null;
+            if ($request->filled('coupon_code')) {
+                $coupon = Coupon::where('code', $request->coupon_code)->where('is_active', true)->first();
+                if ($coupon && ($coupon->max_uses === null || $coupon->uses < $coupon->max_uses) && ($coupon->min_spend === null || $subtotal >= $coupon->min_spend)) {
+                    $appliedCouponCode = $coupon->code;
+                    if ($coupon->type === 'fixed') {
+                        $discount = $coupon->value;
+                    } elseif ($coupon->type === 'percent') {
+                        $discount = ($subtotal * $coupon->value) / 100;
+                    }
+                    $coupon->increment('uses');
+                }
+            }
+
             $total = $subtotal + $deliveryCharges - $discount;
 
             // Generate unique order number
@@ -88,6 +149,8 @@ class CheckoutApiController extends Controller
             $order->shipping_phone = $request->shipping_phone;
             $order->shipping_address = $request->shipping_address;
             $order->shipping_city = $request->shipping_city;
+            $order->coupon_code = $appliedCouponCode;
+            $order->discount_amount = $discount;
             $order->save();
 
             // Create Order Items

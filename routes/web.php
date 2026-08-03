@@ -467,6 +467,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/web-products/{id}/settings', [App\Http\Controllers\WebProductController::class, 'getWebSettings'])->name('web_products.get_settings');
     Route::post('/web-products/{id}/settings', [App\Http\Controllers\WebProductController::class, 'updateWebSettings'])->name('web_products.update_settings');
 
+    // Coupons
+    Route::get('/coupons', [App\Http\Controllers\CouponController::class, 'index'])->name('admin.coupons.index');
+    Route::post('/coupons', [App\Http\Controllers\CouponController::class, 'store'])->name('admin.coupons.store');
+    Route::put('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'update'])->name('admin.coupons.update');
+    Route::delete('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'destroy'])->name('admin.coupons.destroy');
+
     // Return Policy Settings
     Route::get('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'returnSettings'])->name('settings.return-policy');
     Route::post('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'updateReturnSettings'])->name('settings.return-policy.update');

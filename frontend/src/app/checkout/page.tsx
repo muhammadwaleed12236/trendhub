@@ -7,7 +7,7 @@ import Link from "next/link";
 import { CheckCircle, ShoppingBag, Loader2 } from "lucide-react";
 
 export default function Checkout() {
-  const { items, getTotalPrice, clearCart } = useCartStore();
+  const { items, getTotalPrice, getDiscountAmount, getFinalTotal, appliedCoupon, applyCoupon, removeCoupon, clearCart } = useCartStore();
 
   // Form states
   const [shippingName, setShippingName] = useState("");
@@ -20,9 +20,43 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<any>(null);
 
+  // Coupon states
+  const [promoCode, setPromoCode] = useState("");
+  const [promoError, setPromoError] = useState("");
+  const [validatingPromo, setValidatingPromo] = useState(false);
+
   const subtotal = getTotalPrice();
-  const deliveryCharges = subtotal >= 10000 ? 0 : 250;
-  const total = subtotal + deliveryCharges;
+  const discountAmount = getDiscountAmount();
+  const subtotalAfterDiscount = getFinalTotal();
+  const deliveryCharges = subtotalAfterDiscount >= 10000 ? 0 : 250;
+  const total = subtotalAfterDiscount + deliveryCharges;
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) return;
+    setValidatingPromo(true);
+    setPromoError("");
+    try {
+      const res = await api.post("/checkout/validate-coupon", {
+        coupon_code: promoCode.trim(),
+        cart_total: subtotal
+      });
+      
+      if (res.data.status === "success") {
+        applyCoupon({
+          code: promoCode.trim(),
+          type: res.data.type,
+          value: res.data.value
+        });
+        setPromoCode("");
+      } else {
+        setPromoError(res.data.message || "Invalid coupon code");
+      }
+    } catch (err: any) {
+      setPromoError(err.response?.data?.message || "Error validating coupon");
+    } finally {
+      setValidatingPromo(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +71,7 @@ export default function Checkout() {
       shipping_city: shippingCity,
       payment_method: paymentMethod,
       order_notes: orderNotes,
+      coupon_code: appliedCoupon?.code || null,
       items: items.map((item) => ({
         product_id: item.product.id,
         quantity: item.quantity,
@@ -50,6 +85,7 @@ export default function Checkout() {
       if (res.data.status === "success") {
         setOrderSuccess(res.data.order);
         clearCart();
+        removeCoupon();
       }
     } catch (err) {
       alert("Could not place order. Please try again.");
@@ -273,6 +309,52 @@ export default function Checkout() {
               <span className="text-gray-500">Subtotal:</span>
               <span className="font-semibold text-black">Rs. {subtotal.toLocaleString()}</span>
             </div>
+            
+            {/* Promo Code Input */}
+            <div className="pt-2 pb-2">
+              {appliedCoupon ? (
+                <div className="bg-green-50 border border-green-100 p-3 flex justify-between items-center text-green-700">
+                  <div className="flex flex-col">
+                    <span className="font-bold tracking-wider uppercase text-[10px]">Applied Coupon</span>
+                    <span className="font-mono">{appliedCoupon.code}</span>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={removeCoupon}
+                    className="text-xs underline hover:text-green-900 cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                    placeholder="Promo code"
+                    className="flex-1 border border-gray-200 px-3 py-2 text-xs focus:outline-none focus:border-black transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyPromo}
+                    disabled={validatingPromo}
+                    className="bg-black text-white px-4 py-2 text-[10px] font-bold uppercase tracking-wider hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {validatingPromo ? "..." : "Apply"}
+                  </button>
+                </div>
+              )}
+              {promoError && <p className="text-red-500 text-[10px] mt-1">{promoError}</p>}
+            </div>
+
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-[#ff3b30]">
+                <span>Discount:</span>
+                <span className="font-semibold">- Rs. {discountAmount.toLocaleString()}</span>
+              </div>
+            )}
+            
             <div className="flex justify-between">
               <span className="text-gray-500">Delivery Charges:</span>
               <span className="font-semibold text-black">

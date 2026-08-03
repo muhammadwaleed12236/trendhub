@@ -31,6 +31,7 @@ Route::get('/categories', [\App\Http\Controllers\Api\CategoryApiController::clas
 Route::get('/products', [\App\Http\Controllers\Api\ProductApiController::class, 'index']);
 Route::get('/products/{id}', [\App\Http\Controllers\Api\ProductApiController::class, 'show']);
 Route::post('/checkout', [\App\Http\Controllers\Api\CheckoutApiController::class, 'placeOrder']);
+Route::post('/checkout/validate-coupon', [\App\Http\Controllers\Api\CheckoutApiController::class, 'validateCoupon']);
 
 // Authenticated Routes
 Route::middleware('auth:sanctum')->group(function () {

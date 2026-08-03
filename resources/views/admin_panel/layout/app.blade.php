@@ -850,6 +850,7 @@
                                     <ul class="submenu-item">
                                         <li><a href="{{ route('website_settings.index') }}"><i class="fa-solid fa-cogs"></i> Website Settings</a></li>
                                         <li><a href="{{ route('web_products.index') }}"><i class="fa-solid fa-box"></i> Web Products</a></li>
+                                        <li><a href="{{ route('admin.coupons.index') }}"><i class="fas fa-tags"></i> Coupons</a></li>
                                         <li><a href="{{ route('web_orders.index') }}"><i class="fa-solid fa-shopping-cart"></i> Web Orders</a></li>
                                     </ul>
                                 </div>
