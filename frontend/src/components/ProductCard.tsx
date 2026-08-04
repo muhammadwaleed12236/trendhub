@@ -6,6 +6,7 @@ import { Heart, ShoppingBag, Eye } from "lucide-react";
 import { useWishlistStore } from "@/store/wishlistStore";
 import { useCartStore } from "@/store/cartStore";
 import Link from "next/link";
+import { getProductFallbackImage } from "@/lib/imageHelper";
 
 interface ProductCardProps {
   product: Product;
@@ -24,7 +25,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     ? `${assetUrl}/uploads/products/${product.web_main_image}`
     : product.image
     ? `${assetUrl}/uploads/products/${product.image}`
-    : "/placeholder.jpg";
+    : getProductFallbackImage(product.id);
 
   // Use first gallery image as secondary/hover image if available
   let hoverImage = mainImage;

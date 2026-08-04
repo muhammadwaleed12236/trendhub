@@ -8,6 +8,7 @@ import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
 import ProductCard from "@/components/ProductCard";
 import { Heart, Plus, Minus, Info, Loader2 } from "lucide-react";
+import { getProductFallbackImage } from "@/lib/imageHelper";
 
 interface ProductPageProps {
   params: Promise<{ id: string }>;
@@ -69,7 +70,7 @@ export default function ProductDetail({ params }: ProductPageProps) {
     ? `${assetUrl}/uploads/products/${product.web_main_image}`
     : product.image
     ? `${assetUrl}/uploads/products/${product.image}`
-    : "/placeholder.jpg";
+    : getProductFallbackImage(product.id);
 
   const allImages = [defaultMain];
   if (product.web_images) {

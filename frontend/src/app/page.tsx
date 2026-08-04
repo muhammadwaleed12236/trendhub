@@ -1,14 +1,15 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import api from "@/lib/api";
 import { Product, Category } from "@/types";
 import ProductCard from "@/components/ProductCard";
 import Link from "next/link";
 import { ArrowRight, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { useRef } from "react";
 import { useSettings } from "@/hooks/useSettings";
+import { getProductFallbackImage } from "@/lib/imageHelper";
 
 export default function Home() {
   const { data: settings } = useSettings();
@@ -37,6 +38,14 @@ export default function Home() {
       return res.data?.data as Category[] || [];
     },
   });
+
+  // Dispatch event when home products are fetched
+  useEffect(() => {
+    if (!loadingProducts && homeProducts) {
+      (window as any).__productsLoaded = true;
+      window.dispatchEvent(new Event("products-loaded"));
+    }
+  }, [loadingProducts, homeProducts]);
 
   // Filter products by tags
   const newArrivals = homeProducts?.filter(p => p.promo_tag === "New Arrival") || [];
@@ -81,7 +90,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif tracking-[0.25em] uppercase font-light leading-snug"
           >
-            TIMELESS ELEGANCE
+            {/* TIMELESS ELEGANCE */}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 15 }}
@@ -89,7 +98,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="text-[11px] sm:text-xs md:text-sm font-serif italic text-neutral-800 tracking-[0.1em] font-light max-w-[500px]"
           >
-            Discover refined luxury wardrobe staples crafted for modern living.
+            {/* Discover refined luxury wardrobe staples crafted for modern living. */}
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -97,7 +106,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="pt-4 flex justify-center gap-3 sm:gap-4"
           >
-            <Link
+            {/* <Link
               href="/shop"
               className="bg-black text-white px-6 sm:px-8 py-3 text-[10px] sm:text-xs font-sans uppercase tracking-[0.2em] font-bold hover:bg-neutral-800 transition-colors shadow-lg hover:scale-105 duration-300"
             >
@@ -108,7 +117,7 @@ export default function Home() {
               className="border border-black text-black px-6 sm:px-8 py-3 text-[10px] sm:text-xs font-sans uppercase tracking-[0.2em] font-bold hover:bg-black hover:text-white transition-all duration-300 shadow-lg"
             >
               Explore Collection
-            </Link>
+            </Link> */}
           </motion.div>
         </div>
 
@@ -124,13 +133,13 @@ export default function Home() {
                     ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/uploads/products/${product.web_main_image}`
                     : product.image
                     ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/uploads/products/${product.image}`
-                    : "/placeholder.jpg";
+                    : getProductFallbackImage(product.id);
                   
                   return (
                     <Link
                       key={`${product.id}-${index}`}
                       href={`/product/${product.id}`}
-                      className="w-[100px] sm:w-[130px] md:w-[150px] aspect-[2/3] shrink-0 flex items-center justify-center bg-gray-50 overflow-hidden hover:opacity-90 transition-opacity duration-300 group"
+                      className="w-[100px] sm:w-[130px] md:w-[150px] aspect-[4/5] shrink-0 flex items-center justify-center bg-gray-50 overflow-hidden hover:opacity-90 transition-opacity duration-300 group"
                     >
                       <img
                         src={pMainImage}
@@ -145,7 +154,7 @@ export default function Home() {
                 [...Array(15)].map((_, i) => (
                   <div
                     key={i}
-                    className="w-[100px] sm:w-[130px] md:w-[150px] aspect-[2/3] shrink-0 bg-gray-100 animate-pulse"
+                    className="w-[100px] sm:w-[130px] md:w-[150px] aspect-[4/5] shrink-0 bg-gray-100 animate-pulse"
                   />
                 ))
               )}

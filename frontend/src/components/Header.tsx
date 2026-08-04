@@ -10,6 +10,9 @@ import { useAuthStore } from "@/store/authStore";
 import CartSidebar from "./CartSidebar";
 import AnnouncementBar from "./AnnouncementBar";
 import { useSettings } from "@/hooks/useSettings";
+import { Product } from "@/types";
+import api from "@/lib/api";
+import { getProductFallbackImage } from "@/lib/imageHelper";
 
 export default function Header() {
   const pathname = usePathname();
@@ -18,6 +21,9 @@ export default function Header() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState(false);
 
   const cartItemsCount = useCartStore((state) => state.getTotalItems());
@@ -31,6 +37,46 @@ export default function Header() {
     setIsMounted(true);
     checkAuth();
   }, [checkAuth]);
+
+  // Debounced live product search
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setSearchResults([]);
+      setSuggestions([]);
+      return;
+    }
+
+    setIsSearching(true);
+    const delayDebounce = setTimeout(async () => {
+      try {
+        const res = await api.get(`/products?search=${encodeURIComponent(searchQuery)}`);
+        const fetchedProducts = res.data?.data?.data as Product[] || [];
+        setSearchResults(fetchedProducts);
+
+        // Predefined keywords to filter suggestions
+        const allPossibleSuggestions = [
+          "Formal Shirts",
+          "Polo Shirts",
+          "Denim Jackets",
+          "Trousers",
+          "Knit Wool Sweater",
+          "Oxford Shoes",
+          "Utility Jacket",
+          "Evening Gown"
+        ];
+        const filtered = allPossibleSuggestions.filter(item => 
+          item.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setSuggestions(filtered);
+      } catch (error) {
+        console.error("Live search error:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
 
   // Scroll handler for transparent/white header logic
   useEffect(() => {
@@ -183,42 +229,148 @@ export default function Header() {
 
         {/* Search Overlay */}
         {isSearchOpen && (
-          <div className="fixed inset-0 bg-white z-50 flex flex-col p-6">
-            <div className="max-w-[1000px] mx-auto w-full mt-10">
+          <div className="fixed inset-0 bg-white z-50 flex flex-col p-6 overflow-y-auto">
+            <div className="max-w-[1200px] mx-auto w-full mt-10 flex flex-col flex-1 pb-10">
+              {/* Search Header */}
               <div className="flex justify-between items-center border-b border-black pb-4">
-                <input
-                  type="text"
-                  placeholder="SEARCH FOR LUXURY APPAREL..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && searchQuery.trim() !== "") {
-                      setIsSearchOpen(false);
-                      window.location.href = `/shop?search=${encodeURIComponent(searchQuery)}`;
-                    }
-                  }}
-                  className="w-full bg-transparent text-xl font-serif tracking-widest focus:outline-none placeholder-gray-300 text-black uppercase"
-                  autoFocus
-                />
-                <button onClick={() => setIsSearchOpen(false)} className="p-2">
+                <div className="flex items-center gap-3 flex-1">
+                  <Search size={24} className="text-black" />
+                  <input
+                    type="text"
+                    placeholder="SEARCH FOR LUXURY APPAREL..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && searchQuery.trim() !== "") {
+                        setIsSearchOpen(false);
+                        window.location.href = `/shop?search=${encodeURIComponent(searchQuery)}`;
+                      }
+                    }}
+                    className="w-full bg-transparent text-xl font-serif tracking-widest focus:outline-none placeholder-gray-300 text-black uppercase"
+                    autoFocus
+                  />
+                </div>
+                <button onClick={() => {
+                  setIsSearchOpen(false);
+                  setSearchQuery("");
+                }} className="p-2 border border-gray-100 hover:border-black rounded-full transition-colors">
                   <X size={24} />
                 </button>
               </div>
-              <div className="mt-8">
-                <h5 className="text-xs font-semibold tracking-widest text-gray-400 uppercase font-sans">Popular Searches</h5>
-                <div className="flex flex-wrap gap-3 mt-4">
-                  {["Formal Shirts", "Polo Shirts", "Denim Jackets", "Trousers"].map((term) => (
-                    <Link
-                      key={term}
-                      href={`/shop?search=${term}`}
-                      onClick={() => setIsSearchOpen(false)}
-                      className="border border-gray-200 px-4 py-2 text-xs font-sans uppercase tracking-wider hover:border-black transition-colors"
-                    >
-                      {term}
-                    </Link>
-                  ))}
+
+              {/* Dynamic Content Area */}
+              {searchQuery.trim() === "" ? (
+                /* Popular Searches (Empty state) */
+                <div className="mt-10">
+                  <h5 className="text-xs font-semibold tracking-widest text-gray-400 uppercase font-sans mb-4">Popular Searches</h5>
+                  <div className="flex flex-wrap gap-3">
+                    {["Formal Shirts", "Polo Shirts", "Denim Jackets", "Trousers"].map((term) => (
+                      <Link
+                        key={term}
+                        href={`/shop?search=${encodeURIComponent(term)}`}
+                        onClick={() => setIsSearchOpen(false)}
+                        className="border border-gray-200 hover:border-black px-5 py-2.5 text-xs font-sans uppercase tracking-wider transition-colors text-black rounded-full"
+                      >
+                        {term}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                /* Active Search State */
+                <div className="flex flex-col flex-1 mt-8 space-y-8">
+                  {/* Suggestions Row */}
+                  {suggestions.length > 0 && (
+                    <div className="border-b border-gray-100 pb-6">
+                      <h5 className="text-xs font-semibold tracking-widest text-gray-400 uppercase font-sans mb-4">Suggestions</h5>
+                      <div className="flex flex-wrap gap-3">
+                        {suggestions.map((sug) => {
+                          // Highlight query inside suggestion
+                          const parts = sug.split(new RegExp(`(${searchQuery})`, 'gi'));
+                          return (
+                            <Link
+                              key={sug}
+                              href={`/shop?search=${encodeURIComponent(sug)}`}
+                              onClick={() => setIsSearchOpen(false)}
+                              className="bg-gray-50 border border-gray-100 hover:border-black rounded-full px-4 py-2 text-xs font-sans uppercase tracking-wider flex items-center gap-2 transition-colors text-black"
+                            >
+                              <Search size={12} className="text-gray-400" />
+                              <span>
+                                {parts.map((part, i) => 
+                                  part.toLowerCase() === searchQuery.toLowerCase() ? (
+                                    <mark key={i} className="bg-yellow-100 text-black px-0.5 rounded font-bold">{part}</mark>
+                                  ) : (
+                                    <span key={i}>{part}</span>
+                                  )
+                                )}
+                              </span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Product Results */}
+                  <div className="flex-1">
+                    <h5 className="text-xs font-semibold tracking-widest text-gray-400 uppercase font-sans mb-6">
+                      Product Results {isSearching ? "" : `(${searchResults.length})`}
+                    </h5>
+
+                    {isSearching ? (
+                      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+                        <span className="text-xs text-gray-400 font-sans tracking-widest uppercase">Searching products...</span>
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-6">
+                        {searchResults.map((product) => {
+                          const pMainImage = product.web_main_image
+                            ? `http://127.0.0.1:8000/uploads/products/${product.web_main_image}`
+                            : product.image
+                            ? `http://127.0.0.1:8000/uploads/products/${product.image}`
+                            : getProductFallbackImage(product.id);
+                            
+                          const price = product.web_sale_price || product.sale_price_per_piece;
+
+                          return (
+                            <Link
+                              key={product.id}
+                              href={`/product/${product.id}`}
+                              onClick={() => {
+                                setIsSearchOpen(false);
+                                setSearchQuery("");
+                              }}
+                              className="group flex flex-col space-y-3 block"
+                            >
+                              <div className="aspect-[3/4] w-full bg-gray-50 overflow-hidden relative border border-gray-100 rounded-md">
+                                <img
+                                  src={pMainImage}
+                                  alt={product.item_name}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <h4 className="text-[11px] font-sans font-bold uppercase tracking-wider text-black line-clamp-2 group-hover:underline leading-relaxed">
+                                  {product.item_name}
+                                </h4>
+                                <p className="text-[10px] text-gray-500 font-sans font-bold">
+                                  Rs. {Number(price).toLocaleString()}
+                                </p>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-20 text-center space-y-2">
+                        <span className="text-sm text-gray-400 font-serif italic">No luxury apparel found matching "{searchQuery}"</span>
+                        <span className="text-xs text-gray-300 font-sans tracking-wider uppercase">Try checking spelling or try other keywords</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -5,6 +5,7 @@ import { X, Plus, Minus, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
+import { getProductFallbackImage } from "@/lib/imageHelper";
 
 interface CartSidebarProps {
   isOpen: boolean;
@@ -71,7 +72,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                     ? `${assetUrl}/uploads/products/${product.web_main_image}`
                     : product.image
                     ? `${assetUrl}/uploads/products/${product.image}`
-                    : "/placeholder.jpg";
+                    : getProductFallbackImage(product.id);
 
                   return (
                     <div key={idx} className="flex gap-4 border-b border-gray-50 pb-6 last:border-0 last:pb-0">

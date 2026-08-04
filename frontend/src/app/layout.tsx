@@ -5,6 +5,7 @@ import QueryProvider from "@/providers/QueryProvider";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import Preloader from "@/components/Preloader";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-serif",
@@ -37,6 +38,7 @@ export default function RootLayout({
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col font-sans bg-white text-[#111111]">
         <QueryProvider>
+          <Preloader />
           <Header />
           <main className="flex-1">
             {children}
