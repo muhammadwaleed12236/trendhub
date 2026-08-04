@@ -417,6 +417,15 @@
                                 }
                             </script>
 
+                            <!-- Settings -->
+                            @if (auth()->check() && (auth()->user()->email === 'admin@admin.com' || auth()->user()->hasRole('Super Admin')))
+                                <li class="nav-item mr-2 d-flex align-items-center">
+                                    <a href="{{ route('settings.index') }}" class="nav-link" title="Settings">
+                                        <i class="fas fa-cog text-secondary" style="font-size: 20px; transition: color 0.3s;"></i>
+                                    </a>
+                                </li>
+                            @endif
+
                             <li class="nav-item nav-profile dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown"
                                     id="profileDropdown">
@@ -452,8 +461,8 @@
                 </div>
             </div>
             <div class="nav-bottom">
-                <div class="container">
-                    <ul class="nav page-navigation">
+                <div class="container-fluid" style="padding: 0 20px;">
+                    <ul class="nav page-navigation justify-content-center">
                         <!--=========================*
                               Home
                     *===========================-->
@@ -828,15 +837,6 @@
                             @endcanany
                         </li>
 
-                        <!-- Settings -->
-                        @if (auth()->check() && (auth()->user()->email === 'admin@admin.com' || auth()->user()->hasRole('Super Admin')))
-                            <li class="nav-item">
-                                <a href="{{ route('settings.index') }}" class="nav-link">
-                                    <i class="menu_icon fas fa-cog"></i>
-                                    <span class="menu-title">Settings</span>
-                                </a>
-                            </li>
-                        @endif
 
                         <!-- Website Management -->
                         @if (auth()->check() && (auth()->user()->email === 'admin@admin.com' || auth()->user()->hasRole('Super Admin')))

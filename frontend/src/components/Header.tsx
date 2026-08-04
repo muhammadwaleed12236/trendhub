@@ -58,9 +58,9 @@ export default function Header() {
           className={`w-full transition-all duration-300 border-b border-gray-100 ${
             isHome
               ? isScrolled
-                ? "fixed top-0 bg-white/95 backdrop-blur-md shadow-sm"
-                : "absolute bg-transparent text-white border-transparent"
-              : "sticky top-0 bg-white/95 backdrop-blur-md shadow-sm"
+                ? "fixed top-0 bg-white/95 backdrop-blur-md shadow-sm text-black"
+                : "absolute bg-white text-black border-gray-100"
+              : "sticky top-0 bg-white/95 backdrop-blur-md shadow-sm text-black"
           }`}
         >
           <div className="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
@@ -68,14 +68,14 @@ export default function Header() {
             <div className="flex items-center gap-3 sm:gap-6">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-1 hover:bg-gray-100/10 rounded-md cursor-pointer"
+                className="lg:hidden p-1 hover:bg-gray-100 rounded-md cursor-pointer"
               >
                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
 
               <button
                 onClick={() => setIsSearchOpen(true)}
-                className="lg:hidden p-1 hover:bg-gray-100/10 rounded-md cursor-pointer"
+                className="lg:hidden p-1 hover:bg-gray-100 rounded-md cursor-pointer"
               >
                 <Search size={20} />
               </button>
@@ -108,9 +108,7 @@ export default function Header() {
                   <img 
                     src={`http://127.0.0.1:8000/${settings.web_site_logo}`} 
                     alt={settings?.web_site_name || "TrendHub"} 
-                    className={`h-10 sm:h-14 object-contain transition-all duration-300 ${
-                      (!isScrolled && pathname === "/" && !isMobileMenuOpen) ? "brightness-0 invert mix-blend-screen" : ""
-                    }`}
+                    className="h-10 sm:h-14 object-contain transition-all duration-300"
                   />
                 ) : (
                   settings?.web_site_name || "TrendHub"
@@ -122,21 +120,21 @@ export default function Header() {
             <div className="flex items-center gap-3 sm:gap-5">
               <button
                 onClick={() => setIsSearchOpen(true)}
-                className="hidden lg:block p-1.5 hover:bg-gray-100/20 rounded-full transition-colors cursor-pointer"
+                className="hidden lg:block p-1.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
               >
                 <Search size={20} />
               </button>
 
               <Link
                 href={user ? "/dashboard" : "/login"}
-                className="p-1.5 hover:bg-gray-100/20 rounded-full transition-colors hidden sm:block"
+                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors hidden sm:block"
               >
                 <User size={20} />
               </Link>
 
               <Link
                 href="/wishlist"
-                className="p-1.5 hover:bg-gray-100/20 rounded-full transition-colors relative"
+                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors relative"
               >
                 <Heart size={20} />
                 {isMounted && wishlistItemsCount > 0 && (
@@ -148,7 +146,7 @@ export default function Header() {
 
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="p-1.5 hover:bg-gray-100/20 rounded-full transition-colors relative cursor-pointer"
+                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors relative cursor-pointer"
               >
                 <ShoppingBag size={20} />
                 {isMounted && cartItemsCount > 0 && (

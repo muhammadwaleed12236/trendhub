@@ -62,17 +62,17 @@ export default function Home() {
               type="video/mp4"
             />
           </video>
-          {/* Slight dark overlay (20-30%) for better text readability */}
-          <div className="absolute inset-0 bg-black/25"></div>
+          {/* Slight light overlay for better black text readability on video */}
+          <div className="absolute inset-0 bg-white/35"></div>
         </div>
 
         {/* Hero Content (Pushed down to avoid absolute header overlap) */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center text-white px-6 max-w-[800px] mx-auto space-y-6 md:space-y-8 pt-12 sm:pt-16 pb-4">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center text-black px-6 max-w-[800px] mx-auto space-y-6 md:space-y-8 pt-12 sm:pt-16 pb-4">
           <motion.p
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-[10px] sm:text-xs uppercase tracking-[0.3em] font-sans font-bold text-neutral-300"
+            className="text-[10px] sm:text-xs uppercase tracking-[0.3em] font-sans font-bold text-neutral-800"
           >
           </motion.p>
           <motion.h1
@@ -87,7 +87,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-[11px] sm:text-xs md:text-sm font-serif italic text-neutral-200 tracking-[0.1em] font-light max-w-[500px]"
+            className="text-[11px] sm:text-xs md:text-sm font-serif italic text-neutral-800 tracking-[0.1em] font-light max-w-[500px]"
           >
             Discover refined luxury wardrobe staples crafted for modern living.
           </motion.p>
@@ -99,13 +99,13 @@ export default function Home() {
           >
             <Link
               href="/shop"
-              className="bg-white text-black px-6 sm:px-8 py-3 text-[10px] sm:text-xs font-sans uppercase tracking-[0.2em] font-bold hover:bg-neutral-100 transition-colors shadow-lg hover:scale-105 duration-300"
+              className="bg-black text-white px-6 sm:px-8 py-3 text-[10px] sm:text-xs font-sans uppercase tracking-[0.2em] font-bold hover:bg-neutral-800 transition-colors shadow-lg hover:scale-105 duration-300"
             >
               Shop Now
             </Link>
             <Link
               href="/shop?promo_tag=Featured"
-              className="border border-white text-white px-6 sm:px-8 py-3 text-[10px] sm:text-xs font-sans uppercase tracking-[0.2em] font-bold hover:bg-white hover:text-black transition-all duration-300 shadow-lg"
+              className="border border-black text-black px-6 sm:px-8 py-3 text-[10px] sm:text-xs font-sans uppercase tracking-[0.2em] font-bold hover:bg-black hover:text-white transition-all duration-300 shadow-lg"
             >
               Explore Collection
             </Link>
