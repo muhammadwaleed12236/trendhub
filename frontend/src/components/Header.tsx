@@ -55,12 +55,12 @@ export default function Header() {
 
         {/* Main Navbar */}
         <nav
-          className={`w-full transition-all duration-300 border-b border-gray-100 ${
+          className={`w-full transition-all duration-300 ${
             isHome
               ? isScrolled
-                ? "fixed top-0 bg-white/95 backdrop-blur-md shadow-sm text-black"
-                : "absolute bg-white text-black border-gray-100"
-              : "sticky top-0 bg-white/95 backdrop-blur-md shadow-sm text-black"
+                ? "fixed top-0 bg-white/95 backdrop-blur-md shadow-sm text-black border-b border-gray-100"
+                : "absolute bg-transparent text-black border-transparent"
+              : "sticky top-0 bg-white/95 backdrop-blur-md shadow-sm text-black border-b border-gray-100"
           }`}
         >
           <div className="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
