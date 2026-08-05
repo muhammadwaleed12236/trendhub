@@ -34,14 +34,18 @@ export const useCartStore = create<CartState>()(
               item.selectedColor === color
           );
 
+          const maxStock = product.total_stock !== undefined ? product.total_stock : Infinity;
+
           if (existingItemIndex > -1) {
             const updatedItems = [...state.items];
-            updatedItems[existingItemIndex].quantity += quantity;
+            const newQty = Math.min(updatedItems[existingItemIndex].quantity + quantity, maxStock);
+            updatedItems[existingItemIndex].quantity = newQty;
             return { items: updatedItems };
           }
 
+          const safeQty = Math.min(quantity, maxStock);
           return {
-            items: [...state.items, { product, quantity, selectedSize: size, selectedColor: color }],
+            items: [...state.items, { product, quantity: safeQty, selectedSize: size, selectedColor: color }],
           };
         });
       },
@@ -66,13 +70,18 @@ export const useCartStore = create<CartState>()(
         }
 
         set((state) => ({
-          items: state.items.map((item) =>
-            item.product.id === productId &&
-            item.selectedSize === size &&
-            item.selectedColor === color
-              ? { ...item, quantity }
-              : item
-          ),
+          items: state.items.map((item) => {
+            if (
+              item.product.id === productId &&
+              item.selectedSize === size &&
+              item.selectedColor === color
+            ) {
+              const maxStock = item.product.total_stock !== undefined ? item.product.total_stock : Infinity;
+              const safeQty = Math.min(quantity, maxStock);
+              return { ...item, quantity: safeQty };
+            }
+            return item;
+          }),
         }));
       },
 

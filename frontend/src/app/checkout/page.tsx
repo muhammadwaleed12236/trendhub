@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useCartStore } from "@/store/cartStore";
+import { useSettings } from "@/hooks/useSettings";
 import api from "@/lib/api";
 import Link from "next/link";
 import { CheckCircle, ShoppingBag, Loader2 } from "lucide-react";
 
 export default function Checkout() {
   const { items, getTotalPrice, getDiscountAmount, getFinalTotal, appliedCoupon, applyCoupon, removeCoupon, clearCart } = useCartStore();
+  const { data: settings } = useSettings();
 
   // Form states
   const [shippingName, setShippingName] = useState("");
@@ -15,6 +17,8 @@ export default function Checkout() {
   const [shippingAddress, setShippingAddress] = useState("");
   const [shippingCity, setShippingCity] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [transactionId, setTransactionId] = useState("");
+  const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [orderNotes, setOrderNotes] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -64,31 +68,48 @@ export default function Checkout() {
 
     setLoading(true);
 
-    const payload = {
-      shipping_name: shippingName,
-      shipping_phone: shippingPhone,
-      shipping_address: shippingAddress,
-      shipping_city: shippingCity,
-      payment_method: paymentMethod,
-      order_notes: orderNotes,
-      coupon_code: appliedCoupon?.code || null,
-      items: items.map((item) => ({
-        product_id: item.product.id,
-        quantity: item.quantity,
-        size: item.selectedSize || null,
-        color: item.selectedColor || null,
-      })),
-    };
+    const formData = new FormData();
+    formData.append("shipping_name", shippingName);
+    formData.append("shipping_phone", shippingPhone);
+    formData.append("shipping_address", shippingAddress);
+    formData.append("shipping_city", shippingCity);
+    formData.append("payment_method", paymentMethod);
+    formData.append("order_notes", orderNotes);
+    if (appliedCoupon?.code) {
+      formData.append("coupon_code", appliedCoupon.code);
+    }
+    
+    items.forEach((item, index) => {
+      formData.append(`items[${index}][product_id]`, String(item.product.id));
+      formData.append(`items[${index}][quantity]`, String(item.quantity));
+      if (item.selectedSize) {
+        formData.append(`items[${index}][size]`, item.selectedSize);
+      }
+      if (item.selectedColor) {
+        formData.append(`items[${index}][color]`, item.selectedColor);
+      }
+    });
+
+    if (paymentMethod === "Easypaisa") {
+      formData.append("transaction_id", transactionId);
+      if (paymentScreenshot) {
+        formData.append("payment_screenshot", paymentScreenshot);
+      }
+    }
 
     try {
-      const res = await api.post("/checkout", payload);
+      const res = await api.post("/checkout", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       if (res.data.status === "success") {
         setOrderSuccess(res.data.order);
         clearCart();
         removeCoupon();
       }
-    } catch (err) {
-      alert("Could not place order. Please try again.");
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Could not place order. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -250,8 +271,85 @@ export default function Checkout() {
                 >
                   Bank Transfer
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("Easypaisa")}
+                  className={`flex-1 border py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
+                    paymentMethod === "Easypaisa"
+                      ? "border-black bg-black text-white font-bold"
+                      : "border-gray-200 text-gray-500 hover:border-black"
+                  }`}
+                >
+                  Easypaisa
+                </button>
               </div>
             </div>
+
+            {paymentMethod === "Easypaisa" && (
+              <div className="sm:col-span-2 border border-emerald-100 bg-emerald-50/30 p-6 space-y-6 rounded-lg animate-fadeIn">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-ping"></span>
+                    Easypaisa Manual Payment
+                  </h4>
+                  <p className="text-xs text-gray-400">Please send the exact total amount to the account below and submit details.</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+                  <div className="space-y-4">
+                    <div className="border-l-4 border-emerald-500 pl-3">
+                      <span className="text-[10px] uppercase text-gray-400 block tracking-wider font-semibold">Account Title</span>
+                      <strong className="text-sm text-black uppercase">{settings?.web_easypaisa_account_title || "TrendHub Premium"}</strong>
+                    </div>
+                    <div className="border-l-4 border-emerald-500 pl-3">
+                      <span className="text-[10px] uppercase text-gray-400 block tracking-wider font-semibold">Mobile Number</span>
+                      <strong className="text-sm text-black">{settings?.web_easypaisa_mobile_number || "0300-1234567"}</strong>
+                    </div>
+                    <div className="border-l-4 border-emerald-500 pl-3">
+                      <span className="text-[10px] uppercase text-gray-400 block tracking-wider font-semibold">Payable Amount</span>
+                      <strong className="text-sm text-emerald-700">Rs. {total.toLocaleString()}</strong>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-center justify-center border border-gray-100 bg-white p-3 rounded-lg shadow-sm">
+                    <img 
+                      src={settings?.web_easypaisa_qr_code ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_easypaisa_qr_code}` : "/easypaisa_qr.png"} 
+                      alt="Easypaisa QR Code" 
+                      className="w-32 h-32 object-contain"
+                    />
+                    <span className="text-[9px] uppercase tracking-widest text-gray-400 mt-2 font-semibold">Scan QR to Pay</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-black">Transaction ID (TID) *</label>
+                    <input
+                      type="text"
+                      required
+                      value={transactionId}
+                      onChange={(e) => setTransactionId(e.target.value)}
+                      placeholder="e.g. 12345678901"
+                      className="w-full border border-gray-200 bg-white px-4 py-3 text-xs focus:outline-none focus:border-black transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-black">Payment Screenshot *</label>
+                    <input
+                      type="file"
+                      required
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setPaymentScreenshot(e.target.files[0]);
+                        }
+                      }}
+                      className="w-full border border-gray-200 bg-white px-4 py-2.5 text-xs focus:outline-none focus:border-black transition-colors file:mr-4 file:py-1 file:px-3 file:rounded-sm file:border-0 file:text-[10px] file:font-semibold file:bg-black file:text-white file:cursor-pointer hover:file:bg-neutral-800"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="sm:col-span-2 space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider text-black">Order Notes (Optional)</label>

@@ -460,6 +460,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/web-orders', [App\Http\Controllers\WebOrderController::class, 'index'])->name('web_orders.index');
     Route::get('/web-orders/{id}', [App\Http\Controllers\WebOrderController::class, 'show'])->name('web_orders.show');
     Route::post('/web-orders/{id}/status', [App\Http\Controllers\WebOrderController::class, 'updateStatus'])->name('web_orders.status');
+    Route::post('/web-orders/{id}/verify-payment', [App\Http\Controllers\WebOrderController::class, 'verifyPayment'])->name('web_orders.verify_payment');
 
     // Web Products (Quick Manage)
     Route::get('/web-products', [App\Http\Controllers\WebProductController::class, 'index'])->name('web_products.index');

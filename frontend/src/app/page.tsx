@@ -56,7 +56,7 @@ export default function Home() {
   return (
     <div className="w-full overflow-hidden">
       {/* 1. HERO BANNER WITH FASHION VIDEO */}
-      <section className="relative w-full bg-neutral-950 flex flex-col justify-between overflow-hidden h-[80vh] min-h-[600px]">
+      <section className="fixed top-0 left-0 w-full bg-neutral-950 flex flex-col justify-center overflow-hidden h-[100vh] -z-10">
         {/* Full-width Background Autoplay Fashion Video */}
         <div className="absolute inset-0 w-full h-full overflow-hidden">
           <video
@@ -64,10 +64,11 @@ export default function Home() {
             muted
             loop
             playsInline
+            key={settings?.web_home_hero_video || "/hero-video.mp4"}
             className="w-full h-full object-cover scale-[1.03]"
           >
             <source
-              src="/hero-video.mp4"
+              src={settings?.web_home_hero_video ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_home_hero_video}` : "/hero-video.mp4"}
               type="video/mp4"
             />
           </video>
@@ -120,48 +121,53 @@ export default function Home() {
             </Link> */}
           </motion.div>
         </div>
+      </section>
 
+      {/* Spacer to push scrollable content below the fixed hero video */}
+      <div className="h-[100vh] pointer-events-none"></div>
+
+      {/* Scrollable Content Wrapper that overlaps the fixed hero video */}
+      <div className="relative z-10 bg-white w-full shadow-[0_-15px_30px_rgba(0,0,0,0.08)]">
         {/* Continuous Horizontal Product Slider showing ONLY product images */}
         <div className="relative z-10 w-full bg-white/95 backdrop-blur-md border-t border-gray-100 py-0 select-none overflow-hidden">
-          <div className="w-full relative flex items-center">
-            {/* Slide Track */}
-            <div className="animate-infinite-scroll flex gap-1 px-1">
-              {/* If products are loaded, display them twice to guarantee a smooth continuous loop */}
-              {homeProducts && homeProducts.length > 0 ? (
-                [...homeProducts, ...homeProducts, ...homeProducts].map((product, index) => {
-                  const pMainImage = product.web_main_image
-                    ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/uploads/products/${product.web_main_image}`
-                    : product.image
-                    ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/uploads/products/${product.image}`
-                    : getProductFallbackImage(product.id);
-                  
-                  return (
-                    <Link
-                      key={`${product.id}-${index}`}
-                      href={`/product/${product.id}`}
-                      className="w-[100px] sm:w-[130px] md:w-[150px] aspect-[4/5] shrink-0 flex items-center justify-center bg-gray-50 overflow-hidden hover:opacity-90 transition-opacity duration-300 group"
-                    >
-                      <img
-                        src={pMainImage}
-                        alt={product.item_name}
-                        className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-                      />
-                    </Link>
-                  );
-                })
-              ) : (
-                /* Fallbacks if products aren't loaded yet */
-                [...Array(15)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-[100px] sm:w-[130px] md:w-[150px] aspect-[4/5] shrink-0 bg-gray-100 animate-pulse"
-                  />
-                ))
-              )}
-            </div>
+        <div className="w-full relative flex items-center">
+          {/* Slide Track */}
+          <div className="animate-infinite-scroll flex gap-1 px-1">
+            {/* If products are loaded, display them twice to guarantee a smooth continuous loop */}
+            {homeProducts && homeProducts.length > 0 ? (
+              [...homeProducts, ...homeProducts, ...homeProducts].map((product, index) => {
+                const pMainImage = product.web_main_image
+                  ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/uploads/products/${product.web_main_image}`
+                  : product.image
+                  ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/uploads/products/${product.image}`
+                  : getProductFallbackImage(product.id);
+                
+                return (
+                  <Link
+                    key={`${product.id}-${index}`}
+                    href={`/product/${product.id}`}
+                    className="w-[calc(100vw/2-4px)] sm:w-[calc(100vw/3-4px)] md:w-[calc(100vw/4-4px)] lg:w-[calc(100vw/6-4px)] aspect-[4/5] shrink-0 flex items-center justify-center bg-gray-50 overflow-hidden hover:opacity-90 transition-opacity duration-300 group"
+                  >
+                    <img
+                      src={pMainImage}
+                      alt={product.item_name}
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+                    />
+                  </Link>
+                );
+              })
+            ) : (
+              /* Fallbacks if products aren't loaded yet */
+              [...Array(15)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-[calc(100vw/2-4px)] sm:w-[calc(100vw/3-4px)] md:w-[calc(100vw/4-4px)] lg:w-[calc(100vw/6-4px)] aspect-[4/5] shrink-0 bg-gray-100 animate-pulse"
+                />
+              ))
+            )}
           </div>
         </div>
-      </section>
+      </div>
 
       {/* 2. DYNAMIC CATEGORY SHOWCASE (REFERENCE MATCH) */}
       <section className="w-full bg-white py-16 sm:py-24 overflow-hidden border-t border-gray-100">
@@ -170,7 +176,7 @@ export default function Home() {
           {/* Left: Large Featured Image */}
           <div className="w-full lg:w-[35%] xl:w-[30%] relative aspect-[4/5] sm:aspect-[3/4] lg:aspect-[4/5] bg-gray-200 overflow-hidden group rounded-2xl z-0">
             <img 
-              src={settings?.web_home_banner_image ? `http://127.0.0.1:8000/${settings.web_home_banner_image}` : "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800"} 
+              src={settings?.web_home_banner_image ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_home_banner_image}` : "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800"} 
               alt="Featured Collection" 
               className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
               loading="lazy"
@@ -182,7 +188,7 @@ export default function Home() {
           <div className="w-full lg:w-[70%] flex flex-col justify-center pt-8 lg:pt-0 lg:-ml-12 z-10">
             
             {/* Header & Controls */}
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-8 space-y-4 sm:space-y-0 bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-sm lg:shadow-none lg:bg-transparent lg:p-0">
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-8 space-y-4 sm:space-y-0 p-2 lg:p-0">
               <div className="space-y-1 text-center sm:text-left mx-auto">
                 <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl tracking-wide font-light text-black">
                   Men's Collections
@@ -417,6 +423,7 @@ export default function Home() {
           </div>
         ))}
       </section>
+      </div>
     </div>
   );
 }

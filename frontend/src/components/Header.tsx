@@ -96,7 +96,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="w-full z-40">
+      <header className={`w-full z-40 ${isHome && !isScrolled ? "absolute top-0 left-0 bg-transparent" : "relative"}`}>
         <AnnouncementBar />
 
         {/* Main Navbar */}

@@ -1,6 +1,7 @@
 export interface Category {
   id: number;
   name: string;
+  web_image_url?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -30,6 +31,8 @@ export interface Product {
   web_main_image?: string | null; // Primary Web Image
   web_images?: WebImage[];
   description?: string | null;
+  total_stock?: number;
+  color?: string | null;
 }
 
 export interface CartItem {

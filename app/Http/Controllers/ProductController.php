@@ -140,6 +140,26 @@ class ProductController extends Controller
                     ->select('total_pieces', 'color')
                     ->get();
 
+                // Fetch confirmed web sales
+                $webSalesList = DB::table('ecommerce_order_items as eoi')
+                    ->join('ecommerce_orders as eo', 'eo.id', '=', 'eoi.ecommerce_order_id')
+                    ->where('eoi.product_id', $p->id)
+                    ->where('eo.is_stock_deducted', 1)
+                    ->select('eoi.quantity as total_pieces', 'eoi.color', 'eoi.size')
+                    ->get();
+
+                $salesListArray = $salesList->toArray();
+                foreach ($webSalesList as $wItem) {
+                    $salesListArray[] = (object) [
+                        'total_pieces' => $wItem->total_pieces,
+                        'color' => json_encode([
+                            'color' => $wItem->color ?: '-',
+                            'size' => $wItem->size ?: '-'
+                        ])
+                    ];
+                }
+                $salesList = collect($salesListArray);
+
                 $returnsList = DB::table('sale_return_items as sri')
                     ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
                     ->where('sri.product_id', $p->id)

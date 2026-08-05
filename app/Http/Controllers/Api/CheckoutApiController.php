@@ -65,7 +65,9 @@ class CheckoutApiController extends Controller
             'shipping_phone' => 'required|string|max:20',
             'shipping_address' => 'required|string|max:500',
             'shipping_city' => 'required|string|max:100',
-            'payment_method' => 'required|string|in:COD,Bank Transfer',
+            'payment_method' => 'required|string|in:COD,Bank Transfer,Easypaisa',
+            'transaction_id' => 'required_if:payment_method,Easypaisa|nullable|string|max:255',
+            'payment_screenshot' => 'required_if:payment_method,Easypaisa|nullable|image|max:5120',
             'order_notes' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
@@ -91,8 +93,16 @@ class CheckoutApiController extends Controller
 
             // Calculate totals and fetch products safely
             foreach ($request->items as $itemData) {
-                $product = Product::findOrFail($itemData['product_id']);
+                $product = Product::withSum('warehouseStocks as total_stock', 'total_pieces')->findOrFail($itemData['product_id']);
                 
+                $totalStock = (int) ($product->total_stock ?? 0);
+                if ($totalStock < $itemData['quantity']) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => "The product '{$product->item_name}' is out of stock or does not have sufficient quantity (Available: {$totalStock})."
+                    ], 422);
+                }
+
                 // Final price checking (web price vs POS price)
                 $price = $product->web_sale_price ?: $product->sale_price_per_piece;
                 $totalItemPrice = $price * $itemData['quantity'];
@@ -142,7 +152,21 @@ class CheckoutApiController extends Controller
             $order->delivery_charges = $deliveryCharges;
             $order->total = $total;
             $order->payment_method = $request->payment_method;
-            $order->payment_status = 'pending';
+            
+            if ($request->payment_method === 'Easypaisa') {
+                $order->payment_status = 'Pending Verification';
+                $order->transaction_id = $request->transaction_id;
+                
+                if ($request->hasFile('payment_screenshot')) {
+                    $file = $request->file('payment_screenshot');
+                    $fileName = time() . '_screenshot.' . $file->getClientOriginalExtension();
+                    $file->move(public_path('uploads/payments'), $fileName);
+                    $order->payment_screenshot = 'uploads/payments/' . $fileName;
+                }
+            } else {
+                $order->payment_status = 'pending';
+            }
+            
             $order->order_status = 'pending';
             $order->order_notes = $request->order_notes;
             $order->shipping_name = $request->shipping_name;

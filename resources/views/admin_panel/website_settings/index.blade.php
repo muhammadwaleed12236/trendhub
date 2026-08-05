@@ -211,18 +211,55 @@
                         <input type="file" name="site_logo" class="form-control" accept="image/*">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Home Banner Image</label>
+                        <label class="form-label">Collection Section Large Image (Featured Collection)</label>
                         @if(isset($settings['web_home_banner_image']))
                             <div class="image-preview-container">
-                                <img src="{{ asset($settings['web_home_banner_image']) }}" class="border" alt="Home Banner Image">
-                                <span class="small text-muted">Current Banner</span>
+                                <img src="{{ asset($settings['web_home_banner_image']) }}" class="border" alt="Collection Large Image">
+                                <span class="small text-muted">Current Large Image</span>
                             </div>
                         @endif
                         <input type="file" name="home_banner_image" class="form-control" accept="image/*">
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Home Hero Section Video</label>
+                        @if(isset($settings['web_home_hero_video']))
+                            <div class="image-preview-container d-flex flex-column align-items-start gap-2">
+                                <video src="{{ asset($settings['web_home_hero_video']) }}" class="border rounded" style="max-height: 80px;" controls></video>
+                                <span class="small text-muted">Current Video: {{ basename($settings['web_home_hero_video']) }}</span>
+                            </div>
+                        @endif
+                        <input type="file" name="home_hero_video" class="form-control" accept="video/mp4,video/webm,video/ogg">
+                    </div>
                     <div class="col-md-12">
                         <label class="form-label">Home Banner Text</label>
                         <textarea name="home_banner_text" class="form-control" rows="2" placeholder="Write banner slogan or text here...">{{ $settings['web_home_banner_text'] ?? '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Easypaisa Payment Settings --}}
+        <div class="section-card">
+            <div class="card-header-pro text-emerald-600" style="color: #059669;"><i class="fas fa-wallet me-2"></i>Easypaisa Payment Details</div>
+            <div class="card-body-pro">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Easypaisa Account Title</label>
+                        <input type="text" name="easypaisa_account_title" class="form-control" value="{{ $settings['web_easypaisa_account_title'] ?? '' }}" placeholder="e.g. TrendHub Premium">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Easypaisa Mobile Number</label>
+                        <input type="text" name="easypaisa_mobile_number" class="form-control" value="{{ $settings['web_easypaisa_mobile_number'] ?? '' }}" placeholder="e.g. 0300-1234567">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Easypaisa QR Code Image</label>
+                        @if(isset($settings['web_easypaisa_qr_code']))
+                            <div class="image-preview-container">
+                                <img src="{{ asset($settings['web_easypaisa_qr_code']) }}" class="border" alt="Easypaisa QR Code">
+                                <span class="small text-muted font-monospace">Current QR Code: {{ basename($settings['web_easypaisa_qr_code']) }}</span>
+                            </div>
+                        @endif
+                        <input type="file" name="easypaisa_qr_code" class="form-control" accept="image/*">
                     </div>
                 </div>
             </div>

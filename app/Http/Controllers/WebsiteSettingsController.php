@@ -30,12 +30,15 @@ class WebsiteSettingsController extends Controller
             'return_policy' => 'nullable|string',
             'about_us' => 'nullable|string',
             'home_banner_text' => 'nullable|string',
+            'easypaisa_account_title' => 'nullable|string|max:255',
+            'easypaisa_mobile_number' => 'nullable|string|max:50',
         ]);
 
         $keys = [
             'site_name', 'contact_email', 'contact_phone',
             'facebook_link', 'instagram_link', 'tiktok_link', 'whatsapp_number',
-            'shipping_policy', 'return_policy', 'about_us', 'home_banner_text'
+            'shipping_policy', 'return_policy', 'about_us', 'home_banner_text',
+            'easypaisa_account_title', 'easypaisa_mobile_number'
         ];
 
         foreach ($keys as $key) {
@@ -66,6 +69,22 @@ class WebsiteSettingsController extends Controller
             Cache::forget('setting_web_home_banner_image');
         }
 
+        if ($request->hasFile('home_hero_video')) {
+            $file = $request->file('home_hero_video');
+            $fileName = time() . '_hero_video.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/settings'), $fileName);
+            
+            Setting::updateOrCreate(
+                ['key' => 'web_home_hero_video'],
+                [
+                    'value' => 'uploads/settings/' . $fileName,
+                    'type' => 'string',
+                    'group' => 'website'
+                ]
+            );
+            Cache::forget('setting_web_home_hero_video');
+        }
+
         if ($request->hasFile('site_logo')) {
             $file = $request->file('site_logo');
             $fileName = time() . '_logo.' . $file->getClientOriginalExtension();
@@ -80,6 +99,22 @@ class WebsiteSettingsController extends Controller
                 ]
             );
             Cache::forget('setting_web_site_logo');
+        }
+
+        if ($request->hasFile('easypaisa_qr_code')) {
+            $file = $request->file('easypaisa_qr_code');
+            $fileName = time() . '_easypaisa_qr.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/settings'), $fileName);
+            
+            Setting::updateOrCreate(
+                ['key' => 'web_easypaisa_qr_code'],
+                [
+                    'value' => 'uploads/settings/' . $fileName,
+                    'type' => 'string',
+                    'group' => 'website'
+                ]
+            );
+            Cache::forget('setting_web_easypaisa_qr_code');
         }
 
         return redirect()->back()->with('success', 'Website settings updated successfully.');

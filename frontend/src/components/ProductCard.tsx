@@ -58,6 +58,11 @@ export default function ProductCard({ product }: ProductCardProps) {
             Save {discountPercent}%
           </span>
         )}
+        {product.total_stock !== undefined && product.total_stock <= 0 && (
+          <span className="bg-[#ff3b30] text-white text-[9px] uppercase tracking-widest px-2.5 py-1 font-sans font-bold">
+            Out of Stock
+          </span>
+        )}
       </div>
 
       {/* Wishlist Heart */}
@@ -74,7 +79,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           <img
             src={isHovered ? hoverImage : mainImage}
             alt={product.item_name}
-            className="w-full h-full object-cover transition-all duration-700 ease-out"
+            className={`w-full h-full object-cover transition-all duration-700 ease-out ${
+              product.total_stock !== undefined && product.total_stock <= 0 ? "opacity-60 grayscale-[40%]" : ""
+            }`}
           />
         </Link>
 
@@ -84,7 +91,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             href={`/product/${product.id}`}
             className="flex-1 text-center py-3.5 text-[10px] font-sans font-bold uppercase tracking-[0.18em] text-[#111111] hover:bg-gray-50 transition-colors"
           >
-            Choose Options
+            {product.total_stock !== undefined && product.total_stock <= 0 ? "Out of Stock" : "Choose Options"}
           </Link>
           <div className="w-[1px] h-10 bg-[#eaeaea]" />
           <Link

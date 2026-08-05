@@ -225,18 +225,31 @@ export default function ProductDetail({ params }: ProductPageProps) {
             )}
           </div>
 
+          {/* Out of Stock Alert */}
+          {product.total_stock !== undefined && product.total_stock <= 0 && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3.5 text-xs uppercase font-bold tracking-widest text-center">
+              This Product is Out of Stock
+            </div>
+          )}
+
           {/* Action Row: Quantity + Add To Cart */}
           <div className="flex gap-4">
             {/* Quantity Controls */}
-            <div className="flex items-center border border-gray-200">
+            <div className={`flex items-center border border-gray-200 ${
+              product.total_stock !== undefined && product.total_stock <= 0 ? "opacity-40 pointer-events-none" : ""
+            }`}>
               <button
+                disabled={product.total_stock !== undefined && product.total_stock <= 0}
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="px-4 py-3.5 text-gray-400 hover:text-black transition-colors"
               >
                 <Minus size={14} />
               </button>
-              <span className="px-4 text-sm text-black font-bold">{quantity}</span>
+              <span className="px-4 text-sm text-black font-bold">
+                {product.total_stock !== undefined && product.total_stock <= 0 ? 0 : quantity}
+              </span>
               <button
+                disabled={product.total_stock !== undefined && product.total_stock <= 0}
                 onClick={() => setQuantity(quantity + 1)}
                 className="px-4 py-3.5 text-gray-400 hover:text-black transition-colors"
               >
@@ -246,12 +259,18 @@ export default function ProductDetail({ params }: ProductPageProps) {
 
             {/* Add to Cart button */}
             <button
+              disabled={product.total_stock !== undefined && product.total_stock <= 0}
               onClick={() => {
+                if (product.total_stock !== undefined && product.total_stock <= 0) return;
                 addItem(product, quantity, selectedSize, selectedColor);
               }}
-              className="flex-1 bg-black text-white text-center py-4 text-xs font-sans uppercase tracking-[0.2em] font-semibold hover:bg-neutral-800 transition-colors cursor-pointer"
+              className={`flex-1 text-center py-4 text-xs font-sans uppercase tracking-[0.2em] font-semibold transition-colors ${
+                product.total_stock !== undefined && product.total_stock <= 0
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-black text-white hover:bg-neutral-800 cursor-pointer"
+              }`}
             >
-              Add To Bag
+              {product.total_stock !== undefined && product.total_stock <= 0 ? "Out of Stock" : "Add To Bag"}
             </button>
 
             {/* Wishlist Button */}

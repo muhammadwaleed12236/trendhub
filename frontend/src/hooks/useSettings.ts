@@ -15,6 +15,10 @@ export interface WebsiteSettings {
   web_home_banner_text?: string;
   web_home_banner_image?: string;
   web_site_logo?: string;
+  web_home_hero_video?: string;
+  web_easypaisa_account_title?: string;
+  web_easypaisa_mobile_number?: string;
+  web_easypaisa_qr_code?: string;
 }
 
 export const useSettings = () => {
