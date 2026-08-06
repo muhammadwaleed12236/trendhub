@@ -236,6 +236,20 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="alert alert-danger d-flex align-items-center mb-4 border" role="alert" style="background-color: #fee2e2; border-color: #fca5a5; color: #991b1b;">
+            <i class="fas fa-exclamation-circle me-3 fs-4"></i>
+            <div>{{ session('error') }}</div>
+        </div>
+    @endif
+
+    @if(session('info'))
+        <div class="alert alert-info d-flex align-items-center mb-4 border" role="alert" style="background-color: #e0f2fe; border-color: #7dd3fc; color: #0369a1;">
+            <i class="fas fa-info-circle me-3 fs-4"></i>
+            <div>{{ session('info') }}</div>
+        </div>
+    @endif
+
     <div class="row g-4">
         {{-- Order Items --}}
         <div class="col-lg-8">
@@ -368,18 +382,55 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <span class="text-muted">Payment Method:</span>
-                        <span class="fw-bold text-uppercase text-slate-800">{{ $order->payment_method }}</span>
+                        <span class="fw-bold text-slate-800">{{ $order->payment_method }}</span>
                     </div>
+
+                    @if($order->payment_method === 'Easypaisa')
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-muted">Transaction ID:</span>
+                            <span class="fw-bold text-primary">{{ $order->transaction_id }}</span>
+                        </div>
+                        @if($order->payment_screenshot)
+                            <div class="mb-3">
+                                <span class="text-muted d-block mb-2">Payment Screenshot:</span>
+                                <a href="{{ asset($order->payment_screenshot) }}" target="_blank" class="d-block border rounded overflow-hidden p-1 text-center bg-light" style="max-width: 100%; transition: all 0.2s;">
+                                    <img src="{{ asset($order->payment_screenshot) }}" alt="Screenshot" class="img-fluid rounded" style="max-height: 200px; object-fit: contain;">
+                                    <span class="d-block small text-primary mt-2"><i class="fas fa-search-plus"></i> View Full Screen</span>
+                                </a>
+                            </div>
+                        @endif
+                    @endif
+
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="text-muted">Payment Status:</span>
                         @if($order->payment_status == 'paid')
                             <span class="badge-pay-success"><i class="fas fa-check-circle me-1"></i> Paid</span>
                         @elseif($order->payment_status == 'failed')
                             <span class="badge-pay-danger"><i class="fas fa-times-circle me-1"></i> Failed</span>
+                        @elseif($order->payment_status == 'Pending Verification')
+                            <span class="badge-pay-warning text-dark"><i class="fas fa-user-shield me-1"></i> Pending Verification</span>
                         @else
                             <span class="badge-pay-warning"><i class="fas fa-clock me-1"></i> Pending</span>
                         @endif
                     </div>
+
+                    @if($order->payment_method === 'Easypaisa' && $order->payment_status === 'Pending Verification')
+                        <div class="border-top pt-3 mt-3">
+                            <h6 class="fw-bold text-slate-700 mb-3"><i class="fas fa-shield-alt me-1 text-primary"></i> Verify Payment</h6>
+                            <div class="d-flex gap-2">
+                                <form action="{{ route('web_orders.verify_payment', $order->id) }}" method="POST" class="flex-grow-1">
+                                    @csrf
+                                    <input type="hidden" name="action" value="approve">
+                                    <button type="submit" class="btn btn-success w-100 py-2"><i class="fas fa-check me-1"></i> Approve</button>
+                                </form>
+                                <form action="{{ route('web_orders.verify_payment', $order->id) }}" method="POST" class="flex-grow-1">
+                                    @csrf
+                                    <input type="hidden" name="action" value="reject">
+                                    <button type="submit" class="btn btn-outline-danger w-100 py-2"><i class="fas fa-ban me-1"></i> Reject</button>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
             

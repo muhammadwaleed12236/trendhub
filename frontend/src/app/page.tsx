@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "@/lib/api";
 import { Product, Category } from "@/types";
 import ProductCard from "@/components/ProductCard";
@@ -14,11 +14,13 @@ import { getProductFallbackImage } from "@/lib/imageHelper";
 export default function Home() {
   const { data: settings } = useSettings();
   const sliderRef = useRef<HTMLDivElement>(null);
+  const [activeCollectionTab, setActiveCollectionTab] = useState("Men");
 
   const scrollCategories = (direction: "left" | "right") => {
     if (sliderRef.current) {
-      const scrollAmount = window.innerWidth < 768 ? 240 : 320;
-      sliderRef.current.scrollBy({ left: direction === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
+      const containerWidth = sliderRef.current.clientWidth;
+      const scrollAmount = direction === "left" ? -containerWidth : containerWidth;
+      sliderRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
   };
 
@@ -53,6 +55,31 @@ export default function Home() {
   const bestSellers = homeProducts?.filter(p => p.promo_tag === "Best Seller") || [];
   const flashSale = homeProducts?.filter(p => p.promo_tag === "Flash Sale") || [];
 
+  // Filter products for the active collection tab
+  const activeCollectionProducts = homeProducts?.filter(product => {
+    const nameLower = product.item_name.toLowerCase();
+    const catNameLower = product.category_relation?.name?.toLowerCase() || "";
+    
+    if (activeCollectionTab === "Men") {
+      return nameLower.includes("men") || nameLower.includes("man") || catNameLower.includes("men");
+    }
+    if (activeCollectionTab === "Women") {
+      return nameLower.includes("women") || nameLower.includes("lady") || catNameLower.includes("women");
+    }
+    if (activeCollectionTab === "Boys") {
+      return nameLower.includes("boys") || nameLower.includes("boy") || catNameLower.includes("boys");
+    }
+    if (activeCollectionTab === "Girls") {
+      return nameLower.includes("girls") || nameLower.includes("girl") || catNameLower.includes("girls");
+    }
+    return true;
+  }) || [];
+
+  // Fallback to top products if active tag has zero items
+  const displayProducts = activeCollectionProducts.length > 0 
+    ? activeCollectionProducts 
+    : (homeProducts || []).slice(0, 5);
+
   return (
     <div className="w-full overflow-hidden">
       {/* 1. HERO BANNER WITH FASHION VIDEO */}
@@ -72,8 +99,6 @@ export default function Home() {
               type="video/mp4"
             />
           </video>
-          {/* Slight light overlay for better black text readability on video */}
-          <div className="absolute inset-0 bg-white/35"></div>
         </div>
 
         {/* Hero Content (Pushed down to avoid absolute header overlap) */}
@@ -169,156 +194,156 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 2. DYNAMIC CATEGORY SHOWCASE (REFERENCE MATCH) */}
-      <section className="w-full bg-white py-16 sm:py-24 overflow-hidden border-t border-gray-100">
-        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 flex flex-col lg:flex-row items-center">
-          
-          {/* Left: Large Featured Image */}
-          <div className="w-full lg:w-[35%] xl:w-[30%] relative aspect-[4/5] sm:aspect-[3/4] lg:aspect-[4/5] bg-gray-200 overflow-hidden group rounded-2xl z-0">
-            <img 
-              src={settings?.web_home_banner_image ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_home_banner_image}` : "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800"} 
-              alt="Featured Collection" 
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-black/10 transition-opacity duration-300 group-hover:bg-black/20"></div>
+      {/* 1.5 FEATURED COLLECTIONS SECTION */}
+      <section className="py-20 bg-white">
+        <div className="max-w-[1400px] mx-auto px-6 space-y-10 text-center">
+          <div className="space-y-6">
+            <h2 className="font-serif text-3xl sm:text-4xl tracking-wide font-normal text-neutral-800">
+              Featured Collections
+            </h2>
+            {/* Tab Pills */}
+            <div className="flex justify-center gap-2">
+              {["Men", "Women", "Boys", "Girls"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveCollectionTab(tab)}
+                  className={`px-6 py-2 rounded-full text-xs font-sans font-medium tracking-wider transition-all duration-300 cursor-pointer ${
+                    activeCollectionTab === tab
+                      ? "bg-[#717171] text-white shadow-xs"
+                      : "bg-[#f4f4f4] text-[#888888] hover:bg-[#e8e8e8]"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Right: Category Slider (Overlapping) */}
-          <div className="w-full lg:w-[70%] flex flex-col justify-center pt-8 lg:pt-0 lg:-ml-12 z-10">
-            
-            {/* Header & Controls */}
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-8 space-y-4 sm:space-y-0 p-2 lg:p-0">
-              <div className="space-y-1 text-center sm:text-left mx-auto">
-                <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl tracking-wide font-light text-black">
-                  Men's Collections
-                </h2>
-              </div>
-              
-              {/* Slider Arrows */}
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => scrollCategories("left")}
-                  className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-black cursor-pointer bg-white"
-                >
-                  <ChevronLeft size={20} strokeWidth={1.5} />
-                </button>
-                <button 
-                  onClick={() => scrollCategories("right")}
-                  className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-black hover:text-white transition-colors cursor-pointer bg-white"
-                >
-                  <ChevronRight size={20} strokeWidth={1.5} />
-                </button>
-              </div>
-            </div>
+          {/* 5-Column Responsive Product Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+            {displayProducts.slice(0, 5).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
 
-            {/* Slider Track */}
-            <div 
-              ref={sliderRef}
-              className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory pb-4 pr-6 lg:pr-12"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          {/* View all products bottom button */}
+          <div className="pt-6">
+            <Link
+              href="/shop"
+              className="bg-[#333333] hover:bg-[#222222] text-white px-8 py-3 text-[10px] sm:text-xs uppercase tracking-[0.2em] font-sans font-bold transition-all duration-300 inline-block rounded-xs"
             >
-              {/* Hide webkit scrollbar via inline styles equivalent */}
-              <style dangerouslySetInnerHTML={{__html: `::-webkit-scrollbar { display: none; }`}} />
-              
-              {categories && categories.length > 0 ? categories.map((cat, index) => {
-                const fallbackImages = [
-                  "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600",
-                  "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?q=80&w=600",
-                  "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=600",
-                  "https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=600"
-                ];
-                
-                const backendUrl = "http://127.0.0.1:8000";
-                // web_image_url might already start with http if asset() included it, but if it starts with /, we prepend the backend URL.
-                let imageUrl = fallbackImages[index % fallbackImages.length];
-                if (cat.web_image_url) {
-                  imageUrl = cat.web_image_url.startsWith("http") 
-                    ? cat.web_image_url 
-                    : `${backendUrl}${cat.web_image_url.startsWith('/') ? '' : '/'}${cat.web_image_url}`;
-                }
-
-                return (
-                  <Link
-                    key={cat.id}
-                    href={`/shop?category_id=${cat.id}`}
-                    className="group relative flex-none w-[200px] sm:w-[240px] md:w-[260px] aspect-[3/4] bg-gray-100 overflow-hidden snap-start block rounded-xl shadow-md"
-                  >
-                    <img
-                      src={imageUrl}
-                      alt={cat.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    
-                    {/* Text background overlay like reference (small dark translucent box) */}
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
-                      <div className="bg-black/40 backdrop-blur-md px-4 py-1.5 text-center rounded-sm">
-                        <h3 className="font-sans text-xs sm:text-sm text-white font-medium">
-                          {cat.name}
-                        </h3>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              }) : (
-                [...Array(4)].map((_, i) => (
-                  <div key={i} className="flex-none w-[220px] sm:w-[260px] md:w-[280px] aspect-[3/4] bg-gray-200 animate-pulse snap-start"></div>
-                ))
-              )}
-            </div>
-
+              View all products
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* 3. NEW ARRIVALS */}
-      {newArrivals.length > 0 && (
-        <section className="bg-[#fafafa] py-24">
-          <div className="max-w-[1400px] mx-auto px-6 space-y-12">
-            <div className="flex justify-between items-end border-b border-gray-100 pb-4">
-              <div className="space-y-1">
-                <h2 className="font-serif text-2xl tracking-widest uppercase font-light">New Arrivals</h2>
-                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-sans">Freshly dropped additions</p>
-              </div>
-              <Link
-                href="/shop?promo_tag=New Arrival"
-                className="text-xs uppercase tracking-widest font-sans flex items-center gap-1.5 hover:underline font-semibold"
-              >
-                View All <ArrowRight size={12} />
-              </Link>
+      {/* 2. DYNAMIC NEW ARRIVALS SLIDER (REFERENCE MATCH) */}
+      {newArrivals && newArrivals.length > 0 && (
+        <section className="w-full bg-white py-20 overflow-hidden border-t border-gray-100">
+          <div className="max-w-[1400px] mx-auto px-6 flex flex-col lg:flex-row items-center">
+            
+            {/* Left: Large Featured Image */}
+            <div className="w-full lg:w-[35%] xl:w-[30%] relative aspect-[4/5] sm:aspect-[3/4] lg:aspect-[4/5] bg-gray-200 overflow-hidden group rounded-2xl z-0">
+              <img 
+                src={settings?.web_home_banner_image ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_home_banner_image}` : "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800"} 
+                alt="New Arrivals" 
+                className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/10 transition-opacity duration-300 group-hover:bg-black/20"></div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {newArrivals.slice(0, 4).map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+            {/* Right: Category Slider (Overlapping) */}
+            <div className="w-full lg:w-[70%] flex flex-col justify-center pt-8 lg:pt-0 lg:-ml-12 z-10 overflow-hidden">
+              
+              {/* Header & Controls */}
+              <div className="flex flex-col sm:flex-row justify-between items-center mb-8 space-y-4 sm:space-y-0 p-2 lg:p-0">
+                <div className="space-y-1 text-center sm:text-left mx-auto">
+                  <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl tracking-wide font-light text-black">
+                    New Arrivals
+                  </h2>
+                </div>
+                
+                {/* Slider Arrows */}
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => scrollCategories("left")}
+                    className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-black cursor-pointer bg-white"
+                  >
+                    <ChevronLeft size={20} strokeWidth={1.5} />
+                  </button>
+                  <button 
+                    onClick={() => scrollCategories("right")}
+                    className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-black hover:text-white transition-colors cursor-pointer bg-white"
+                  >
+                    <ChevronRight size={20} strokeWidth={1.5} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Slider Track */}
+              <div 
+                ref={sliderRef}
+                className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory pb-4 pr-6 lg:pr-12"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {/* Hide webkit scrollbar via inline styles equivalent */}
+                <style dangerouslySetInnerHTML={{__html: `::-webkit-scrollbar { display: none; }`}} />
+                
+                {newArrivals.map((product) => {
+                  const pMainImage = product.web_main_image
+                    ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/uploads/products/${product.web_main_image}`
+                    : product.image
+                    ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/uploads/products/${product.image}`
+                    : getProductFallbackImage(product.id);
+
+                  return (
+                    <Link
+                      key={product.id}
+                      href={`/product/${product.id}`}
+                      className="group relative flex-none w-full sm:w-[calc((100%-16px)/2)] lg:w-[calc((100%-48px)/3)] aspect-[3/4] bg-gray-100 overflow-hidden snap-start block rounded-xl shadow-md"
+                    >
+                      <img
+                        src={pMainImage}
+                        alt={product.item_name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </Link>
+                  );
+                })}
+              </div>
+
             </div>
           </div>
         </section>
       )}
 
-      {/* 4. TRENDING PRODUCTS */}
+      {/* 3. TRENDING PRODUCTS */}
       {trendingProducts.length > 0 && (
-        <section className="py-24">
-          <div className="max-w-[1400px] mx-auto px-6 space-y-12">
-            <div className="flex justify-between items-end border-b border-gray-100 pb-4">
-              <div className="space-y-1">
-                <h2 className="font-serif text-2xl tracking-widest uppercase font-light">Trending Now</h2>
-                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-sans">Most wanted luxury essentials</p>
-              </div>
-              <Link
-                href="/shop?promo_tag=Trending"
-                className="text-xs uppercase tracking-widest font-sans flex items-center gap-1.5 hover:underline font-semibold"
-              >
-                View All <ArrowRight size={12} />
-              </Link>
+        <section className="bg-[#fafafa] py-20">
+          <div className="max-w-[1400px] mx-auto px-6 space-y-10">
+            <div className="text-center space-y-4">
+              <h2 className="font-serif text-3xl sm:text-4xl tracking-wide font-normal text-neutral-800 uppercase">
+                Trending Now
+              </h2>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-sans">Most wanted luxury essentials</p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {trendingProducts.slice(0, 4).map((product) => (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-5">
+              {trendingProducts.slice(0, 5).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
+            </div>
+
+            <div className="pt-6 text-center">
+              <Link
+                href="/shop?promo_tag=Trending"
+                className="bg-[#333333] hover:bg-[#222222] text-white px-8 py-3 text-[10px] sm:text-xs uppercase tracking-[0.2em] font-sans font-bold transition-all duration-300 inline-block rounded-xs"
+              >
+                View all trending
+              </Link>
             </div>
           </div>
         </section>
@@ -348,25 +373,28 @@ export default function Home() {
 
       {/* 6. BEST SELLERS */}
       {bestSellers.length > 0 && (
-        <section className="py-24 bg-[#fafafa]">
-          <div className="max-w-[1400px] mx-auto px-6 space-y-12">
-            <div className="flex justify-between items-end border-b border-gray-100 pb-4">
-              <div className="space-y-1">
-                <h2 className="font-serif text-2xl tracking-widest uppercase font-light">Best Sellers</h2>
-                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-sans">Our signature styles</p>
-              </div>
-              <Link
-                href="/shop?promo_tag=Best Seller"
-                className="text-xs uppercase tracking-widest font-sans flex items-center gap-1.5 hover:underline font-semibold"
-              >
-                View All <ArrowRight size={12} />
-              </Link>
+        <section className="py-20 bg-[#fafafa]">
+          <div className="max-w-[1400px] mx-auto px-6 space-y-10">
+            <div className="text-center space-y-4">
+              <h2 className="font-serif text-3xl sm:text-4xl tracking-wide font-normal text-neutral-800 uppercase">
+                Best Sellers
+              </h2>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-sans">Our signature styles</p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {bestSellers.slice(0, 4).map((product) => (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-5">
+              {bestSellers.slice(0, 5).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
+            </div>
+
+            <div className="pt-6 text-center">
+              <Link
+                href="/shop?promo_tag=Best Seller"
+                className="bg-[#333333] hover:bg-[#222222] text-white px-8 py-3 text-[10px] sm:text-xs uppercase tracking-[0.2em] font-sans font-bold transition-all duration-300 inline-block rounded-xs"
+              >
+                View all best sellers
+              </Link>
             </div>
           </div>
         </section>

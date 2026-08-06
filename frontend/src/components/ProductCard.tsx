@@ -40,38 +40,54 @@ export default function ProductCard({ product }: ProductCardProps) {
     discountPercent = Math.round((diff / product.sale_price_per_piece) * 100);
   }
 
+  // Helper to determine fabric / variant details overlay
+  const getOverlayText = () => {
+    if (product.color) {
+      try {
+        const parsed = JSON.parse(product.color);
+        const item = parsed[0];
+        if (item) {
+          if (typeof item === "object") {
+            return item.color || item.name || "Texture";
+          }
+          return String(item);
+        }
+      } catch (e) {
+        if (typeof product.color === "string") {
+          return product.color;
+        }
+      }
+    }
+
+    const nameLower = product.item_name.toLowerCase();
+    if (nameLower.includes("polo")) return "Micro Zig Zag";
+    if (nameLower.includes("shirt")) return "Seer Sucker Lycra";
+    if (nameLower.includes("jacket")) return "Drop Needle Jersey";
+    if (nameLower.includes("trouser")) return "Stretch Fit";
+    if (nameLower.includes("cargo")) return "Neoprene";
+    
+    return "Texture";
+  };
+
   return (
     <div
       className="group w-full flex flex-col relative overflow-hidden bg-white select-none"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Badges */}
-      <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none">
-        {product.promo_tag && (
-          <span className="bg-[#111111] text-white text-[9px] uppercase tracking-widest px-2.5 py-1 font-sans font-bold">
-            {product.promo_tag}
-          </span>
-        )}
+      {/* Discount & Status Badges */}
+      <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 pointer-events-none">
         {discountPercent > 0 && (
-          <span className="bg-[#ff3b30] text-white text-[9px] uppercase tracking-widest px-2.5 py-1 font-sans font-bold">
-            Save {discountPercent}%
+          <span className="bg-[#7a0f12] text-white text-[10px] px-2.5 py-1 font-sans font-bold self-start uppercase">
+            -{discountPercent}%
           </span>
         )}
         {product.total_stock !== undefined && product.total_stock <= 0 && (
-          <span className="bg-[#ff3b30] text-white text-[9px] uppercase tracking-widest px-2.5 py-1 font-sans font-bold">
+          <span className="bg-[#222222] text-white text-[9px] uppercase tracking-wider px-2 py-1 font-sans font-bold self-start mt-0.5">
             Out of Stock
           </span>
         )}
       </div>
-
-      {/* Wishlist Heart */}
-      <button
-        onClick={() => toggleWishlist(product)}
-        className="absolute top-3 right-3 z-10 p-2 bg-white/80 backdrop-blur-md rounded-full shadow-sm text-gray-400 hover:text-[#ff3b30] transition-colors hover:scale-110 duration-200 cursor-pointer"
-      >
-        <Heart size={15} fill={isInWishlist ? "#ff3b30" : "none"} stroke={isInWishlist ? "#ff3b30" : "currentColor"} />
-      </button>
 
       {/* Image Container */}
       <div className="relative aspect-[3/4] overflow-hidden bg-gray-50 block">
@@ -85,43 +101,31 @@ export default function ProductCard({ product }: ProductCardProps) {
           />
         </Link>
 
-        {/* Hover Split Buttons Bar */}
-        <div className="absolute bottom-4 left-4 right-4 hidden md:flex items-center bg-white border border-[#eaeaea] shadow-sm transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto z-10">
-          <Link
-            href={`/product/${product.id}`}
-            className="flex-1 text-center py-3.5 text-[10px] font-sans font-bold uppercase tracking-[0.18em] text-[#111111] hover:bg-gray-50 transition-colors"
-          >
-            {product.total_stock !== undefined && product.total_stock <= 0 ? "Out of Stock" : "Choose Options"}
-          </Link>
-          <div className="w-[1px] h-10 bg-[#eaeaea]" />
-          <Link
-            href={`/product/${product.id}`}
-            className="px-4.5 h-10 flex items-center justify-center text-gray-500 hover:text-black transition-colors"
-          >
-            <Eye size={18} />
-          </Link>
+        {/* Fabric/Variant Text Overlay on Bottom-Left */}
+        <div className="absolute bottom-0 left-0 bg-[#dcdcdc]/70 text-neutral-800 text-[10px] font-sans font-medium py-1 px-3.5 tracking-wide select-none pointer-events-none">
+          {getOverlayText()}
         </div>
       </div>
 
       {/* Product Info */}
-      <div className="pt-4 text-left space-y-1">
+      <div className="pt-4 text-center space-y-1.5 px-2">
         <Link
           href={`/product/${product.id}`}
-          className="text-[13px] font-bold tracking-widest text-[#111111] hover:opacity-75 transition-all line-clamp-1 block uppercase font-sans"
+          className="text-xs sm:text-[13px] font-sans uppercase font-semibold text-neutral-800 hover:text-black transition-colors tracking-wide min-h-[32px] sm:min-h-[40px] flex items-center justify-center line-clamp-2"
         >
           {product.item_name}
         </Link>
 
         {/* Pricing */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-[13px] text-black font-semibold font-sans">
-            Rs.{product.final_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
+        <div className="flex justify-center items-baseline gap-2 text-[10px] sm:text-xs">
           {discountPercent > 0 && (
-            <span className="text-[11px] text-gray-400 line-through font-sans">
-              Rs.{product.sale_price_per_piece?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <span className="text-gray-400 line-through font-sans">
+              PKR {Math.round(product.sale_price_per_piece || 0).toLocaleString()}
             </span>
           )}
+          <span className="text-[#9e6b41] font-bold font-sans">
+            PKR {Math.round(product.final_price).toLocaleString()}
+          </span>
         </div>
       </div>
     </div>

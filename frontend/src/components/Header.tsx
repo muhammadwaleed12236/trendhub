@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, Heart, User, ShoppingBag, Menu, X } from "lucide-react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
@@ -25,6 +26,8 @@ export default function Header() {
   const [isSearching, setIsSearching] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
 
   const cartItemsCount = useCartStore((state) => state.getTotalItems());
   const wishlistItemsCount = useWishlistStore((state) => state.items.length);
@@ -78,14 +81,28 @@ export default function Header() {
     return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
-  // Scroll handler for transparent/white header logic
+  // Scroll handler for transparent/white header logic + auto-hide
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 50) {
+      const currentScrollY = window.scrollY;
+
+      // Handle transparent vs solid background logic
+      if (currentScrollY > 50) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
       }
+
+      // Handle show/hide header on scroll logic
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        // Scrolling down and past threshold -> Hide header
+        setIsVisible(false);
+      } else {
+        // Scrolling up or near top -> Show header
+        setIsVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -97,64 +114,46 @@ export default function Header() {
   return (
     <>
       <header className={`w-full z-40 ${isHome && !isScrolled ? "absolute top-0 left-0 bg-transparent" : "relative"}`}>
-        <AnnouncementBar />
+        {/* <AnnouncementBar /> */}
 
         {/* Main Navbar */}
         <nav
-          className={`w-full transition-all duration-300 ${
+          className={`w-full transition-all duration-300 transform ${
+            isVisible ? "translate-y-0" : "-translate-y-full"
+          } ${
             isHome
               ? isScrolled
                 ? "fixed top-0 bg-white/95 backdrop-blur-md shadow-sm text-black border-b border-gray-100"
-                : "absolute bg-transparent text-black border-transparent"
+                : "absolute bg-transparent text-white border-transparent"
               : "sticky top-0 bg-white/95 backdrop-blur-md shadow-sm text-black border-b border-gray-100"
           }`}
         >
-          <div className="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
-            {/* Left: Hamburger menu for mobile & Shop links for desktop */}
-            <div className="flex items-center gap-3 sm:gap-6">
+          <div className="w-full mx-auto px-4 sm:px-8 h-12 sm:h-14 flex items-center justify-between">
+            {/* Left: Hamburger menu + Menu text */}
+            <div className="flex items-center">
               <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-1 hover:bg-gray-100 rounded-md cursor-pointer"
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="flex items-center gap-1.5 cursor-pointer focus:outline-none transition-opacity hover:opacity-80"
+                aria-label="Open menu"
               >
-                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                <Menu size={18} strokeWidth={1.5} />
+                <span className="text-[10px] uppercase tracking-[0.2em] font-sans font-semibold hidden sm:inline">Menu</span>
               </button>
-
-              <button
-                onClick={() => setIsSearchOpen(true)}
-                className="lg:hidden p-1 hover:bg-gray-100 rounded-md cursor-pointer"
-              >
-                <Search size={20} />
-              </button>
-
-              <div className="hidden lg:flex items-center gap-8 text-[11px] uppercase tracking-[0.2em] font-sans font-semibold">
-                <Link
-                  href="/shop"
-                  className={`hover:opacity-60 transition-opacity ${
-                    pathname === "/shop" ? "underline underline-offset-4 decoration-2" : ""
-                  }`}
-                >
-                  Shop All
-                </Link>
-                <Link href="/shop?promo_tag=Featured" className="hover:opacity-60 transition-opacity">
-                  Featured
-                </Link>
-                <Link href="/shop?promo_tag=New Arrival" className="hover:opacity-60 transition-opacity">
-                  New Arrivals
-                </Link>
-                <Link href="/shop?promo_tag=Trending" className="hover:opacity-60 transition-opacity">
-                  Trending
-                </Link>
-              </div>
             </div>
 
             {/* Center: Brand Logo */}
             <div className="absolute left-1/2 -translate-x-1/2">
-              <Link href="/" className="font-serif text-lg sm:text-2xl tracking-[0.2em] sm:tracking-[0.25em] font-bold text-inherit uppercase flex items-center justify-center">
+              <Link
+                href="/"
+                className="font-sans text-xl sm:text-2xl tracking-[0.35em] font-medium text-inherit uppercase flex items-center justify-center hover:opacity-85 transition-opacity"
+              >
                 {settings?.web_site_logo ? (
-                  <img 
-                    src={`http://127.0.0.1:8000/${settings.web_site_logo}`} 
-                    alt={settings?.web_site_name || "TrendHub"} 
-                    className="h-10 sm:h-14 object-contain transition-all duration-300"
+                  <img
+                    src={`http://127.0.0.1:8000/${settings.web_site_logo}`}
+                    alt={settings?.web_site_name || "TrendHub"}
+                    className={`h-9 sm:h-12 w-auto max-w-[180px] sm:max-w-[240px] object-contain transition-all duration-300 ${
+                      isHome && !isScrolled ? "invert" : ""
+                    }`}
                   />
                 ) : (
                   settings?.web_site_name || "TrendHub"
@@ -164,39 +163,37 @@ export default function Header() {
 
             {/* Right: Actions */}
             <div className="flex items-center gap-3 sm:gap-5">
+              {/* Search Icon */}
               <button
                 onClick={() => setIsSearchOpen(true)}
-                className="hidden lg:block p-1.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+                className="p-1.5 hover:opacity-80 transition-opacity cursor-pointer"
+                aria-label="Search products"
               >
-                <Search size={20} />
+                <Search size={18} strokeWidth={1.5} />
               </button>
 
+              {/* User Account Icon */}
               <Link
                 href={user ? "/dashboard" : "/login"}
-                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors hidden sm:block"
+                className="p-1.5 hover:opacity-80 transition-opacity"
+                aria-label="User account"
               >
-                <User size={20} />
+                <User size={18} strokeWidth={1.5} />
               </Link>
 
-              <Link
-                href="/wishlist"
-                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors relative"
-              >
-                <Heart size={20} />
-                {isMounted && wishlistItemsCount > 0 && (
-                  <span className="absolute top-0 right-0 w-4 h-4 bg-black text-white rounded-full flex items-center justify-center text-[9px] font-sans">
-                    {wishlistItemsCount}
-                  </span>
-                )}
-              </Link>
-
+              {/* Cart Icon */}
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors relative cursor-pointer"
+                className="p-1.5 hover:opacity-80 transition-opacity relative cursor-pointer"
+                aria-label="Open cart"
               >
-                <ShoppingBag size={20} />
+                <ShoppingBag size={18} strokeWidth={1.5} />
                 {isMounted && cartItemsCount > 0 && (
-                  <span className="absolute top-0 right-0 w-4 h-4 bg-black text-white rounded-full flex items-center justify-center text-[9px] font-sans">
+                  <span className={`absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-sans font-bold shadow-sm transition-all duration-300 ${
+                    isHome && !isScrolled
+                      ? "bg-white text-black"
+                      : "bg-black text-white"
+                  }`}>
                     {cartItemsCount}
                   </span>
                 )}
@@ -205,27 +202,121 @@ export default function Header() {
           </div>
         </nav>
 
-        {/* Mobile Menu Drawer */}
-        {isMobileMenuOpen && (
-          <div className="fixed inset-0 bg-white z-50 lg:hidden flex flex-col pt-10 px-8">
-            <div className="flex justify-between items-center mb-10">
-              <span className="font-serif text-2xl tracking-widest font-bold">MENU</span>
-              <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 border border-gray-100 rounded-full">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex flex-col gap-6 text-lg font-serif tracking-wider">
-              <Link href="/shop" onClick={() => setIsMobileMenuOpen(false)}>Shop All</Link>
-              <Link href="/shop?promo_tag=Featured" onClick={() => setIsMobileMenuOpen(false)}>Featured</Link>
-              <Link href="/shop?promo_tag=New Arrival" onClick={() => setIsMobileMenuOpen(false)}>New Arrivals</Link>
-              <Link href="/shop?promo_tag=Trending" onClick={() => setIsMobileMenuOpen(false)}>Trending</Link>
-              <Link href="/wishlist" onClick={() => setIsMobileMenuOpen(false)}>
-                Wishlist ({isMounted ? wishlistItemsCount : 0})
-              </Link>
-              <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>My Account</Link>
-            </div>
-          </div>
-        )}
+        {/* Animated Drawer Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <>
+              {/* Overlay */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.4 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="fixed inset-0 bg-black z-50 cursor-pointer"
+              />
+
+              {/* Drawer Content */}
+              <motion.div
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "tween", duration: 0.35, ease: "easeInOut" }}
+                className="fixed left-0 top-0 bottom-0 w-full max-w-[360px] sm:max-w-[400px] bg-white z-50 flex flex-col shadow-2xl text-black border-r border-gray-100"
+              >
+                {/* Header */}
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                  <span className="font-sans text-sm font-bold uppercase tracking-[0.2em] text-black">Menu</span>
+                  <button
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-1.5 hover:bg-gray-50 rounded-full transition-colors text-gray-500 hover:text-black cursor-pointer"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Links */}
+                <div className="flex-1 overflow-y-auto px-8 py-10 space-y-8">
+                  {/* Main Sections */}
+                  <div className="flex flex-col space-y-6">
+                    <Link
+                      href="/shop?search=men"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="font-sans text-2xl font-bold uppercase tracking-[0.15em] hover:translate-x-2 transition-transform duration-300 block text-black"
+                    >
+                      Men
+                    </Link>
+                    <Link
+                      href="/shop?search=women"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="font-sans text-2xl font-bold uppercase tracking-[0.15em] hover:translate-x-2 transition-transform duration-300 block text-black"
+                    >
+                      Women
+                    </Link>
+                    <Link
+                      href="/shop?search=juniors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="font-sans text-2xl font-bold uppercase tracking-[0.15em] hover:translate-x-2 transition-transform duration-300 block text-black"
+                    >
+                      Juniors
+                    </Link>
+                  </div>
+
+                  <div className="border-t border-gray-100 my-4" />
+
+                  {/* Collections */}
+                  <div className="flex flex-col space-y-4">
+                    <Link
+                      href="/shop"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-gray-600 hover:text-black transition-colors block"
+                    >
+                      Shop All
+                    </Link>
+                    <Link
+                      href="/shop?promo_tag=New Arrival"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-gray-600 hover:text-black transition-colors block"
+                    >
+                      New Arrivals
+                    </Link>
+                    <Link
+                      href="/shop?promo_tag=Trending"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-gray-600 hover:text-black transition-colors block"
+                    >
+                      Trending
+                    </Link>
+                  </div>
+
+                  <div className="border-t border-gray-100 my-4" />
+
+                  {/* User Actions */}
+                  <div className="flex flex-col space-y-4">
+                    <Link
+                      href="/wishlist"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-gray-600 hover:text-black transition-colors flex items-center justify-between"
+                    >
+                      <span>Wishlist</span>
+                      {isMounted && wishlistItemsCount > 0 && (
+                        <span className="bg-black text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
+                          {wishlistItemsCount}
+                        </span>
+                      )}
+                    </Link>
+                    <Link
+                      href={user ? "/dashboard" : "/login"}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-gray-600 hover:text-black transition-colors block"
+                    >
+                      {user ? "My Account" : "Login / Register"}
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Search Overlay */}
         {isSearchOpen && (
