@@ -71,17 +71,28 @@ class SaleController extends Controller
 
         $sales = $query->get();
 
-        // If AJAX request, return only table rows partial
+        $stats = [
+            'total_count' => $sales->count(),
+            'total_net' => (float) $sales->sum('total_net'),
+            'total_discount' => (float) $sales->sum('total_extradiscount'),
+            'posted_count' => $sales->where('sale_status', 'posted')->count(),
+            'draft_count' => $sales->where('sale_status', 'draft')->count(),
+            'booked_count' => $sales->where('sale_status', 'booked')->count(),
+            'returned_count' => $sales->whereIn('sale_status', ['returned', 1])->count(),
+        ];
+
+        // If AJAX request, return only table rows partial & stats
         if ($request->ajax()) {
             return response()->json([
-                'html' => view('admin_panel.sale.partials.sales_table_body', compact('sales'))->render()
+                'html' => view('admin_panel.sale.partials.sales_table_body', compact('sales'))->render(),
+                'stats' => $stats
             ]);
         }
 
         // Load all customers for filter dropdown
         $customers = Customer::orderBy('customer_name')->get();
 
-        return view('admin_panel.sale.index', compact('sales', 'customers'));
+        return view('admin_panel.sale.index', compact('sales', 'customers', 'stats'));
     }
 
     public function addsale()

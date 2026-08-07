@@ -102,7 +102,12 @@
                     @can('purchases.edit')
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('purchase.edit', $purchase->id) }}">
-                                <i class="fas fa-edit text-primary fa-fw"></i> Edit
+                                <i class="fas fa-edit text-primary fa-fw"></i> Edit (Simple)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('purchase-pos.index') }}?edit_id={{ $purchase->id }}">
+                                <i class="fas fa-cash-register text-success fa-fw"></i> Edit (POS Purchase)
                             </a>
                         </li>
                     @endcan
@@ -208,11 +213,14 @@
                     </div>
                 </div>
 
-                {{-- Mobile Action Buttons 2x2 Grid --}}
+                {{-- Mobile Action Buttons Grid --}}
                 <div class="d-grid gap-2 mt-2" style="display: grid; grid-template-columns: 1fr 1fr;">
                     @can('purchases.edit')
                         <a href="{{ route('purchase.edit', $purchase->id) }}" class="btn btn-sm btn-outline-primary fw-bold" style="border-radius: 8px;">
-                            <i class="fas fa-edit me-1"></i> Edit
+                            <i class="fas fa-edit me-1"></i> Edit (Simple)
+                        </a>
+                        <a href="{{ route('purchase-pos.index') }}?edit_id={{ $purchase->id }}" class="btn btn-sm btn-outline-success fw-bold" style="border-radius: 8px;">
+                            <i class="fas fa-cash-register me-1"></i> Edit (POS)
                         </a>
                     @endcan
 
@@ -221,6 +229,9 @@
                             <a href="{{ route('purchase.invoice', $purchase->id) }}" class="btn btn-sm btn-outline-info fw-bold" style="border-radius: 8px;">
                                 <i class="fas fa-file-invoice me-1"></i> Invoice
                             </a>
+                            <a href="{{ route('purchase.receipt', $purchase->id) }}" class="btn btn-sm btn-outline-secondary fw-bold" style="border-radius: 8px;">
+                                <i class="fas fa-receipt me-1"></i> Receipt
+                            </a>
                         @endcan
                     @else
                         @can('purchases.create')
@@ -228,15 +239,6 @@
                                 <i class="fas fa-check-circle me-1"></i> Confirm
                             </a>
                         @endcan
-                    @endif
-
-                    @if ($purchase->status_purchase != 'draft')
-                        @can('purchases.view')
-                            <a href="{{ route('purchase.receipt', $purchase->id) }}" class="btn btn-sm btn-outline-secondary fw-bold" style="border-radius: 8px;">
-                                <i class="fas fa-receipt me-1"></i> Receipt
-                            </a>
-                        @endcan
-                    @else
                         @can('purchases.delete')
                             <form action="{{ route('purchase.destroy', $purchase->id) }}" method="POST" class="d-inline delete-form">
                                 @csrf

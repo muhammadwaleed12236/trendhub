@@ -2206,6 +2206,56 @@
             renderCart();
         });
 
+        // Auto-load Edit Sale data if present
+        @if(isset($editSaleData) && !empty($editSaleData))
+            const editSaleData = @json($editSaleData);
+            if (editSaleData && editSaleData.items && editSaleData.items.length > 0) {
+                cart = [];
+                
+                if (editSaleData.customer_id) {
+                    $('#customerSelect').val(editSaleData.customer_id).trigger('change');
+                }
+
+                if ($('#pos_edit_id').length === 0) {
+                    $('#posCheckoutForm').append('<input type="hidden" name="edit_id" id="pos_edit_id" value="' + editSaleData.id + '">');
+                } else {
+                    $('#pos_edit_id').val(editSaleData.id);
+                }
+
+                editSaleData.items.forEach(function(item) {
+                    addToCart(
+                        item.id,
+                        item.name,
+                        item.price,
+                        999999,
+                        item.qty,
+                        item.size_mode,
+                        item.pieces_per_box,
+                        item.variant_data,
+                        item.price,
+                        item.price,
+                        0
+                    );
+                });
+
+                if (editSaleData.paid_amount !== undefined) {
+                    $('.payment-row:first .receipt-amount').val(editSaleData.paid_amount).trigger('input');
+                }
+                if (editSaleData.payment_account_id) {
+                    $('.payment-row:first .payment-account').val(String(editSaleData.payment_account_id)).trigger('change');
+                }
+
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'info',
+                    title: 'Editing Sale #' + editSaleData.invoice_no,
+                    showConfirmButton: false,
+                    timer: 3500
+                });
+            }
+        @endif
+
     });
 </script>
 @endsection

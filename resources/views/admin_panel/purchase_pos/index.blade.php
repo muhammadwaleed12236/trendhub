@@ -2293,6 +2293,56 @@
             renderCart();
         });
 
+        // Auto-load Edit Purchase data if present
+        @if(isset($editPurchaseData) && !empty($editPurchaseData))
+            const editPurchaseData = @json($editPurchaseData);
+            if (editPurchaseData && editPurchaseData.items && editPurchaseData.items.length > 0) {
+                cart = [];
+                
+                if (editPurchaseData.vendor_id) {
+                    $('#VendorSelect').val(editPurchaseData.vendor_id).trigger('change');
+                }
+
+                if ($('#pos_edit_id').length === 0) {
+                    $('#posCheckoutForm').append('<input type="hidden" name="edit_id" id="pos_edit_id" value="' + editPurchaseData.id + '">');
+                } else {
+                    $('#pos_edit_id').val(editPurchaseData.id);
+                }
+
+                editPurchaseData.items.forEach(function(item) {
+                    addToCart(
+                        item.id,
+                        item.name,
+                        item.price,
+                        999999,
+                        item.qty,
+                        item.size_mode,
+                        item.pieces_per_box,
+                        item.variant_data,
+                        item.price,
+                        item.price,
+                        0
+                    );
+                });
+
+                if (editPurchaseData.paid_amount !== undefined) {
+                    $('.payment-row:first .payment-amount').val(editPurchaseData.paid_amount).trigger('input');
+                }
+                if (editPurchaseData.payment_account_id) {
+                    $('.payment-row:first .payment-account').val(String(editPurchaseData.payment_account_id)).trigger('change');
+                }
+
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'info',
+                    title: 'Editing Purchase #' + editPurchaseData.invoice_no,
+                    showConfirmButton: false,
+                    timer: 3500
+                });
+            }
+        @endif
+
     });
 </script>
 @endsection

@@ -6,13 +6,14 @@ use App\Models\Account;
 use App\Models\AccountHead;
 use App\Models\Product;
 use App\Models\Vendor;
+use App\Models\Purchase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\PurchaseController;
 
 class PurchasePOSController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $products = Product::where("is_active", true)->with("warehouseStocks")->get();
 
@@ -194,8 +195,6 @@ class PurchasePOSController extends Controller
             }
         }
 
-        // Clean customers
-
         $cashAndBankHeads = AccountHead::whereIn("name", ["Cash", "Bank"])->pluck("id");
         $accounts = Account::whereIn("head_id", $cashAndBankHeads)->where("status", 1)->orderBy("title")->get();
 
@@ -214,7 +213,100 @@ class PurchasePOSController extends Controller
 
         $customers = collect();
 
-        return view("admin_panel.purchase_pos.index", compact("posProducts", "customers", "accounts", "vendors"));
+        // Check if editing existing purchase
+        $editId = $request->query('edit_id');
+        $editPurchaseData = null;
+        if ($editId) {
+            $purchase = Purchase::with('items.product')->find($editId);
+            if ($purchase) {
+                $items = [];
+                foreach ($purchase->items as $item) {
+                    $p = $item->product;
+                    $sizeMode = $item->size_mode ?? ($p ? $p->size_mode : 'by_pieces');
+                    $ppb = (float) ($item->pieces_per_box > 0 ? $item->pieces_per_box : ($p ? ($p->pieces_per_box > 0 ? $p->pieces_per_box : 1) : 1));
+
+                    $variantData = '';
+                    $itemName = $p ? $p->item_name : 'Item';
+                    if (!empty($item->color)) {
+                        $decoded = base64_decode($item->color, true);
+                        $vData = ($decoded !== false) ? json_decode($decoded, true) : json_decode($item->color, true);
+                        if (!empty($vData) && is_array($vData)) {
+                            $variantData = base64_encode(json_encode($vData));
+                            $vColorName = $vData['color'] ?? '';
+                            $vSizeName = $vData['size'] ?? '';
+                            $vParts = [];
+                            if ($vSizeName && $vSizeName !== '-') $vParts[] = $vSizeName;
+                            if ($vColorName && $vColorName !== '-') $vParts[] = $vColorName;
+                            if (!empty($vParts)) $itemName .= ' ' . implode(' | ', $vParts);
+                        } else {
+                            $itemName .= ' (' . $item->color . ')';
+                        }
+                    }
+
+                    $itemId = $item->product_id;
+                    if ($variantData) {
+                        $itemId .= '|variant|' . $variantData;
+                    }
+
+                    $items[] = [
+                        'id' => $itemId,
+                        'product_id' => $item->product_id,
+                        'name' => $itemName,
+                        'price' => (float) $item->price,
+                        'qty' => (int) $item->qty,
+                        'size_mode' => $sizeMode,
+                        'pieces_per_box' => $ppb,
+                        'variant_data' => $variantData,
+                        'item_discount' => (float) $item->item_discount,
+                        'line_total' => (float) $item->line_total
+                    ];
+                }
+
+                // Fetch payment account from JournalEntry for this purchase
+                $paymentAccountId = null;
+                $cashBankAccIds = $accounts->pluck('id')->toArray();
+                if (!empty($cashBankAccIds)) {
+                    $paymentEntry = \App\Models\JournalEntry::whereIn('account_id', $cashBankAccIds)
+                        ->where(function($q) use ($purchase) {
+                            $q->where('description', 'like', '%Purchase #' . $purchase->invoice_no . '%')
+                              ->orWhere('description', 'like', '%Purchase %' . $purchase->id . '%');
+                        })
+                        ->first();
+                    if ($paymentEntry) {
+                        $paymentAccountId = $paymentEntry->account_id;
+                    }
+                }
+                $paidAmount = (float) ($purchase->paid_amount ?? 0);
+                if ($paidAmount <= 0) {
+                    $journalPaid = \App\Models\JournalEntry::whereIn('account_id', $cashBankAccIds)
+                        ->where(function($q) use ($purchase) {
+                            $q->where('description', 'like', '%' . $purchase->invoice_no . '%')
+                              ->orWhere('description', 'like', '%Purchase %' . $purchase->id . '%');
+                        })
+                        ->sum('credit');
+                    if ($journalPaid > 0) {
+                        $paidAmount = (float) $journalPaid;
+                    } elseif ($purchase->total_net > 0 && strtolower($purchase->status_purchase) === 'approved') {
+                        $paidAmount = (float) $purchase->total_net;
+                    }
+                }
+
+                $editPurchaseData = [
+                    'id' => $purchase->id,
+                    'invoice_no' => $purchase->invoice_no,
+                    'vendor_id' => $purchase->vendor_id,
+                    'warehouse_id' => $purchase->warehouse_id,
+                    'note' => $purchase->note ?? '',
+                    'discount' => (float) $purchase->additional_discount,
+                    'extra_cost' => (float) $purchase->extra_cost,
+                    'paid_amount' => $paidAmount,
+                    'payment_account_id' => $paymentAccountId,
+                    'items' => $items
+                ];
+            }
+        }
+
+        return view("admin_panel.purchase_pos.index", compact("posProducts", "customers", "accounts", "vendors", "editPurchaseData"));
     }
 
     public function store(Request $request)
@@ -228,18 +320,15 @@ class PurchasePOSController extends Controller
         
         // Map POS cart fields to Purchase fields
         $data["price"] = $request->input("price_per_piece");
-        // POS sends warehouse_id as array, Purchase expects single integer
         if (isset($data["warehouse_id"]) && is_array($data["warehouse_id"])) {
             $data["warehouse_id"] = $data["warehouse_id"][0] ?? 1;
         } else {
-            $data["warehouse_id"] = 1; // Default fallback
+            $data["warehouse_id"] = 1;
         }
 
-        // Add missing required fields for PurchaseController validation
         $productIds = (array) $request->input("product_id", []);
         $data["unit"] = array_fill(0, count($productIds), "pieces");
         
-        // POS sends item_disc as absolute, PurchaseController expects item_discount as percentage
         $itemDiscs = (array) $request->input("item_disc", []);
         $prices = (array) $data["price"];
         $qtys = (array) $request->input("qty", []);
@@ -258,6 +347,17 @@ class PurchasePOSController extends Controller
         $newRequest->headers->set("X-Requested-With", "XMLHttpRequest");
 
         $purchaseController = app(PurchaseController::class);
+
+        if ($request->filled('edit_id')) {
+            $editId = $request->input('edit_id');
+            $response = $purchaseController->update($newRequest, $editId);
+            return response()->json([
+                "ok" => true,
+                "message" => "Purchase Updated Successfully!",
+                "invoice_url" => route('purchase.invoice', $editId),
+            ]);
+        }
+
         $response = $purchaseController->store($newRequest);
 
         $responseData = $response->getData(true);
