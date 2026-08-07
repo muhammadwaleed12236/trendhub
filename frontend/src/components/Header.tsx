@@ -160,16 +160,16 @@ export default function Header() {
             </div>
 
             {/* Center: Brand Logo */}
-            <div className="absolute left-1/2 -translate-x-1/2">
+            <div className="absolute left-1/2 -translate-x-1/2 z-10 max-w-[50%] sm:max-w-[60%] flex items-center justify-center">
               <Link
                 href="/"
-                className="font-sans text-xl sm:text-2xl tracking-[0.35em] font-medium text-inherit uppercase flex items-center justify-center hover:opacity-85 transition-opacity"
+                className="font-sans text-[11px] min-[375px]:text-sm sm:text-2xl tracking-[0.2em] sm:tracking-[0.35em] font-medium text-inherit uppercase flex items-center justify-center hover:opacity-85 transition-all duration-300"
               >
                 {settings?.web_site_logo ? (
                   <img
                     src={`http://127.0.0.1:8000/${settings.web_site_logo}`}
                     alt={settings?.web_site_name || "TrendHub"}
-                    className={`h-9 sm:h-12 w-auto max-w-[180px] sm:max-w-[240px] object-contain transition-all duration-300 ${
+                    className={`h-7 sm:h-12 w-auto max-w-[130px] min-[375px]:max-w-[160px] sm:max-w-[240px] object-contain transition-all duration-300 ${
                       isHome && !isScrolled ? "invert" : ""
                     }`}
                   />
@@ -193,7 +193,7 @@ export default function Header() {
               {/* User Account Icon */}
               <Link
                 href={user ? "/dashboard" : "/login"}
-                className="p-1.5 hover:opacity-80 transition-opacity"
+                className="p-1.5 hover:opacity-80 transition-opacity hidden sm:inline-block"
                 aria-label="User account"
               >
                 <User size={18} strokeWidth={1.5} />
@@ -202,7 +202,7 @@ export default function Header() {
               {/* Wishlist Icon */}
               <Link
                 href="/wishlist"
-                className="p-1.5 hover:opacity-80 transition-opacity relative"
+                className="p-1.5 hover:opacity-80 transition-opacity relative hidden sm:inline-block"
                 aria-label="Wishlist"
               >
                 <Heart size={18} strokeWidth={1.5} />

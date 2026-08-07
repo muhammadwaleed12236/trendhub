@@ -266,13 +266,13 @@ export default function Home() {
               Featured Collections
             </h2>
             {/* Tab Pills */}
-            <div className="flex justify-center gap-2">
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 px-4">
               {categories && categories.length > 0 ? (
                 categories.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => setActiveCollectionTab(cat.name)}
-                    className={`px-6 py-2 rounded-full text-xs font-sans font-medium tracking-wider transition-all duration-300 cursor-pointer ${
+                    className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-sans font-medium tracking-wider transition-all duration-300 cursor-pointer ${
                       activeCollectionTab === cat.name
                         ? "bg-[#717171] text-white shadow-xs"
                         : "bg-[#f4f4f4] text-[#888888] hover:bg-[#e8e8e8]"
@@ -286,7 +286,7 @@ export default function Home() {
                   <button
                     key={tab}
                     onClick={() => setActiveCollectionTab(tab)}
-                    className={`px-6 py-2 rounded-full text-xs font-sans font-medium tracking-wider transition-all duration-300 cursor-pointer ${
+                    className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-sans font-medium tracking-wider transition-all duration-300 cursor-pointer ${
                       activeCollectionTab === tab
                         ? "bg-[#717171] text-white shadow-xs"
                         : "bg-[#f4f4f4] text-[#888888] hover:bg-[#e8e8e8]"
@@ -365,7 +365,7 @@ export default function Home() {
               {/* Slider Track */}
               <div 
                 ref={sliderRef}
-                className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory pb-4 pr-6 lg:pr-12"
+                className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory pb-4"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {/* Hide webkit scrollbar via inline styles equivalent */}
@@ -382,7 +382,7 @@ export default function Home() {
                     <Link
                       key={product.id}
                       href={`/product/${product.id}`}
-                      className="group relative flex-none w-full sm:w-[calc((100%-16px)/2)] lg:w-[calc((100%-48px)/3)] aspect-[3/4] bg-gray-100 overflow-hidden snap-start block rounded-xl shadow-md"
+                      className="group relative flex-none w-full sm:w-[calc((100%-24px)/2)] lg:w-[calc((100%-48px)/3)] aspect-[3/4] bg-gray-100 overflow-hidden snap-start block rounded-xl shadow-md"
                     >
                       <img
                         src={pMainImage}
@@ -393,6 +393,8 @@ export default function Home() {
                     </Link>
                   );
                 })}
+                {/* Spacer to act as padding-right at the end of the scroll */}
+                <div className="flex-none w-4 sm:w-6 lg:w-12 h-1" />
               </div>
 
             </div>
@@ -429,56 +431,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* 5. FLASH SALE BANNER */}
-      {flashSale.length > 0 && (
-        <section className="relative bg-black py-20 text-white text-center space-y-6 select-none overflow-hidden">
-          <div className="absolute inset-0 bg-cover bg-center opacity-20 filter grayscale" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1549298916-b41d501d3772?q=80&w=1200')" }}></div>
-          <div className="relative z-10 max-w-[800px] mx-auto px-6 space-y-4">
-            <span className="bg-red-600 text-white text-[9px] uppercase tracking-widest px-3 py-1 font-bold rounded-sm">Limited Offer</span>
-            <h2 className="font-serif text-4xl tracking-widest uppercase font-light">FLASH SALE</h2>
-            <p className="text-sm font-serif italic text-neutral-300 font-light max-w-[500px] mx-auto">
-              Elevated pieces at exclusive pricing. Only available for a limited time.
-            </p>
-            <div className="pt-4">
-              <Link
-                href="/shop?promo_tag=Flash Sale"
-                className="bg-white text-black px-8 py-3.5 text-xs font-sans uppercase tracking-[0.2em] font-bold hover:bg-neutral-200 transition-colors inline-block"
-              >
-                Shop The Sale
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
 
-      {/* 6. BEST SELLERS */}
-      {bestSellers.length > 0 && (
-        <section className="py-20 bg-[#fafafa]">
-          <div className="max-w-[1400px] mx-auto px-6 space-y-10">
-            <div className="text-center space-y-4">
-              <h2 className="font-serif text-3xl sm:text-4xl tracking-wide font-normal text-neutral-800 uppercase">
-                Best Sellers
-              </h2>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-sans">Our signature styles</p>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-5">
-              {bestSellers.slice(0, 5).map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-
-            <div className="pt-6 text-center">
-              <Link
-                href="/shop?promo_tag=Best Seller"
-                className="bg-[#333333] hover:bg-[#222222] text-white px-8 py-3 text-[10px] sm:text-xs uppercase tracking-[0.2em] font-sans font-bold transition-all duration-300 inline-block rounded-xs"
-              >
-                View all best sellers
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Default placeholder if no products enabled on homepage yet */}
       {(!homeProducts || homeProducts.length === 0) && !loadingProducts && (
@@ -515,14 +468,19 @@ export default function Home() {
       </section>
 
       {/* 8. INSTAGRAM GALLERY */}
-      <section className="w-full grid grid-cols-2 md:grid-cols-5 gap-1 border-t border-gray-100 pt-1 select-none">
+      <section 
+        className="w-full flex md:grid md:grid-cols-5 gap-1 border-t border-gray-100 pt-1 select-none overflow-x-auto"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {/* Hide webkit scrollbar via inline styles equivalent */}
+        <style dangerouslySetInnerHTML={{__html: `::-webkit-scrollbar { display: none; }`}} />
         {instagramGalleryItems.map((item) => (
           <Link
             key={item.id}
             href={item.link}
             target={item.isPlaceholder ? "_blank" : undefined}
             rel={item.isPlaceholder ? "noopener noreferrer" : undefined}
-            className="relative aspect-square overflow-hidden group bg-gray-50 block"
+            className="relative flex-none w-[45vw] sm:w-[30vw] md:w-full aspect-square overflow-hidden group bg-gray-50 block"
           >
             <img
               src={item.image}
