@@ -158,7 +158,7 @@ export default function Checkout() {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-[1400px] mx-auto px-6 py-28 text-center space-y-6 select-none font-sans">
+      <div className="max-w-[1400px] mx-auto px-6 pt-8 pb-20 sm:pt-12 sm:pb-28 text-center space-y-6 select-none font-sans">
         <ShoppingBag size={48} className="mx-auto text-gray-300 stroke-[1]" />
         <h1 className="font-serif text-2xl uppercase tracking-widest font-light">Your Cart is Empty</h1>
         <p className="text-sm text-gray-400 max-w-[400px] mx-auto font-light">
@@ -177,7 +177,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto px-6 py-28 select-none font-sans">
+    <div className="max-w-[1400px] mx-auto px-6 pt-8 pb-20 sm:pt-12 sm:pb-28 select-none font-sans">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
         
         {/* Left Form: Checkout Details */}

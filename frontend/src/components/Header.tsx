@@ -11,9 +11,10 @@ import { useAuthStore } from "@/store/authStore";
 import CartSidebar from "./CartSidebar";
 import AnnouncementBar from "./AnnouncementBar";
 import { useSettings } from "@/hooks/useSettings";
-import { Product } from "@/types";
+import { Product, Category } from "@/types";
 import api from "@/lib/api";
 import { getProductFallbackImage } from "@/lib/imageHelper";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Header() {
   const pathname = usePathname();
@@ -35,6 +36,14 @@ export default function Header() {
 
   const { data: settings, isLoading, error } = useSettings();
   console.log("Header settings payload:", { settings, isLoading, error });
+
+  const { data: categories } = useQuery({
+    queryKey: ["header-categories"],
+    queryFn: async () => {
+      const res = await api.get("/categories");
+      return res.data?.data as Category[] || [];
+    },
+  });
 
   useEffect(() => {
     setIsMounted(true);
@@ -81,7 +90,7 @@ export default function Header() {
     return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
-  // Scroll handler for transparent/white header logic + auto-hide
+  // Scroll handler for transparent/white header logic + auto-hide and open-cart event
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -105,8 +114,17 @@ export default function Header() {
       lastScrollY.current = currentScrollY;
     };
 
+    const handleOpenCart = () => {
+      setIsCartOpen(true);
+    };
+
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("open-cart", handleOpenCart);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("open-cart", handleOpenCart);
+    };
   }, []);
 
   const isHome = pathname === "/";
@@ -162,7 +180,7 @@ export default function Header() {
             </div>
 
             {/* Right: Actions */}
-            <div className="flex items-center gap-3 sm:gap-5">
+            <div className="flex items-center gap-1 sm:gap-2">
               {/* Search Icon */}
               <button
                 onClick={() => setIsSearchOpen(true)}
@@ -179,6 +197,24 @@ export default function Header() {
                 aria-label="User account"
               >
                 <User size={18} strokeWidth={1.5} />
+              </Link>
+
+              {/* Wishlist Icon */}
+              <Link
+                href="/wishlist"
+                className="p-1.5 hover:opacity-80 transition-opacity relative"
+                aria-label="Wishlist"
+              >
+                <Heart size={18} strokeWidth={1.5} />
+                {isMounted && wishlistItemsCount > 0 && (
+                  <span className={`absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-sans font-bold shadow-sm transition-all duration-300 ${
+                    isHome && !isScrolled
+                      ? "bg-white text-black"
+                      : "bg-black text-white"
+                  }`}>
+                    {wishlistItemsCount}
+                  </span>
+                )}
               </Link>
 
               {/* Cart Icon */}
@@ -237,28 +273,26 @@ export default function Header() {
                 {/* Links */}
                 <div className="flex-1 overflow-y-auto px-8 py-10 space-y-8">
                   {/* Main Sections */}
-                  <div className="flex flex-col space-y-6">
-                    <Link
-                      href="/shop?search=men"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="font-sans text-2xl font-bold uppercase tracking-[0.15em] hover:translate-x-2 transition-transform duration-300 block text-black"
-                    >
-                      Men
-                    </Link>
-                    <Link
-                      href="/shop?search=women"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="font-sans text-2xl font-bold uppercase tracking-[0.15em] hover:translate-x-2 transition-transform duration-300 block text-black"
-                    >
-                      Women
-                    </Link>
-                    <Link
-                      href="/shop?search=juniors"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="font-sans text-2xl font-bold uppercase tracking-[0.15em] hover:translate-x-2 transition-transform duration-300 block text-black"
-                    >
-                      Juniors
-                    </Link>
+                  <div className="flex flex-col">
+                    <span className="font-sans text-xs font-bold uppercase tracking-[0.2em] text-black mb-4 block">
+                      Shop by Category
+                    </span>
+                    <div className="flex flex-col space-y-4">
+                      {categories && categories.length > 0 ? (
+                        categories.map((cat) => (
+                          <Link
+                            key={cat.id}
+                            href={`/shop?category_id=${cat.id}`}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-gray-600 hover:text-black transition-colors block hover:translate-x-1.5 transition-transform duration-200"
+                          >
+                            {cat.name}
+                          </Link>
+                        ))
+                      ) : (
+                        <span className="text-[10px] text-gray-400 font-sans tracking-[0.2em] uppercase">Loading categories...</span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="border-t border-gray-100 my-4" />
@@ -285,6 +319,13 @@ export default function Header() {
                       className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-gray-600 hover:text-black transition-colors block"
                     >
                       Trending
+                    </Link>
+                    <Link
+                      href="/shop?promo_tag=Flash Sale"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-gray-600 hover:text-black transition-colors block"
+                    >
+                      Sale
                     </Link>
                   </div>
 

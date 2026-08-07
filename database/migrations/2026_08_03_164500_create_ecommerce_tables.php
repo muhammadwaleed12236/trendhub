@@ -52,8 +52,9 @@ return new class extends Migration
             $table->string('code')->unique();
             $table->enum('type', ['fixed', 'percent']);
             $table->decimal('value', 10, 2);
-            $table->decimal('min_order_amount', 10, 2)->default(0);
-            $table->date('expires_at')->nullable();
+            $table->decimal('min_spend', 10, 2)->nullable();
+            $table->integer('max_uses')->nullable();
+            $table->integer('uses')->default(0);
             $table->boolean('is_active')->default(1);
             $table->timestamps();
         });

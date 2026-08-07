@@ -49,6 +49,16 @@ export default function Home() {
     }
   }, [loadingProducts, homeProducts]);
 
+  // Set default active tab once categories are loaded
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      const hasMen = categories.some(cat => cat.name.toLowerCase() === "men");
+      if (!hasMen) {
+        setActiveCollectionTab(categories[0].name);
+      }
+    }
+  }, [categories]);
+
   // Filter products by tags
   const newArrivals = homeProducts?.filter(p => p.promo_tag === "New Arrival") || [];
   const trendingProducts = homeProducts?.filter(p => p.promo_tag === "Trending") || [];
@@ -57,28 +67,82 @@ export default function Home() {
 
   // Filter products for the active collection tab
   const activeCollectionProducts = homeProducts?.filter(product => {
+    if (!activeCollectionTab) return true;
+
     const nameLower = product.item_name.toLowerCase();
     const catNameLower = product.category_relation?.name?.toLowerCase() || "";
-    
-    if (activeCollectionTab === "Men") {
+    const activeTabLower = activeCollectionTab.toLowerCase();
+
+    // Exact category name match
+    if (catNameLower === activeTabLower) {
+      return true;
+    }
+
+    // Predefined legacy matching logic
+    if (activeTabLower === "men") {
       return nameLower.includes("men") || nameLower.includes("man") || catNameLower.includes("men");
     }
-    if (activeCollectionTab === "Women") {
+    if (activeTabLower === "women") {
       return nameLower.includes("women") || nameLower.includes("lady") || catNameLower.includes("women");
     }
-    if (activeCollectionTab === "Boys") {
+    if (activeTabLower === "boys") {
       return nameLower.includes("boys") || nameLower.includes("boy") || catNameLower.includes("boys");
     }
-    if (activeCollectionTab === "Girls") {
+    if (activeTabLower === "girls") {
       return nameLower.includes("girls") || nameLower.includes("girl") || catNameLower.includes("girls");
     }
-    return true;
+
+    // Sub-string fallback
+    return nameLower.includes(activeTabLower);
   }) || [];
 
   // Fallback to top products if active tag has zero items
   const displayProducts = activeCollectionProducts.length > 0 
     ? activeCollectionProducts 
     : (homeProducts || []).slice(0, 5);
+
+  // Generate 5 items for the Instagram Gallery
+  const instagramGalleryItems = (() => {
+    const placeholders = [
+      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=400",
+      "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=400",
+      "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=400",
+      "https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=400",
+      "https://images.unsplash.com/photo-1496345875659-11f7dd282d1d?q=80&w=400"
+    ];
+
+    const items = [];
+    const productsWithImages = homeProducts ? homeProducts.filter(p => p.web_main_image || p.image) : [];
+
+    const baseUrl = process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000";
+
+    for (let i = 0; i < 5; i++) {
+      if (productsWithImages[i]) {
+        const product = productsWithImages[i];
+        const image = product.web_main_image
+          ? `${baseUrl}/uploads/products/${product.web_main_image}`
+          : product.image
+          ? `${baseUrl}/uploads/products/${product.image}`
+          : getProductFallbackImage(product.id);
+        items.push({
+          id: product.id,
+          image,
+          link: `/product/${product.id}`,
+          label: product.item_name,
+          isPlaceholder: false
+        });
+      } else {
+        items.push({
+          id: `placeholder-${i}`,
+          image: placeholders[i],
+          link: settings?.web_instagram_link || "https://instagram.com",
+          label: `@${settings?.web_site_name || "TrendHub"}`,
+          isPlaceholder: true
+        });
+      }
+    }
+    return items;
+  })();
 
   return (
     <div className="w-full overflow-hidden">
@@ -203,19 +267,35 @@ export default function Home() {
             </h2>
             {/* Tab Pills */}
             <div className="flex justify-center gap-2">
-              {["Men", "Women", "Boys", "Girls"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveCollectionTab(tab)}
-                  className={`px-6 py-2 rounded-full text-xs font-sans font-medium tracking-wider transition-all duration-300 cursor-pointer ${
-                    activeCollectionTab === tab
-                      ? "bg-[#717171] text-white shadow-xs"
-                      : "bg-[#f4f4f4] text-[#888888] hover:bg-[#e8e8e8]"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+              {categories && categories.length > 0 ? (
+                categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCollectionTab(cat.name)}
+                    className={`px-6 py-2 rounded-full text-xs font-sans font-medium tracking-wider transition-all duration-300 cursor-pointer ${
+                      activeCollectionTab === cat.name
+                        ? "bg-[#717171] text-white shadow-xs"
+                        : "bg-[#f4f4f4] text-[#888888] hover:bg-[#e8e8e8]"
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))
+              ) : (
+                ["Men", "Women", "Boys", "Girls"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveCollectionTab(tab)}
+                    className={`px-6 py-2 rounded-full text-xs font-sans font-medium tracking-wider transition-all duration-300 cursor-pointer ${
+                      activeCollectionTab === tab
+                        ? "bg-[#717171] text-white shadow-xs"
+                        : "bg-[#f4f4f4] text-[#888888] hover:bg-[#e8e8e8]"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))
+              )}
             </div>
           </div>
 
@@ -436,19 +516,33 @@ export default function Home() {
 
       {/* 8. INSTAGRAM GALLERY */}
       <section className="w-full grid grid-cols-2 md:grid-cols-5 gap-1 border-t border-gray-100 pt-1 select-none">
-        {[
-          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=400",
-          "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=400",
-          "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=400",
-          "https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=400",
-          "https://images.unsplash.com/photo-1496345875659-11f7dd282d1d?q=80&w=400"
-        ].map((url, idx) => (
-          <div key={idx} className="relative aspect-square overflow-hidden group bg-gray-50">
-            <img src={url} alt="Instagram" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-            <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-              <span className="text-white text-xs uppercase tracking-widest font-sans font-bold">@TrendHub</span>
+        {instagramGalleryItems.map((item) => (
+          <Link
+            key={item.id}
+            href={item.link}
+            target={item.isPlaceholder ? "_blank" : undefined}
+            rel={item.isPlaceholder ? "noopener noreferrer" : undefined}
+            className="relative aspect-square overflow-hidden group bg-gray-50 block"
+          >
+            <img
+              src={item.image}
+              alt={item.label}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 text-center">
+              <span className="text-white text-[10px] uppercase tracking-[0.2em] font-sans font-semibold mb-1">
+                {item.isPlaceholder ? "Follow Us" : "Shop the Look"}
+              </span>
+              <span className="text-white text-xs uppercase tracking-widest font-sans font-bold line-clamp-2 px-2">
+                {item.label}
+              </span>
+              {!item.isPlaceholder && (
+                <span className="mt-3 border border-white text-white text-[9px] uppercase tracking-widest font-bold px-3 py-1 bg-white/10 hover:bg-white hover:text-black transition-all duration-300">
+                  Shop Now
+                </span>
+              )}
             </div>
-          </div>
+          </Link>
         ))}
       </section>
       </div>

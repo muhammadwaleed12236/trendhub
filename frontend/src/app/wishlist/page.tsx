@@ -10,7 +10,7 @@ export default function Wishlist() {
   const { items, clearWishlist } = useWishlistStore();
 
   return (
-    <div className="max-w-[1400px] mx-auto px-6 py-28 space-y-8 select-none">
+    <div className="max-w-[1400px] mx-auto px-6 pt-8 pb-20 sm:pt-12 sm:pb-28 space-y-8 select-none">
       {/* Title */}
       <div className="space-y-2 border-b border-gray-100 pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
