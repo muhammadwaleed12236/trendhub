@@ -453,26 +453,26 @@ Route::middleware('auth')->group(function () {
 
     // Website Settings
     Route::get('/website-settings', [App\Http\Controllers\WebsiteSettingsController::class, 'index'])->middleware('permission:website-settings.view')->name('website_settings.index');
-    Route::post('/website-settings', [App\Http\Controllers\WebsiteSettingsController::class, 'update'])->middleware('permission:website-settings.edit')->name('website_settings.update');
-    Route::post('/website-settings/categories', [App\Http\Controllers\WebsiteSettingsController::class, 'updateCategories'])->middleware('permission:website-settings.edit')->name('website_settings.categories.update');
+    Route::post('/website-settings', [App\Http\Controllers\WebsiteSettingsController::class, 'update'])->middleware('permission:website-settings.edit|website-settings.update|website-settings.create|website-settings.delete|website-settings.upload_manage')->name('website_settings.update');
+    Route::post('/website-settings/categories', [App\Http\Controllers\WebsiteSettingsController::class, 'updateCategories'])->middleware('permission:website-settings.edit|website-settings.update|website-settings.create|website-settings.delete|website-settings.upload_manage')->name('website_settings.categories.update');
 
     // Web Orders
-    Route::get('/web-orders', [App\Http\Controllers\WebOrderController::class, 'index'])->name('web_orders.index');
-    Route::get('/web-orders/{id}', [App\Http\Controllers\WebOrderController::class, 'show'])->name('web_orders.show');
-    Route::post('/web-orders/{id}/status', [App\Http\Controllers\WebOrderController::class, 'updateStatus'])->name('web_orders.status');
-    Route::post('/web-orders/{id}/verify-payment', [App\Http\Controllers\WebOrderController::class, 'verifyPayment'])->name('web_orders.verify_payment');
+    Route::get('/web-orders', [App\Http\Controllers\WebOrderController::class, 'index'])->middleware('permission:web_orders.view|web_orders.read')->name('web_orders.index');
+    Route::get('/web-orders/{id}', [App\Http\Controllers\WebOrderController::class, 'show'])->middleware('permission:web_orders.view|web_orders.read')->name('web_orders.show');
+    Route::post('/web-orders/{id}/status', [App\Http\Controllers\WebOrderController::class, 'updateStatus'])->middleware('permission:web_orders.edit')->name('web_orders.status');
+    Route::post('/web-orders/{id}/verify-payment', [App\Http\Controllers\WebOrderController::class, 'verifyPayment'])->middleware('permission:web_orders.edit')->name('web_orders.verify_payment');
 
     // Web Products (Quick Manage)
-    Route::get('/web-products', [App\Http\Controllers\WebProductController::class, 'index'])->name('web_products.index');
-    Route::post('/web-products/ajax-update', [App\Http\Controllers\WebProductController::class, 'updateAjax'])->name('web_products.update_ajax');
-    Route::get('/web-products/{id}/settings', [App\Http\Controllers\WebProductController::class, 'getWebSettings'])->name('web_products.get_settings');
-    Route::post('/web-products/{id}/settings', [App\Http\Controllers\WebProductController::class, 'updateWebSettings'])->name('web_products.update_settings');
+    Route::get('/web-products', [App\Http\Controllers\WebProductController::class, 'index'])->middleware('permission:web_products.view|web_products.read')->name('web_products.index');
+    Route::post('/web-products/ajax-update', [App\Http\Controllers\WebProductController::class, 'updateAjax'])->middleware('permission:web_products.edit')->name('web_products.update_ajax');
+    Route::get('/web-products/{id}/settings', [App\Http\Controllers\WebProductController::class, 'getWebSettings'])->middleware('permission:web_products.view|web_products.read')->name('web_products.get_settings');
+    Route::post('/web-products/{id}/settings', [App\Http\Controllers\WebProductController::class, 'updateWebSettings'])->middleware('permission:web_products.edit')->name('web_products.update_settings');
 
     // Coupons
-    Route::get('/coupons', [App\Http\Controllers\CouponController::class, 'index'])->name('admin.coupons.index');
-    Route::post('/coupons', [App\Http\Controllers\CouponController::class, 'store'])->name('admin.coupons.store');
-    Route::put('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'update'])->name('admin.coupons.update');
-    Route::delete('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'destroy'])->name('admin.coupons.destroy');
+    Route::get('/coupons', [App\Http\Controllers\CouponController::class, 'index'])->middleware('permission:coupons.view|coupons.read')->name('admin.coupons.index');
+    Route::post('/coupons', [App\Http\Controllers\CouponController::class, 'store'])->middleware('permission:coupons.create|coupons.add')->name('admin.coupons.store');
+    Route::put('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'update'])->middleware('permission:coupons.edit')->name('admin.coupons.update');
+    Route::delete('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'destroy'])->middleware('permission:coupons.delete')->name('admin.coupons.destroy');
 
     // Return Policy Settings
     Route::get('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'returnSettings'])->name('settings.return-policy');

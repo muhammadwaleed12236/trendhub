@@ -216,16 +216,24 @@
             </span>
         </div>
         
+@php
+    $canEditOrders = auth()->user()->hasPermissionTo('web_orders.edit');
+@endphp
+
         <form action="{{ route('web_orders.status', $order->id) }}" method="POST" class="d-flex gap-2">
             @csrf
-            <select name="status" class="form-select w-auto">
+            <select name="status" class="form-select w-auto" {{ !$canEditOrders ? 'disabled' : '' }}>
                 <option value="pending" {{ $order->order_status == 'pending' ? 'selected' : '' }}>Pending</option>
                 <option value="processing" {{ $order->order_status == 'processing' ? 'selected' : '' }}>Processing</option>
                 <option value="shipped" {{ $order->order_status == 'shipped' ? 'selected' : '' }}>Shipped</option>
                 <option value="delivered" {{ $order->order_status == 'delivered' ? 'selected' : '' }}>Delivered</option>
                 <option value="cancelled" {{ $order->order_status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
             </select>
-            <button type="submit" class="btn btn-primary shadow-sm"><i class="fas fa-save me-1"></i> Update Status</button>
+            @if($canEditOrders)
+                <button type="submit" class="btn btn-primary shadow-sm"><i class="fas fa-save me-1"></i> Update Status</button>
+            @else
+                <button type="button" class="btn btn-primary shadow-sm" disabled><i class="fas fa-lock me-1"></i> Update Status (Read Only)</button>
+            @endif
         </form>
     </div>
 
@@ -417,18 +425,24 @@
                     @if($order->payment_method === 'Easypaisa' && $order->payment_status === 'Pending Verification')
                         <div class="border-top pt-3 mt-3">
                             <h6 class="fw-bold text-slate-700 mb-3"><i class="fas fa-shield-alt me-1 text-primary"></i> Verify Payment</h6>
-                            <div class="d-flex gap-2">
-                                <form action="{{ route('web_orders.verify_payment', $order->id) }}" method="POST" class="flex-grow-1">
-                                    @csrf
-                                    <input type="hidden" name="action" value="approve">
-                                    <button type="submit" class="btn btn-success w-100 py-2"><i class="fas fa-check me-1"></i> Approve</button>
-                                </form>
-                                <form action="{{ route('web_orders.verify_payment', $order->id) }}" method="POST" class="flex-grow-1">
-                                    @csrf
-                                    <input type="hidden" name="action" value="reject">
-                                    <button type="submit" class="btn btn-outline-danger w-100 py-2"><i class="fas fa-ban me-1"></i> Reject</button>
-                                </form>
-                            </div>
+                            @if($canEditOrders)
+                                <div class="d-flex gap-2">
+                                    <form action="{{ route('web_orders.verify_payment', $order->id) }}" method="POST" class="flex-grow-1">
+                                        @csrf
+                                        <input type="hidden" name="action" value="approve">
+                                        <button type="submit" class="btn btn-success w-100 py-2"><i class="fas fa-check me-1"></i> Approve</button>
+                                    </form>
+                                    <form action="{{ route('web_orders.verify_payment', $order->id) }}" method="POST" class="flex-grow-1">
+                                        @csrf
+                                        <input type="hidden" name="action" value="reject">
+                                        <button type="submit" class="btn btn-outline-danger w-100 py-2"><i class="fas fa-ban me-1"></i> Reject</button>
+                                    </form>
+                                </div>
+                            @else
+                                <div class="alert alert-light border p-2 text-center text-muted mb-0 small" style="background-color:#f8fafc; border-color:#e2e8f0;">
+                                    <i class="fas fa-lock me-1"></i> You need edit permission to verify payments.
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </div>

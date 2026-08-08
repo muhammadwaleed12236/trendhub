@@ -839,7 +839,7 @@
 
 
                         <!-- Website Management -->
-                        @if (auth()->check() && (auth()->user()->email === 'admin@admin.com' || auth()->user()->hasRole('Super Admin')))
+                        @canany(['website-settings.view', 'web_products.view', 'web_products.read', 'coupons.view', 'coupons.read', 'web_orders.view', 'web_orders.read'])
                             <li class="nav-item">
                                 <a href="#" class="nav-link">
                                     <i class="menu_icon fas fa-globe"></i>
@@ -848,14 +848,22 @@
                                 </a>
                                 <div class="submenu">
                                     <ul class="submenu-item">
-                                        <li><a href="{{ route('website_settings.index') }}"><i class="fa-solid fa-cogs"></i> Website Settings</a></li>
-                                        <li><a href="{{ route('web_products.index') }}"><i class="fa-solid fa-box"></i> Web Products</a></li>
-                                        <li><a href="{{ route('admin.coupons.index') }}"><i class="fas fa-tags"></i> Coupons</a></li>
-                                        <li><a href="{{ route('web_orders.index') }}"><i class="fa-solid fa-shopping-cart"></i> Web Orders</a></li>
+                                        @can('website-settings.view')
+                                            <li><a href="{{ route('website_settings.index') }}"><i class="fa-solid fa-cogs"></i> Website Settings</a></li>
+                                        @endcan
+                                        @canany(['web_products.view', 'web_products.read'])
+                                            <li><a href="{{ route('web_products.index') }}"><i class="fa-solid fa-box"></i> Web Products</a></li>
+                                        @endcan
+                                        @canany(['coupons.view', 'coupons.read'])
+                                            <li><a href="{{ route('admin.coupons.index') }}"><i class="fas fa-tags"></i> Coupons</a></li>
+                                        @endcan
+                                        @canany(['web_orders.view', 'web_orders.read'])
+                                            <li><a href="{{ route('web_orders.index') }}"><i class="fa-solid fa-shopping-cart"></i> Web Orders</a></li>
+                                        @endcan
                                     </ul>
                                 </div>
                             </li>
-                        @endif
+                        @endcanany
 
                     </ul>
                 </div>

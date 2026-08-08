@@ -10,6 +10,10 @@ class WebsiteSettingsController extends Controller
 {
     public function index()
     {
+        if (!auth()->user()->hasPermissionTo('website-settings.view')) {
+            abort(403, 'Unauthorized action. You do not have permission to view Website Settings.');
+        }
+
         $settings = Setting::where('group', 'website')->pluck('value', 'key')->toArray();
         $categories = \App\Models\Category::all();
         
@@ -32,14 +36,49 @@ class WebsiteSettingsController extends Controller
             'home_banner_text' => 'nullable|string',
             'easypaisa_account_title' => 'nullable|string|max:255',
             'easypaisa_mobile_number' => 'nullable|string|max:50',
+            'home_hero_media_type' => 'nullable|string|in:video,image',
         ]);
+        // 1. Check Edit/Update Permission generally
+        if (!auth()->user()->hasAnyPermission(['website-settings.edit', 'website-settings.update'])) {
+            abort(403, 'Unauthorized action. You do not have permission to edit or update Website Settings.');
+        }
+
+        // 2. Check Upload/Manage Permission if files are uploaded
+        $hasFiles = $request->hasFile('site_logo') || $request->hasFile('home_banner_image') || 
+                    $request->hasFile('home_hero_video') || $request->hasFile('home_hero_image') || 
+                    $request->hasFile('easypaisa_qr_code');
+
+        if ($hasFiles && !auth()->user()->hasPermissionTo('website-settings.upload_manage')) {
+            return redirect()->back()->with('error', 'Unauthorized action. You need upload/manage permission to upload files.');
+        }
 
         $keys = [
             'site_name', 'contact_email', 'contact_phone',
             'facebook_link', 'instagram_link', 'tiktok_link', 'whatsapp_number',
             'shipping_policy', 'return_policy', 'about_us', 'home_banner_text',
-            'easypaisa_account_title', 'easypaisa_mobile_number'
+            'easypaisa_account_title', 'easypaisa_mobile_number',
+            'home_hero_media_type'
         ];
+
+        // 3. Check Create and Delete Permissions for text keys
+        foreach ($keys as $key) {
+            $oldValue = Setting::where('key', 'web_' . $key)->value('value');
+            $newValue = $request->input($key, '');
+
+            // Deleting a setting value (was filled, now clearing it)
+            if (!empty($oldValue) && empty($newValue)) {
+                if (!auth()->user()->hasPermissionTo('website-settings.delete')) {
+                    return redirect()->back()->with('error', 'Unauthorized action. You need delete permission to clear the value of ' . ucwords(str_replace('_', ' ', $key)) . '.');
+                }
+            }
+
+            // Creating a setting value (was empty, now filling it)
+            if (empty($oldValue) && !empty($newValue)) {
+                if (!auth()->user()->hasPermissionTo('website-settings.create')) {
+                    return redirect()->back()->with('error', 'Unauthorized action. You need create permission to set ' . ucwords(str_replace('_', ' ', $key)) . '.');
+                }
+            }
+        }
 
         foreach ($keys as $key) {
             Setting::updateOrCreate(
@@ -85,6 +124,22 @@ class WebsiteSettingsController extends Controller
             Cache::forget('setting_web_home_hero_video');
         }
 
+        if ($request->hasFile('home_hero_image')) {
+            $file = $request->file('home_hero_image');
+            $fileName = time() . '_hero_image.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/settings'), $fileName);
+            
+            Setting::updateOrCreate(
+                ['key' => 'web_home_hero_image'],
+                [
+                    'value' => 'uploads/settings/' . $fileName,
+                    'type' => 'string',
+                    'group' => 'website'
+                ]
+            );
+            Cache::forget('setting_web_home_hero_image');
+        }
+
         if ($request->hasFile('site_logo')) {
             $file = $request->file('site_logo');
             $fileName = time() . '_logo.' . $file->getClientOriginalExtension();
@@ -122,6 +177,26 @@ class WebsiteSettingsController extends Controller
 
     public function updateCategories(Request $request)
     {
+        // 1. Check Edit/Update Permission generally
+        if (!auth()->user()->hasAnyPermission(['website-settings.edit', 'website-settings.update'])) {
+            abort(403, 'Unauthorized action. You do not have permission to edit or update Category Settings.');
+        }
+
+        // 2. Check Upload/Manage Permission if files are uploaded
+        $hasCatFiles = false;
+        if ($request->has('categories')) {
+            foreach ($request->input('categories') as $catId => $data) {
+                if ($request->hasFile("categories.{$catId}.web_image")) {
+                    $hasCatFiles = true;
+                    break;
+                }
+            }
+        }
+
+        if ($hasCatFiles && !auth()->user()->hasPermissionTo('website-settings.upload_manage')) {
+            return redirect()->back()->with('error', 'Unauthorized action. You need upload/manage permission to upload files.');
+        }
+
         $categories = \App\Models\Category::all();
 
         foreach ($categories as $category) {

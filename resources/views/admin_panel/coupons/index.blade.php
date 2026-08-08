@@ -370,9 +370,11 @@
             <h4 class="fw-bold mb-0">Coupons Management</h4>
             <small class="text-muted">Create and manage coupon codes for promotional discounts.</small>
         </div>
+        @canany(['coupons.create', 'coupons.add'])
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addCouponModal">
             <i class="fas fa-plus me-2"></i> Add New Coupon
         </button>
+        @endcanany
     </div>
 
     @if(session('success'))
@@ -445,9 +447,12 @@
                             </td>
                             <td class="text-end pe-4">
                                 <div class="d-inline-flex gap-2">
+                                    @can('coupons.edit')
                                     <button class="btn btn-sm btn-outline-indigo" data-toggle="modal" data-target="#editCouponModal{{ $coupon->id }}">
                                         <i class="fas fa-edit me-1"></i> Edit
                                     </button>
+                                    @endcan
+                                    @can('coupons.delete')
                                     <form action="{{ route('admin.coupons.destroy', $coupon->id) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('DELETE')
@@ -455,6 +460,7 @@
                                             <i class="fas fa-trash-alt me-1"></i> Delete
                                         </button>
                                     </form>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

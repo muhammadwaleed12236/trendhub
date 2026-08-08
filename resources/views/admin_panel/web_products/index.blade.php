@@ -342,6 +342,10 @@
     </div>
 </div>
 
+@php
+    $canEditProducts = auth()->user()->hasPermissionTo('web_products.edit');
+@endphp
+
 {{-- Web Settings Modal --}}
 <div class="modal fade" id="webSettingsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -356,26 +360,26 @@
                     <div class="row g-4">
                         <div class="col-md-4">
                             <div class="form-check form-switch mt-2">
-                                <input class="form-check-input" type="checkbox" id="modal_is_web_visible" name="is_web_visible" value="1">
+                                <input class="form-check-input" type="checkbox" id="modal_is_web_visible" name="is_web_visible" value="1" {{ !$canEditProducts ? 'disabled' : '' }}>
                                 <label class="form-check-label fw-bold text-slate-700 ms-2" for="modal_is_web_visible">Enable for Website</label>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-check form-switch mt-2">
-                                <input class="form-check-input" type="checkbox" id="modal_show_on_homepage" name="show_on_homepage" value="1">
+                                <input class="form-check-input" type="checkbox" id="modal_show_on_homepage" name="show_on_homepage" value="1" {{ !$canEditProducts ? 'disabled' : '' }}>
                                 <label class="form-check-label fw-bold text-slate-700 ms-2" for="modal_show_on_homepage">Show on Homepage</label>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-check form-switch mt-2">
-                                <input class="form-check-input" type="checkbox" id="modal_auto_hide" name="auto_hide_out_of_stock" value="1">
+                                <input class="form-check-input" type="checkbox" id="modal_auto_hide" name="auto_hide_out_of_stock" value="1" {{ !$canEditProducts ? 'disabled' : '' }}>
                                 <label class="form-check-label fw-bold text-slate-700 ms-2" for="modal_auto_hide">Auto Hide Out of Stock</label>
                             </div>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Promotional Tag</label>
-                            <select class="form-select" name="promo_tag" id="modal_promo_tag">
+                            <select class="form-select" name="promo_tag" id="modal_promo_tag" {{ !$canEditProducts ? 'disabled' : '' }}>
                                 <option value="">None</option>
                                 <option value="Featured">Featured</option>
                                 <option value="New Arrival">New Arrival</option>
@@ -386,22 +390,22 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Website Sale Price</label>
-                            <input type="number" step="0.01" class="form-control" name="web_sale_price" id="modal_web_sale_price" placeholder="Leave empty to use default">
+                            <input type="number" step="0.01" class="form-control" name="web_sale_price" id="modal_web_sale_price" placeholder="Leave empty to use default" {{ !$canEditProducts ? 'disabled' : '' }}>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Meta Title (SEO)</label>
-                            <input type="text" class="form-control" name="meta_title" id="modal_meta_title" placeholder="SEO Title">
+                            <input type="text" class="form-control" name="meta_title" id="modal_meta_title" placeholder="SEO Title" {{ !$canEditProducts ? 'disabled' : '' }}>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Meta Description (SEO)</label>
-                            <input type="text" class="form-control" name="meta_description" id="modal_meta_description" placeholder="SEO Description">
+                            <input type="text" class="form-control" name="meta_description" id="modal_meta_description" placeholder="SEO Description" {{ !$canEditProducts ? 'disabled' : '' }}>
                         </div>
                         
                         <div class="col-md-6">
                             <label class="form-label text-indigo fw-bold">Main Website Image (Primary)</label>
                             <div id="modalExistingMainImage" class="mb-3"></div>
-                            <input type="file" class="form-control" name="web_main_image" accept="image/*">
+                            <input type="file" class="form-control" name="web_main_image" accept="image/*" {{ !$canEditProducts ? 'disabled' : '' }}>
                             <small class="text-muted mt-2 d-block">This image will show as the primary thumbnail on the website.</small>
                         </div>
                         
@@ -412,19 +416,19 @@
                             <div class="row g-3">
                                 <div class="col-md-3">
                                     <label class="small text-muted mb-2 d-block">Image 1</label>
-                                    <input type="file" class="form-control form-control-sm" name="web_images[]" accept="image/*">
+                                    <input type="file" class="form-control form-control-sm" name="web_images[]" accept="image/*" {{ !$canEditProducts ? 'disabled' : '' }}>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="small text-muted mb-2 d-block">Image 2</label>
-                                    <input type="file" class="form-control form-control-sm" name="web_images[]" accept="image/*">
+                                    <input type="file" class="form-control form-control-sm" name="web_images[]" accept="image/*" {{ !$canEditProducts ? 'disabled' : '' }}>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="small text-muted mb-2 d-block">Image 3</label>
-                                    <input type="file" class="form-control form-control-sm" name="web_images[]" accept="image/*">
+                                    <input type="file" class="form-control form-control-sm" name="web_images[]" accept="image/*" {{ !$canEditProducts ? 'disabled' : '' }}>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="small text-muted mb-2 d-block">Image 4</label>
-                                    <input type="file" class="form-control form-control-sm" name="web_images[]" accept="image/*">
+                                    <input type="file" class="form-control form-control-sm" name="web_images[]" accept="image/*" {{ !$canEditProducts ? 'disabled' : '' }}>
                                 </div>
                             </div>
                             <small class="text-muted mt-3 d-block">Upload new images in any of the slots above to replace the existing gallery.</small>
@@ -433,7 +437,11 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light border" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                    @if($canEditProducts)
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    @else
+                        <button type="button" class="btn btn-primary" disabled><i class="fas fa-lock me-1"></i> Save Settings (Read Only)</button>
+                    @endif
                 </div>
             </div>
         </form>

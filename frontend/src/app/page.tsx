@@ -148,21 +148,29 @@ export default function Home() {
     <div className="w-full overflow-hidden">
       {/* 1. HERO BANNER WITH FASHION VIDEO */}
       <section className="fixed top-0 left-0 w-full bg-neutral-950 flex flex-col justify-center overflow-hidden h-[100vh] -z-10">
-        {/* Full-width Background Autoplay Fashion Video */}
+        {/* Full-width Background Autoplay Fashion Video or Image */}
         <div className="absolute inset-0 w-full h-full overflow-hidden">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            key={settings?.web_home_hero_video || "/hero-video.mp4"}
-            className="w-full h-full object-cover scale-[1.03]"
-          >
-            <source
-              src={settings?.web_home_hero_video ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_home_hero_video}` : "/hero-video.mp4"}
-              type="video/mp4"
+          {settings?.web_home_hero_media_type === "image" && settings?.web_home_hero_image ? (
+            <img
+              src={`${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_home_hero_image}`}
+              alt="Hero Background"
+              className="w-full h-full object-cover scale-[1.03]"
             />
-          </video>
+          ) : (
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              key={settings?.web_home_hero_video || "/hero-video.mp4"}
+              className="w-full h-full object-cover scale-[1.03]"
+            >
+              <source
+                src={settings?.web_home_hero_video ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_home_hero_video}` : "/hero-video.mp4"}
+                type="video/mp4"
+              />
+            </video>
+          )}
         </div>
 
         {/* Hero Content (Pushed down to avoid absolute header overlap) */}

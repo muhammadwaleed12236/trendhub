@@ -20,6 +20,31 @@ class RoleController extends Controller
         foreach (['stock.adjust.view', 'stock.adjust.create', 'stock.adjust.edit', 'stock.adjust.delete'] as $permName) {
             Permission::firstOrCreate(['name' => $permName]);
         }
+        foreach ([
+            'website-settings.view',
+            'website-settings.create',
+            'website-settings.edit',
+            'website-settings.delete',
+            'website-settings.update',
+            'website-settings.upload_manage',
+            
+            // Web Products permissions
+            'web_products.view', 'web_products.read',
+            'web_products.create', 'web_products.add',
+            'web_products.edit', 'web_products.delete',
+            
+            // Coupons permissions
+            'coupons.view', 'coupons.read',
+            'coupons.create', 'coupons.add',
+            'coupons.edit', 'coupons.delete',
+            
+            // Web Orders permissions
+            'web_orders.view', 'web_orders.read',
+            'web_orders.create', 'web_orders.add',
+            'web_orders.edit', 'web_orders.delete'
+        ] as $permName) {
+            Permission::firstOrCreate(['name' => $permName]);
+        }
         
         $allPermissions  = Permission::all();
         return view('admin_panel.roles.role', compact(['roles', 'allPermissions']));

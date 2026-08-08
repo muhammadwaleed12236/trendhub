@@ -82,7 +82,10 @@ class AllModulesPermissionsSeeder extends Seeder
             'hr.holidays',
             'hr.salary.structure',
             'hr.loans',
-            'hr.biometric.devices'
+            'hr.biometric.devices',
+            'web_products',
+            'coupons',
+            'web_orders'
         ];
 
         // Standard actions
@@ -94,6 +97,18 @@ class AllModulesPermissionsSeeder extends Seeder
                 $permissionName = strtolower("{$module}.{$action}");
                 Permission::firstOrCreate(['name' => $permissionName]);
             }
+        }
+
+        // Register Website Settings specific permissions (with custom actions)
+        foreach ([
+            'website-settings.view',
+            'website-settings.create',
+            'website-settings.edit',
+            'website-settings.delete',
+            'website-settings.update',
+            'website-settings.upload_manage'
+        ] as $permName) {
+            Permission::firstOrCreate(['name' => $permName]);
         }
 
         // Grant all new permissions to Super Admin just in case (though Gate::before handles it)
