@@ -482,41 +482,28 @@ export default function Home() {
           </div>
         </section>
       )}
-      {/* 8. INSTAGRAM GALLERY */}
-      <section 
-        className="w-full flex md:grid md:grid-cols-5 gap-1 border-t border-gray-100 pt-1 select-none overflow-x-auto"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {/* Hide webkit scrollbar via inline styles equivalent */}
-        <style dangerouslySetInnerHTML={{__html: `::-webkit-scrollbar { display: none; }`}} />
-        {instagramGalleryItems.map((item) => (
-          <Link
-            key={item.id}
-            href={item.link}
-            target={item.isPlaceholder ? "_blank" : undefined}
-            rel={item.isPlaceholder ? "noopener noreferrer" : undefined}
-            className="relative flex-none w-[45vw] sm:w-[30vw] md:w-full aspect-square overflow-hidden group bg-gray-50 block"
-          >
-            <img
-              src={item.image}
-              alt={item.label}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 text-center">
-              <span className="text-white text-[10px] uppercase tracking-[0.2em] font-sans font-semibold mb-1">
-                {item.isPlaceholder ? "Follow Us" : "Shop the Look"}
-              </span>
-              <span className="text-white text-xs uppercase tracking-widest font-sans font-bold line-clamp-2 px-2">
-                {item.label}
-              </span>
-              {!item.isPlaceholder && (
-                <span className="mt-3 border border-white text-white text-[9px] uppercase tracking-widest font-bold px-3 py-1 bg-white/10 hover:bg-white hover:text-black transition-all duration-300">
-                  Shop Now
-                </span>
-              )}
-            </div>
-          </Link>
-        ))}
+      {/* 8. STORE LOCATOR BANNER */}
+      <section className="w-full border-t border-gray-100 select-none">
+        <Link href="/store-locator" className="block relative w-full h-[300px] sm:h-[450px] overflow-hidden group">
+          <img
+            src={settings?.web_store_locator_banner_image 
+              ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_store_locator_banner_image}` 
+              : "https://images.unsplash.com/photo-1582037917273-10250df7a230?q=80&w=1600"}
+            alt="Store Locator"
+            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 filter brightness-[0.85] contrast-[0.95]"
+          />
+          <div className="absolute inset-0 bg-black/10 transition-opacity duration-300 group-hover:bg-black/20 flex flex-col items-center justify-center p-6 text-center space-y-3 sm:space-y-4">
+            <h3 className="text-white text-3xl sm:text-5xl uppercase tracking-[0.2em] font-sans font-extrabold drop-shadow-sm">
+              STORE LOCATOR
+            </h3>
+            <p className="text-white text-xs sm:text-sm uppercase tracking-widest font-sans font-light drop-shadow-sm max-w-[450px]">
+              Your favorites, now just a visit away!
+            </p>
+            <span className="mt-4 border border-white text-white text-[10px] sm:text-xs uppercase tracking-widest font-bold px-6 py-2.5 bg-white/10 hover:bg-white hover:text-black transition-all duration-300">
+              Find a Store
+            </span>
+          </div>
+        </Link>
       </section>
       </div>
     </div>

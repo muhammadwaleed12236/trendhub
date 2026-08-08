@@ -533,6 +533,53 @@
             </div>
         </div>
 
+        {{-- Store Locator Settings --}}
+        <div class="section-card-custom">
+            <div class="card-header-pro-custom text-primary"><i class="fas fa-map-marked-alt"></i>Store Locator Settings</div>
+            <div class="card-body-pro-custom">
+                <div class="row g-4">
+                    <div class="col-md-12">
+                        <label class="form-label-custom">Store Locator Banner Image</label>
+                        @if(isset($settings['web_store_locator_banner_image']))
+                            <div class="image-preview-container-custom">
+                                <img src="{{ asset($settings['web_store_locator_banner_image']) }}" class="border" alt="Store Locator Banner">
+                                <span class="small text-muted">Current Banner Image</span>
+                            </div>
+                        @endif
+                        <input type="file" name="store_locator_banner_image" class="form-control-custom" accept="image/*" {{ !$canUpload ? 'disabled' : '' }}>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label-custom">Google Maps Embed Iframe Src URL</label>
+                        <input type="text" name="store_locator_map_iframe" class="form-control-custom" value="{{ $settings['web_store_locator_map_iframe'] ?? '' }}" placeholder="https://www.google.com/maps/embed?pb=..." {{ ((empty($settings['web_store_locator_map_iframe']) && !$canCreate) || (!empty($settings['web_store_locator_map_iframe']) && !$canEdit)) ? 'disabled' : '' }}>
+                        <small class="form-text text-muted">Paste only the <strong>src</strong> attribute value from the Google Maps share embed HTML code.</small>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label-custom">Store Locations (Add/Edit List)</label>
+                        <input type="hidden" name="store_locator_locations" id="store_locator_locations_input" value="{{ $settings['web_store_locator_locations'] ?? '[]' }}">
+                        <div class="table-responsive-custom">
+                            <table class="table mb-0" id="locations_table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="font-size: 11px; padding: 8px 16px;">Store Name</th>
+                                        <th style="font-size: 11px; padding: 8px 16px;">Address</th>
+                                        <th style="font-size: 11px; padding: 8px 16px;">Phone</th>
+                                        <th style="font-size: 11px; padding: 8px 16px; width: 80px;" class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="add_location_btn" {{ !$canEdit ? 'disabled' : '' }}>
+                                <i class="fas fa-plus"></i> Add Store Location
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Policies & Content --}}
         <div class="section-card-custom">
             <div class="card-header-pro-custom text-warning"><i class="fas fa-file-contract"></i>Policies & Content</div>
@@ -637,6 +684,80 @@
             imageRadio.addEventListener('change', toggleMediaInputs);
             toggleMediaInputs();
         }
+
+        // Store Locator Locations Manager
+        const locationsInput = document.getElementById('store_locator_locations_input');
+        const locationsTableBody = document.querySelector('#locations_table tbody');
+        const addLocationBtn = document.getElementById('add_location_btn');
+        
+        let locations = [];
+        try {
+            locations = JSON.parse(locationsInput.value || '[]');
+        } catch(e) {
+            locations = [];
+        }
+
+        function renderLocations() {
+            locationsTableBody.innerHTML = '';
+            if (locations.length === 0) {
+                locationsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-3 small">No store locations added yet. Click 'Add Store Location' to get started.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            locations.forEach((loc, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <input type="text" class="form-control form-control-sm loc-input" data-index="${index}" data-field="name" value="${loc.name || ''}" placeholder="Dolmen Mall, Clifton" required style="font-size: 13px;" ${ {{ !$canEdit ? 'true' : 'false' }} ? 'disabled' : '' }>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm loc-input" data-index="${index}" data-field="address" value="${loc.address || ''}" placeholder="Shop # F-21 & F-22..." required style="font-size: 13px;" ${ {{ !$canEdit ? 'true' : 'false' }} ? 'disabled' : '' }>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm loc-input" data-index="${index}" data-field="phone" value="${loc.phone || ''}" placeholder="021-3898237" style="font-size: 13px;" ${ {{ !$canEdit ? 'true' : 'false' }} ? 'disabled' : '' }>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-loc-btn" data-index="${index}" ${ {{ !$canEdit ? 'true' : 'false' }} ? 'disabled' : '' }>
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                locationsTableBody.appendChild(row);
+            });
+
+            // Attach listeners
+            document.querySelectorAll('.loc-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    const idx = parseInt(this.getAttribute('data-index'));
+                    const field = this.getAttribute('data-field');
+                    locations[idx][field] = this.value;
+                    locationsInput.value = JSON.stringify(locations);
+                });
+            });
+
+            document.querySelectorAll('.remove-loc-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const idx = parseInt(this.getAttribute('data-index'));
+                    locations.splice(idx, 1);
+                    locationsInput.value = JSON.stringify(locations);
+                    renderLocations();
+                });
+            });
+        }
+
+        if (addLocationBtn) {
+            addLocationBtn.addEventListener('click', function() {
+                locations.push({ name: '', address: '', phone: '' });
+                locationsInput.value = JSON.stringify(locations);
+                renderLocations();
+            });
+        }
+
+        renderLocations();
     });
 </script>
 @endsection

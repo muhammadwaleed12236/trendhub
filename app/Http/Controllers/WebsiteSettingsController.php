@@ -37,6 +37,8 @@ class WebsiteSettingsController extends Controller
             'easypaisa_account_title' => 'nullable|string|max:255',
             'easypaisa_mobile_number' => 'nullable|string|max:50',
             'home_hero_media_type' => 'nullable|string|in:video,image',
+            'store_locator_map_iframe' => 'nullable|string',
+            'store_locator_locations' => 'nullable|string',
         ]);
         // 1. Check Edit/Update Permission generally
         if (!auth()->user()->hasAnyPermission(['website-settings.edit', 'website-settings.update'])) {
@@ -46,7 +48,7 @@ class WebsiteSettingsController extends Controller
         // 2. Check Upload/Manage Permission if files are uploaded
         $hasFiles = $request->hasFile('site_logo') || $request->hasFile('home_banner_image') || 
                     $request->hasFile('home_hero_video') || $request->hasFile('home_hero_image') || 
-                    $request->hasFile('easypaisa_qr_code');
+                    $request->hasFile('easypaisa_qr_code') || $request->hasFile('store_locator_banner_image');
 
         if ($hasFiles && !auth()->user()->hasPermissionTo('website-settings.upload_manage')) {
             return redirect()->back()->with('error', 'Unauthorized action. You need upload/manage permission to upload files.');
@@ -57,7 +59,7 @@ class WebsiteSettingsController extends Controller
             'facebook_link', 'instagram_link', 'tiktok_link', 'whatsapp_number',
             'shipping_policy', 'return_policy', 'about_us', 'home_banner_text',
             'easypaisa_account_title', 'easypaisa_mobile_number',
-            'home_hero_media_type'
+            'home_hero_media_type', 'store_locator_map_iframe', 'store_locator_locations'
         ];
 
         // 3. Check Create and Delete Permissions for text keys
@@ -170,6 +172,22 @@ class WebsiteSettingsController extends Controller
                 ]
             );
             Cache::forget('setting_web_easypaisa_qr_code');
+        }
+
+        if ($request->hasFile('store_locator_banner_image')) {
+            $file = $request->file('store_locator_banner_image');
+            $fileName = time() . '_store_locator_banner.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/settings'), $fileName);
+            
+            Setting::updateOrCreate(
+                ['key' => 'web_store_locator_banner_image'],
+                [
+                    'value' => 'uploads/settings/' . $fileName,
+                    'type' => 'string',
+                    'group' => 'website'
+                ]
+            );
+            Cache::forget('setting_web_store_locator_banner_image');
         }
 
         return redirect()->back()->with('success', 'Website settings updated successfully.');
