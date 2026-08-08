@@ -18,9 +18,29 @@ export default function Home() {
 
   const scrollCategories = (direction: "left" | "right") => {
     if (sliderRef.current) {
-      const containerWidth = sliderRef.current.clientWidth;
-      const scrollAmount = direction === "left" ? -containerWidth : containerWidth;
-      sliderRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+      const container = sliderRef.current;
+      const firstCard = container.querySelector('a');
+      if (firstCard) {
+        const cardWidth = firstCard.clientWidth;
+        // Determine number of cards to scroll based on screen width
+        let cardsToScroll = 1;
+        if (window.innerWidth >= 1024) {
+          cardsToScroll = 3; // Scroll all 3 cards on desktop
+        } else if (window.innerWidth >= 640) {
+          cardsToScroll = 2; // Scroll 2 cards on tablet
+        }
+        
+        const gap = 10; // gap-2.5 is 10px
+        const scrollAmount = (cardWidth + gap) * cardsToScroll;
+        container.scrollBy({
+          left: direction === "left" ? -scrollAmount : scrollAmount,
+          behavior: "smooth"
+        });
+      } else {
+        const containerWidth = container.clientWidth;
+        const scrollAmount = direction === "left" ? -containerWidth : containerWidth;
+        container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+      }
     }
   };
 
@@ -332,29 +352,29 @@ export default function Home() {
           <div className="max-w-[1400px] mx-auto px-6 flex flex-col lg:flex-row items-center">
             
             {/* Left: Large Featured Image */}
-            <div className="w-full lg:w-[35%] xl:w-[30%] relative aspect-[4/5] sm:aspect-[3/4] lg:aspect-[4/5] bg-gray-200 overflow-hidden group rounded-2xl z-0">
+            <div className="w-full lg:w-[38%] xl:w-[32%] relative aspect-[4/5] sm:aspect-[3/4] lg:aspect-[4/5] bg-gray-200 overflow-hidden group rounded-[2px] z-0">
               <img 
                 src={settings?.web_home_banner_image ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_home_banner_image}` : "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800"} 
                 alt="New Arrivals" 
                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                 loading="lazy"
               />
-              <div className="absolute inset-0 bg-black/10 transition-opacity duration-300 group-hover:bg-black/20"></div>
+              <div className="absolute inset-0 bg-black/5"></div>
             </div>
 
             {/* Right: Category Slider (Overlapping) */}
-            <div className="w-full lg:w-[70%] flex flex-col justify-center pt-8 lg:pt-0 lg:-ml-12 z-10 overflow-hidden">
+            <div className="w-full lg:w-[68%] xl:w-[73%] flex flex-col justify-center pt-8 lg:pt-0 lg:-ml-24 xl:-ml-28 z-10 overflow-hidden">
               
               {/* Header & Controls */}
               <div className="flex flex-col sm:flex-row justify-between items-center mb-8 space-y-4 sm:space-y-0 p-2 lg:p-0">
-                <div className="space-y-1 text-center sm:text-left mx-auto">
+                <div className="space-y-1 text-center w-full">
                   <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl tracking-wide font-light text-black">
                     New Arrivals
                   </h2>
                 </div>
                 
-                {/* Slider Arrows */}
-                <div className="flex gap-2">
+                {/* Slider Arrows (Positioned at right edge) */}
+                <div className="flex gap-2 sm:absolute sm:right-6 lg:right-0">
                   <button 
                     onClick={() => scrollCategories("left")}
                     className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-black cursor-pointer bg-white"
@@ -373,7 +393,7 @@ export default function Home() {
               {/* Slider Track */}
               <div 
                 ref={sliderRef}
-                className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory pb-4"
+                className="flex gap-2 sm:gap-2.5 overflow-x-auto snap-x snap-mandatory pb-4"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {/* Hide webkit scrollbar via inline styles equivalent */}
@@ -390,7 +410,7 @@ export default function Home() {
                     <Link
                       key={product.id}
                       href={`/product/${product.id}`}
-                      className="group relative flex-none w-full sm:w-[calc((100%-24px)/2)] lg:w-[calc((100%-48px)/3)] aspect-[3/4] bg-gray-100 overflow-hidden snap-start block rounded-xl shadow-md"
+                      className="group relative flex-none w-full sm:w-[calc((100%-10px)/2)] lg:w-[calc((100%-20px)/3)] aspect-[3/4] bg-gray-100 overflow-hidden snap-start block rounded-[2px]"
                     >
                       <img
                         src={pMainImage}
@@ -398,6 +418,10 @@ export default function Home() {
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         loading="lazy"
                       />
+                        {/* Name Label Overlay displaying Category matching the Reference Image */}
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-1.5 text-[9px] uppercase tracking-[0.2em] font-sans font-bold whitespace-nowrap rounded-[2px] transition-all duration-300 group-hover:bg-black/75">
+                          {product.category_relation?.name || "Collection"}
+                        </div>
                     </Link>
                   );
                 })}
@@ -458,23 +482,6 @@ export default function Home() {
           </div>
         </section>
       )}
-
-      {/* 7. CUSTOMER REVIEWS */}
-      <section className="py-24 border-t border-gray-100">
-        <div className="max-w-[900px] mx-auto px-6 text-center space-y-8">
-          <div className="flex justify-center gap-1 text-black">
-            {[...Array(5)].map((_, i) => <Star key={i} size={15} fill="currentColor" />)}
-          </div>
-          <p className="font-serif text-xl sm:text-2xl italic leading-relaxed text-gray-700 font-light">
-            "The minimalist layout and clean black-and-white aesthetic makes shopping feel like browsing a high-end designer showroom. The quality of the clothing is second to none."
-          </p>
-          <div className="space-y-1">
-            <h4 className="font-sans text-xs uppercase tracking-widest font-bold">Sophia Martinez</h4>
-            <p className="text-[10px] text-gray-400 font-sans uppercase">Verified Client</p>
-          </div>
-        </div>
-      </section>
-
       {/* 8. INSTAGRAM GALLERY */}
       <section 
         className="w-full flex md:grid md:grid-cols-5 gap-1 border-t border-gray-100 pt-1 select-none overflow-x-auto"

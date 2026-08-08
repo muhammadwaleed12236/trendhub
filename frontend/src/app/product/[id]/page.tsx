@@ -244,7 +244,7 @@ export default function ProductDetail({ params }: ProductPageProps) {
   }
 
   return (
-    <div className="max-w-[1300px] mx-auto px-4 sm:px-6 pt-6 pb-20 sm:pt-8 sm:pb-28 space-y-16 sm:space-y-24 select-none">
+    <div className="max-w-[1300px] mx-auto px-4 sm:px-6 pt-6 pb-20 sm:pt-8 sm:pb-28 select-none">
       
       {/* Breadcrumbs */}
       <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-400 tracking-wider font-sans uppercase">
@@ -258,7 +258,7 @@ export default function ProductDetail({ params }: ProductPageProps) {
       </div>
 
       {/* Main product showcase grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start mt-4 sm:mt-6">
         
         {/* Left Side: Product Gallery (lg:col-span-6) */}
         <div className="lg:col-span-6 flex flex-col-reverse md:flex-row gap-4">
@@ -552,7 +552,7 @@ export default function ProductDetail({ params }: ProductPageProps) {
 
       {/* Related Products Grid */}
       {relatedProducts && relatedProducts.length > 0 && (
-        <div className="space-y-12">
+        <div className="space-y-12 mt-16 sm:mt-24">
           <div className="border-b border-gray-100 pb-4 text-center sm:text-left">
             <h2 className="font-serif text-2xl tracking-widest uppercase font-light">Related Products</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-sans">Complete the look</p>
