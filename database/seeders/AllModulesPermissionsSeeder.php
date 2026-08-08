@@ -85,7 +85,8 @@ class AllModulesPermissionsSeeder extends Seeder
             'hr.biometric.devices',
             'web_products',
             'coupons',
-            'web_orders'
+            'web_orders',
+            'settings'
         ];
 
         // Standard actions

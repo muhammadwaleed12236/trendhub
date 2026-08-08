@@ -418,13 +418,13 @@
                             </script>
 
                             <!-- Settings -->
-                            @if (auth()->check() && (auth()->user()->email === 'admin@admin.com' || auth()->user()->hasRole('Super Admin')))
+                            @canany(['settings.view', 'settings.read'])
                                 <li class="nav-item mr-2 d-flex align-items-center">
                                     <a href="{{ route('settings.index') }}" class="nav-link" title="Settings">
                                         <i class="fas fa-cog text-secondary" style="font-size: 20px; transition: color 0.3s;"></i>
                                     </a>
                                 </li>
-                            @endif
+                            @endcanany
 
                             <li class="nav-item nav-profile dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown"

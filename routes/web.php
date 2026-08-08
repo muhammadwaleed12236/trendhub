@@ -448,8 +448,8 @@ Route::middleware('auth')->group(function () {
     })->name('modules.list');
 
     // Settings & Notifications
-    Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
-    Route::post('/settings', [App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
+    Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])->middleware('permission:settings.view|settings.read')->name('settings.index');
+    Route::post('/settings', [App\Http\Controllers\SettingsController::class, 'update'])->middleware('permission:settings.edit|settings.update')->name('settings.update');
 
     // Website Settings
     Route::get('/website-settings', [App\Http\Controllers\WebsiteSettingsController::class, 'index'])->middleware('permission:website-settings.view')->name('website_settings.index');
@@ -475,12 +475,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'destroy'])->middleware('permission:coupons.delete')->name('admin.coupons.destroy');
 
     // Return Policy Settings
-    Route::get('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'returnSettings'])->name('settings.return-policy');
-    Route::post('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'updateReturnSettings'])->name('settings.return-policy.update');
+    Route::get('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'returnSettings'])->middleware('permission:settings.view|settings.read')->name('settings.return-policy');
+    Route::post('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'updateReturnSettings'])->middleware('permission:settings.edit|settings.update')->name('settings.return-policy.update');
 
     // Return Approvers Management
-    Route::get('/settings/return-approvers', [App\Http\Controllers\SettingsController::class, 'returnApprovers'])->name('settings.return-approvers');
-    Route::post('/settings/return-approvers/update', [App\Http\Controllers\SettingsController::class, 'updateReturnApprovers'])->name('settings.return-approvers.update');
+    Route::get('/settings/return-approvers', [App\Http\Controllers\SettingsController::class, 'returnApprovers'])->middleware('permission:settings.view|settings.read')->name('settings.return-approvers');
+    Route::post('/settings/return-approvers/update', [App\Http\Controllers\SettingsController::class, 'updateReturnApprovers'])->middleware('permission:settings.edit|settings.update')->name('settings.return-approvers.update');
 
     Route::get('/notifications', [App\Http\Controllers\SystemNotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/count', [App\Http\Controllers\SettingsController::class, 'notificationCount'])->name('notifications.count');

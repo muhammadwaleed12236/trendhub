@@ -41,7 +41,12 @@ class RoleController extends Controller
             // Web Orders permissions
             'web_orders.view', 'web_orders.read',
             'web_orders.create', 'web_orders.add',
-            'web_orders.edit', 'web_orders.delete'
+            'web_orders.edit', 'web_orders.delete',
+
+            // General Settings permissions
+            'settings.view', 'settings.read',
+            'settings.create', 'settings.add',
+            'settings.edit', 'settings.delete', 'settings.update'
         ] as $permName) {
             Permission::firstOrCreate(['name' => $permName]);
         }
