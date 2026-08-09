@@ -46,7 +46,12 @@ class RoleController extends Controller
             // General Settings permissions
             'settings.view', 'settings.read',
             'settings.create', 'settings.add',
-            'settings.edit', 'settings.delete', 'settings.update'
+            'settings.edit', 'settings.delete', 'settings.update',
+
+            // Web Users permissions
+            'web_users.view', 'web_users.read',
+            'web_users.create', 'web_users.add',
+            'web_users.edit', 'web_users.delete'
         ] as $permName) {
             Permission::firstOrCreate(['name' => $permName]);
         }

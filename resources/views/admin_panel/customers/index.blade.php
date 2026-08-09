@@ -39,6 +39,7 @@
                             <th>Mobile</th>
                             <th>Credit Limit</th>
                             <th>Status</th>
+                            <th>Source</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -50,6 +51,18 @@
                                 <td>{{ $customer->mobile }}</td>
                                 <td>{{ $customer->balance_range == 0 ? 'Unlimited' : number_format($customer->balance_range, 0) }}</td>
                                 <td>{{ $customer->status }}</td>
+                                <td>
+                                    @php
+                                        $source = $customer->source ?? 'Manual';
+                                    @endphp
+                                    @if($source === 'Website')
+                                        <span class="badge bg-success">Website</span>
+                                    @elseif($source === 'Both')
+                                        <span class="badge bg-info text-dark">Both</span>
+                                    @else
+                                        <span class="badge bg-secondary">Manual</span>
+                                    @endif
+                                </td>
                                 <td>
                                     @include('admin_panel.partials.action_buttons', [
                                         'editRoute' => route('customers.edit', $customer->id),

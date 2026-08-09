@@ -11,7 +11,7 @@ class WebCustomer extends Authenticatable
     use HasApiTokens, HasFactory;
 
     protected $fillable = [
-        'name', 'email', 'phone', 'password', 'address', 'city', 'state', 'country', 'zip_code'
+        'customer_id', 'name', 'email', 'phone', 'password', 'address', 'city', 'state', 'country', 'zip_code'
     ];
 
     protected $hidden = [

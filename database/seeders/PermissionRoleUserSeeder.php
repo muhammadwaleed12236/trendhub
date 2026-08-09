@@ -42,7 +42,7 @@ class PermissionRoleUserSeeder extends Seeder
             'products', 'categories', 'subcategories', 'brands', 'units',
             'inward_gatepass', 'purchases', 'vendors', 'warehouses', 'stock_transfers',
             'sales', 'customers', 'sales_officers', 'zones', 'vouchers', 'reports', 'assembly', 'inventory',
-            'web_products', 'coupons', 'web_orders', 'settings'
+            'web_products', 'coupons', 'web_orders', 'settings', 'web_users'
         ];
 
         $actions = ['read', 'add', 'edit', 'delete'];

@@ -21,6 +21,9 @@ export interface WebsiteSettings {
   web_easypaisa_account_title?: string;
   web_easypaisa_mobile_number?: string;
   web_easypaisa_qr_code?: string;
+  web_store_locator_banner_image?: string;
+  web_store_locator_locations?: string;
+  web_store_locator_map_iframe?: string;
 }
 
 export const useSettings = () => {

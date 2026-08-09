@@ -157,6 +157,7 @@ class WebOrderController extends Controller
 
         $request->validate([
             'action' => 'required|in:approve,reject',
+            'paid_amount' => 'nullable|numeric|min:0',
         ]);
 
         $order = EcommerceOrder::with('items.product')->findOrFail($id);
@@ -207,6 +208,10 @@ class WebOrderController extends Controller
                     }
                     $order->is_stock_deducted = true;
                 }
+
+                // Set manual paid amount or default to order total
+                $paidAmount = $request->filled('paid_amount') ? (float)$request->paid_amount : $order->total;
+                $order->paid_amount = $paidAmount;
 
                 $order->payment_status = 'paid';
                 $order->order_status = 'processing';

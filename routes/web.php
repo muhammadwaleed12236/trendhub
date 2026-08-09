@@ -474,6 +474,10 @@ Route::middleware('auth')->group(function () {
     Route::put('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'update'])->middleware('permission:coupons.edit')->name('admin.coupons.update');
     Route::delete('/coupons/{coupon}', [App\Http\Controllers\CouponController::class, 'destroy'])->middleware('permission:coupons.delete')->name('admin.coupons.destroy');
 
+    // Web Users (Separate Module)
+    Route::get('/web-users', [App\Http\Controllers\WebUserController::class, 'index'])->middleware('permission:web_users.view|web_users.read')->name('web_users.index');
+    Route::delete('/web-users/{id}', [App\Http\Controllers\WebUserController::class, 'destroy'])->middleware('permission:web_users.delete')->name('web_users.destroy');
+
     // Return Policy Settings
     Route::get('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'returnSettings'])->middleware('permission:settings.view|settings.read')->name('settings.return-policy');
     Route::post('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'updateReturnSettings'])->middleware('permission:settings.edit|settings.update')->name('settings.return-policy.update');

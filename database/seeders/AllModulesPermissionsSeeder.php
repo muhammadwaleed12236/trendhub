@@ -86,7 +86,8 @@ class AllModulesPermissionsSeeder extends Seeder
             'web_products',
             'coupons',
             'web_orders',
-            'settings'
+            'settings',
+            'web_users'
         ];
 
         // Standard actions

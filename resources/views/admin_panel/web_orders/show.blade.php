@@ -422,22 +422,61 @@
                         @endif
                     </div>
 
+                    @if($order->payment_method === 'Easypaisa')
+                        <!-- Payment Summary Breakdown -->
+                        <div class="border-top border-bottom py-3 my-3" style="border-style: dashed !important; border-color: #cbd5e1 !important;">
+                            <h6 class="fw-bold text-slate-800 mb-2 small text-uppercase tracking-wider">Payment Summary</h6>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted small">Order Total:</span>
+                                <span class="fw-semibold text-slate-700">Rs. {{ number_format($order->total, 2) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted small">Easypaisa Paid:</span>
+                                <span class="fw-bold text-success">Rs. {{ number_format($order->paid_amount ?? 0, 2) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted small">Remaining COD:</span>
+                                <span class="fw-bold {{ ($order->total - ($order->paid_amount ?? 0)) > 0 ? 'text-danger' : 'text-slate-500' }}">
+                                    Rs. {{ number_format(max(0, $order->total - ($order->paid_amount ?? 0)), 2) }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- COD Warning Alert -->
+                        @if($order->payment_status === 'paid' && ($order->total - ($order->paid_amount ?? 0)) > 0)
+                            <div class="alert alert-warning border-0 p-3 mb-3" style="background-color: #fef3c7; color: #92400e; border-radius: 8px;">
+                                <div class="d-flex gap-2">
+                                    <i class="fas fa-exclamation-triangle mt-1"></i>
+                                    <div>
+                                        <strong class="d-block text-amber-900 small fw-bold" style="font-size: 0.85rem;">COD Collection Required</strong>
+                                        <span class="small" style="font-size: 0.8rem;">Rider needs to collect <strong>Rs. {{ number_format($order->total - ($order->paid_amount ?? 0), 2) }}</strong> in cash upon delivery.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    @endif
+
                     @if($order->payment_method === 'Easypaisa' && $order->payment_status === 'Pending Verification')
                         <div class="border-top pt-3 mt-3">
                             <h6 class="fw-bold text-slate-700 mb-3"><i class="fas fa-shield-alt me-1 text-primary"></i> Verify Payment</h6>
                             @if($canEditOrders)
-                                <div class="d-flex gap-2">
-                                    <form action="{{ route('web_orders.verify_payment', $order->id) }}" method="POST" class="flex-grow-1">
-                                        @csrf
-                                        <input type="hidden" name="action" value="approve">
-                                        <button type="submit" class="btn btn-success w-100 py-2"><i class="fas fa-check me-1"></i> Approve</button>
-                                    </form>
-                                    <form action="{{ route('web_orders.verify_payment', $order->id) }}" method="POST" class="flex-grow-1">
-                                        @csrf
-                                        <input type="hidden" name="action" value="reject">
-                                        <button type="submit" class="btn btn-outline-danger w-100 py-2"><i class="fas fa-ban me-1"></i> Reject</button>
-                                    </form>
-                                </div>
+                                <form action="{{ route('web_orders.verify_payment', $order->id) }}" method="POST">
+                                    @csrf
+                                    <div class="mb-3">
+                                        <label class="form-label text-slate-600 small fw-bold">Paid Amount (Easypaisa)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light text-slate-600" style="font-size: 0.85rem;">Rs.</span>
+                                            <input type="number" step="0.01" min="0" max="{{ $order->total }}" name="paid_amount" class="form-control" value="{{ $order->total }}" required style="font-size: 0.85rem;">
+                                        </div>
+                                        <div class="form-text text-muted small mt-1" style="font-size: 0.75rem;">
+                                            Specify verified amount. The remaining balance automatically becomes COD.
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" name="action" value="approve" class="btn btn-success flex-grow-1 py-2"><i class="fas fa-check me-1"></i> Approve</button>
+                                        <button type="submit" name="action" value="reject" class="btn btn-outline-danger flex-grow-1 py-2"><i class="fas fa-ban me-1"></i> Reject</button>
+                                    </div>
+                                </form>
                             @else
                                 <div class="alert alert-light border p-2 text-center text-muted mb-0 small" style="background-color:#f8fafc; border-color:#e2e8f0;">
                                     <i class="fas fa-lock me-1"></i> You need edit permission to verify payments.

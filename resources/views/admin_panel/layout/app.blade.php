@@ -839,7 +839,7 @@
 
 
                         <!-- Website Management -->
-                        @canany(['website-settings.view', 'web_products.view', 'web_products.read', 'coupons.view', 'coupons.read', 'web_orders.view', 'web_orders.read'])
+                        @canany(['website-settings.view', 'web_products.view', 'web_products.read', 'coupons.view', 'coupons.read', 'web_orders.view', 'web_orders.read', 'web_users.view', 'web_users.read'])
                             <li class="nav-item">
                                 <a href="#" class="nav-link">
                                     <i class="menu_icon fas fa-globe"></i>
@@ -859,6 +859,9 @@
                                         @endcan
                                         @canany(['web_orders.view', 'web_orders.read'])
                                             <li><a href="{{ route('web_orders.index') }}"><i class="fa-solid fa-shopping-cart"></i> Web Orders</a></li>
+                                        @endcan
+                                        @canany(['web_users.view', 'web_users.read'])
+                                            <li><a href="{{ route('web_users.index') }}"><i class="fas fa-users"></i> Web Users</a></li>
                                         @endcan
                                     </ul>
                                 </div>

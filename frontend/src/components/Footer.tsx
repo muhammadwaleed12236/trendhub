@@ -19,7 +19,7 @@ export default function Footer() {
 
   return (
     <footer className="w-full bg-[#fafafa] border-t border-gray-100 text-[#111111] pt-16 pb-12 font-sans select-none">
-      <div className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+      <div className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
         
         {/* About column */}
         <div className="space-y-4 lg:col-span-2 pr-6">
@@ -74,34 +74,21 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Customer Support */}
+        {/* Explore Links */}
         <div className="space-y-4">
-          <h5 className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">Customer Support</h5>
+          <h5 className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">Explore</h5>
           <ul className="space-y-2.5 text-[13px]">
             <li>
-              <Link href="/faq" className="text-gray-600 hover:text-black transition-colors">FAQs</Link>
+              <Link href="/" className="text-gray-600 hover:text-black transition-colors">Home</Link>
             </li>
             <li>
-              <Link href="/shipping" className="text-gray-600 hover:text-black transition-colors">Shipping & Delivery</Link>
+              <Link href="/shop" className="text-gray-600 hover:text-black transition-colors">Shop</Link>
             </li>
             <li>
-              <Link href="/returns" className="text-gray-600 hover:text-black transition-colors">Returns & Exchanges</Link>
+              <Link href="/store-locator" className="text-gray-600 hover:text-black transition-colors">Store Locator</Link>
             </li>
             <li>
-              <Link href="/size-guide" className="text-gray-600 hover:text-black transition-colors">Size Guide</Link>
-            </li>
-          </ul>
-        </div>
-
-        {/* Brand */}
-        <div className="space-y-4">
-          <h5 className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">Our Brand</h5>
-          <ul className="space-y-2.5 text-[13px]">
-            <li>
-              <Link href="/about" className="text-gray-600 hover:text-black transition-colors">Our Story</Link>
-            </li>
-            <li>
-              <Link href="/contact" className="text-gray-600 hover:text-black transition-colors">Contact Us</Link>
+              <Link href="/wishlist" className="text-gray-600 hover:text-black transition-colors">Wishlist</Link>
             </li>
           </ul>
         </div>

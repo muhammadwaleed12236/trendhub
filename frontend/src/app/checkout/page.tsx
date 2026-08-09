@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCartStore } from "@/store/cartStore";
 import { useSettings } from "@/hooks/useSettings";
+import { useAuthStore } from "@/store/authStore";
 import api from "@/lib/api";
 import Link from "next/link";
 import { CheckCircle, ShoppingBag, Loader2 } from "lucide-react";
@@ -10,6 +11,7 @@ import { CheckCircle, ShoppingBag, Loader2 } from "lucide-react";
 export default function Checkout() {
   const { items, getTotalPrice, getDiscountAmount, getFinalTotal, appliedCoupon, applyCoupon, removeCoupon, clearCart } = useCartStore();
   const { data: settings } = useSettings();
+  const { user } = useAuthStore();
 
   // Form states
   const [shippingName, setShippingName] = useState("");
@@ -23,6 +25,16 @@ export default function Checkout() {
 
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<any>(null);
+
+  // Auto-fill form details if user is logged in
+  useEffect(() => {
+    if (user) {
+      if (user.name) setShippingName(user.name);
+      if (user.phone) setShippingPhone(user.phone);
+      if (user.address) setShippingAddress(user.address);
+      if (user.city) setShippingCity(user.city);
+    }
+  }, [user]);
 
   // Coupon states
   const [promoCode, setPromoCode] = useState("");
@@ -259,17 +271,6 @@ export default function Checkout() {
                   }`}
                 >
                   Cash on Delivery
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("Bank Transfer")}
-                  className={`flex-1 border py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
-                    paymentMethod === "Bank Transfer"
-                      ? "border-black bg-black text-white font-bold"
-                      : "border-gray-200 text-gray-500 hover:border-black"
-                  }`}
-                >
-                  Bank Transfer
                 </button>
                 <button
                   type="button"
