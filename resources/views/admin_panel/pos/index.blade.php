@@ -1596,6 +1596,17 @@
                     } else if (item.sizeMode === 'by_meter') {
                         totalPieces = item.qty * factor;
                     }
+                } else if (item.sizeMode === 'by_cartons') {
+                    let ppb = parseFloat(item.piecesPerBox) || 1;
+                    let qtyStr = (item.qty || '').toString().trim();
+                    if (qtyStr.includes('.')) {
+                        let parts = qtyStr.split('.');
+                        let boxes = parseInt(parts[0]) || 0;
+                        let loose = parseInt(parts[1]) || 0;
+                        totalPieces = (boxes * ppb) + loose;
+                    } else {
+                        totalPieces = item.qty * ppb;
+                    }
                 }
                 
                 let isRet = item.is_return === true;

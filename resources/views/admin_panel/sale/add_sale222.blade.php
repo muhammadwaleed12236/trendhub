@@ -299,17 +299,17 @@
         }
 
         /* Column Widths - Compact & Full Width */
-        .col-product { width: auto; min-width: 280px; }
-        .col-stock { width: 70px; min-width: 70px; }
-        .col-qty { width: 70px; min-width: 70px; }
-        .col-size { width: 75px; min-width: 75px; }
-        .col-color { width: 85px; min-width: 85px; }
-        .col-pieces { width: 70px; min-width: 70px; }
-        .col-price-p { width: 85px; min-width: 85px; }
-        .col-disc { width: 90px; min-width: 90px; }
-        .col-disc-amt { width: 80px; min-width: 80px; }
-        .col-amount { width: 95px; min-width: 95px; }
-        .col-action { width: 35px; min-width: 35px; text-align: center; }
+        .col-product { width: auto; min-width: 150px; }
+        .col-stock { width: 55px; min-width: 55px; }
+        .col-qty, .col-qty-wrapper { width: 95px; min-width: 95px; }
+        .col-size { width: 55px; min-width: 55px; }
+        .col-color { width: 60px; min-width: 60px; }
+        .col-pieces { width: 55px; min-width: 55px; }
+        .col-price-p { width: 75px; min-width: 75px; }
+        .col-disc { width: 75px; min-width: 75px; }
+        .col-disc-amt { width: 70px; min-width: 70px; }
+        .col-amount { width: 85px; min-width: 85px; }
+        .col-action { width: 32px; min-width: 32px; text-align: center; }
 
         /* Invalid cells & inputs */
         .invalid-cell {
@@ -644,20 +644,119 @@
                                     <thead>
                                         <tr>
                                             <th style="width:25px;" class="text-center">#</th>
-                                            <th class="col-product" style="min-width: 180px;">PRODUCT</th>
-                                            <th class="col-stock" style="width: 70px;">STOCK</th>
-                                            <th class="col-qty" style="width: 75px;">QTY</th>
-                                            <th class="col-size" style="width: 65px;">SIZE</th>
-                                            <th class="col-color" style="width: 70px;">COLOR</th>
-                                            <th class="col-pieces" style="width: 65px;">PCS</th>
-                                            <th class="col-price-p" style="width: 85px;">PRICE</th>
-                                            <th class="col-disc" style="width: 85px;">DISCOUNT</th>
-                                            <th class="col-amount" style="width: 95px;">AMOUNT</th>
-                                            <th class="col-action" style="width: 30px;">×</th>
+                                            <th class="col-product" style="min-width: 140px;">PRODUCT</th>
+                                            <th class="col-stock" style="width: 55px;">STOCK</th>
+                                            <th class="col-qty" style="width: 95px;">QTY</th>
+                                            <th class="col-size" style="width: 55px;">SIZE</th>
+                                            <th class="col-color" style="width: 60px;">COLOR</th>
+                                            <th class="col-pieces" style="width: 55px;">PCS</th>
+                                            <th class="col-price-p" style="width: 75px;">PRICE</th>
+                                            <th class="col-disc" style="width: 75px;">DISCOUNT</th>
+                                            <th class="col-amount" style="width: 85px;">AMOUNT</th>
+                                            <th class="col-action" style="width: 32px;">×</th>
                                         </tr>
                                     </thead>
                                     <tbody id="salesTableBody">
+                                        <tr>
+                                            <!-- # ROW INDEX -->
+                                            <td class="text-center fw-bold text-muted row-index" style="vertical-align:middle; font-size:0.75rem;">1</td>
 
+                                            <!-- PRODUCT -->
+                                            <td class="col-product">
+                                                <select class="form-select product" style="width:100%">
+                                                    <option value=""></option>
+                                                </select>
+                                                <input type="hidden" class="product-id-hidden" name="product_id[]">
+                                                <input type="hidden" class="variant-data-hidden" name="color[]">
+                                                <input type="hidden" class="item-code-display">
+                                                <input type="hidden" class="size-h">
+                                                <input type="hidden" class="size-w">
+                                                <input type="hidden" class="size-mode-text">
+                                            </td>
+
+                                            <!-- STOCK -->
+                                            <td class="col-stock">
+                                                <input type="text" class="form-control stock text-center input-readonly" readonly tabindex="-1">
+                                                <input type="hidden" class="warehouse" name="warehouse_id[]" value="{{ auth()->user()->warehouse_id ?? 1 }}">
+                                                <input type="hidden" class="variant-stock-value">
+                                            </td>
+
+                                            <!-- Qty cell with Sub-Unit toggle on Right and Left-Aligned Cursor -->
+                                            <td style="width:95px;min-width:95px;" class="col-qty-wrapper">
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <input type="number" step="any" class="form-control carton-qty text-start" name="carton_qty[]" placeholder="0" min="0" value="" style="flex: 1; min-width: 0; height: 26px; font-size: 0.85rem; padding-left: 6px;">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary qty-unit-toggle px-1 py-0 d-none" 
+                                                            data-unit-mode="main" title="Toggle Unit (Ctn ↔ Pcs / Kg ↔ Gm / Ft ↔ In)" style="font-size: 0.65rem; height: 26px; min-width: 28px; font-weight: 700; border-radius: 4px; flex-shrink: 0;">
+                                                        Kg
+                                                    </button>
+                                                </div>
+                                                <input type="hidden" class="hidden-sub-unit-mode" name="sub_unit_mode[]" value="main">
+                                            </td>
+
+                                            <!-- Loose Pieces -->
+                                            <td style="width:70px;min-width:70px;" class="d-none">
+                                                <input type="number" class="form-control loose-pcs-input text-end" name="loose_qty[]" placeholder="" min="0" value="">
+                                            </td>
+
+                                            <!-- Size (Display - readonly) -->
+                                            <td class="col-size">
+                                                <input type="text" class="form-control size-display text-center input-readonly" readonly tabindex="-1" placeholder="-">
+                                                <input type="hidden" class="pack-qty" name="pack_qty[]" value="1">
+                                            </td>
+
+                                            <!-- Color (Display - readonly) -->
+                                            <td class="col-color">
+                                                <input type="text" class="form-control color-display text-center input-readonly" readonly tabindex="-1" placeholder="-">
+                                            </td>
+
+                                            <!-- Total Pieces (Calculated) -->
+                                            <td class="col-pieces">
+                                                <input type="text" class="form-control total-pieces text-end input-readonly" name="total_pieces[]" readonly placeholder="0" tabindex="-1">
+                                                <!-- Hidden qty field for backend compatibility -->
+                                                <input type="hidden" class="sales-qty" name="qty[]" value="0">
+                                            </td>
+                                         
+                                            <!-- Price/Piece (EDITABLE) -->
+                                            <td class="col-price-p">
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <input type="text" class="form-control visible-price text-end" name="visible_price[]" placeholder="0" style="flex: 1; min-width: 0;">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary price-mode-row-toggle px-1 py-0" 
+                                                            data-mode="retail" title="Retail Mode" style="font-size: 0.65rem; height: 24px; min-width: 20px; font-weight: bold;">
+                                                        R
+                                                    </button>
+                                                </div>
+                                                <input type="hidden" class="price-per-piece" name="price_per_piece[]">
+                                                <input type="hidden" class="retail-price">
+                                                <input type="hidden" class="wholesale-price">
+                                                <input type="hidden" class="weight-per-piece">
+                                            </td>
+
+                                            <!-- SINGLE DISCOUNT COLUMN -->
+                                            <td class="col-disc">
+                                                <div class="discount-wrapper">
+                                                    <input type="number"
+                                                           class="form-control discount-value text-end"
+                                                           name="item_disc[]"
+                                                           placeholder="0">
+                                                    <input type="hidden" class="discount-type-hidden" name="discount_type[]" value="percent">
+                                                    <button type="button"
+                                                            class="btn btn-outline-secondary discount-toggle"
+                                                            data-type="percent" tabindex="-1">%</button>
+                                                </div>
+                                                <input type="hidden" class="discount-amount" value="0">
+                                            </td>
+
+                                            <!-- NET AMOUNT -->
+                                            <td class="col-amount">
+                                                <input type="text" class="form-control sales-amount text-end input-readonly" name="total[]" value="0" readonly tabindex="-1">
+                                                <input type="hidden" class="gross-amount">
+                                            </td>
+
+                                            <!-- ACTION -->
+                                            <td class="col-action text-center">
+                                                <button type="button" class="btn btn-sm btn-outline-danger del-row" tabindex="-1">&times;</button>
+                                            </td>
+                                        </tr>
                                     </tbody>
                                     <tfoot>
                                         <tr>
@@ -938,165 +1037,8 @@
     </div>
 </div>
 
-<script>
-$(document).ready(function() {
-    // Toggle pieces_per_box field based on size mode
-    $('#qap_size_mode').on('change', function() {
-        if ($(this).val() === 'by_pieces') {
-            $('#qap_ppb_wrap').hide();
-            $('#qap_ppb').val(1);
-        } else {
-            $('#qap_ppb_wrap').show();
-        }
-    });
-
-    // Load categories, brands, and subcategories immediately
-    var $catSelect = $('#qap_category');
-    var $brandSelect = $('#qap_brand');
-    var $subCatSelect = $('#qap_subcategory');
-
-    // Load categories if empty
-    if ($catSelect.find('option').length <= 1) {
-        $.get("{{ url('/get-categories') }}", function(data) {
-            (data || []).forEach(function(cat) {
-                $catSelect.append('<option value="'+ cat.id +'">'+ cat.name +'</option>');
-            });
-        }).fail(function() {
-            console.error('Failed to load categories');
-        });
-    }
-
-    // Load brands if empty
-    if ($brandSelect.find('option').length <= 1) {
-        $.get("{{ url('/get-brands') }}", function(data) {
-            (data || []).forEach(function(brand) {
-                $brandSelect.append('<option value="'+ brand.id +'">'+ brand.name +'</option>');
-            });
-        }).fail(function() {
-            console.error('Failed to load brands');
-        });
-    }
-
-    // Load all subcategories initially if empty
-    if ($subCatSelect.find('option').length <= 1) {
-        $.get("{{ url('/get-all-subcategories') }}", function(data) {
-            (data || []).forEach(function(sub) {
-                $subCatSelect.append('<option value="'+ sub.id +'">'+ sub.name +'</option>');
-            });
-        }).fail(function() {
-            console.error('Failed to load subcategories');
-        });
-    }
-
-    // Load subcategories when category changes
-    $('#qap_category').on('change', function() {
-        var categoryId = $(this).val();
-        var $subCatSelect = $('#qap_subcategory');
-        $subCatSelect.html('<option value="">Select Sub Category</option>');
-        
-        if (categoryId) {
-            $.get("{{ url('/get-subcategories') }}/" + categoryId, function(data) {
-                (data || []).forEach(function(sub) {
-                    $subCatSelect.append('<option value="'+ sub.id +'">'+ sub.name +'</option>');
-                });
-            });
-        }
-    });
-
-    // Submit Quick Add Product
-    $('#quickAddProductForm').on('submit', function(e) {
-        e.preventDefault();
-        var $btn = $('#btnQuickSaveProduct');
-        var originalHtml = $btn.html();
-        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
-
-        $.ajax({
-            url: "{{ route('store-product') }}",
-            method: "POST",
-            data: $(this).serialize(),
-            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-            success: function(response) {
-                $btn.prop('disabled', false).html(originalHtml);
-                $('#quickAddProductForm')[0].reset();
-
-                // Close modal
-                var modal = bootstrap.Modal.getInstance(document.getElementById('quickAddProductModal'));
-                if (modal) modal.hide();
-
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Product Added!',
-                    text: response.message || 'Product created successfully. You can now search for it.',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            },
-            error: function(xhr) {
-                $btn.prop('disabled', false).html(originalHtml);
-                var msg = 'Error adding product.';
-                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
-                    msg = Object.values(xhr.responseJSON.errors).flat().join('\n');
-                } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                    msg = xhr.responseJSON.message;
-                }
-                Swal.fire('Error', msg, 'error');
-            }
-        });
-    });
-});
-</script> -->
-
-    <!-- {{-- Quick Add Product Modal --}}
-    @include('admin_panel.partials.quick_add_product_modal') -->
-
-   <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
-    <script src="{{ asset('assets/vendors/select2/js/select2.min.js') }}"></script>
-    <script src="{{ asset('assets/vendors/bootstrap5/js/bootstrap.bundle.min.js') }}"></script>
-  {{-- Quick Add Product Modal --}}
+    {{-- Quick Add Product Modal --}}
     @include('admin_panel.partials.quick_add_product_modal')
-    {{-- sjadlfksal --}}
-
-    <script>
-        /* ========== DISCOUNT TOGGLE (% ↔ PKR) ========== */
-
-        // $(document).on('click', '.discount-toggle', function () {
-
-        //     const $btn = $(this);
-        //     const currentType = $btn.data('type');
-
-        //     if (currentType === 'percent') {
-        //         // switch to PKR
-        //         $btn.data('type', 'pkr');
-        //         $btn.text('PKR');
-        //     } else {
-        //         // switch to %
-        //         $btn.data('type', 'percent');
-        //         $btn.text('%');
-        //     }
-
-        //     // focus back to input
-        //     $btn.closest('.discount-wrapper')
-        //         .find('.discount-value')
-        //         .focus();
-        // });
-    </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    {{-- hajshdsadsdsksa --}}
-
-    {{-- Shared Logic for Sales (Add/Edit) --}}
 @endsection
 
 @section('js')
@@ -1105,6 +1047,9 @@ $(document).ready(function() {
     <script>
         $(document).ready(function() {
             // --- Initial Setup ---
+            $('#salesTableBody tr').each(function() {
+                initProductSelect2($(this).find('.product'));
+            });
             if ($('#salesTableBody tr').length === 0) {
                 addNewRow();
             }

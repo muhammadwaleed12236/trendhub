@@ -905,7 +905,7 @@ class SaleController extends Controller
         }
         $currentBalance = $previousBalance + $sale->total_net;
 
-        return view('admin_panel.sale.salereceipt', [
+        return view('admin_panel.sale.saleinvoice', [
             'sale' => $sale,
             'saleItems' => $items,
             'previousBalance' => $previousBalance,
@@ -1229,7 +1229,14 @@ class SaleController extends Controller
                 $discType = $request->discount_type[$index] ?? 'percent';
 
                 // Calculate Line Total (gross before discount)
-                $lineTotal = $totalPieces * $dbPrice;
+                $frontendGross = (float) ($request->gross_amount[$index] ?? 0);
+                if ($frontendGross > 0) {
+                    $lineTotal = $frontendGross;
+                } elseif (isset($product) && $product->size_mode === 'by_cartons' && $ppb > 1) {
+                    $lineTotal = ($totalPieces / $ppb) * $dbPrice;
+                } else {
+                    $lineTotal = $totalPieces * $dbPrice;
+                }
 
                 // Apply Discount correctly
                 if ($discType === 'pkr') {

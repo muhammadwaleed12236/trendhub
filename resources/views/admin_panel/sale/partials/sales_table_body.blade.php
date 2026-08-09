@@ -187,22 +187,28 @@
     </tr>
 
     {{-- Mobile Table Card Row (< 768px) --}}
+    @php
+        $cardBorderColor = '#10b981'; // Green for posted
+        if ($sale->sale_status === 'draft') $cardBorderColor = '#f59e0b';
+        elseif ($sale->sale_status === 'booked') $cardBorderColor = '#06b6d4';
+        elseif ($sale->sale_status === 'returned' || $sale->sale_status == 1) $cardBorderColor = '#ef4444';
+    @endphp
     <tr class="d-table-row d-md-none border-0">
         <td colspan="12" class="p-0 border-0 bg-transparent">
-            <div class="sale-mcard p-3 bg-white rounded-3 border mb-3 shadow-sm">
+            <div class="sale-mcard p-3 bg-white rounded-3 border mb-3 shadow-sm" style="border-left: 4px solid {{ $cardBorderColor }} !important;">
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="fw-bold text-dark fs-6">#{{ $sale->reference ?? $sale->id }}</span>
+                        <span class="fw-bold text-dark fs-6 font-monospace">#{{ $sale->reference ?? $sale->invoice_no ?? $sale->id }}</span>
                     </div>
                     <div>{!! $statusBadge !!}</div>
                 </div>
 
                 <div class="d-flex align-items-center gap-2 my-2">
-                    <div class="avatar-circle text-info fw-bold d-flex align-items-center justify-content-center rounded-circle" style="width: 32px; height: 32px; font-size: 13px; background-color: #e0f2fe; color: #0369a1;">
+                    <div class="avatar-circle text-info fw-bold d-flex align-items-center justify-content-center rounded-circle" style="width: 34px; height: 34px; font-size: 13px; background-color: #e0f2fe; color: #0369a1;">
                         {{ strtoupper(substr(optional($sale->customer_relation)->customer_name ?? 'C', 0, 1)) }}
                     </div>
                     <div>
-                        <div class="fw-bold text-dark small">{{ optional($sale->customer_relation)->customer_name ?? 'N/A' }}</div>
+                        <div class="fw-bold text-dark small">{{ optional($sale->customer_relation)->customer_name ?? 'Walk-in Customer' }}</div>
                         <div class="text-muted small" style="font-size: 11px;">
                             <i class="far fa-calendar-alt me-1"></i> {{ $sale->created_at->format('d/m/Y') }}
                             <span class="ms-2"><i class="fas fa-box me-1"></i> {{ $sale->total_items > 0 ? $sale->total_items : $sale->qty }} Items</span>
@@ -232,14 +238,36 @@
                         </a>
                     @endcan
 
+                    @if ($sale->sale_status === 'draft' || $sale->sale_status === 'booked')
+                        @can('sales.create')
+                            <form action="{{ route('sales.confirm', $sale->id) }}" method="POST" class="confirm-booking-form m-0">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-success w-100 fw-bold" style="border-radius: 8px;">
+                                    <i class="fas fa-check-circle me-1"></i> Confirm
+                                </button>
+                            </form>
+                        @endcan
+                    @endif
+
                     @can('sales.view')
                         <a href="{{ route('sales.invoice', $sale->id) }}" target="_blank" class="btn btn-sm btn-outline-info fw-bold" style="border-radius: 8px;">
                             <i class="fas fa-file-invoice me-1"></i> Invoice
+                        </a>
+                        <a href="{{ route('sales.receipt', $sale->id) }}" target="_blank" class="btn btn-sm btn-outline-success fw-bold" style="border-radius: 8px;">
+                            <i class="fas fa-receipt me-1"></i> Receipt
                         </a>
                         <a href="{{ route('sales.dc', $sale->id) }}" target="_blank" class="btn btn-sm btn-outline-warning fw-bold text-dark" style="border-radius: 8px;">
                             <i class="fas fa-shipping-fast me-1"></i> DC
                         </a>
                     @endcan
+
+                    @if ($sale->sale_status !== 'returned')
+                        @can('sales.create')
+                            <a href="{{ route('sale.return.show', $sale->id) }}" class="btn btn-sm btn-outline-danger fw-bold" style="border-radius: 8px;">
+                                <i class="fas fa-undo me-1"></i> Return
+                            </a>
+                        @endcan
+                    @endif
                 </div>
             </div>
         </td>

@@ -178,7 +178,31 @@ class ReportingController extends Controller
                     $vSize = $v['size'] ?? '-';
                     $vColor = $v['color'] ?? '-';
 
-                    $initial = (float) ($v['stock'] ?? 0);
+                    // Variant Unit Logic
+                    $vUnitName = $v['unit'] ?? $unitName;
+                    $isCartonMode = ($product->size_mode === 'by_cartons' || strtolower($vUnitName) === 'carton');
+
+                    // Cartons / Loose / Unit Formatting
+                    $ppb = (float) ($product->pieces_per_box ?? 1);
+                    if ($isCartonMode) {
+                        $vConv = (float) ($v['conv_factor'] ?? 0);
+                        if ($vConv > 0) $ppb = $vConv;
+                    }
+
+                    // Initial Stock in Pieces
+                    $vRawStock = (string) ($v['stock'] ?? '0');
+                    if ($isCartonMode && $ppb > 1) {
+                        if (strpos($vRawStock, '.') !== false) {
+                            $parts = explode('.', $vRawStock);
+                            $boxes = (int) ($parts[0] ?? 0);
+                            $looseP = (int) ($parts[1] ?? 0);
+                            $initial = ($boxes * $ppb) + $looseP;
+                        } else {
+                            $initial = (float) $vRawStock * $ppb;
+                        }
+                    } else {
+                        $initial = (float) $vRawStock;
+                    }
 
                     // Purchased for variant
                     $purchased = 0; $purchaseAmount = 0;
@@ -229,7 +253,7 @@ class ReportingController extends Controller
                         }
                     }
 
-                    // Balance = Initial + Purchased - Sold + Returned - Purchased Returned + Adjustments
+                    // Balance in Total Pieces = Initial + Purchased - Sold + Returned - Purchased Returned + Adjustments
                     $balance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned + $adjustments);
 
                     // Weighted Average Purchase Price
@@ -245,25 +269,21 @@ class ReportingController extends Controller
                     $totalAdjustments  += $adjustments;
                     $totalSoldAmount   += $saleAmount;
 
-                    // Variant Unit Logic
-                    $vUnitName = $v['unit'] ?? $unitName;
-                    if (isset($v['conv_factor']) && $product->size_mode === 'by_kg') {
-                        $factor = (float) $v['conv_factor'];
-                        if ($factor != 1 && !isset($v['unit'])) {
-                            $vUnitName = 'Pcs';
-                        }
-                    }
-
-                    // Cartons / Loose / Unit Formatting
-                    $ppb = (float) ($product->pieces_per_box ?? 1);
-                    if ($ppb > 1) {
+                    if ($isCartonMode && $ppb > 1) {
                         $cartons = floor($balance / $ppb);
                         $loose   = $balance % $ppb;
-                        $formattedStock = "{$cartons} Box . {$loose} {$vUnitName}";
+                        $formattedStock = ($loose > 0) ? "{$cartons} Ctn . {$loose} Pcs" : "{$cartons} Cartons";
+                        $cartonDisplay = ($loose > 0) ? "{$cartons} Ctn + {$loose} Pcs <span class='text-muted small'>({$ppb} pcs/ctn)</span>" : "{$cartons} Ctn <span class='text-muted small'>({$ppb} pcs/ctn)</span>";
+                    } elseif ($ppb > 1 && $product->size_mode === 'by_size') {
+                        $cartons = floor($balance / $ppb);
+                        $loose   = $balance % $ppb;
+                        $formattedStock = ($loose > 0) ? "{$cartons} Box . {$loose} Pcs" : "{$cartons} Boxes";
+                        $cartonDisplay = ($loose > 0) ? "{$cartons} Box + {$loose} Pcs" : "{$cartons} Box";
                     } else {
                         $cartons = '-';
                         $loose   = $balance;
-                        $formattedStock = "{$balance} {$vUnitName}";
+                        $formattedStock = number_format($balance, (in_array($product->size_mode, ['by_kg','by_meter','by_feet']) ? 2 : 0)) . " {$vUnitName}";
+                        $cartonDisplay = '—';
                     }
 
                     // Stock Status Badge
@@ -288,6 +308,7 @@ class ReportingController extends Controller
                         'adjustments'     => $adjustments,
                         'balance'         => $balance,
                         'formatted_stock' => $formattedStock,
+                        'carton_display'  => $cartonDisplay,
                         'cartons'         => $cartons,
                         'loose'           => $loose,
                         'average_price'   => $averagePrice,
@@ -318,17 +339,24 @@ class ReportingController extends Controller
                 // Returned qty
                 $retQuery = DB::table('stock_movements')
                     ->where('product_id', $product->id)
-                    ->whereIn('ref_type', ['SR', 'SALE_RETURN'])
-                    ->where('type', 'in');
+                    ->where('type', 'sale_return');
+                if ($warehouseId && $warehouseId !== 'all') {
+                    $retQuery->where('note', 'like', "%Warehouse #{$warehouseId}%");
+                }
                 if ($dateFrom) $retQuery->whereDate('created_at', '>=', $dateFrom);
                 if ($dateTo)   $retQuery->whereDate('created_at', '<=', $dateTo);
                 $returnedQty = (float) $retQuery->sum('qty');
 
-                // Purchase returned qty
-                $pRetQuery = DB::table('purchase_return_items')->where('product_id', $product->id);
-                if ($dateFrom) $pRetQuery->whereDate('created_at', '>=', $dateFrom);
-                if ($dateTo)   $pRetQuery->whereDate('created_at', '<=', $dateTo);
-                $pReturned = (float) $pRetQuery->sum('qty');
+                // Purchase Returned qty
+                $pRetQuery = DB::table('purchase_return_items as pri')
+                    ->join('purchase_returns as pr', 'pr.id', '=', 'pri.purchase_return_id')
+                    ->where('pri.product_id', $product->id);
+                if ($warehouseId && $warehouseId !== 'all') {
+                    $pRetQuery->where('pr.warehouse_id', $warehouseId);
+                }
+                if ($dateFrom) $pRetQuery->whereDate('pr.created_at', '>=', $dateFrom);
+                if ($dateTo)   $pRetQuery->whereDate('pr.created_at', '<=', $dateTo);
+                $pReturned = (float) $pRetQuery->sum('pri.qty');
 
                 // Stock Adjustments
                 $adjQuery = DB::table('stock_movements')
@@ -357,15 +385,23 @@ class ReportingController extends Controller
                 $totalSoldAmount   += $saleAmount;
 
                 // Cartons / Loose
+                $isCartonMode = ($product->size_mode === 'by_cartons' || strtolower($unitName) === 'carton');
                 $ppb = (float) ($product->pieces_per_box ?? 1);
-                if ($ppb > 1) {
+                if ($isCartonMode && $ppb > 1) {
                     $cartons = floor($balance / $ppb);
                     $loose   = $balance % $ppb;
-                    $formattedStock = "{$cartons} Box . {$loose} Pcs";
+                    $formattedStock = ($loose > 0) ? "{$cartons} Ctn . {$loose} Pcs" : "{$cartons} Cartons";
+                    $cartonDisplay = ($loose > 0) ? "{$cartons} Ctn + {$loose} Pcs <span class='text-muted small'>({$ppb} pcs/ctn)</span>" : "{$cartons} Ctn <span class='text-muted small'>({$ppb} pcs/ctn)</span>";
+                } elseif ($ppb > 1 && $product->size_mode === 'by_size') {
+                    $cartons = floor($balance / $ppb);
+                    $loose   = $balance % $ppb;
+                    $formattedStock = ($loose > 0) ? "{$cartons} Box . {$loose} Pcs" : "{$cartons} Boxes";
+                    $cartonDisplay = ($loose > 0) ? "{$cartons} Box + {$loose} Pcs" : "{$cartons} Box";
                 } else {
                     $cartons = '-';
                     $loose   = $balance;
-                    $formattedStock = "{$balance} {$unitName}";
+                    $formattedStock = number_format($balance, (in_array($product->size_mode, ['by_kg','by_meter','by_feet']) ? 2 : 0)) . " {$unitName}";
+                    $cartonDisplay = '—';
                 }
 
                 // Stock Status Badge
@@ -390,6 +426,7 @@ class ReportingController extends Controller
                     'adjustments'     => $adjustments,
                     'balance'         => $balance,
                     'formatted_stock' => $formattedStock,
+                    'carton_display'  => $cartonDisplay,
                     'cartons'         => $cartons,
                     'loose'           => $loose,
                     'average_price'   => $averagePrice,
