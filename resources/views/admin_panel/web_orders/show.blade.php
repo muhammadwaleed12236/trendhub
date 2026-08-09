@@ -1,6 +1,63 @@
 @extends('admin_panel.layout.app')
 
 @section('content')
+@php
+    $brandName = \App\Models\Setting::where('key', 'web_site_name')->value('value') ?: 'TrendHub';
+    $customerName = $order->customer->name ?? $order->shipping_name;
+    $orderId = $order->order_number;
+    $orderTotal = number_format($order->total, 2);
+    $websiteUrl = url('/');
+    
+    // Format phone
+    $phone = preg_replace('/[^0-9]/', '', $order->shipping_phone);
+    if (str_starts_with($phone, '0')) {
+        $phone = '92' . substr($phone, 1);
+    }
+
+    // Fetch Support Phone dynamically
+    $supportPhoneSetting = \App\Models\Setting::where('key', 'web_whatsapp_number')->value('value') 
+        ?: \App\Models\Setting::where('key', 'web_contact_phone')->value('value');
+
+    $supportUrlLine = '';
+    if (!empty($supportPhoneSetting)) {
+        $supportPhone = preg_replace('/[^0-9]/', '', $supportPhoneSetting);
+        if (str_starts_with($supportPhone, '0')) {
+            $supportPhone = '92' . substr($supportPhone, 1);
+        }
+        if (strlen($supportPhone) === 10 && !str_starts_with($supportPhone, '92')) {
+            $supportPhone = '92' . $supportPhone;
+        }
+        $supportUrlLine = "\nIf you need any assistance, feel free to contact our customer support:\nhttps://wa.me/" . $supportPhone;
+    }
+
+    // Confirmed Message
+    $confirmedMessage = "Order Confirmed!\n" .
+                        "Dear {$customerName},\n" .
+                        "Your order {$orderId} from {$brandName} has been successfully confirmed and verified.\n" .
+                        "It will be delivered to you within 3-4 days.{$supportUrlLine}\n" .
+                        "Thank you for shopping with us.";
+    $confirmedUrl = "https://wa.me/{$phone}?text=" . rawurlencode($confirmedMessage);
+
+    // Dispatched Message
+    $courierName = $order->courier_name ?: 'Courier Service';
+    $trackingInfo = '';
+    if ($order->tracking_url) {
+        $trackingInfo = "\nTracking URL: " . $order->tracking_url;
+    } elseif ($order->tracking_number) {
+        $trackingInfo = "\nTracking Number: " . $order->tracking_number;
+    }
+    $dispatchedMessage = "Order Dispatched\n" .
+                         "Dear {$customerName},\n" .
+                         "Your order from {$brandName} has been shipped.\n" .
+                         "Order ID: {$orderId}\n" .
+                         "Amount: PKR {$orderTotal}\n\n" .
+                         "Courier: {$courierName}" .
+                         "{$trackingInfo}\n\n" .
+                         "Thank you for shopping with us.\n" .
+                         "Visit Website:\n" .
+                         "{$websiteUrl}";
+    $dispatchedUrl = "https://wa.me/{$phone}?text=" . rawurlencode($dispatchedMessage);
+@endphp
 <link href="{{ asset('assets/vendors/bootstrap5/css/bootstrap.min.css') }}" rel="stylesheet">
 <style>
     .page-container {
@@ -212,7 +269,7 @@
                 }
             @endphp
             <span class="{{ $statusClass }} text-capitalize">
-                <i class="fas {{ $statusIcon }}"></i> {{ $order->order_status }}
+                <i class="fas {{ $statusIcon }}"></i> {{ $order->order_status === 'shipped' ? 'Dispatched' : $order->order_status }}
             </span>
         </div>
         
@@ -220,21 +277,151 @@
     $canEditOrders = auth()->user()->hasPermissionTo('web_orders.edit');
 @endphp
 
-        <form action="{{ route('web_orders.status', $order->id) }}" method="POST" class="d-flex gap-2">
-            @csrf
-            <select name="status" class="form-select w-auto" {{ !$canEditOrders ? 'disabled' : '' }}>
-                <option value="pending" {{ $order->order_status == 'pending' ? 'selected' : '' }}>Pending</option>
-                <option value="processing" {{ $order->order_status == 'processing' ? 'selected' : '' }}>Processing</option>
-                <option value="shipped" {{ $order->order_status == 'shipped' ? 'selected' : '' }}>Shipped</option>
-                <option value="delivered" {{ $order->order_status == 'delivered' ? 'selected' : '' }}>Delivered</option>
-                <option value="cancelled" {{ $order->order_status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-            </select>
-            @if($canEditOrders)
-                <button type="submit" class="btn btn-primary shadow-sm"><i class="fas fa-save me-1"></i> Update Status</button>
-            @else
-                <button type="button" class="btn btn-primary shadow-sm" disabled><i class="fas fa-lock me-1"></i> Update Status (Read Only)</button>
+        <!-- Right action group: Status Form + WhatsApp button -->
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <form action="{{ route('web_orders.status', $order->id) }}" method="POST" class="d-flex gap-2 align-items-center mb-0" id="status-update-form" onsubmit="return window.validateStatusForm()">
+                @csrf
+                <select name="status" id="order-status-select" class="form-select w-auto" onchange="window.toggleCourierField(this.value)" {{ !$canEditOrders ? 'disabled' : '' }}>
+                    <option value="pending" {{ $order->order_status == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="processing" {{ $order->order_status == 'processing' ? 'selected' : '' }}>Processing</option>
+                    <option value="shipped" {{ $order->order_status == 'shipped' ? 'selected' : '' }}>Dispatched</option>
+                    <option value="delivered" {{ $order->order_status == 'delivered' ? 'selected' : '' }}>Delivered</option>
+                    <option value="cancelled" {{ $order->order_status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                </select>
+                
+                <!-- Inline Courier Name Input (only visible when Dispatched is selected AND database status is not Dispatched) -->
+                <div id="courier-name-container" style="display: none; max-width: 180px;">
+                    <input type="text" name="courier_name" id="courier-name-input" class="form-control" placeholder="Courier Name" value="{{ $order->courier_name ?? '' }}">
+                </div>
+
+                @if($canEditOrders)
+                    <button type="submit" class="btn btn-primary shadow-sm"><i class="fas fa-save me-1"></i> Update Status</button>
+                @else
+                    <button type="button" class="btn btn-primary shadow-sm" disabled><i class="fas fa-lock me-1"></i> Update Status (Read Only)</button>
+                @endif
+            </form>
+
+            <script>
+                window.toggleCourierField = function(val) {
+                    const container = document.getElementById('courier-name-container');
+                    const input = document.getElementById('courier-name-input');
+                    if (!container || !input) return;
+                    
+                    const dbStatus = '{{ $order->order_status }}';
+                    if (val === 'shipped' && dbStatus !== 'shipped') {
+                        container.style.setProperty('display', 'block', 'important');
+                        input.setAttribute('required', 'required');
+                    } else {
+                        container.style.setProperty('display', 'none', 'important');
+                        input.removeAttribute('required');
+                    }
+                };
+
+                window.validateStatusForm = function() {
+                    const select = document.getElementById('order-status-select');
+                    const input = document.getElementById('courier-name-input');
+                    if (select && select.value === 'shipped') {
+                        if (!input || !input.value.trim()) {
+                            alert('Courier Name is required to dispatch the order.');
+                            return false;
+                        }
+                    }
+                    return true;
+                };
+
+                // Run toggle on load using multiple events for maximum reliability
+                (function() {
+                    function runInit() {
+                        const select = document.getElementById('order-status-select');
+                        if (select) {
+                            window.toggleCourierField(select.value);
+                        }
+                    }
+                    runInit();
+                    window.addEventListener('load', runInit);
+                    document.addEventListener('DOMContentLoaded', runInit);
+                    if (typeof jQuery !== 'undefined') {
+                        jQuery(document).ready(runInit);
+                    }
+                    setTimeout(runInit, 50);
+                    setTimeout(runInit, 200);
+                })();
+
+                // Mark WhatsApp message as sent and disable the button
+                window.markWhatsAppSent = function(orderId, status) {
+                    const key = 'wa_sent_' + orderId + '_' + status;
+                    localStorage.setItem(key, 'true');
+                    
+                    // Trigger state update after a short timeout to let the new window open
+                    setTimeout(function() {
+                        window.updateWhatsAppButtonState(orderId, status);
+                    }, 500);
+                };
+
+                // Apply disabled styles to the WhatsApp button
+                window.updateWhatsAppButtonState = function(orderId, status) {
+                    const key = 'wa_sent_' + orderId + '_' + status;
+                    const isSent = localStorage.getItem(key) === 'true';
+                    
+                    if (isSent) {
+                        const btnId = status === 'processing' ? 'wa-btn-processing' : 'wa-btn-shipped';
+                        const btn = document.getElementById(btnId);
+                        if (btn) {
+                            btn.classList.remove('btn-success');
+                            btn.classList.add('btn-secondary');
+                            btn.style.setProperty('background-color', '#64748b', 'important');
+                            btn.style.setProperty('border-color', '#64748b', 'important');
+                            btn.style.setProperty('cursor', 'not-allowed', 'important');
+                            btn.style.setProperty('pointer-events', 'none', 'important');
+                            btn.innerHTML = '<i class="fas fa-check me-2"></i> WhatsApp Sent';
+                            btn.removeAttribute('href');
+                            btn.removeAttribute('target');
+                            btn.onclick = function(e) { e.preventDefault(); return false; };
+                        }
+                    }
+                };
+
+                // Initialize WhatsApp button states on load
+                (function() {
+                    function initWAState() {
+                        const orderId = '{{ $order->id }}';
+                        const currentStatus = '{{ $order->order_status }}';
+                        if (currentStatus === 'processing' || currentStatus === 'shipped') {
+                            window.updateWhatsAppButtonState(orderId, currentStatus);
+                        }
+                    }
+                    if (typeof jQuery !== 'undefined') {
+                        jQuery(document).ready(initWAState);
+                    } else {
+                        window.addEventListener('load', initWAState);
+                    }
+                    setTimeout(initWAState, 50);
+                    setTimeout(initWAState, 500);
+                })();
+            </script>
+
+            @if(in_array($order->order_status, ['processing', 'shipped']))
+                <div class="d-flex align-items-center">
+                    @if($order->order_status === 'processing')
+                        <a href="{{ $confirmedUrl }}" target="_blank" 
+                           id="wa-btn-processing"
+                           onclick="window.markWhatsAppSent('{{ $order->id }}', 'processing')"
+                           class="btn btn-success shadow-sm text-white px-3 py-2 fw-semibold d-inline-flex align-items-center" 
+                           style="background-color: #25d366; border-color: #25d366; height: 38px; border-radius: 8px;">
+                           <i class="fab fa-whatsapp me-2"></i> Send WhatsApp Confirmation
+                        </a>
+                    @elseif($order->order_status === 'shipped')
+                        <a href="{{ $dispatchedUrl }}" target="_blank" 
+                           id="wa-btn-shipped"
+                           onclick="window.markWhatsAppSent('{{ $order->id }}', 'shipped')"
+                           class="btn btn-success shadow-sm text-white px-3 py-2 fw-semibold d-inline-flex align-items-center" 
+                           style="background-color: #25d366; border-color: #25d366; height: 38px; border-radius: 8px;">
+                           <i class="fab fa-whatsapp me-2"></i> Send WhatsApp Dispatch Alert
+                        </a>
+                    @endif
+                </div>
             @endif
-        </form>
+        </div>
     </div>
 
     @if(session('success'))
@@ -255,6 +442,20 @@
         <div class="alert alert-info d-flex align-items-center mb-4 border" role="alert" style="background-color: #e0f2fe; border-color: #7dd3fc; color: #0369a1;">
             <i class="fas fa-info-circle me-3 fs-4"></i>
             <div>{{ session('info') }}</div>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger d-flex align-items-start mb-4 border" role="alert" style="background-color: #fee2e2; border-color: #fca5a5; color: #991b1b;">
+            <i class="fas fa-exclamation-triangle me-3 fs-4 mt-1"></i>
+            <div>
+                <strong class="d-block mb-1">Please fix the following validation errors:</strong>
+                <ul class="mb-0 ps-3">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
         </div>
     @endif
 
@@ -382,6 +583,23 @@
                     </div>
                 </div>
             </div>
+
+            @if($order->order_status === 'shipped' || $order->courier_name)
+            <div class="card mb-4">
+                <div class="card-header py-3">
+                    <h5 class="mb-0 fw-bold text-slate-800"><i class="fas fa-truck me-2 text-indigo"></i> Shipment Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="detail-item d-flex align-items-start gap-3">
+                        <i class="fas fa-shipping-fast fs-5 text-indigo mt-1"></i>
+                        <div>
+                            <span class="text-muted d-block small mb-1">Courier</span>
+                            <strong class="text-slate-800">{{ $order->courier_name }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
 
             <div class="card mb-4">
                 <div class="card-header py-3">

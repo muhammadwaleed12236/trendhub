@@ -222,7 +222,7 @@
                                     }
                                 @endphp
                                 <span class="{{ $statusClass }} text-capitalize">
-                                    <i class="fas {{ $statusIcon }}"></i> {{ $order->order_status }}
+                                    <i class="fas {{ $statusIcon }}"></i> {{ $order->order_status === 'shipped' ? 'Dispatched' : $order->order_status }}
                                 </span>
                             </td>
                             <td class="text-end pe-4">

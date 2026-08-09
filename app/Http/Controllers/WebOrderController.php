@@ -35,6 +35,9 @@ class WebOrderController extends Controller
 
         $request->validate([
             'status' => 'required|in:pending,processing,shipped,delivered,cancelled',
+            'courier_name' => 'required_if:status,shipped|nullable|string|max:255',
+            'tracking_number' => 'nullable|string|max:255',
+            'tracking_url' => 'nullable|url|max:255',
         ]);
 
         $order = EcommerceOrder::with('items.product')->findOrFail($id);
@@ -137,9 +140,25 @@ class WebOrderController extends Controller
             }
 
             $order->order_status = $newStatus;
+            
+            // Save courier info if Dispatched
+            if ($newStatus === 'shipped') {
+                $order->courier_name = $request->courier_name;
+                $order->tracking_number = $request->tracking_number;
+                $order->tracking_url = $request->tracking_url;
+            }
+            
             $order->save();
 
             \Illuminate\Support\Facades\DB::commit();
+
+            // Trigger WhatsApp Notification
+            try {
+                $whatsAppService = app(\App\Services\WhatsAppService::class);
+                $whatsAppService->sendStatusNotification($order, $newStatus);
+            } catch (\Exception $e) {
+                \Log::error("Failed to send WhatsApp notification: " . $e->getMessage());
+            }
 
             return redirect()->back()->with('success', 'Order status updated and stock adjusted successfully.');
 
@@ -218,6 +237,15 @@ class WebOrderController extends Controller
                 $order->save();
 
                 \Illuminate\Support\Facades\DB::commit();
+
+                // Trigger WhatsApp Notification
+                try {
+                    $whatsAppService = app(\App\Services\WhatsAppService::class);
+                    $whatsAppService->sendStatusNotification($order, 'processing');
+                } catch (\Exception $e) {
+                    \Log::error("Failed to send WhatsApp notification: " . $e->getMessage());
+                }
+
                 return redirect()->back()->with('success', 'Payment approved successfully! Order is now in Processing status.');
 
             } catch (\Exception $e) {
