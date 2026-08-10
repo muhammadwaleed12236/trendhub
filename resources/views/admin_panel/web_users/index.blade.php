@@ -92,11 +92,45 @@
         font-weight: 600;
         display: inline-block;
     }
+    .filter-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+    }
 </style>
 
 <div class="page-container mt-4 mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4 page-header">
         <h4>Website Registered Users (Web Customers)</h4>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card filter-card mb-4">
+        <form action="{{ route('web_users.index') }}" method="GET" class="row g-3 align-items-end">
+            <!-- Search field -->
+            <div class="col-12 col-sm-6 col-md-5">
+                <label for="search" class="form-label small fw-semibold text-slate-600">Search User</label>
+                <input type="text" name="search" id="search" class="form-control" placeholder="Name, Email, or Phone..." value="{{ request('search') }}">
+            </div>
+
+            <!-- Linked Customer Status -->
+            <div class="col-12 col-sm-6 col-md-4">
+                <label for="linked_status" class="form-label small fw-semibold text-slate-600">Linked Customer Status</label>
+                <select name="linked_status" id="linked_status" class="form-select">
+                    <option value="">All Users</option>
+                    <option value="linked" {{ request('linked_status') == 'linked' ? 'selected' : '' }}>Linked to ERP Customer</option>
+                    <option value="unlinked" {{ request('linked_status') == 'unlinked' ? 'selected' : '' }}>Unlinked (Website Only)</option>
+                </select>
+            </div>
+
+            <!-- Buttons -->
+            <div class="col-12 col-md-3 d-flex gap-2 justify-content-end">
+                <button type="submit" class="btn btn-primary px-3 shadow-sm d-flex align-items-center gap-1" style="height: 38px; border-radius: 8px;"><i class="fas fa-filter"></i> Filter</button>
+                <a href="{{ route('web_users.index') }}" class="btn btn-light px-3 border shadow-sm d-flex align-items-center gap-1" style="height: 38px; border-radius: 8px; background-color: #f8fafc; color: #475569; border-color: #cbd5e1;"><i class="fas fa-redo"></i> Reset</a>
+            </div>
+        </form>
     </div>
 
     @if(session('success'))

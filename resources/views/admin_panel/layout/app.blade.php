@@ -858,6 +858,7 @@
                                             <li><a href="{{ route('admin.coupons.index') }}"><i class="fas fa-tags"></i> Coupons</a></li>
                                         @endcan
                                         @canany(['web_orders.view', 'web_orders.read'])
+                                            <li><a href="{{ route('web_orders.dashboard') }}"><i class="fa-solid fa-chart-line"></i> Web Dashboard</a></li>
                                             <li><a href="{{ route('web_orders.index') }}"><i class="fa-solid fa-shopping-cart"></i> Web Orders</a></li>
                                         @endcan
                                         @canany(['web_users.view', 'web_users.read'])

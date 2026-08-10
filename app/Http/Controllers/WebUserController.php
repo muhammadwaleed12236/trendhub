@@ -8,13 +8,34 @@ use Illuminate\Http\Request;
 
 class WebUserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         if (!auth()->user()->hasAnyPermission(['web_users.view', 'web_users.read'])) {
             abort(403, 'Unauthorized action. You do not have permission to view Web Users.');
         }
 
-        $webCustomers = WebCustomer::latest()->get();
+        $query = WebCustomer::query();
+
+        // Search Filter (Name, Email, Phone)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        // Linked Status Filter
+        if ($request->filled('linked_status')) {
+            if ($request->linked_status === 'linked') {
+                $query->whereNotNull('customer_id');
+            } elseif ($request->linked_status === 'unlinked') {
+                $query->whereNull('customer_id');
+            }
+        }
+
+        $webCustomers = $query->latest()->get();
 
         return view('admin_panel.web_users.index', compact('webCustomers'));
     }

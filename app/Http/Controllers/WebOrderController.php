@@ -7,14 +7,186 @@ use App\Models\EcommerceOrder;
 
 class WebOrderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         if (!auth()->user()->hasAnyPermission(['web_orders.view', 'web_orders.read'])) {
             abort(403, 'Unauthorized action. You do not have permission to view Web Orders.');
         }
 
-        $orders = EcommerceOrder::with('customer')->orderBy('created_at', 'desc')->paginate(20);
+        $query = EcommerceOrder::with('customer');
+
+        // Search Filter (Order ID, Customer Name, Phone)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                  ->orWhere('shipping_name', 'like', "%{$search}%")
+                  ->orWhere('shipping_phone', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function($subQ) use ($search) {
+                      $subQ->where('name', 'like', "%{$search}%")
+                           ->orWhere('phone', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Order Status Filter
+        if ($request->filled('order_status')) {
+            $query->where('order_status', $request->order_status);
+        }
+
+        // Payment Status Filter
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->payment_status);
+        }
+
+        // Payment Method Filter
+        if ($request->filled('payment_method')) {
+            $query->where('payment_method', $request->payment_method);
+        }
+
+        // Date From Filter
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        // Date To Filter
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $orders = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
         return view('admin_panel.web_orders.index', compact('orders'));
+    }
+
+    public function dashboard()
+    {
+        if (!auth()->user()->hasAnyPermission(['web_orders.view', 'web_orders.read'])) {
+            abort(403, 'Unauthorized action. You do not have permission to view Web Dashboard.');
+        }
+
+        // 1. Fetch Accounts
+        $easypaisaAccount = \App\Models\Account::where('title', 'like', '%easypaisa%')->first();
+        $cashInHandAccount = \App\Models\Account::where('title', 'like', '%cash in hand%')
+            ->orWhere('title', 'like', '%cash account%')
+            ->first();
+
+        // Helper function to calculate balance (inline inside php block, or in controller)
+        $getAccountBalance = function($account) {
+            if (!$account) return 0;
+            $sum = \App\Models\JournalEntry::where('account_id', $account->id)
+                ->selectRaw('SUM(debit) as debits, SUM(credit) as credits')
+                ->first();
+            $debits = $sum->debits ?? 0;
+            $credits = $sum->credits ?? 0;
+            if (strtolower($account->type) === 'credit') {
+                return ($account->initial_balance ?? 0) + ($credits - $debits);
+            } else {
+                return ($account->initial_balance ?? 0) + ($debits - $credits);
+            }
+        };
+
+        $easypaisaBalance = $getAccountBalance($easypaisaAccount);
+        $cashInHandBalance = $getAccountBalance($cashInHandAccount);
+
+        // 2. Fetch Web Orders for analytics
+        $allOrders = EcommerceOrder::orderBy('created_at', 'desc')->get();
+
+        $today = now()->format('Y-m-d');
+
+        $stats = [
+            'total_orders' => $allOrders->count(),
+            'pending_count' => $allOrders->where('order_status', 'pending')->count(),
+            'processing_count' => $allOrders->where('order_status', 'processing')->count(),
+            'shipped_count' => $allOrders->where('order_status', 'shipped')->count(),
+            'delivered_count' => $allOrders->where('order_status', 'delivered')->count(),
+            'cancelled_count' => $allOrders->where('order_status', 'cancelled')->count(),
+            'total_easypaisa_confirmed' => 0,
+            'total_cod_delivered' => 0,
+            'total_sales' => 0,
+            'today_sales' => 0,
+            'today_orders_count' => 0,
+        ];
+
+        // 3. Build Web Transactions Ledger dynamically
+        $transactions = [];
+        foreach ($allOrders as $order) {
+            $orderNum = $order->order_number;
+            $total = (float)$order->total;
+            $paid = (float)$order->paid_amount;
+            $paymentMethod = $order->payment_method;
+            $paymentStatus = $order->payment_status;
+            $orderStatus = $order->order_status;
+            
+            $createdAt = $order->created_at ? $order->created_at->format('Y-m-d') : '';
+            $updatedAt = $order->updated_at ? $order->updated_at->format('Y-m-d') : '';
+            $date = $order->created_at ? $order->created_at->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s');
+
+            if ($createdAt === $today) {
+                $stats['today_orders_count']++;
+            }
+
+            // --- Easypaisa Entry ---
+            // If payment method is Easypaisa and it is confirmed/paid (meaning payment is received)
+            if (in_array(strtolower($paymentMethod), ['easypaisa', 'online']) && in_array(strtolower($paymentStatus), ['paid', 'confirmed', 'verified']) && $paid > 0) {
+                $stats['total_easypaisa_confirmed'] += $paid;
+                
+                // If payment confirmation occurred today
+                if ($updatedAt === $today) {
+                    $stats['today_sales'] += $paid;
+                }
+
+                $transactions[] = (object)[
+                    'date' => $date,
+                    'order_id' => $order->id,
+                    'order_number' => $orderNum,
+                    'method' => 'Easypaisa',
+                    'amount' => $paid,
+                    'type' => 'Easypaisa Confirmed',
+                    'status_badge' => 'bg-success',
+                    'description' => "Easypaisa payment confirmed for Order #{$orderNum}"
+                ];
+            }
+
+            // --- Cash / COD Entry ---
+            // If order is delivered, show COD entry (amount = remaining COD amount, i.e., total - paid)
+            $remainingCod = $total - $paid;
+            if ($orderStatus === 'delivered' && $remainingCod > 0) {
+                $stats['total_cod_delivered'] += $remainingCod;
+                
+                // If delivery occurred today
+                if ($updatedAt === $today) {
+                    $stats['today_sales'] += $remainingCod;
+                }
+
+                $transactions[] = (object)[
+                    'date' => $date,
+                    'order_id' => $order->id,
+                    'order_number' => $orderNum,
+                    'method' => 'Cash on Delivery (COD)',
+                    'amount' => $remainingCod,
+                    'type' => 'COD Delivered',
+                    'status_badge' => 'bg-info text-dark',
+                    'description' => "COD remaining amount received upon delivery of Order #{$orderNum}"
+                ];
+            }
+        }
+
+        $stats['total_sales'] = $stats['total_easypaisa_confirmed'] + $stats['total_cod_delivered'];
+
+        // Sort unified transactions list by Date (newest first)
+        usort($transactions, function($a, $b) {
+            return strcmp($b->date, $a->date);
+        });
+
+        // Limit recent transactions to 10 for dashboard view
+        $recentTransactions = array_slice($transactions, 0, 10);
+        $recentOrders = $allOrders->take(5);
+
+        return view('admin_panel.web_orders.dashboard', compact(
+            'easypaisaAccount', 'easypaisaBalance',
+            'cashInHandAccount', 'cashInHandBalance',
+            'stats', 'recentTransactions', 'recentOrders'
+        ));
     }
 
     public function show($id)

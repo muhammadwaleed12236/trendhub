@@ -153,14 +153,85 @@
         border-color: #94a3b8;
         color: #0f172a;
     }
+    .filter-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+    }
 </style>
 
 <div class="page-container mt-3">
     <div class="d-flex align-items-center justify-content-between mb-4 page-header">
         <div>
-            <h4 class="fw-bold mb-0">Web Orders Dashboard</h4>
+            <h4 class="fw-bold mb-0">Web Orders</h4>
             <small class="text-muted">Track customer orders, payments, and fulfillment status.</small>
         </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card filter-card mb-4">
+        <form action="{{ route('web_orders.index') }}" method="GET" class="row g-3 align-items-end">
+            <!-- Search field -->
+            <div class="col-12 col-sm-6 col-md-3">
+                <label for="search" class="form-label small fw-semibold text-slate-600">Search Order</label>
+                <input type="text" name="search" id="search" class="form-control" placeholder="ID, Name, or Phone..." value="{{ request('search') }}">
+            </div>
+
+            <!-- Order Status -->
+            <div class="col-12 col-sm-6 col-md-2">
+                <label for="order_status" class="form-label small fw-semibold text-slate-600">Order Status</label>
+                <select name="order_status" id="order_status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {{ request('order_status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="processing" {{ request('order_status') == 'processing' ? 'selected' : '' }}>Processing</option>
+                    <option value="shipped" {{ request('order_status') == 'shipped' ? 'selected' : '' }}>Dispatched</option>
+                    <option value="delivered" {{ request('order_status') == 'delivered' ? 'selected' : '' }}>Delivered</option>
+                    <option value="cancelled" {{ request('order_status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                </select>
+            </div>
+
+            <!-- Payment Status -->
+            <div class="col-12 col-sm-6 col-md-2">
+                <label for="payment_status" class="form-label small fw-semibold text-slate-600">Payment Status</label>
+                <select name="payment_status" id="payment_status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {{ request('payment_status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="paid" {{ request('payment_status') == 'paid' ? 'selected' : '' }}>Paid</option>
+                    <option value="confirmed" {{ request('payment_status') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                    <option value="failed" {{ request('payment_status') == 'failed' ? 'selected' : '' }}>Failed</option>
+                </select>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="col-12 col-sm-6 col-md-2">
+                <label for="payment_method" class="form-label small fw-semibold text-slate-600">Payment Method</label>
+                <select name="payment_method" id="payment_method" class="form-select">
+                    <option value="">All Methods</option>
+                    <option value="COD" {{ request('payment_method') == 'COD' ? 'selected' : '' }}>COD / Cash</option>
+                    <option value="Easypaisa" {{ request('payment_method') == 'Easypaisa' ? 'selected' : '' }}>Easypaisa</option>
+                </select>
+            </div>
+
+            <!-- Date From -->
+            <div class="col-12 col-sm-6 col-md-1-5" style="flex: 1; min-width: 120px;">
+                <label for="date_from" class="form-label small fw-semibold text-slate-600">From Date</label>
+                <input type="date" name="date_from" id="date_from" class="form-control" value="{{ request('date_from') }}">
+            </div>
+
+            <!-- Date To -->
+            <div class="col-12 col-sm-6 col-md-1-5" style="flex: 1; min-width: 120px;">
+                <label for="date_to" class="form-label small fw-semibold text-slate-600">To Date</label>
+                <input type="date" name="date_to" id="date_to" class="form-control" value="{{ request('date_to') }}">
+            </div>
+
+            <!-- Buttons -->
+            <div class="col-12 col-md-auto d-flex gap-2 justify-content-end">
+                <button type="submit" class="btn btn-primary px-3 shadow-sm d-flex align-items-center gap-1" style="height: 38px; border-radius: 8px;"><i class="fas fa-filter"></i> Filter</button>
+                <a href="{{ route('web_orders.index') }}" class="btn btn-light px-3 border shadow-sm d-flex align-items-center gap-1" style="height: 38px; border-radius: 8px; background-color: #f8fafc;"><i class="fas fa-redo"></i> Reset</a>
+            </div>
+        </form>
     </div>
 
     @if(session('success'))

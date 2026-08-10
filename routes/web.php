@@ -458,6 +458,7 @@ Route::middleware('auth')->group(function () {
 
     // Web Orders
     Route::get('/web-orders', [App\Http\Controllers\WebOrderController::class, 'index'])->middleware('permission:web_orders.view|web_orders.read')->name('web_orders.index');
+    Route::get('/web-orders/dashboard', [App\Http\Controllers\WebOrderController::class, 'dashboard'])->middleware('permission:web_orders.view|web_orders.read')->name('web_orders.dashboard');
     Route::get('/web-orders/{id}', [App\Http\Controllers\WebOrderController::class, 'show'])->middleware('permission:web_orders.view|web_orders.read')->name('web_orders.show');
     Route::post('/web-orders/{id}/status', [App\Http\Controllers\WebOrderController::class, 'updateStatus'])->middleware('permission:web_orders.edit')->name('web_orders.status');
     Route::post('/web-orders/{id}/verify-payment', [App\Http\Controllers\WebOrderController::class, 'verifyPayment'])->middleware('permission:web_orders.edit')->name('web_orders.verify_payment');
