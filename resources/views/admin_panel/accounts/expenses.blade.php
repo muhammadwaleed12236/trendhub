@@ -1,118 +1,126 @@
 @extends('admin_panel.layout.app')
 
 @section('content')
-    <div class="container-fluid py-4">
+    <div class="main-content">
+        <div class="main-content-inner">
+            <div class="container-fluid py-4">
 
+                {{-- Page Header --}}
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <div>
+                        <h4 class="fw-bold mb-0 text-dark">{{ ucwords($type ?? 'Voucher') }}</h4>
+                        <p class="text-muted mb-0 small">Manage and view all {{ strtolower($type ?? 'voucher') }} entries</p>
+                    </div>
+                    @can('expense.voucher.create')
+                        <button class="btn btn-primary shadow-sm fw-bold d-inline-flex align-items-center" data-toggle="modal" data-target="#voucherModal" data-bs-toggle="modal" data-bs-target="#voucherModal" style="height: 38px; border-radius: 6px;">
+                            <i class="fas fa-plus mr-1" style="margin-right: 5px;"></i> Add {{ ucwords($type ?? 'Voucher') }}
+                        </button>
+                    @endcan
+                </div>
 
+                {{-- Voucher Table --}}
+                <div class="card shadow border-0 rounded-4">
+                    <div class="card-body">
+                        <div class="table-responsive mt-2 mb-4">
+                            <table id="voucherTable" class="table table-bordered table-striped table-hover align-middle">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Customer Type</th>
+                                        <th>Party / Customer</th>
+                                        <th>Narration</th>
+                                        <th class="text-end">Amount</th>
+                                        <th>Date</th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($vouchers as $voucher)
+                                        <tr>
+                                            <td>{{ $voucher->id }}</td>
+                                            <td>{{ ucfirst($voucher->type) }}</td>
+                                            <td>{{ $voucher->person }}</td>
+                                            <td>{{ $voucher->narration }}</td>
+                                            <td class="text-end fw-bold text-dark">{{ number_format($voucher->amount, 2) }}</td>
+                                            <td>{{ $voucher->date }}</td>
+                                            <td class="text-center">
+                                                @can('expense.voucher.edit')
+                                                    <button class="btn btn-warning btn-sm edit-btn fw-bold" data-id="{{ $voucher->id }}"
+                                                        data-sales_officer="{{ $voucher->sales_officer }}" data-date="{{ $voucher->date }}"
+                                                        data-type="{{ $voucher->type }}" data-person="{{ $voucher->person }}"
+                                                        data-sub_head="{{ $voucher->sub_head }}"
+                                                        data-narration="{{ $voucher->narration }}" data-amount="{{ $voucher->amount }}"
+                                                        data-toggle="modal" data-target="#voucherModal"
+                                                        data-bs-toggle="modal" data-bs-target="#voucherModal">
+                                                        <i class="fas fa-edit me-1"></i> Edit
+                                                    </button>
+                                                @endcan
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
-
-        {{-- Voucher Table --}}
-        <div class="card shadow-sm">
-            <div class="card-header d-flex justify-content-between align-items-center text-white">
-                <h6 class="mb-0">Voucher List</h6>
-                @can('expense.voucher.create')
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#voucherModal">
-                        <i class="bi bi-plus-circle"></i> Add Voucher
-                    </button>
-                @endcan
-            </div>
-
-            <div class="card-body">
-                <table id="voucherTable" class="table table-bordered table-striped table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            {{--  <th>Sales Officer</th>  --}}
-
-                            <th>id</th>
-                            <th>Customer</th>
-                            <th>party</th>
-                            {{--  <th>Sub-Head</th>  --}}
-                            <th>Narration</th>
-                            <th>Amount</th>
-                            <th>Date</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($vouchers as $voucher)
-                            <tr>
-                                <td>{{ $voucher->id }}</td>
-
-                                <td>{{ ucfirst($voucher->type) }}</td>
-                                <td>{{ $voucher->person }}</td>
-                                {{--  <td>{{ $voucher->sub_head }}</td>  --}}
-                                <td>{{ $voucher->narration }}</td>
-                                <td>{{ number_format($voucher->amount, 2) }}</td>
-                                <td>{{ $voucher->date }}</td>
-                                <td>
-                                    @can('expense.voucher.edit')
-                                        <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $voucher->id }}"
-                                            data-sales_officer="{{ $voucher->sales_officer }}" data-date="{{ $voucher->date }}"
-                                            data-type="{{ $voucher->type }}" data-person="{{ $voucher->person }}"
-                                            data-sub_head="{{ $voucher->sub_head }}"
-                                            data-narration="{{ $voucher->narration }}" data-amount="{{ $voucher->amount }}"
-                                            data-bs-toggle="modal" data-bs-target="#voucherModal">
-                                            Edit
-                                        </button>
-                                    @endcan
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>
 
     {{-- Voucher Modal --}}
-    <div class="modal fade" id="voucherModal" tabindex="-1" aria-labelledby="voucherModalLabel" aria-hidden="true">
-        <div class="modal-dialog  modal-lg">
-            <div class="modal-content">
+    <div class="modal fade" id="voucherModal" tabindex="-1" role="dialog" aria-labelledby="voucherModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
                 <form action="{{ route('vouchers.store') }}" method="POST">
                     @csrf
                     <input type="hidden" name="id" id="voucher_id">
 
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title" id="voucherModalLabel">Add Voucher</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <div class="modal-header bg-primary text-white px-4 py-3">
+                        <h5 class="modal-title fw-bold text-white mb-0" id="voucherModalLabel">Add {{ ucwords($type ?? 'Voucher') }}</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.9; font-size: 1.5rem;">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
 
-                    <div class="modal-body">
+                    <div class="modal-body p-4">
                         <div style="overflow-x: auto; white-space: nowrap;">
-                            <table class="table table-bordered" id="voucherItemsTable">
-                                <thead>
+                            <table class="table table-bordered align-middle" id="voucherItemsTable">
+                                <thead class="bg-light">
                                     <tr>
                                         <th>Date</th>
                                         <th>Customer Type</th>
                                         <th>Customer</th>
                                         <th>Narration</th>
-                                        <th>Custom</th>
                                         <th>Amount</th>
-                                        <th>Action</th>
+                                        <th class="text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr class="voucher-row">
                                         <td><input type="date" name="date[]" class="form-control" required></td>
                                         <td>
-                                            <select name="type[]" class="form-select type-select" required>
+                                            <select name="type[]" class="form-control form-select type-select" required>
                                                 <option value="Main Customer">Main Customer</option>
                                                 <option value="Customer">Customer</option>
                                                 <option value="Walking Customer">Walking Customer</option>
                                             </select>
                                         </td>
                                         <td>
-                                            <select name="person[]" class="form-select person-select" required>
+                                            <select name="person[]" class="form-control form-select person-select" required>
                                                 <option value="">Select Customer</option>
                                             </select>
                                         </td>
                                         <td>
-                                            <select name="narration[]" class="form-select narration-select" required>
+                                            <select name="narration[]" class="form-control form-select narration-select" required>
                                                 @foreach ($narration as $item)
                                                     <option value="{{ $item->narration }}">{{ $item->narration }}</option>
                                                 @endforeach
                                                 <option value="custom">-- Custom --</option>
                                             </select>
+                                            <input type="text" name="custom_narration[]"
+                                                class="form-control custom-narration-input mt-2" style="display:none;"
+                                                placeholder="Write custom narration">
                                         </td>
                                         <div class="col-md-4 d-none">
                                             <label class="form-label">Sub-Head</label>
@@ -124,30 +132,24 @@
                                             </select>
                                         </div>
                                         <td>
-                                            <input type="text" name="custom_narration[]"
-                                                class="form-control custom-narration-input mt-2" style="display:none;"
-                                                placeholder="Write custom narration">
-                                        </td>
-                                        <td>
                                             <input type="number" name="amount[]" class="form-control" step="0.01"
                                                 required>
                                         </td>
-                                        <td>
+                                        <td class="text-center">
                                             <button type="button" class="btn btn-danger btn-sm remove-row">Remove</button>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
-                            <tr>
-                                <td colspan="5" class="text-end"><strong>Total</strong></td>
-                                <td><input type="text" name="total" class="form-control" readonly></td>
-                                <td></td>
-                            </tr>
+                            <div class="d-flex justify-content-end align-items-center mt-3 gap-2">
+                                <strong class="me-2 text-dark">Total Amount:</strong>
+                                <input type="text" name="total" class="form-control fw-bold text-success border-success" style="width: 160px;" readonly>
+                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-success">Save Voucher</button>
+                    <div class="modal-footer bg-light border-top px-4 py-3">
+                        <button type="button" class="btn btn-secondary btn-sm px-3" data-dismiss="modal" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm">Save Voucher</button>
                     </div>
                 </form>
             </div>

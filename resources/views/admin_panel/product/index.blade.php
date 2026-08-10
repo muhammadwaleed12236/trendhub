@@ -439,8 +439,9 @@
     }
 </style>
 
-<div class="erp-page">
-<div class="container-fluid px-3">
+<div class="main-content">
+    <div class="main-content-inner">
+        <div class="container-fluid px-3 py-3">
 
     {{-- ── Stats Row ── --}}
     <div class="stat-grid mb-4" style="display:grid; grid-template-columns: repeat(4,1fr); gap:16px;">
@@ -830,8 +831,9 @@
         </div>
 
     </div>{{-- /erp-card --}}
-</div>{{-- /container-fluid --}}
-</div>{{-- /erp-page --}}
+        </div>{{-- /container-fluid --}}
+    </div>{{-- /main-content-inner --}}
+</div>{{-- /main-content --}}
 
 
 {{-- ══════════════════════════════════════════════════════════════

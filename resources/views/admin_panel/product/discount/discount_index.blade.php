@@ -1,17 +1,18 @@
 @extends('admin_panel.layout.app')
 @section('content')
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-        <div>
-            <h5 class="mb-0 fw-bold">💰 Product Discounts</h5>
-            <small class="text-muted">Manage all product discounts here</small>
+<div class="container-fluid px-3 px-md-4 py-2">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+            <div>
+                <h5 class="mb-0 fw-bold">💰 Product Discounts</h5>
+                <small class="text-muted">Manage all product discounts here</small>
+            </div>
+            @if(auth()->user()->can('Create Discount') || auth()->user()->email === 'admin@admin.com')
+                <a href="{{ route('product') }}" class="btn btn-success btn-sm fw-bold shadow-sm" style="border-radius: 6px;">
+                    <i class="fas fa-box-open me-1"></i> View Products
+                </a>
+            @endif
         </div>
-        @if(auth()->user()->can('Create Discount') || auth()->user()->email === 'admin@admin.com')
-            <a href="{{ route('product') }}" class="btn btn-success btn-sm">
-                View Product
-            </a>
-        @endif
-    </div>
 
     <div class="card-body">
         @if (session()->has('success'))
@@ -101,6 +102,7 @@
             </table>
         </div>
     </div>
+</div>
 </div>
 
 {{-- DataTables JS --}}

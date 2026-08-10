@@ -15,19 +15,22 @@
 
     <div class="main-content">
         <div class="main-content-inner">
-            <div class="container">
+            <div class="container-fluid py-4 px-md-4">
                 <div class="row">
                     <div class="col-lg-12">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h3 class="fw-bold" style="color: #0b5a2b;">Expense Categories</h3>
+                        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                            <div>
+                                <h3 class="fw-bold mb-0" style="color: #0b5a2b;">Expense Categories</h3>
+                                <p class="text-muted mb-0 small">Manage and view all expense categories</p>
+                            </div>
                             @can('expense.voucher.create')
-                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal"
-                                    id="reset">
-                                    <i class="bi bi-plus-lg me-1"></i> Create Category
+                                <button type="button" class="btn btn-primary shadow-sm fw-bold d-inline-flex align-items-center" data-toggle="modal" data-target="#exampleModal"
+                                    id="reset" style="height: 38px; border-radius: 6px;">
+                                    <i class="fas fa-plus mr-1" style="margin-right: 5px;"></i> Create Category
                                 </button>
                             @endcan
                         </div>
-                        <div class="border mt-1 shadow rounded" style="background-color: white;">
+                        <div class="border shadow rounded-4" style="background-color: white;">
                             <div class="col-lg-12 m-auto">
                                 <div class="table-responsive mt-4 mb-4 px-3">
                                     <table id="default-datatable" class="table table-striped table-bordered align-middle">

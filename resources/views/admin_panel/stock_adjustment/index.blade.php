@@ -172,8 +172,9 @@
     }
 </style>
 
-<div class="erp-page">
-<div class="container-fluid px-3">
+<div class="main-content">
+    <div class="main-content-inner">
+        <div class="container-fluid px-3 py-3">
 
     {{-- ── Stats Cards Row ── --}}
     <div class="stat-grid">
@@ -387,9 +388,9 @@
         </div>
 
     </div>
-
-</div>
-</div>
+        </div>{{-- /container-fluid --}}
+    </div>{{-- /main-content-inner --}}
+</div>{{-- /main-content --}}
 
 {{-- ══════════════════════════════════════════════════════════════
      POS-STYLE MULTI-VARIANT BATCH ADJUSTMENT MODAL

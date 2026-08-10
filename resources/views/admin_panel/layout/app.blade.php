@@ -270,6 +270,84 @@
                 padding: 5px 8px !important;
             }
         }
+
+        /* Fix Navigation Overlapping Page Content Universally */
+        .rt_nav_header.horizontal-layout {
+            position: relative !important;
+            z-index: 1020 !important;
+            margin-bottom: 0 !important;
+            width: 100% !important;
+        }
+        .rt_nav_header.horizontal-layout .nav-bottom,
+        .rt_nav_header.horizontal-layout.fixed-on-scroll .nav-bottom {
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            z-index: 1020 !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        /* Universal App Page Body - Generous Top Clearance */
+        .app-page-body {
+            position: relative;
+            width: 100%;
+            min-height: calc(100vh - 140px);
+            padding-top: 55px !important;
+            padding-bottom: 60px !important;
+            box-sizing: border-box;
+        }
+
+        .main-content {
+            position: relative !important;
+            width: 100% !important;
+            padding-top: 15px !important;
+            padding-bottom: 40px !important;
+            min-height: auto !important;
+        }
+        .main-content-inner {
+            padding: 10px 0 30px 0 !important;
+        }
+        .sale-report-container,
+        .report-page-container,
+        .cat-page,
+        .brand-page,
+        .erp-page {
+            padding-top: 15px !important;
+        }
+        .app-page-body > .card:first-child,
+        .app-page-body > .container:first-child,
+        .app-page-body > .container-fluid:first-child,
+        .app-page-body > form:first-child {
+            margin-top: 10px;
+        }
+        .page-header {
+            margin-top: 5px !important;
+            margin-bottom: 25px !important;
+        }
+
+        /* Modal & Backdrop Stacking Fix */
+        .modal {
+            z-index: 1060 !important;
+        }
+        .modal-backdrop {
+            z-index: 1040 !important;
+        }
+        .modal-dialog {
+            z-index: 1061 !important;
+            position: relative;
+        }
+        @media (max-width: 991px) {
+            .rt_nav_header.horizontal-layout {
+                position: relative !important;
+            }
+            .app-page-body {
+                padding-top: 35px !important;
+            }
+            .main-content {
+                padding-top: 15px !important;
+            }
+        }
     </style>
 
     @vite(['resources/js/app.js'])
@@ -953,7 +1031,9 @@
             </div>
         </nav>
 
-        @yield('content')
+        <div class="app-page-body">
+            @yield('content')
+        </div>
 
         <footer>
             <div class="footer-area">
@@ -1105,10 +1185,13 @@
                 }
             });
 
-            // Auto-detect freeze: if a click occurs on body but hits nothing interactive, clear overlays
+            // Auto-detect freeze: if a click occurs on body/backdrop with no active modal, clear stuck overlays
             document.body.addEventListener('click', function (e) {
-                if (e.target === document.body || e.target.classList.contains('modal-backdrop')) {
-                    clearStuckOverlays();
+                var openModals = document.querySelectorAll('.modal.show');
+                if (openModals.length === 0) {
+                    if (e.target === document.body || e.target.classList.contains('modal-backdrop')) {
+                        clearStuckOverlays();
+                    }
                 }
             });
 

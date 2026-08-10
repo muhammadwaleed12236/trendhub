@@ -1,498 +1,446 @@
 @extends('admin_panel.layout.app')
 @section('content')
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="{{ asset('assets/vendors/bootstrap-icons/css/bootstrap-icons.min.css') }}">
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
         :root {
-            --primary: #0f172a;
-            --primary-hover: #334155;
-            --secondary: #f1f5f9;
-            --secondary-hover: #e2e8f0;
-            --accent: #2563eb;
-            --accent-hover: #1d4ed8;
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --border: #94a3b8;
-            --border-hover: #64748b;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --danger: #ef4444;
-            --danger-bg: #fef2f2;
-            --success: #10b981;
-            --success-bg: #ecfdf5;
-            --radius-md: 8px;
-            --radius-lg: 12px;
+            --excel-border: #cbd5e1;
+            --excel-header-bg: #1e293b;
+            --excel-header-text: #ffffff;
+            --excel-row-hover: #f1f5f9;
+            --excel-focus: #2563eb;
         }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
+        /* Compact Layout & Card */
+        .voucher-sheet-card {
+            background: #ffffff;
+            border: 1px solid var(--excel-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+            padding: 16px 20px;
+            margin-bottom: 20px;
         }
 
-        /* Layout & Cards */
-        .erp-card {
-            background: var(--surface);
-            border-radius: var(--radius-lg);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--border);
-            padding: 32px 40px;
-            margin-bottom: 24px;
-        }
-
-        .erp-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .erp-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-main);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .erp-title i {
-            color: var(--accent);
-            background: #eff6ff;
-            padding: 8px 12px;
-            border-radius: var(--radius-md);
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-main);
-            margin: 32px 0 20px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .section-title i {
-            color: var(--text-muted);
-            font-size: 1.2rem;
-        }
-        .section-title::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-            margin-left: 8px;
-        }
-
-        /* Form Controls */
-        .form-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-            display: block;
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-        }
-
-        .form-control, .form-select {
-            background-color: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 10px 14px;
-            font-size: 0.95rem;
-            color: var(--text-main);
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.01);
-            width: 100%;
-            appearance: none;
-        }
-        
-        .form-select {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 0.75rem center;
-            background-repeat: no-repeat;
-            background-size: 1em 1em;
-            padding-right: 2.5rem;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-            outline: none;
-        }
-        
-        .form-control:hover:not(:focus):not([readonly]),
-        .form-select:hover:not(:focus):not([readonly]) {
-            border-color: var(--border-hover);
-        }
-
-        .form-control[readonly] {
-            background-color: #f8fafc;
-            color: var(--text-muted);
-            border-color: var(--border);
-            cursor: not-allowed;
-        }
-
-        .form-control::placeholder {
-            color: #94a3b8;
-        }
-
-        /* Status Card (Balance) */
-        .balance-card {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 100%;
-        }
-        .balance-label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-        }
-        .balance-value {
-            font-size: 1.1rem;
+        .sheet-header-title {
+            font-size: 1.15rem;
             font-weight: 700;
-        }
-        .balance-dr .balance-value { color: var(--danger); }
-        .balance-cr .balance-value { color: var(--success); }
-        .balance-dr { background: var(--danger-bg); border-color: #fecaca; }
-        .balance-cr { background: var(--success-bg); border-color: #a7f3d0; }
-
-        /* Buttons */
-        .btn-primary {
-            background-color: var(--accent);
-            color: white;
-            border: none;
-            border-radius: var(--radius-md);
-            padding: 10px 24px;
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-            display: inline-flex;
+            color: #0f172a;
+            display: flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 1px 3px rgba(37,99,235,0.3);
-            cursor: pointer;
-        }
-        .btn-primary:hover {
-            background-color: var(--accent-hover);
-            transform: translateY(-1px);
         }
 
-        .btn-secondary {
-            background-color: var(--surface);
-            color: var(--text-main);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 10px 20px;
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .btn-secondary:hover {
-            background-color: var(--secondary);
-            border-color: var(--border-hover);
-            color: var(--text-main);
+        .section-bar {
+            background: #f8fafc;
+            border-left: 3px solid #2563eb;
+            padding: 4px 10px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #334155;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 10px;
+            margin-top: 14px;
         }
 
-        .btn-outline {
-            background-color: transparent;
-            color: var(--accent);
-            border: 1px dashed var(--border-hover);
-            border-radius: var(--radius-md);
-            padding: 12px 24px;
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        /* Compact Excel Form Inputs */
+        .ex-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            display: block;
+        }
+
+        .ex-input {
+            height: 32px;
+            font-size: 0.83rem;
+            padding: 3px 8px;
+            border: 1px solid var(--excel-border);
+            border-radius: 4px;
+            background-color: #ffffff;
+            color: #0f172a;
             width: 100%;
-            justify-content: center;
-            cursor: pointer;
-            margin-top: 16px;
-        }
-        .btn-outline:hover {
-            background-color: #eff6ff;
-            border-color: var(--accent);
-        }
-        
-        .btn-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: var(--radius-md);
-            background: var(--secondary);
-            color: var(--text-muted);
-            border: 1px solid transparent;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .btn-icon:hover {
-            background: #e2e8f0;
-            color: var(--text-main);
-        }
-        .btn-icon.danger {
-            background: var(--danger-bg);
-            color: var(--danger);
-        }
-        .btn-icon.danger:hover {
-            background: #fee2e2;
+            transition: all 0.15s ease;
         }
 
-        /* Table Design */
-        .table-wrapper {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            overflow: hidden;
+        .ex-input:focus {
+            border-color: var(--excel-focus);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+            background-color: #ffffff;
         }
-        
-        .erp-table {
+
+        .ex-input[readonly] {
+            background-color: #f8fafc;
+            color: #64748b;
+            cursor: not-allowed;
+            border-color: #e2e8f0;
+        }
+
+        select.ex-input {
+            appearance: auto;
+            cursor: pointer;
+        }
+
+        /* Compact Balance Pill */
+        .balance-badge {
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            border-radius: 4px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+        }
+        .balance-dr {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #dc2626;
+        }
+        .balance-cr {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #16a34a;
+        }
+
+        /* Excel-like Table Styling */
+        .excel-table-container {
+            border: 1px solid var(--excel-border);
+            border-radius: 6px;
+            overflow: hidden;
+            background: #ffffff;
+            margin-top: 8px;
+        }
+
+        .excel-table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 0.83rem;
+            margin-bottom: 0;
         }
-        
-        .erp-table th {
-            background-color: var(--secondary);
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            font-weight: 600;
+
+        .excel-table thead th {
+            background-color: #1e293b;
+            color: #ffffff;
+            font-size: 0.74rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 14px 16px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .erp-table td {
-            padding: 12px 16px;
+            letter-spacing: 0.04em;
+            padding: 7px 10px;
+            border: 1px solid #334155;
             vertical-align: middle;
-            border-bottom: 1px solid var(--border);
         }
-        
-        .erp-table tr:last-child td {
-            border-bottom: none;
+
+        .excel-table tbody td {
+            padding: 4px 6px;
+            border: 1px solid var(--excel-border);
+            vertical-align: middle;
+            background-color: #ffffff;
         }
-        
-        .erp-table tr:hover td {
+
+        .excel-table tbody tr:hover td {
             background-color: #f8fafc;
         }
 
-        /* Summary Box */
-        .summary-box-wrapper {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 24px;
-        }
-        .summary-box {
-            background: #f8fafc;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 20px 24px;
-            width: 350px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .summary-label {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-muted);
-        }
-        .summary-value {
-            font-size: 1.5rem;
+        .excel-table .row-number {
             font-weight: 700;
-            color: var(--text-main);
-            border: none;
+            color: #64748b;
+            text-align: center;
+            background-color: #f8fafc;
+            width: 40px;
+            user-select: none;
+        }
+
+        .excel-table .cell-input {
+            height: 28px;
+            font-size: 0.83rem;
+            padding: 2px 6px;
+            border: 1px solid transparent;
+            border-radius: 3px;
             background: transparent;
-            text-align: right;
-            width: 150px;
-            padding: 0;
+            width: 100%;
+            color: #0f172a;
         }
-        .summary-value:focus {
+
+        .excel-table .cell-input:hover {
+            border-color: #cbd5e1;
+            background: #ffffff;
+        }
+
+        .excel-table .cell-input:focus {
+            border-color: var(--excel-focus);
+            background: #ffffff;
             outline: none;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
         }
-        
-        /* Grid spacing */
-        .row-gap-3 { row-gap: 24px; }
-        
-        .text-end { text-align: right !important; }
-        .text-center { text-align: center !important; }
+
+        .excel-table select.cell-input {
+            appearance: auto;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+        }
+
+        .btn-mini-add {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #2563eb;
+            font-size: 0.75rem;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+        .btn-mini-add:hover {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+
+        .btn-mini-del {
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            border: 1px solid #fecaca;
+            background: #fff;
+            color: #ef4444;
+            font-size: 0.75rem;
+            transition: all 0.15s;
+            cursor: pointer;
+        }
+        .btn-mini-del:hover {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #ef4444;
+        }
+
+        /* Add Row Bar */
+        .add-row-bar {
+            padding: 6px 12px;
+            background: #f8fafc;
+            border-top: 1px solid var(--excel-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Summary Total Bar */
+        .total-summary-card {
+            background: #0f172a;
+            color: #ffffff;
+            border-radius: 6px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-width: 280px;
+        }
+
+        .total-summary-value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #38bdf8;
+            background: transparent;
+            border: none;
+            text-align: right;
+            width: 160px;
+            font-family: monospace;
+        }
+        /* Gap helpers for Bootstrap 4 */
+        .gap-1 { gap: 6px !important; }
+        .gap-2 { gap: 10px !important; }
+        .gap-3 { gap: 16px !important; }
+        .d-flex.gap-1 > * + * { margin-left: 6px; }
+        .d-flex.gap-2 > * + * { margin-left: 10px; }
+        .d-flex.gap-3 > * + * { margin-left: 16px; }
+        .me-1 { margin-right: 4px !important; }
+        .me-2 { margin-right: 8px !important; }
+        .ms-1 { margin-left: 4px !important; }
+        .ms-2 { margin-left: 8px !important; }
     </style>
 
     <div class="main-content">
-        <div class="main-content-inner" style="padding: 10px;">
-            <div class="container-fluid p-0" style="max-width: 1200px; margin: 0 auto;">
+        <div class="main-content-inner">
+            <div class="container-fluid py-3 px-md-4">
 
+                {{-- Alert Messages --}}
                 @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" style="border-radius: 10px;">
+                    <div class="alert alert-success alert-dismissible fade show py-2 px-3 small border-0 shadow-sm rounded-3 mb-3">
                         <i class="bi bi-check-circle me-1"></i> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" style="padding: 0.75rem;"></button>
                     </div>
                 @endif
                 @if (session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" style="border-radius: 10px;">
+                    <div class="alert alert-danger alert-dismissible fade show py-2 px-3 small border-0 shadow-sm rounded-3 mb-3">
                         <i class="bi bi-exclamation-triangle me-1"></i> {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" style="padding: 0.75rem;"></button>
                     </div>
                 @endif
 
                 <form action="{{ route('store_expense_vochers') }}" method="POST" id="expenseForm">
                     @csrf
 
-                    <div class="erp-card">
-                        <!-- Header -->
-                        <div class="erp-header">
-                            <h2 class="erp-title">
-                                <i class="bi bi-wallet2"></i> Expense Voucher
-                            </h2>
-                            <div class="d-flex gap-3">
-                                <a href="{{ route('all_expense_vochers') }}" class="btn-secondary">
-                                    <i class="bi bi-list-ul"></i> All Expenses
+                    <div class="voucher-sheet-card">
+
+                        {{-- Action Top Bar --}}
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-2">
+                            <div class="sheet-header-title">
+                                <i class="bi bi-wallet2 text-primary"></i> Expense Voucher Entry
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <a href="{{ route('all_expense_vochers') }}" class="btn btn-outline-secondary btn-sm fw-bold d-inline-flex align-items-center" style="height: 32px; font-size: 0.8rem; padding: 4px 12px; border-radius: 5px; margin-right: 12px;">
+                                    <i class="bi bi-list-ul me-1" style="margin-right: 5px;"></i> All Expenses
                                 </a>
-                                <button type="submit" class="btn-primary">
-                                    <i class="bi bi-check2"></i> Save Voucher
+                                <button type="submit" class="btn btn-primary btn-sm fw-bold shadow-sm d-inline-flex align-items-center" style="height: 32px; font-size: 0.8rem; padding: 4px 16px; border-radius: 5px;">
+                                    <i class="bi bi-check2 me-1" style="margin-right: 5px;"></i> Save Voucher
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Row 1: Voucher Info -->
-                        <div class="section-title">
-                            <i class="bi bi-info-circle"></i> Voucher Details
-                        </div>
-                        <div class="row row-gap-3 mb-4">
-                            <div class="col-md-3 col-lg-2">
-                                <label class="form-label">Voucher No</label>
-                                <input type="text" class="form-control" name="evid" value="{{ $nextRvid }}" readonly>
+                        {{-- Section 1: Header / Voucher Info --}}
+                        <div class="section-bar">1. Voucher &amp; Source Details</div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6 col-md-2 col-lg-2">
+                                <label class="ex-label">Voucher #</label>
+                                <input type="text" class="ex-input fw-bold text-primary font-monospace" name="evid" value="{{ $nextRvid }}" readonly>
                             </div>
-                            <div class="col-md-3 col-lg-2">
-                                <label class="form-label">Entry Date</label>
-                                <input type="date" name="entry_date" class="form-control" value="{{ now()->toDateString() }}">
+                            <div class="col-6 col-md-2 col-lg-2">
+                                <label class="ex-label">Date</label>
+                                <input type="date" name="entry_date" class="ex-input" value="{{ now()->toDateString() }}" required>
                             </div>
-                            <div class="col-md-6 col-lg-3">
-                                <label class="form-label">Reference / Cheque #</label>
-                                <input type="text" name="ref_no_header" class="form-control" placeholder="e.g. Chq-848492">
+                            <div class="col-6 col-md-2 col-lg-2">
+                                <label class="ex-label">Ref / Cheque #</label>
+                                <input type="text" name="ref_no_header" class="ex-input" placeholder="e.g. Chq-1029">
                             </div>
-                            <div class="col-md-12 col-lg-5">
-                                <label class="form-label">Global Remarks <span class="text-lowercase text-muted fw-normal" style="text-transform:none;">(optional)</span></label>
-                                <input type="text" name="remarks" class="form-control" id="remarks" placeholder="General description of payment...">
-                            </div>
-                        </div>
-
-                        <!-- Row 2: Paid From -->
-                        <div class="section-title">
-                            <i class="bi bi-bank"></i> Paid From (Source)
-                        </div>
-                        <div class="row row-gap-3 mb-5 align-items-end">
-                            <div class="col-md-4 col-lg-3">
-                                <label class="form-label">Payment Source Type</label>
-                                <select name="vendor_type" class="form-select" id="partyType">
-                                    <option value="" disabled selected>Select Type</option>
+                            <div class="col-6 col-md-3 col-lg-3">
+                                <label class="ex-label">Payment Head (Source)</label>
+                                <select name="vendor_type" class="ex-input" id="partyType" required>
+                                    <option value="" disabled selected>Select Source Head</option>
                                     @foreach ($AccountHeads as $head)
                                         <option value="{{ $head->id }}">{{ $head->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-5 col-lg-4">
-                                <label class="form-label">Account / Party</label>
-                                <select name="vendor_id" class="form-select" id="partyId" required>
+                            <div class="col-12 col-md-3 col-lg-3">
+                                <label class="ex-label">Account / Paid From</label>
+                                <select name="vendor_id" class="ex-input" id="partyId" required>
                                     <option disabled selected>Select Account</option>
                                 </select>
                             </div>
-                            <div class="col-md-3 col-lg-2">
-                                <label class="form-label">Account Code / Phone</label>
-                                <input type="text" name="tel" id="tel" class="form-control" readonly>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6 col-md-3 col-lg-2">
+                                <label class="ex-label">Account Code</label>
+                                <input type="text" name="tel" id="tel" class="ex-input font-monospace" readonly placeholder="Auto Code">
                             </div>
-                            <div class="col-md-12 col-lg-3">
-                                <div id="balanceContainer" class="balance-card">
-                                    <span class="balance-label">Current Balance</span>
-                                    <span id="balanceDisplay" class="balance-value">0.00 <span style="font-size: 0.8em">Dr</span></span>
+                            <div class="col-6 col-md-3 col-lg-3">
+                                <label class="ex-label">Account Balance</label>
+                                <div id="balanceContainer" class="balance-badge">
+                                    <span style="font-size: 0.72rem; color: #64748b;">Current:</span>
+                                    <span id="balanceDisplay">0.00 Dr</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Expense Allocation -->
-                        <div class="section-title">
-                            <i class="bi bi-list-columns-reverse"></i> Expense Allocation
-                        </div>
-                        <div class="table-wrapper">
-                            <table class="erp-table" id="voucherTable">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 35%;">Expense Category</th>
-                                        <th style="width: 40%;">Remarks / Description</th>
-                                        <th style="width: 18%;" class="text-end">Amount (Rs.)</th>
-                                        <th style="width: 7%;" class="text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <select name="row_account_id[]" class="form-select rowAccountCategory" required>
-                                                    <option value="" disabled selected>Select Category</option>
-                                                    @foreach ($expenseCategories as $cat)
-                                                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <a href="javascript:void(0)" data-toggle="modal" data-target="#newExpenseCategoryModal" class="btn-icon" title="Add New Category">
-                                                    <i class="bi bi-plus-lg"></i>
-                                                </a>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <input type="text" name="narration_text[]" class="form-control" placeholder="e.g. Rent payment, office repair...">
-                                            <input type="hidden" name="narration_id[]" value="">
-                                        </td>
-                                        <td>
-                                            <input type="number" name="amount[]" step="0.01" class="form-control text-end fw-bold amount" placeholder="0.00" required>
-                                        </td>
-                                        <td class="text-center">
-                                            <button type="button" class="btn-icon danger removeRow" title="Remove">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <button type="button" class="btn-outline" id="addNewRow">
-                            <i class="bi bi-plus-circle"></i> Add Another Expense Category
-                        </button>
-
-                        <div class="summary-box-wrapper">
-                            <div class="summary-box">
-                                <span class="summary-label">Total Expense Amount</span>
-                                <div class="d-flex align-items-center">
-                                    <span class="text-muted" style="font-weight: 600; font-size: 1.2rem; margin-right: 4px;">Rs.</span>
-                                    <input type="text" name="total_amount" class="summary-value" id="totalAmount" readonly value="0.00">
-                                </div>
+                            <div class="col-12 col-md-6 col-lg-7">
+                                <label class="ex-label">Global Remarks / Description</label>
+                                <input type="text" name="remarks" class="ex-input" id="remarks" placeholder="Description of expense payment...">
                             </div>
                         </div>
 
-                        {{-- Hidden fields --}}
+                        {{-- Section 2: Excel Expense Grid --}}
+                        <div class="section-bar d-flex justify-content-between align-items-center">
+                            <span>2. Expense Allocation (Excel Grid)</span>
+                            <span class="text-muted text-lowercase font-normal" style="font-size: 0.72rem; font-weight: normal;">Press Enter in amount to add line</span>
+                        </div>
+
+                        <div class="excel-table-container">
+                            <div class="table-responsive">
+                                <table class="excel-table" id="voucherTable">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40px;" class="text-center">#</th>
+                                            <th style="width: 32%;">Expense Category</th>
+                                            <th style="width: 44%;">Remarks / Description</th>
+                                            <th style="width: 18%;" class="text-end">Amount (PKR)</th>
+                                            <th style="width: 45px;" class="text-center">Del</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="row-number">1</td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <select name="row_account_id[]" class="cell-input rowAccountCategory" required>
+                                                        <option value="" disabled selected>-- Select Category --</option>
+                                                        @foreach ($expenseCategories as $cat)
+                                                            <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <a href="javascript:void(0)" data-toggle="modal" data-target="#newExpenseCategoryModal" class="btn-mini-add" title="Quick Add Category">
+                                                        <i class="bi bi-plus-lg"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <input type="text" name="narration_text[]" class="cell-input" placeholder="e.g. Utility bill, stationery, repair...">
+                                                <input type="hidden" name="narration_id[]" value="">
+                                            </td>
+                                            <td>
+                                                <input type="number" name="amount[]" step="0.01" class="cell-input text-end fw-bold amount font-monospace" placeholder="0.00" required>
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn-mini-del removeRow" title="Delete Row">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="add-row-bar">
+                                <button type="button" class="btn btn-outline-primary btn-sm fw-bold d-inline-flex align-items-center" id="addNewRow" style="height: 28px; font-size: 0.78rem; padding: 2px 10px; border-radius: 4px;">
+                                    <i class="bi bi-plus-circle me-1"></i> Add Another Row (Enter)
+                                </button>
+                                <span class="text-muted small" style="font-size: 0.74rem;">Rows: <strong id="rowCountDisplay">1</strong></span>
+                            </div>
+                        </div>
+
+                        {{-- Bottom Total & Summary Bar --}}
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top flex-wrap gap-2">
+                            <div class="text-muted small">
+                                <i class="bi bi-info-circle me-1" style="margin-right: 5px;"></i> Please verify amounts before saving the voucher.
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="total-summary-card shadow-sm" style="margin-right: 16px;">
+                                    <span style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase;">Total Expense</span>
+                                    <div class="d-flex align-items-center" style="margin-left: 12px;">
+                                        <span style="color: #94a3b8; font-size: 0.9rem; margin-right: 6px;">Rs.</span>
+                                        <input type="text" name="total_amount" class="total-summary-value" id="totalAmount" readonly value="0.00">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary fw-bold shadow-sm d-inline-flex align-items-center" style="height: 44px; padding: 0 24px; border-radius: 6px; font-size: 0.9rem;">
+                                    <i class="bi bi-check-circle-fill me-2" style="margin-right: 8px;"></i> Save Expense
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Hidden dummy fields for controller compatibility --}}
                         <input type="hidden" name="reference_no[]" value="">
                         <input type="hidden" name="discount_value[]" value="0">
                         <input type="hidden" name="rate[]" value="0">
@@ -502,40 +450,44 @@
             </div>
         </div>
     </div>
-@endsection
 
-    <!-- New Expense Category Modal -->
-    <div class="modal fade" id="newExpenseCategoryModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title fs-6">Create New Expense Category</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- Quick Add Expense Category Modal -->
+    <div class="modal fade" id="newExpenseCategoryModal" tabindex="-1" role="dialog" aria-labelledby="newExpenseCategoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header bg-primary text-white px-4 py-3">
+                    <h5 class="modal-title fw-bold text-white mb-0" id="newExpenseCategoryModalLabel">
+                        <i class="bi bi-folder-plus me-1"></i> Create Expense Category
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.9; font-size: 1.5rem;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
                 <form id="newExpenseCategoryForm">
                     @csrf
-                    <div class="modal-body p-4">
+                    <div class="modal-body p-4 text-start">
                         <div class="form-group mb-3">
-                            <label class="form-label text-secondary fw-bold" style="font-size: 12px;">CATEGORY NAME <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control" placeholder="e.g. Utility Bills, Travel" required>
+                            <label class="ex-label">Category Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="ex-input" placeholder="e.g. Office Stationery, Utility Bills" required style="height: 38px;">
                         </div>
                         <div class="form-group mb-3">
-                            <label class="form-label text-secondary fw-bold" style="font-size: 12px;">CODE (Optional)</label>
-                            <input type="text" name="code" class="form-control" placeholder="e.g. UTIL-01">
+                            <label class="ex-label">Category Code (Optional)</label>
+                            <input type="text" name="code" class="ex-input font-monospace" placeholder="e.g. EXP-01" style="height: 38px;">
                         </div>
                         <div class="form-group mb-0">
-                            <label class="form-label text-secondary fw-bold" style="font-size: 12px;">DESCRIPTION</label>
-                            <textarea name="description" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
+                            <label class="ex-label">Description (Optional)</label>
+                            <textarea name="description" class="form-control" rows="2" placeholder="Notes about this expense category..." style="font-size: 0.85rem; border-color: #cbd5e1;"></textarea>
                         </div>
                     </div>
-                    <div class="modal-footer bg-light">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="btnSaveNewCategory" style="background:var(--accent); color:white; padding:8px 20px; border-radius:8px; border:none;">Save Category</button>
+                    <div class="modal-footer bg-light border-top px-4 py-3">
+                        <button type="button" class="btn btn-secondary btn-sm px-3" data-dismiss="modal" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm" id="btnSaveNewCategory">Save Category</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+@endsection
 
 @section('js')
     <script>
@@ -549,7 +501,7 @@
 
             function loadPartyList(type) {
                 let $select = $('#partyId');
-                $select.html('<option disabled selected>Loading...</option>');
+                $select.html('<option disabled selected>Loading accounts...</option>');
                 $('#tel').val('');
                 updateBalance(0);
 
@@ -594,14 +546,23 @@
                 let formatted = Math.abs(bal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 if (bal >= 0) {
                     $container.removeClass('balance-cr').addClass('balance-dr');
-                    $badge.html(formatted + ' <span style="font-size: 0.8em">Dr</span>');
+                    $badge.html(formatted + ' <span style="font-size: 0.75em">Dr</span>');
                 } else {
                     $container.removeClass('balance-dr').addClass('balance-cr');
-                    $badge.html(formatted + ' <span style="font-size: 0.8em">Cr</span>');
+                    $badge.html(formatted + ' <span style="font-size: 0.75em">Cr</span>');
                 }
             }
 
-            // Totals Calculation
+            // Totals Calculation & Row Numbers
+            function updateRowIndices() {
+                let count = 0;
+                $('#voucherTable tbody tr').each(function(index) {
+                    $(this).find('.row-number').text(index + 1);
+                    count++;
+                });
+                $('#rowCountDisplay').text(count);
+            }
+
             function calculateTotal() {
                 let total = 0;
                 $('.amount').each(function() {
@@ -619,41 +580,45 @@
                 let optionsHtml = $('.rowAccountCategory').first().html();
                 let newRow = `
                 <tr>
+                    <td class="row-number">1</td>
                     <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <select name="row_account_id[]" class="form-select rowAccountCategory" required>
+                        <div class="d-flex align-items-center gap-1">
+                            <select name="row_account_id[]" class="cell-input rowAccountCategory" required>
                                 ${optionsHtml}
                             </select>
-                            <a href="javascript:void(0)" data-toggle="modal" data-target="#newExpenseCategoryModal" class="btn-icon" title="Add New Category">
+                            <a href="javascript:void(0)" data-toggle="modal" data-target="#newExpenseCategoryModal" class="btn-mini-add" title="Quick Add Category">
                                 <i class="bi bi-plus-lg"></i>
                             </a>
                         </div>
                     </td>
                     <td>
-                        <input type="text" name="narration_text[]" class="form-control" placeholder="e.g. Rent payment, office repair...">
+                        <input type="text" name="narration_text[]" class="cell-input" placeholder="e.g. Utility bill, stationery, repair...">
                         <input type="hidden" name="narration_id[]" value="">
                     </td>
                     <td>
-                        <input type="number" name="amount[]" step="0.01" class="form-control text-end fw-bold amount" placeholder="0.00" required>
+                        <input type="number" name="amount[]" step="0.01" class="cell-input text-end fw-bold amount font-monospace" placeholder="0.00" required>
                     </td>
                     <td class="text-center">
-                        <button type="button" class="btn-icon danger removeRow" title="Remove"><i class="bi bi-trash"></i></button>
+                        <button type="button" class="btn-mini-del removeRow" title="Delete Row"><i class="bi bi-trash"></i></button>
                     </td>
                 </tr>
             `;
                 $('#voucherTable tbody').append(newRow);
                 $('#voucherTable tbody tr:last-child .rowAccountCategory').val('');
+                updateRowIndices();
+                $('#voucherTable tbody tr:last-child .rowAccountCategory').focus();
             });
 
             // Remove Row
             $(document).on('click', '.removeRow', function() {
                 if ($('#voucherTable tbody tr').length > 1) {
                     $(this).closest('tr').remove();
+                    updateRowIndices();
                     calculateTotal();
                 }
             });
 
-            // Enter key adds new row
+            // Enter key on amount adds new row and focuses it
             $(document).on('keypress', '.amount', function(e) {
                 if (e.which === 13) {
                     e.preventDefault();
@@ -678,7 +643,6 @@
                             $('#newExpenseCategoryModal').modal('hide');
                             $('#newExpenseCategoryForm')[0].reset();
                             
-                            // Append new option to all existing dropdowns and select it on the last one or empty ones
                             let newCat = response.category;
                             let newOptionHtml = `<option value="${newCat.id}">${newCat.name}</option>`;
                             $('.rowAccountCategory').each(function() {
