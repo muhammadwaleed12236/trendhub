@@ -134,13 +134,13 @@ export default function DashboardPage() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {orders.map((order) => (
                       <div
                         key={order.id}
-                        className="border border-gray-200 rounded-sm overflow-hidden"
+                        className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow transition-shadow duration-200"
                       >
-                        <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex flex-wrap justify-between items-center gap-4">
+                        <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 flex flex-wrap justify-between items-center gap-4">
                           <div>
                             <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">
                               Order Number
@@ -177,20 +177,22 @@ export default function DashboardPage() {
                             </span>
                           </div>
                         </div>
-                        <div className="px-6 py-4 space-y-4">
+                        <div className="px-4 py-4 sm:px-6 sm:py-4 space-y-4">
                           {order.items?.map((item) => (
-                            <div key={item.id} className="flex justify-between items-center">
-                              <div>
+                            <div key={item.id} className="flex justify-between items-center gap-4">
+                              <div className="flex-1 min-w-0">
                                 <p className="font-semibold text-sm">
                                   {item.product_name}
                                 </p>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-gray-500 mt-0.5">
                                   Qty: {item.quantity} 
                                   {item.size && ` | Size: ${item.size}`}
                                   {item.color && ` | Color: ${item.color}`}
                                 </p>
                               </div>
-                              <p className="font-bold text-sm">Rs. {item.total}</p>
+                              <div className="flex-shrink-0 text-right pl-2">
+                                <p className="font-bold text-sm whitespace-nowrap">Rs. {item.total}</p>
+                              </div>
                             </div>
                           ))}
                         </div>

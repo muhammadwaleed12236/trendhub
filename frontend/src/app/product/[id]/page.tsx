@@ -472,27 +472,37 @@ export default function ProductDetail({ params }: ProductPageProps) {
           )}
 
           {/* Action Row: Quantity + Add To Cart + Wishlist */}
-          <div className="flex gap-4 items-center">
-            {/* Quantity Selector - Pill Shape */}
-            <div className={`flex items-center border border-gray-200 rounded-full py-1.5 ${
-              activeStock <= 0 ? "opacity-40 pointer-events-none" : ""
-            }`}>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
+            <div className="flex gap-3 w-full sm:w-auto">
+              {/* Quantity Selector - Pill Shape */}
+              <div className={`flex flex-1 sm:flex-none justify-between items-center border border-gray-200 rounded-full py-1.5 ${
+                activeStock <= 0 ? "opacity-40 pointer-events-none" : ""
+              }`}>
+                <button
+                  disabled={activeStock <= 0}
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="px-4 py-2 text-gray-400 hover:text-black transition-colors cursor-pointer"
+                >
+                  <Minus size={12} />
+                </button>
+                <span className="px-2 text-sm text-black font-bold font-mono min-w-[20px] text-center">
+                  {activeStock <= 0 ? 0 : quantity}
+                </span>
+                <button
+                  disabled={activeStock <= 0 || quantity >= activeStock}
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="px-4 py-2 text-gray-400 hover:text-black transition-colors cursor-pointer disabled:opacity-30"
+                >
+                  <Plus size={12} />
+                </button>
+              </div>
+
+              {/* Wishlist Button - Circular (Mobile only) */}
               <button
-                disabled={activeStock <= 0}
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="px-4 py-2 text-gray-400 hover:text-black transition-colors cursor-pointer"
+                onClick={() => toggleWishlist(product)}
+                className="flex sm:hidden border border-gray-200 p-4 rounded-full hover:border-black text-gray-400 hover:text-black transition-colors cursor-pointer items-center justify-center shadow-sm"
               >
-                <Minus size={12} />
-              </button>
-              <span className="px-2 text-sm text-black font-bold font-mono min-w-[20px] text-center">
-                {activeStock <= 0 ? 0 : quantity}
-              </span>
-              <button
-                disabled={activeStock <= 0 || quantity >= activeStock}
-                onClick={() => setQuantity(quantity + 1)}
-                className="px-4 py-2 text-gray-400 hover:text-black transition-colors cursor-pointer disabled:opacity-30"
-              >
-                <Plus size={12} />
+                <Heart size={18} fill={isInWishlist ? "#ff3b30" : "none"} stroke={isInWishlist ? "#ff3b30" : "currentColor"} />
               </button>
             </div>
 
@@ -504,7 +514,7 @@ export default function ProductDetail({ params }: ProductPageProps) {
                 addItem(product, quantity, selectedSize, selectedColor);
                 window.dispatchEvent(new CustomEvent("open-cart"));
               }}
-              className={`flex-1 text-center py-4 text-xs font-sans uppercase tracking-[0.2em] font-semibold transition-all duration-300 rounded-full cursor-pointer shadow-md hover:shadow-lg ${
+              className={`w-full sm:flex-1 text-center py-4 text-xs font-sans uppercase tracking-[0.2em] font-semibold transition-all duration-300 rounded-full cursor-pointer shadow-md hover:shadow-lg ${
                 activeStock <= 0
                   ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
                   : "bg-black text-white hover:bg-neutral-800"
@@ -513,10 +523,10 @@ export default function ProductDetail({ params }: ProductPageProps) {
               {activeStock <= 0 ? "Out of Stock" : "Add to Cart"}
             </button>
 
-            {/* Wishlist Button - Circular */}
+            {/* Wishlist Button - Circular (Desktop only) */}
             <button
               onClick={() => toggleWishlist(product)}
-              className="border border-gray-200 p-4 rounded-full hover:border-black text-gray-400 hover:text-black transition-colors cursor-pointer flex items-center justify-center shadow-sm hover:shadow-md"
+              className="hidden sm:flex border border-gray-200 p-4 rounded-full hover:border-black text-gray-400 hover:text-black transition-colors cursor-pointer items-center justify-center shadow-sm hover:shadow-md"
             >
               <Heart size={18} fill={isInWishlist ? "#ff3b30" : "none"} stroke={isInWishlist ? "#ff3b30" : "currentColor"} />
             </button>

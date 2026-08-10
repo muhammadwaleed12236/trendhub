@@ -258,33 +258,33 @@ export default function Checkout() {
               />
             </div>
 
-            <div className="sm:col-span-2 space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-black block">Payment Mode</span>
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("COD")}
-                  className={`flex-1 border py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
-                    paymentMethod === "COD"
-                      ? "border-black bg-black text-white font-bold"
-                      : "border-gray-200 text-gray-500 hover:border-black"
-                  }`}
-                >
-                  Cash on Delivery
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("Easypaisa")}
-                  className={`flex-1 border py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
-                    paymentMethod === "Easypaisa"
-                      ? "border-black bg-black text-white font-bold"
-                      : "border-gray-200 text-gray-500 hover:border-black"
-                  }`}
-                >
-                  Easypaisa
-                </button>
-              </div>
-            </div>
+             <div className="sm:col-span-2 space-y-3">
+               <span className="text-xs font-bold uppercase tracking-wider text-black block">Payment Mode</span>
+               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                 <button
+                   type="button"
+                   onClick={() => setPaymentMethod("COD")}
+                   className={`w-full sm:flex-1 border py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
+                     paymentMethod === "COD"
+                       ? "border-black bg-black text-white font-bold"
+                       : "border-gray-200 text-gray-500 hover:border-black"
+                   }`}
+                 >
+                   Cash on Delivery
+                 </button>
+                 <button
+                   type="button"
+                   onClick={() => setPaymentMethod("Easypaisa")}
+                   className={`w-full sm:flex-1 border py-3 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
+                     paymentMethod === "Easypaisa"
+                       ? "border-black bg-black text-white font-bold"
+                       : "border-gray-200 text-gray-500 hover:border-black"
+                   }`}
+                 >
+                   Easypaisa
+                 </button>
+               </div>
+             </div>
 
             {paymentMethod === "Easypaisa" && (
               <div className="sm:col-span-2 border border-emerald-100 bg-emerald-50/30 p-6 space-y-6 rounded-lg animate-fadeIn">
@@ -382,7 +382,7 @@ export default function Checkout() {
         </form>
 
         {/* Right Summary Panel */}
-        <div className="lg:col-span-5 bg-gray-50 p-8 border border-gray-100 rounded-lg h-fit space-y-6">
+        <div className="lg:col-span-5 bg-gray-50 p-4 sm:p-8 border border-gray-100 rounded-lg h-fit space-y-6">
           <h4 className="font-serif text-lg tracking-wider uppercase font-semibold text-black">ORDER SUMMARY</h4>
           
           {/* Items */}
@@ -432,7 +432,7 @@ export default function Checkout() {
                     value={promoCode}
                     onChange={(e) => setPromoCode(e.target.value)}
                     placeholder="Promo code"
-                    className="flex-1 border border-gray-200 px-3 py-2 text-xs focus:outline-none focus:border-black transition-colors"
+                    className="flex-1 min-w-0 border border-gray-200 px-3 py-2 text-xs focus:outline-none focus:border-black transition-colors"
                   />
                   <button
                     type="button"

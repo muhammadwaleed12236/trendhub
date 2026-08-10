@@ -16,6 +16,8 @@ function ShopCatalog() {
   const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get("category_id") || "");
   const [selectedTag, setSelectedTag] = useState<string>(searchParams.get("promo_tag") || "");
   const [searchQuery, setSearchQuery] = useState<string>(searchParams.get("search") || "");
+  const [selectedSize, setSelectedSize] = useState<string>(searchParams.get("size") || "");
+  const [selectedColor, setSelectedColor] = useState<string>(searchParams.get("color") || "");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -24,6 +26,8 @@ function ShopCatalog() {
     setSelectedCategory(searchParams.get("category_id") || "");
     setSelectedTag(searchParams.get("promo_tag") || "");
     setSearchQuery(searchParams.get("search") || "");
+    setSelectedSize(searchParams.get("size") || "");
+    setSelectedColor(searchParams.get("color") || "");
   }, [searchParams]);
 
   // Fetch Categories
@@ -37,12 +41,14 @@ function ShopCatalog() {
 
   // Fetch Products based on filters
   const { data: productsData, isLoading: loadingProducts } = useQuery({
-    queryKey: ["shop-products", selectedCategory, selectedTag, searchQuery],
+    queryKey: ["shop-products", selectedCategory, selectedTag, searchQuery, selectedSize, selectedColor],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (selectedCategory) params.append("category_id", selectedCategory);
       if (selectedTag) params.append("promo_tag", selectedTag);
       if (searchQuery) params.append("search", searchQuery);
+      if (selectedSize) params.append("size", selectedSize);
+      if (selectedColor) params.append("color", selectedColor);
 
       const res = await api.get(`/products?${params.toString()}`);
       return res.data?.data?.data as Product[] || [];
@@ -68,6 +74,8 @@ function ShopCatalog() {
     setSelectedCategory("");
     setSelectedTag("");
     setSearchQuery("");
+    setSelectedSize("");
+    setSelectedColor("");
     router.push("/shop");
   };
 
@@ -92,12 +100,12 @@ function ShopCatalog() {
             <SlidersHorizontal size={14} />
             Filters {isFilterOpen ? "Close" : "Open"}
           </button>
-          {(selectedCategory || selectedTag || searchQuery) && (
+          {(selectedCategory || selectedTag || searchQuery || selectedSize || selectedColor) && (
             <button
               onClick={clearFilters}
               className="text-[11px] uppercase tracking-widest font-bold text-gray-400 hover:text-black transition-colors"
             >
-              Clear All ({[selectedCategory, selectedTag, searchQuery].filter(Boolean).length})
+              Clear All ({[selectedCategory, selectedTag, searchQuery, selectedSize, selectedColor].filter(Boolean).length})
             </button>
           )}
         </div>
@@ -120,11 +128,11 @@ function ShopCatalog() {
       </div>
 
       {/* Main Grid area with filters sidebar */}
-      <div className="flex gap-10">
+      <div className="flex flex-col lg:flex-row gap-10">
         
         {/* Sidebar Filters */}
         {isFilterOpen && (
-          <aside className="w-64 flex-shrink-0 space-y-8 animate-fadeIn font-sans hidden lg:block border-r border-gray-100 pr-8">
+          <aside className="w-full lg:w-64 flex-shrink-0 space-y-8 animate-fadeIn font-sans border-b lg:border-b-0 lg:border-r border-gray-100 pb-6 lg:pb-0 pr-0 lg:pr-8">
             {/* Category Filter */}
             <div className="space-y-3">
               <h4 className="text-[11px] font-bold uppercase tracking-widest text-black">Categories</h4>
@@ -164,6 +172,80 @@ function ShopCatalog() {
                     }`}
                   >
                     {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Size Filter */}
+            <div className="space-y-3 border-t border-gray-100 pt-6">
+              <h4 className="text-[11px] font-bold uppercase tracking-widest text-black">Sizes</h4>
+              <div className="flex flex-wrap gap-2">
+                {["S", "M", "L", "XL", "XXL"].map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(selectedSize === size ? "" : size)}
+                    className={`w-9 h-9 flex items-center justify-center border text-[11px] font-bold uppercase transition-all duration-200 cursor-pointer ${
+                      selectedSize === size
+                        ? "border-black bg-black text-white"
+                        : "border-gray-200 text-gray-500 hover:border-black hover:text-black"
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Color Filter */}
+            <div className="space-y-3 border-t border-gray-100 pt-6">
+              <h4 className="text-[11px] font-bold uppercase tracking-widest text-black">Colors</h4>
+              <div className="grid grid-cols-4 gap-x-2 gap-y-3.5">
+                {[
+                  { name: "Black", code: "#000000" },
+                  { name: "White", code: "#ffffff", border: true },
+                  { name: "Grey", code: "#808080" },
+                  { name: "Blue", code: "#1e40af" },
+                  { name: "Red", code: "#dc2626" },
+                  { name: "Green", code: "#16a34a" },
+                  { name: "Brown", code: "#78350f" },
+                  { name: "Pink", code: "#db2777" },
+                  { name: "Yellow", code: "#eab308" },
+                  { name: "Beige", code: "#f5f5dc", border: true }
+                ].map((color) => (
+                  <button
+                    key={color.name}
+                    onClick={() => setSelectedColor(selectedColor === color.name ? "" : color.name)}
+                    className="group flex flex-col items-center gap-1 cursor-pointer focus:outline-none"
+                    title={color.name}
+                  >
+                    <div
+                      className={`w-7 h-7 rounded-full transition-transform duration-200 relative flex items-center justify-center ${
+                        color.border ? "border border-gray-300" : ""
+                      } ${
+                        selectedColor === color.name
+                          ? "scale-110 ring-2 ring-offset-2 ring-black"
+                          : "group-hover:scale-105"
+                      }`}
+                      style={{ backgroundColor: color.code }}
+                    >
+                      {selectedColor === color.name && (
+                        <span
+                          className={`text-[10px] font-bold ${
+                            color.name === "White" || color.name === "Beige" || color.name === "Yellow"
+                              ? "text-black"
+                              : "text-white"
+                          }`}
+                        >
+                          ✓
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-[9px] uppercase tracking-wider text-gray-400 group-hover:text-black transition-colors ${
+                      selectedColor === color.name ? "text-black font-semibold" : ""
+                    }`}>
+                      {color.name}
+                    </span>
                   </button>
                 ))}
               </div>

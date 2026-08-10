@@ -37,6 +37,24 @@ class ProductApiController extends Controller
         if ($request->has('promo_tag') && $request->promo_tag != '') {
             $query->where('promo_tag', $request->promo_tag);
         }
+
+        // Filter by color
+        if ($request->has('color') && $request->color != '') {
+            $color = $request->color;
+            $query->where(function($q) use ($color) {
+                $q->where('color', 'like', '%"color":"' . $color . '"%')
+                  ->orWhere('color', 'like', '%"color": "' . $color . '"%');
+            });
+        }
+
+        // Filter by size
+        if ($request->has('size') && $request->size != '') {
+            $size = $request->size;
+            $query->where(function($q) use ($size) {
+                $q->where('color', 'like', '%"size":"' . $size . '"%')
+                  ->orWhere('color', 'like', '%"size": "' . $size . '"%');
+            });
+        }
         
         // Homepage only filter
         if ($request->has('show_on_homepage') && $request->show_on_homepage == 1) {
