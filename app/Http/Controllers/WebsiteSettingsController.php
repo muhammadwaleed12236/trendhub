@@ -10,8 +10,11 @@ class WebsiteSettingsController extends Controller
 {
     public function index()
     {
-        if (!auth()->user()->hasPermissionTo('website-settings.view')) {
-            abort(403, 'Unauthorized action. You do not have permission to view Website Settings.');
+        $user = auth()->user();
+        if ($user && !$user->hasRole(['Super Admin', 'superAdmin', 'admin'])) {
+            if (!$user->can('website-settings.view')) {
+                abort(403, 'Unauthorized action. You do not have permission to view Website Settings.');
+            }
         }
 
         $settings = Setting::where('group', 'website')->pluck('value', 'key')->toArray();
@@ -40,8 +43,12 @@ class WebsiteSettingsController extends Controller
             'store_locator_map_iframe' => 'nullable|string',
             'store_locator_locations' => 'nullable|string',
         ]);
+
+        $user = auth()->user();
+        $isAdmin = $user && $user->hasRole(['Super Admin', 'superAdmin', 'admin']);
+
         // 1. Check Edit/Update Permission generally
-        if (!auth()->user()->hasAnyPermission(['website-settings.edit', 'website-settings.update'])) {
+        if (!$isAdmin && !$user->canAny(['website-settings.edit', 'website-settings.update'])) {
             abort(403, 'Unauthorized action. You do not have permission to edit or update Website Settings.');
         }
 
@@ -50,7 +57,7 @@ class WebsiteSettingsController extends Controller
                     $request->hasFile('home_hero_video') || $request->hasFile('home_hero_image') || 
                     $request->hasFile('easypaisa_qr_code') || $request->hasFile('store_locator_banner_image');
 
-        if ($hasFiles && !auth()->user()->hasPermissionTo('website-settings.upload_manage')) {
+        if ($hasFiles && !$isAdmin && !$user->can('website-settings.upload_manage')) {
             return redirect()->back()->with('error', 'Unauthorized action. You need upload/manage permission to upload files.');
         }
 
@@ -69,14 +76,14 @@ class WebsiteSettingsController extends Controller
 
             // Deleting a setting value (was filled, now clearing it)
             if (!empty($oldValue) && empty($newValue)) {
-                if (!auth()->user()->hasPermissionTo('website-settings.delete')) {
+                if (!$isAdmin && !$user->can('website-settings.delete')) {
                     return redirect()->back()->with('error', 'Unauthorized action. You need delete permission to clear the value of ' . ucwords(str_replace('_', ' ', $key)) . '.');
                 }
             }
 
             // Creating a setting value (was empty, now filling it)
             if (empty($oldValue) && !empty($newValue)) {
-                if (!auth()->user()->hasPermissionTo('website-settings.create')) {
+                if (!$isAdmin && !$user->can('website-settings.create')) {
                     return redirect()->back()->with('error', 'Unauthorized action. You need create permission to set ' . ucwords(str_replace('_', ' ', $key)) . '.');
                 }
             }
@@ -190,13 +197,18 @@ class WebsiteSettingsController extends Controller
             Cache::forget('setting_web_store_locator_banner_image');
         }
 
+        Cache::forget('api_website_settings_group');
+
         return redirect()->back()->with('success', 'Website settings updated successfully.');
     }
 
     public function updateCategories(Request $request)
     {
+        $user = auth()->user();
+        $isAdmin = $user && $user->hasRole(['Super Admin', 'superAdmin', 'admin']);
+
         // 1. Check Edit/Update Permission generally
-        if (!auth()->user()->hasAnyPermission(['website-settings.edit', 'website-settings.update'])) {
+        if (!$isAdmin && !$user->canAny(['website-settings.edit', 'website-settings.update'])) {
             abort(403, 'Unauthorized action. You do not have permission to edit or update Category Settings.');
         }
 
@@ -211,7 +223,7 @@ class WebsiteSettingsController extends Controller
             }
         }
 
-        if ($hasCatFiles && !auth()->user()->hasPermissionTo('website-settings.upload_manage')) {
+        if ($hasCatFiles && !$isAdmin && !$user->can('website-settings.upload_manage')) {
             return redirect()->back()->with('error', 'Unauthorized action. You need upload/manage permission to upload files.');
         }
 

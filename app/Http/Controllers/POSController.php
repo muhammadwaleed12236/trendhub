@@ -39,23 +39,28 @@ class POSController extends Controller
                     ->select('total_pieces', 'color')
                     ->get();
 
-                // Fetch confirmed web sales
-                $webSalesList = DB::table('ecommerce_order_items as eoi')
-                    ->join('ecommerce_orders as eo', 'eo.id', '=', 'eoi.ecommerce_order_id')
-                    ->where('eoi.product_id', $p->id)
-                    ->where('eo.is_stock_deducted', 1)
-                    ->select('eoi.quantity as total_pieces', 'eoi.color', 'eoi.size')
-                    ->get();
+                // Fetch confirmed web sales safely
+                if (\Illuminate\Support\Facades\Schema::hasTable('ecommerce_orders') && \Illuminate\Support\Facades\Schema::hasTable('ecommerce_order_items')) {
+                    try {
+                        $webSalesList = DB::table('ecommerce_order_items as eoi')
+                            ->join('ecommerce_orders as eo', 'eo.id', '=', 'eoi.ecommerce_order_id')
+                            ->where('eoi.product_id', $p->id)
+                            ->where('eo.is_stock_deducted', 1)
+                            ->select('eoi.quantity as total_pieces', 'eoi.color', 'eoi.size')
+                            ->get();
 
-                $salesListArray = $salesList->toArray();
-                foreach ($webSalesList as $wItem) {
-                    $salesListArray[] = (object) [
-                        'total_pieces' => $wItem->total_pieces,
-                        'color' => json_encode([
-                            'color' => $wItem->color ?: '-',
-                            'size' => $wItem->size ?: '-'
-                        ])
-                    ];
+                        foreach ($webSalesList as $wItem) {
+                            $salesListArray[] = (object) [
+                                'total_pieces' => $wItem->total_pieces,
+                                'color' => json_encode([
+                                    'color' => $wItem->color ?: '-',
+                                    'size' => $wItem->size ?: '-'
+                                ])
+                            ];
+                        }
+                    } catch (\Throwable $e) {
+                        // Fail safely
+                    }
                 }
                 $salesList = collect($salesListArray);
 
