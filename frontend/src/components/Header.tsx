@@ -32,10 +32,10 @@ export default function Header() {
 
   const cartItemsCount = useCartStore((state) => state.getTotalItems());
   const wishlistItemsCount = useWishlistStore((state) => state.items.length);
-  const { user, checkAuth } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
 
-  const { data: settings, isLoading, error } = useSettings();
-  console.log("Header settings payload:", { settings, isLoading, error });
+  const { data: settings } = useSettings();
 
   const { data: categories } = useQuery({
     queryKey: ["header-categories"],
@@ -48,7 +48,7 @@ export default function Header() {
   useEffect(() => {
     setIsMounted(true);
     checkAuth();
-  }, [checkAuth]);
+  }, []);
 
   // Debounced live product search
   useEffect(() => {
