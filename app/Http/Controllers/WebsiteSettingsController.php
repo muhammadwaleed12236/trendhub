@@ -231,6 +231,9 @@ class WebsiteSettingsController extends Controller
             $category->save();
         }
 
+        Cache::forget('api_website_categories');
+        Cache::forget('api_web_categories');
+
         return redirect()->back()->with('success', 'Category website settings updated successfully.');
     }
 }

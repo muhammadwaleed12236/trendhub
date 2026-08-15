@@ -273,13 +273,13 @@ export default function Header() {
                 {/* Links */}
                 <div className="flex-1 overflow-y-auto px-8 py-10 space-y-8">
                   {/* Main Sections */}
-                  <div className="flex flex-col">
-                    <span className="font-sans text-xs font-bold uppercase tracking-[0.2em] text-black mb-4 block">
-                      Shop by Category
-                    </span>
-                    <div className="flex flex-col space-y-4">
-                      {categories && categories.length > 0 ? (
-                        categories.map((cat) => (
+                  {categories && categories.length > 0 && (
+                    <div className="flex flex-col">
+                      <span className="font-sans text-xs font-bold uppercase tracking-[0.2em] text-black mb-4 block">
+                        Shop by Category
+                      </span>
+                      <div className="flex flex-col space-y-4">
+                        {categories.map((cat) => (
                           <Link
                             key={cat.id}
                             href={`/shop?category_id=${cat.id}`}
@@ -288,14 +288,11 @@ export default function Header() {
                           >
                             {cat.name}
                           </Link>
-                        ))
-                      ) : (
-                        <span className="text-[10px] text-gray-400 font-sans tracking-[0.2em] uppercase">Loading categories...</span>
-                      )}
+                        ))}
+                      </div>
+                      <div className="border-t border-gray-100 my-4" />
                     </div>
-                  </div>
-
-                  <div className="border-t border-gray-100 my-4" />
+                  )}
 
                   {/* Collections */}
                   <div className="flex flex-col space-y-4">

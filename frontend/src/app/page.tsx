@@ -14,7 +14,7 @@ import { getProductFallbackImage } from "@/lib/imageHelper";
 export default function Home() {
   const { data: settings } = useSettings();
   const sliderRef = useRef<HTMLDivElement>(null);
-  const [activeCollectionTab, setActiveCollectionTab] = useState("Men");
+  const [activeCollectionTab, setActiveCollectionTab] = useState<string>("");
 
   const scrollCategories = (direction: "left" | "right") => {
     if (sliderRef.current) {
@@ -72,10 +72,14 @@ export default function Home() {
   // Set default active tab once categories are loaded
   useEffect(() => {
     if (categories && categories.length > 0) {
-      const hasMen = categories.some(cat => cat.name.toLowerCase() === "men");
-      if (!hasMen) {
-        setActiveCollectionTab(categories[0].name);
-      }
+      setActiveCollectionTab((prev) => {
+        if (!prev || !categories.some((cat) => cat.name === prev)) {
+          return categories[0].name;
+        }
+        return prev;
+      });
+    } else {
+      setActiveCollectionTab("");
     }
   }, [categories]);
 
@@ -86,10 +90,9 @@ export default function Home() {
   const flashSale = homeProducts?.filter(p => p.promo_tag === "Flash Sale") || [];
 
   // Filter products for the active collection tab
-  const activeCollectionProducts = homeProducts?.filter(product => {
+  const activeCollectionProducts = (homeProducts || []).filter(product => {
     if (!activeCollectionTab) return true;
 
-    const nameLower = product.item_name.toLowerCase();
     const catNameLower = product.category_relation?.name?.toLowerCase() || "";
     const activeTabLower = activeCollectionTab.toLowerCase();
 
@@ -98,23 +101,9 @@ export default function Home() {
       return true;
     }
 
-    // Predefined legacy matching logic
-    if (activeTabLower === "men") {
-      return nameLower.includes("men") || nameLower.includes("man") || catNameLower.includes("men");
-    }
-    if (activeTabLower === "women") {
-      return nameLower.includes("women") || nameLower.includes("lady") || catNameLower.includes("women");
-    }
-    if (activeTabLower === "boys") {
-      return nameLower.includes("boys") || nameLower.includes("boy") || catNameLower.includes("boys");
-    }
-    if (activeTabLower === "girls") {
-      return nameLower.includes("girls") || nameLower.includes("girl") || catNameLower.includes("girls");
-    }
-
-    // Sub-string fallback
-    return nameLower.includes(activeTabLower);
-  }) || [];
+    const nameLower = product.item_name.toLowerCase();
+    return nameLower.includes(activeTabLower) || catNameLower.includes(activeTabLower);
+  });
 
   // Fallback to top products if active tag has zero items
   const displayProducts = activeCollectionProducts.length > 0 
@@ -294,9 +283,9 @@ export default function Home() {
               Featured Collections
             </h2>
             {/* Tab Pills */}
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 px-4">
-              {categories && categories.length > 0 ? (
-                categories.map((cat) => (
+            {categories && categories.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3 px-4">
+                {categories.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => setActiveCollectionTab(cat.name)}
@@ -308,23 +297,9 @@ export default function Home() {
                   >
                     {cat.name}
                   </button>
-                ))
-              ) : (
-                ["Men", "Women", "Boys", "Girls"].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveCollectionTab(tab)}
-                    className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-sans font-medium tracking-wider transition-all duration-300 cursor-pointer ${
-                      activeCollectionTab === tab
-                        ? "bg-[#717171] text-white shadow-xs"
-                        : "bg-[#f4f4f4] text-[#888888] hover:bg-[#e8e8e8]"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 5-Column Responsive Product Grid */}

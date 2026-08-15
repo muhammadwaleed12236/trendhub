@@ -5,15 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class WebsiteSettingsApiController extends Controller
 {
     public function index()
     {
-        $settings = Setting::where('group', 'website')->get();
+        // Cache website settings for 10 minutes for lightning-fast loading
+        $settings = Cache::remember('api_website_settings_group', 600, function () {
+            return Setting::where('group', 'website')->get();
+        });
 
-        // Optional: map to return a key-value object if easier for frontend, 
-        // but returning models matches the prompt exactly.
         return response()->json([
             'status' => 'success',
             'data' => $settings

@@ -257,6 +257,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           <img
             src={isHovered ? hoverImage : mainImage}
             alt={product.item_name}
+            loading="lazy"
+            decoding="async"
             className={`w-full h-full object-cover transition-all duration-700 ease-out ${
               product.total_stock !== undefined && product.total_stock <= 0 ? "opacity-60 grayscale-[40%]" : ""
             }`}

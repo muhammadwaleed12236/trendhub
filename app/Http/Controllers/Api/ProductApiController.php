@@ -78,6 +78,28 @@ class ProductApiController extends Controller
             $product->final_price = $product->web_sale_price ?: $product->sale_price_per_piece;
             $product->description = $product->meta_description ?: "Designed as part of our premium modern luxury apparel collection, this piece stands out with premium stitching and elegant cuts.";
             $product->total_stock = (int) ($product->total_stock ?? 0);
+            return $product;
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $products
+        ]);
+    }
+
+    public function show($id)
+    {
+        $cacheKey = 'api_product_detail_' . $id;
+
+        $productData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 30, function () use ($id) {
+            $product = Product::with(['category_relation', 'webImages'])
+                ->withSum('warehouseStocks as total_stock', 'total_pieces')
+                ->where('is_web_visible', 1)
+                ->findOrFail($id);
+
+            $product->final_price = $product->web_sale_price ?: $product->sale_price_per_piece;
+            $product->description = $product->meta_description ?: "Designed as part of our premium modern luxury apparel collection, this piece stands out with premium stitching and elegant cuts.";
+            $product->total_stock = (int) ($product->total_stock ?? 0);
 
             // Fetch actual variant stocks based on ERP ledger formula
             if ($product->color) {
@@ -96,35 +118,7 @@ class ProductApiController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data' => $products
-        ]);
-    }
-
-    public function show($id)
-    {
-        $product = Product::with(['category_relation', 'webImages'])
-            ->withSum('warehouseStocks as total_stock', 'total_pieces')
-            ->where('is_web_visible', 1)
-            ->findOrFail($id);
-        $product->final_price = $product->web_sale_price ?: $product->sale_price_per_piece;
-        $product->description = $product->meta_description ?: "Designed as part of our premium modern luxury apparel collection, this piece stands out with premium stitching and elegant cuts.";
-        $product->total_stock = (int) ($product->total_stock ?? 0);
-
-        // Fetch actual variant stocks based on ERP ledger formula
-        if ($product->color) {
-            try {
-                $calculated_variants = $this->calculateVariantStocks($product);
-                if (!empty($calculated_variants)) {
-                    $product->color = json_encode($calculated_variants);
-                }
-            } catch (\Exception $e) {
-                // Fail silently
-            }
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $product
+            'data' => $productData
         ]);
     }
 

@@ -45,9 +45,10 @@ use Illuminate\Support\Facades\Route;
     |
     */
 
-// 1. Direct Domain: Shows Website
+// 1. Direct Domain / Root: Redirects to Next.js Storefront Website
 Route::get('/', function () {
-    return view('welcome');
+    $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+    return redirect()->away($frontendUrl);
 })->name('website');
 
 // 2. /software: Software Login Page (or Dashboard if already logged in)
