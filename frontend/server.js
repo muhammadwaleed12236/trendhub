@@ -1,3 +1,24 @@
+// Polyfill web standards for older Node versions or Passenger environments
+if (typeof globalThis.Request === "undefined") {
+  try {
+    const { Request, Response, Headers, fetch, FormData } = require("undici");
+    globalThis.Request = globalThis.Request || Request;
+    globalThis.Response = globalThis.Response || Response;
+    globalThis.Headers = globalThis.Headers || Headers;
+    globalThis.fetch = globalThis.fetch || fetch;
+    globalThis.FormData = globalThis.FormData || FormData;
+  } catch (e) {
+    try {
+      const undici = require("next/dist/compiled/undici");
+      globalThis.Request = globalThis.Request || undici.Request;
+      globalThis.Response = globalThis.Response || undici.Response;
+      globalThis.Headers = globalThis.Headers || undici.Headers;
+      globalThis.fetch = globalThis.fetch || undici.fetch;
+      globalThis.FormData = globalThis.FormData || undici.FormData;
+    } catch (e2) {}
+  }
+}
+
 const http = require("http");
 const { parse } = require("url");
 const next = require("next");
@@ -14,6 +35,8 @@ function logError(msg) {
   } catch (e) {}
 }
 
+logError(`Starting Next.js server with Node ${process.version}`);
+
 // Initialize Next.js app
 const app = next({ dev, dir: __dirname });
 const handle = app.getRequestHandler();
@@ -28,7 +51,7 @@ const preparePromise = app.prepare()
     logError("Next.js prepare failed: " + (err.stack || err.message));
   });
 
-// Create HTTP server that listens IMMEDIATELY so Passenger doesn't timeout
+// Create HTTP server that listens immediately for Phusion Passenger
 const server = http.createServer(async (req, res) => {
   try {
     if (!isPrepared) {
@@ -39,11 +62,11 @@ const server = http.createServer(async (req, res) => {
   } catch (err) {
     logError("Request Error: " + (err.stack || err.message));
     res.statusCode = 500;
-    res.end("Internal Server Error: " + (err.message || "Unknown"));
+    res.end("Internal Server Error: " + (err.message || "Unknown error"));
   }
 });
 
-// Bind to Passenger socket immediately
+// Bind to Passenger socket
 if (typeof PhusionPassenger !== "undefined") {
   server.listen("passenger");
 } else {
