@@ -4,7 +4,7 @@ const next = require("next");
 const fs = require("fs");
 const path = require("path");
 
-const dev = process.env.NODE_ENV !== "production";
+const dev = false;
 const port = process.env.PORT || 3000;
 
 const logFile = path.join(__dirname, "server_error.log");
@@ -14,32 +14,40 @@ function logError(msg) {
   } catch (e) {}
 }
 
+// Initialize Next.js app
 const app = next({ dev, dir: __dirname });
 const handle = app.getRequestHandler();
 
-app.prepare()
+let isPrepared = false;
+const preparePromise = app.prepare()
   .then(() => {
-    const server = http.createServer(async (req, res) => {
-      try {
-        const parsedUrl = parse(req.url, true);
-        await handle(req, res, parsedUrl);
-      } catch (err) {
-        logError("Request Error: " + (err.stack || err.message));
-        res.statusCode = 500;
-        res.end("Internal Server Error: " + (err.message || "Unknown error"));
-      }
-    });
-
-    if (typeof PhusionPassenger !== "undefined") {
-      server.listen("passenger");
-    } else {
-      server.listen(port, () => {
-        console.log(`> Next.js ready on port ${port}`);
-      });
-    }
+    isPrepared = true;
+    logError("Next.js app prepared successfully");
   })
   .catch((err) => {
     logError("Next.js prepare failed: " + (err.stack || err.message));
-    console.error("Next.js prepare failed:", err);
-    process.exit(1);
   });
+
+// Create HTTP server that listens IMMEDIATELY so Passenger doesn't timeout
+const server = http.createServer(async (req, res) => {
+  try {
+    if (!isPrepared) {
+      await preparePromise;
+    }
+    const parsedUrl = parse(req.url, true);
+    await handle(req, res, parsedUrl);
+  } catch (err) {
+    logError("Request Error: " + (err.stack || err.message));
+    res.statusCode = 500;
+    res.end("Internal Server Error: " + (err.message || "Unknown"));
+  }
+});
+
+// Bind to Passenger socket immediately
+if (typeof PhusionPassenger !== "undefined") {
+  server.listen("passenger");
+} else {
+  server.listen(port, () => {
+    logError(`Next.js listening on port ${port}`);
+  });
+}
