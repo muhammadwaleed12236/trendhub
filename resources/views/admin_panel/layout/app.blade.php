@@ -590,34 +590,74 @@
                                     }
                                     $('#notificationList').html(html);
 
-                                    $('.snooze-btn').off('click').on('click', function(e) {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        let id = $(this).data('id');
-                                        let row = $(this).closest('.reminder-item');
-                                        $.post("{{ url('customers/snooze-reminder') }}/" + id, { _token: "{{ csrf_token() }}" }, function(res) {
-                                            if (res.success) {
-                                                row.fadeOut(300, function() {
-                                                    $(this).remove();
-                                                    let currentCount = parseInt($('.notification-badge').text());
-                                                    if (currentCount > 1) {
-                                                        $('.notification-badge').text(currentCount - 1);
-                                                    } else {
-                                                        $('.notification-badge').hide();
+                                            // Re-bind Snooze Buttons
+                                            $('.snooze-btn').off('click').on('click', function(e) {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                let id = $(this).data('id');
+                                                let row = $(this).closest('.reminder-item');
+                                                
+                                                $.post("{{ url('customers/snooze-reminder') }}/" + id, { _token: "{{ csrf_token() }}" }, function(res) {
+                                                    if (res.success) {
+                                                        row.fadeOut(300, function() {
+                                                            $(this).remove();
+                                                            // Update badge count
+                                                            let currentCount = parseInt($('.notification-badge').text());
+                                                            if (currentCount > 1) {
+                                                                $('.notification-badge').text(currentCount - 1);
+                                                            } else {
+                                                                $('.notification-badge').hide();
+                                                            }
+                                                        });
                                                     }
                                                 });
-                                            }
-                                        });
-                                    });
+                                            });
+                                        }, // end reminders success
+                                        error: function() { /* silently ignore timeout/errors */ }
+                                        }); // end _notifXhr2 ajax
+                                    }, // end notifications success
+                                    error: function() { /* silently ignore timeout/errors */ }
+                                    }); // end _notifXhr1 ajax
                                 }
-                            });
-                        }
-                    });
-                }
-            </script>
+                            </script>
+
+                            <li class="nav-item nav-profile dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown"
+                                    id="profileDropdown">
+                                    <span class="profile_name">{{ Auth::user()->name }} <i
+                                            class="fas fa-chevron-down"></i></span>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right navbar-dropdown pt-2"
+                                    aria-labelledby="profileDropdown">
+                                    <span role="separator" class="divider"></span>
+                                    <form method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="fas fa-power-off text-dark mr-3"></i> Logout
+                                        </button>
+                                    </form>
+                                    {{-- </a> --}}
+                                </div>
+                            </li>
+                            <!--==================================*
+                                 End Profile Menu
+                        *====================================-->
+                        </ul>
+                        <!--=========================*
+                               Mobile Menu
+                   *===========================-->
+                        <button class="navbar-toggler align-self-center" type="button" data-toggle="minimize">
+                            <span class="fas fa-bars text-white"></span>
+                        </button>
+                        <!--=========================*
+                           End Mobile Menu
+                   *===========================-->
+                    </div>
+                </div>
+            </div>
             <div class="nav-bottom">
-                <div class="container">
-                    <ul class="nav page-navigation">
+                <div class="container-fluid" style="padding: 0 20px;">
+                    <ul class="nav page-navigation justify-content-center">
                         <!--=========================*
                               Home
                     *===========================-->
@@ -993,15 +1033,37 @@
                             @endcanany
                         </li>
 
-                        <!-- Settings -->
-                        @if (auth()->check() && (auth()->user()->email === 'admin@admin.com' || auth()->user()->hasRole('Super Admin')))
+
+                        <!-- Website Management -->
+                        @canany(['website-settings.view', 'web_products.view', 'web_products.read', 'coupons.view', 'coupons.read', 'web_orders.view', 'web_orders.read', 'web_users.view', 'web_users.read'])
                             <li class="nav-item">
-                                <a href="{{ route('settings.index') }}" class="nav-link">
-                                    <i class="menu_icon fas fa-cog"></i>
-                                    <span class="menu-title">Settings</span>
+                                <a href="#" class="nav-link">
+                                    <i class="menu_icon fas fa-globe"></i>
+                                    <span class="menu-title">Website Control</span>
+                                    <i class="menu-arrow"></i>
                                 </a>
+                                <div class="submenu">
+                                    <ul class="submenu-item">
+                                        @can('website-settings.view')
+                                            <li><a href="{{ route('website_settings.index') }}"><i class="fa-solid fa-cogs"></i> Website Settings</a></li>
+                                        @endcan
+                                        @canany(['web_products.view', 'web_products.read'])
+                                            <li><a href="{{ route('web_products.index') }}"><i class="fa-solid fa-box"></i> Web Products</a></li>
+                                        @endcan
+                                        @canany(['coupons.view', 'coupons.read'])
+                                            <li><a href="{{ route('admin.coupons.index') }}"><i class="fas fa-tags"></i> Coupons</a></li>
+                                        @endcan
+                                        @canany(['web_orders.view', 'web_orders.read'])
+                                            <li><a href="{{ route('web_orders.dashboard') }}"><i class="fa-solid fa-chart-line"></i> Web Dashboard</a></li>
+                                            <li><a href="{{ route('web_orders.index') }}"><i class="fa-solid fa-shopping-cart"></i> Web Orders</a></li>
+                                        @endcan
+                                        @canany(['web_users.view', 'web_users.read'])
+                                            <li><a href="{{ route('web_users.index') }}"><i class="fas fa-users"></i> Web Users</a></li>
+                                        @endcan
+                                    </ul>
+                                </div>
                             </li>
-                        @endif
+                        @endcanany
 
                         <!-- Mobile User Profile & Direct Logout -->
                         @if (auth()->check())
