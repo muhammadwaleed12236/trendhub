@@ -369,22 +369,27 @@
             <div class="top_nav flex-grow-1" style="background: #090e1a !important;">
                 <div class="container-fluid px-3 px-md-4 d-flex flex-row h-100 align-items-center justify-content-between">
                     
-                    <!-- Left: ProWave Brand Logo + Company Name Pill -->
+                    <!-- Left: Dynamic Brand Logo + Company Name Pill -->
                     <div class="d-flex align-items-center">
-                        <a class="nav_logo d-flex align-items-center text-decoration-none" href="{{ url('/') }}">
+                        @php
+                            $dynCompName = \App\Models\Setting::get('company_name', 'TrendHub');
+                            $init1 = strtoupper(substr($dynCompName, 0, 1));
+                            $init2 = strlen($dynCompName) > 1 ? strtoupper(substr($dynCompName, 1, 1)) : '';
+                        @endphp
+                        <a class="nav_logo d-flex align-items-center text-decoration-none" href="{{ url('/home') }}">
                             <div class="header-pw-badge">
-                                <span style="color: #ffffff;">P</span><span style="color: #38bdf8;">W</span>
+                                <span style="color: #ffffff;">{{ $init1 }}</span><span style="color: #a1a1aa;">{{ $init2 }}</span>
                             </div>
                             <div class="d-flex flex-column text-start justify-content-center">
-                                <span style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 800; color: #ffffff; line-height: 1.15; letter-spacing: -0.2px;">ProWave</span>
-                                <span style="font-size: 11px; font-weight: 700; color: #38bdf8; letter-spacing: 0.6px; line-height: 1;">Technologies</span>
+                                <span style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 800; color: #ffffff; line-height: 1.15; letter-spacing: -0.2px;">{{ $dynCompName }}</span>
+                                <span style="font-size: 10.5px; font-weight: 700; color: #a1a1aa; letter-spacing: 1px; line-height: 1;">Management</span>
                             </div>
                         </a>
 
                         <!-- Company / Branch Pill -->
                         <div class="header-company-pill d-none d-lg-flex">
                             <i class="far fa-user" style="color: #38bdf8; font-size: 13px;"></i>
-                            <span style="color: #f1f5f9; font-weight: 600; font-size: 13px;">{{ \App\Models\Setting::get('company_name', 'White Dimond') }}</span>
+                            <span style="color: #f1f5f9; font-weight: 600; font-size: 13px;">{{ $dynCompName }}</span>
                         </div>
                     </div>
 

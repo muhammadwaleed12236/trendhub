@@ -45,9 +45,18 @@ use Illuminate\Support\Facades\Route;
     |
     */
 
+// 1. Direct Domain: Shows Website
 Route::get('/', function () {
-    return auth()->check() ? redirect()->route('home') : redirect()->route('login');
-});
+    return view('welcome');
+})->name('website');
+
+// 2. /software: Software Login Page (or Dashboard if already logged in)
+Route::get('/software', function () {
+    if (auth()->check()) {
+        return redirect()->route('home');
+    }
+    return view('auth.login');
+})->name('software');
 
 Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name('home');
 Route::post('/admin/sync-to-cloud', [SyncController::class, 'syncToCloud'])->middleware('auth')->name('admin.sync_to_cloud');

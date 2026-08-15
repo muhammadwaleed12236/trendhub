@@ -1,3 +1,6 @@
+@php
+    $companyName = \App\Models\Setting::get('company_name', 'TrendHub');
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Welcome to ProWave Technologies - Enterprise ERP Login</title>
+    <title>Welcome to {{ $companyName }} - Enterprise ERP Login</title>
 
     <!-- Favicon -->
     <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/favicon.png') }}">
@@ -13,23 +16,22 @@
     <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --primary-light: #60a5fa;
-            --accent: #06b6d4;
-            --accent-purple: #8b5cf6;
-            --dark-bg: #090e1a;
-            --dark-surface: #111827;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
+            --primary: #000000;
+            --primary-dark: #18181b;
+            --primary-light: #27272a;
+            --accent: #ffffff;
+            --dark-bg: #050505;
+            --dark-surface: #0f0f11;
+            --text-main: #09090b;
+            --text-muted: #71717a;
+            --border-color: #e4e4e7;
         }
 
         * {
@@ -41,7 +43,7 @@
 
         body {
             min-height: 100vh;
-            background-color: #0b1120;
+            background-color: #050505;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -49,39 +51,39 @@
             position: relative;
         }
 
-        /* Ambient Glow Background Effects */
+        /* Ambient Glow Background Effects (Monochrome) */
         .ambient-orb {
             position: fixed;
             border-radius: 50%;
-            filter: blur(100px);
+            filter: blur(120px);
             z-index: 0;
             pointer-events: none;
-            opacity: 0.45;
-            animation: orbFloat 14s ease-in-out infinite alternate;
+            opacity: 0.18;
+            animation: orbFloat 16s ease-in-out infinite alternate;
         }
         .orb-1 {
             top: -10%;
             left: -5%;
             width: 550px;
             height: 550px;
-            background: radial-gradient(circle, #2563eb 0%, rgba(37, 99, 235, 0) 70%);
+            background: radial-gradient(circle, #ffffff 0%, rgba(255, 255, 255, 0) 70%);
         }
         .orb-2 {
             bottom: -15%;
             right: -10%;
             width: 600px;
             height: 600px;
-            background: radial-gradient(circle, #7c3aed 0%, rgba(124, 58, 237, 0) 70%);
-            animation-duration: 18s;
+            background: radial-gradient(circle, #a1a1aa 0%, rgba(161, 161, 170, 0) 70%);
+            animation-duration: 20s;
         }
         .orb-3 {
             top: 40%;
             left: 45%;
             width: 350px;
             height: 350px;
-            background: radial-gradient(circle, #06b6d4 0%, rgba(6, 182, 212, 0) 70%);
-            opacity: 0.25;
-            animation-duration: 20s;
+            background: radial-gradient(circle, #71717a 0%, rgba(113, 113, 122, 0) 70%);
+            opacity: 0.12;
+            animation-duration: 22s;
         }
 
         @keyframes orbFloat {
@@ -98,12 +100,12 @@
             max-width: 1140px;
             min-height: 640px;
             margin: 24px;
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
+            background: rgba(15, 15, 17, 0.85);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 24px;
-            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.06);
             display: grid;
             grid-template-columns: 1.15fr 1fr;
             overflow: hidden;
@@ -115,7 +117,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+            background: linear-gradient(135deg, rgba(20, 20, 23, 0.9) 0%, rgba(9, 9, 11, 0.95) 100%);
             border-right: 1px solid rgba(255, 255, 255, 0.08);
             position: relative;
         }
@@ -131,18 +133,19 @@
             width: 48px;
             height: 48px;
             border-radius: 14px;
-            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 50%, #7c3aed 100%);
+            background: #000000;
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 22px;
-            box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.6);
+            font-size: 20px;
+            box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.7);
         }
 
         .brand-text h1 {
             font-family: 'Outfit', sans-serif;
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 800;
             color: #ffffff;
             letter-spacing: -0.5px;
@@ -150,10 +153,10 @@
         }
 
         .brand-text span {
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 600;
-            color: #38bdf8;
-            letter-spacing: 1.5px;
+            color: #a1a1aa;
+            letter-spacing: 1.8px;
             text-transform: uppercase;
         }
 
@@ -167,10 +170,10 @@
             align-items: center;
             gap: 8px;
             padding: 6px 14px;
-            background: rgba(14, 165, 233, 0.12);
-            border: 1px solid rgba(14, 165, 233, 0.3);
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.16);
             border-radius: 50px;
-            color: #38bdf8;
+            color: #f4f4f5;
             font-size: 12px;
             font-weight: 600;
             margin-bottom: 20px;
@@ -179,9 +182,9 @@
         .hero-badge .pulse-dot {
             width: 7px;
             height: 7px;
-            background-color: #38bdf8;
+            background-color: #ffffff;
             border-radius: 50%;
-            box-shadow: 0 0 10px #38bdf8;
+            box-shadow: 0 0 10px #ffffff;
             animation: pulseGlow 2s infinite;
         }
 
@@ -192,7 +195,7 @@
 
         .hero-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 34px;
+            font-size: 36px;
             font-weight: 800;
             color: #ffffff;
             line-height: 1.2;
@@ -201,13 +204,13 @@
         }
 
         .hero-title span {
-            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #e4e4e7 40%, #a1a1aa 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .hero-desc {
-            color: #94a3b8;
+            color: #a1a1aa;
             font-size: 14.5px;
             line-height: 1.6;
             margin-bottom: 28px;
@@ -225,14 +228,14 @@
             align-items: flex-start;
             gap: 10px;
             background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.07);
             border-radius: 12px;
             padding: 12px;
             transition: all 0.2s;
         }
         .feature-item:hover {
             background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(56, 189, 248, 0.3);
+            border-color: rgba(255, 255, 255, 0.25);
             transform: translateY(-1px);
         }
 
@@ -240,25 +243,26 @@
             width: 32px;
             height: 32px;
             border-radius: 8px;
-            background: rgba(56, 189, 248, 0.12);
-            color: #38bdf8;
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 13px;
             flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .feature-text h4 {
             font-size: 12.5px;
             font-weight: 700;
-            color: #f1f5f9;
+            color: #f4f4f5;
             margin-bottom: 2px;
         }
 
         .feature-text p {
             font-size: 11px;
-            color: #64748b;
+            color: #71717a;
             line-height: 1.3;
         }
 
@@ -270,18 +274,18 @@
             padding-top: 20px;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
             font-size: 12px;
-            color: #64748b;
+            color: #71717a;
         }
 
         .hero-status {
             display: flex;
             align-items: center;
             gap: 6px;
-            color: #34d399;
+            color: #e4e4e7;
             font-weight: 600;
         }
 
-        /* Right Form Panel */
+        /* Right Form Panel (Clean White / Light Crisp Contrast) */
         .form-panel {
             background: #ffffff;
             padding: 48px 44px;
@@ -299,13 +303,13 @@
             font-family: 'Outfit', sans-serif;
             font-size: 26px;
             font-weight: 800;
-            color: #0f172a;
+            color: #09090b;
             letter-spacing: -0.5px;
             margin-bottom: 6px;
         }
 
         .form-header p {
-            color: #64748b;
+            color: #71717a;
             font-size: 14px;
         }
 
@@ -326,9 +330,9 @@
             color: #dc2626;
         }
         .auth-alert-success {
-            background-color: #ecfdf5;
-            border: 1px solid #a7f3d0;
-            color: #059669;
+            background-color: #f4f4f5;
+            border: 1px solid #e4e4e7;
+            color: #18181b;
         }
 
         /* Form Group & Floating Inputs */
@@ -340,7 +344,7 @@
             display: block;
             font-size: 12.5px;
             font-weight: 700;
-            color: #334155;
+            color: #18181b;
             margin-bottom: 7px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -355,7 +359,7 @@
         .input-icon {
             position: absolute;
             left: 14px;
-            color: #94a3b8;
+            color: #71717a;
             font-size: 15px;
             transition: color 0.2s;
             pointer-events: none;
@@ -365,25 +369,25 @@
             width: 100%;
             height: 48px;
             padding: 0 42px 0 42px;
-            background-color: #f8fafc;
-            border: 1.5px solid #cbd5e1;
+            background-color: #fafafa;
+            border: 1.5px solid #d4d4d8;
             border-radius: 12px;
             font-size: 14px;
             font-weight: 500;
-            color: #0f172a;
+            color: #09090b;
             outline: none;
             transition: all 0.2s ease-in-out;
         }
 
         .form-control-custom:focus {
             background-color: #ffffff;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+            border-color: #000000;
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.08);
         }
 
         .form-control-custom:focus + .input-icon,
         .input-box:focus-within .input-icon {
-            color: #2563eb;
+            color: #000000;
         }
 
         .password-toggle-btn {
@@ -391,14 +395,14 @@
             right: 14px;
             background: none;
             border: none;
-            color: #94a3b8;
+            color: #71717a;
             font-size: 15px;
             cursor: pointer;
             padding: 4px;
             transition: color 0.2s;
         }
         .password-toggle-btn:hover {
-            color: #334155;
+            color: #09090b;
         }
 
         .input-error-msg {
@@ -425,7 +429,7 @@
             align-items: center;
             gap: 8px;
             cursor: pointer;
-            color: #475569;
+            color: #3f3f46;
             font-weight: 500;
             user-select: none;
         }
@@ -433,27 +437,27 @@
         .remember-checkbox input {
             width: 16px;
             height: 16px;
-            accent-color: #2563eb;
+            accent-color: #000000;
             cursor: pointer;
         }
 
         .forgot-link {
-            color: #2563eb;
+            color: #09090b;
             text-decoration: none;
             font-weight: 600;
             transition: color 0.2s;
         }
         .forgot-link:hover {
-            color: #1d4ed8;
+            color: #52525b;
             text-decoration: underline;
         }
 
-        /* Submit Button */
+        /* Submit Button (Black & White Theme) */
         .btn-auth-submit {
             width: 100%;
             height: 50px;
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            border: none;
+            background: #000000;
+            border: 1px solid #000000;
             border-radius: 12px;
             color: #ffffff;
             font-family: 'Outfit', sans-serif;
@@ -465,14 +469,14 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.45);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
             transition: all 0.25s ease;
         }
 
         .btn-auth-submit:hover {
-            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            background: #18181b;
             transform: translateY(-2px);
-            box-shadow: 0 15px 30px -5px rgba(37, 99, 235, 0.55);
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.55);
         }
 
         .btn-auth-submit:active {
@@ -484,7 +488,7 @@
             margin-top: 28px;
             text-align: center;
             font-size: 12px;
-            color: #94a3b8;
+            color: #71717a;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -549,22 +553,22 @@
         <div class="hero-panel">
             <div class="brand-header">
                 <div class="brand-logo-icon">
-                    <i class="fas fa-wave-square"></i>
+                    <i class="fas fa-layer-group"></i>
                 </div>
                 <div class="brand-text">
-                    <h1>ProWave</h1>
-                    <span>Technologies</span>
+                    <h1>{{ $companyName }}</h1>
+                    <span>Management System</span>
                 </div>
             </div>
 
             <div class="hero-content">
                 <div class="hero-badge">
                     <span class="pulse-dot"></span>
-                    <span>Enterprise ERP Suite v2.6</span>
+                    <span>Enterprise ERP Suite</span>
                 </div>
                 <h2 class="hero-title">
                     Welcome to <br>
-                    <span>ProWave Technologies</span>
+                    <span>{{ $companyName }}</span>
                 </h2>
                 <p class="hero-desc">
                     Next-generation business management platform powering smart POS, automated multi-warehouse inventory, and instant financial ledgers.
@@ -582,7 +586,7 @@
                     </div>
                     <div class="feature-item">
                         <div class="feature-icon">
-                            <i class="fas fa-boxes"></i>
+                            <i class="fas fa-boxes-stacked"></i>
                         </div>
                         <div class="feature-text">
                             <h4>Smart Inventory</h4>
@@ -600,7 +604,7 @@
                     </div>
                     <div class="feature-item">
                         <div class="feature-icon">
-                            <i class="fas fa-shield-alt"></i>
+                            <i class="fas fa-shield-halved"></i>
                         </div>
                         <div class="feature-text">
                             <h4>Role Security</h4>
@@ -615,7 +619,7 @@
                     <i class="fas fa-circle" style="font-size: 8px;"></i>
                     <span>Cloud Servers Operational</span>
                 </div>
-                <span>ProWave OS &bull; 2026</span>
+                <span>{{ $companyName }} OS &bull; {{ date('Y') }}</span>
             </div>
         </div>
 
@@ -623,7 +627,7 @@
         <div class="form-panel">
             <div class="form-header">
                 <h2>Sign in to Workspace</h2>
-                <p>Enter your authorized credentials to access your ProWave ERP workspace.</p>
+                <p>Enter your authorized credentials to access your {{ $companyName }} workspace.</p>
             </div>
 
             <!-- Session Status Alert -->
@@ -657,7 +661,7 @@
                                required 
                                autofocus 
                                autocomplete="username" 
-                               placeholder="name@prowave.com">
+                               placeholder="admin@example.com">
                         <i class="fas fa-envelope input-icon"></i>
                     </div>
                     @error('email')
@@ -715,7 +719,7 @@
 
             <div class="form-footer">
                 <i class="fas fa-lock" style="font-size: 10px;"></i>
-                <span>256-Bit SSL Encrypted Connection &bull; ProWave Technologies &copy; {{ date('Y') }}</span>
+                <span>256-Bit SSL Encrypted Connection &bull; {{ $companyName }} &copy; {{ date('Y') }}</span>
             </div>
         </div>
 
