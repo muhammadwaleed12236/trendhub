@@ -1,44 +1,16 @@
-// Comprehensive Web API polyfills for Phusion Passenger environment
-const util = require("util");
-if (typeof globalThis.TextEncoder === "undefined") globalThis.TextEncoder = util.TextEncoder;
-if (typeof globalThis.TextDecoder === "undefined") globalThis.TextDecoder = util.TextDecoder;
-
+// Universal Web API polyfills for Next.js in Phusion Passenger
 try {
-  const streamWeb = require("stream/web");
-  if (typeof globalThis.ReadableStream === "undefined") globalThis.ReadableStream = streamWeb.ReadableStream;
-  if (typeof globalThis.WritableStream === "undefined") globalThis.WritableStream = streamWeb.WritableStream;
-  if (typeof globalThis.TransformStream === "undefined") globalThis.TransformStream = streamWeb.TransformStream;
-} catch (e) {}
-
-try {
-  const crypto = require("crypto");
-  if (typeof globalThis.crypto === "undefined" && crypto.webcrypto) {
-    globalThis.crypto = crypto.webcrypto;
+  const primitives = require("next/dist/compiled/@edge-runtime/primitives");
+  for (const [key, value] of Object.entries(primitives)) {
+    if (typeof globalThis[key] === "undefined") {
+      globalThis[key] = value;
+    }
+    if (typeof global[key] === "undefined") {
+      global[key] = value;
+    }
   }
-} catch (e) {}
-
-if (typeof globalThis.Request === "undefined" || typeof globalThis.fetch === "undefined") {
-  try {
-    const undici = require("undici");
-    globalThis.Request = globalThis.Request || undici.Request;
-    globalThis.Response = globalThis.Response || undici.Response;
-    globalThis.Headers = globalThis.Headers || undici.Headers;
-    globalThis.fetch = globalThis.fetch || undici.fetch;
-    globalThis.FormData = globalThis.FormData || undici.FormData;
-    globalThis.File = globalThis.File || undici.File;
-    globalThis.Blob = globalThis.Blob || undici.Blob;
-  } catch (e) {
-    try {
-      const undici = require("next/dist/compiled/undici");
-      globalThis.Request = globalThis.Request || undici.Request;
-      globalThis.Response = globalThis.Response || undici.Response;
-      globalThis.Headers = globalThis.Headers || undici.Headers;
-      globalThis.fetch = globalThis.fetch || undici.fetch;
-      globalThis.FormData = globalThis.FormData || undici.FormData;
-      globalThis.File = globalThis.File || undici.File;
-      globalThis.Blob = globalThis.Blob || undici.Blob;
-    } catch (e2) {}
-  }
+} catch (e) {
+  console.error("Failed to load edge primitives:", e);
 }
 
 const http = require("http");
