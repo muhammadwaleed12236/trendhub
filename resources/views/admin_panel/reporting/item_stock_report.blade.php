@@ -439,7 +439,7 @@ $(document).ready(function() {
                     <td>${row.category_name}</td>
                     <td><span class="badge bg-light text-dark border">${row.unit_name}</span></td>
                     <td class="text-center fw-bold text-primary">${row.formatted_stock}</td>
-                    <td class="text-center">${row.cartons !== '-' ? row.cartons + ' Box . ' + row.loose + ' ' + row.unit_name : '—'}</td>
+                    <td class="text-center fw-semibold text-secondary">${row.carton_display || '—'}</td>
                     <td class="text-end">Rs ${parseFloat(row.average_price).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td class="text-end fw-bold text-dark">Rs ${parseFloat(row.stock_value).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td class="text-center">${statusBadge}</td>
@@ -468,7 +468,7 @@ $(document).ready(function() {
                     <td class="text-end text-success">+${parseFloat(row.returned_qty).toLocaleString()}</td>
                     <td class="text-end text-danger">-${parseFloat(row.purch_returned_qty).toLocaleString()}</td>
                     <td class="text-center" style="background:#fffbeb !important;">${adjBadge}</td>
-                    <td class="text-end fw-bold text-primary" style="background:#eef2ff !important;">${row.balance.toLocaleString()} ${row.unit_name}</td>
+                    <td class="text-end fw-bold text-primary" style="background:#eef2ff !important;">${row.formatted_stock}</td>
                     <td class="text-end fw-bold">Rs ${parseFloat(row.stock_value).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td class="text-center">${historyBtn}</td>
                 </tr>`;

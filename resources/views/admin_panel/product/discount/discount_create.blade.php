@@ -1,9 +1,13 @@
 @extends('admin_panel.layout.app')
 @section('content')
-<div class="card">
-    <div class="card-header">
-        <h5>Create Discount for Selected Products</h5>
-    </div>
+<div class="container-fluid px-3 px-md-4 py-2">
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0 fw-bold">🏷 Create Discount for Selected Products</h5>
+            <a href="{{ route('product') }}" class="btn btn-outline-secondary btn-sm fw-bold">
+                <i class="fas fa-arrow-left me-1"></i> Back to Products
+            </a>
+        </div>
     <div class="card-body">
         <form action="{{ route('discount.store') }}" method="POST" id="discountForm">
             @csrf
@@ -90,9 +94,10 @@
                 </tbody>
             </table>
 
-            <button type="submit" class="btn btn-primary mt-3">Save Discounts</button>
+            <button type="submit" class="btn btn-primary mt-3 fw-bold px-4 shadow-sm" style="border-radius:6px;">Save Discounts</button>
         </form>
     </div>
+</div>
 </div>
 
 <script>

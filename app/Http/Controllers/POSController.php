@@ -13,7 +13,7 @@ use Carbon\Carbon;
 
 class POSController extends Controller
 {
-    public function index()
+    public function index(Request $request = null)
     {
         // 1. Fetch all active products
         $products = Product::where('is_active', true)->with('warehouseStocks')->get();
@@ -248,14 +248,120 @@ class POSController extends Controller
         $cashAndBankHeads = AccountHead::whereIn('name', ['Cash', 'Bank'])->pluck('id');
         $accounts = Account::whereIn('head_id', $cashAndBankHeads)->where('status', 1)->orderBy('title')->get();
 
-        // 4. Fetch all Vendors with balances
+        // 4. Fetch all Vendors with balances (Instant Batch Query)
         $balanceService = app(\App\Services\BalanceService::class);
-        $vendors = \App\Models\Vendor::orderBy('name')->get()->map(function($vendor) use ($balanceService) {
-            $vendor->balance = $balanceService->getVendorBalance($vendor->id);
+        $apId = $balanceService->getAccountsPayableId();
+        $vendorBalances = \App\Models\JournalEntry::where('party_type', \App\Models\Vendor::class)
+            ->where('account_id', $apId)
+            ->selectRaw('party_id, COALESCE(SUM(credit) - SUM(debit), 0) as balance')
+            ->groupBy('party_id')
+            ->pluck('balance', 'party_id');
+
+        $vendors = \App\Models\Vendor::orderBy('name')->get()->map(function($vendor) use ($vendorBalances) {
+            $vendor->balance = (float) ($vendorBalances[$vendor->id] ?? 0);
             return $vendor;
         });
 
-        return view('admin_panel.pos.index', compact('posProducts', 'customers', 'accounts', 'vendors'));
+        // 5. Check if editing existing sale
+        $editId = request()->query('edit_id');
+        $editSaleData = null;
+        if ($editId) {
+            $sale = \App\Models\Sale::with('items.product')->find($editId);
+            if ($sale) {
+                $items = [];
+                foreach ($sale->items as $item) {
+                    $p = $item->product;
+                    $sizeMode = $item->size_mode ?? ($p ? $p->size_mode : 'by_pieces');
+                    $ppb = (float) ($item->pieces_per_box > 0 ? $item->pieces_per_box : ($p ? ($p->pieces_per_box > 0 ? $p->pieces_per_box : 1) : 1));
+
+                    $variantData = '';
+                    $itemName = $p ? $p->item_name : 'Item';
+                    if (!empty($item->color)) {
+                        $decoded = base64_decode($item->color, true);
+                        $vData = ($decoded !== false) ? json_decode($decoded, true) : json_decode($item->color, true);
+                        if (!empty($vData) && is_array($vData)) {
+                            $variantData = base64_encode(json_encode($vData));
+                            $vColorName = $vData['color'] ?? '';
+                            $vSizeName = $vData['size'] ?? '';
+                            $vParts = [];
+                            if ($vSizeName && $vSizeName !== '-') $vParts[] = $vSizeName;
+                            if ($vColorName && $vColorName !== '-') $vParts[] = $vColorName;
+                            if (!empty($vParts)) $itemName .= ' ' . implode(' | ', $vParts);
+                        } else {
+                            $itemName .= ' (' . $item->color . ')';
+                        }
+                    }
+
+                    $itemId = $item->product_id;
+                    if ($variantData) {
+                        $itemId .= '|variant|' . $variantData;
+                    }
+
+                    $items[] = [
+                        'id' => $itemId,
+                        'product_id' => $item->product_id,
+                        'name' => $itemName,
+                        'price' => (float) $item->price_per_piece,
+                        'qty' => (int) ($item->total_pieces > 0 ? $item->total_pieces : $item->qty),
+                        'size_mode' => $sizeMode,
+                        'pieces_per_box' => $ppb,
+                        'variant_data' => $variantData,
+                        'item_discount' => (float) $item->discount_amount,
+                        'line_total' => (float) $item->total_price
+                    ];
+                }
+
+                $paymentAccountId = null;
+                $cashBankAccIds = $accounts->pluck('id')->toArray();
+                if (!empty($cashBankAccIds)) {
+                    $paymentEntry = \App\Models\JournalEntry::whereIn('account_id', $cashBankAccIds)
+                        ->where(function($q) use ($sale) {
+                            $q->where('description', 'like', '%Sale #' . $sale->invoice_no . '%')
+                              ->orWhere('description', 'like', '%Sale %' . $sale->id . '%');
+                        })
+                        ->first();
+                    if ($paymentEntry) {
+                        $paymentAccountId = $paymentEntry->account_id;
+                    }
+                }
+                if (!$paymentAccountId) {
+                    $paymentAccountId = $accounts->first()->id ?? null;
+                }
+
+                $paidAmount = 0;
+                if (!empty($sale->paid_amount) && (float)$sale->paid_amount > 0) {
+                    $paidAmount = (float)$sale->paid_amount;
+                } elseif (!empty($sale->cash) && (float)$sale->cash > 0) {
+                    $paidAmount = (float) ($sale->cash - max(0, (float)$sale->change));
+                } else {
+                    $journalPaid = \App\Models\JournalEntry::whereIn('account_id', $cashBankAccIds)
+                        ->where(function($q) use ($sale) {
+                            $q->where('description', 'like', '%' . $sale->invoice_no . '%')
+                              ->orWhere('description', 'like', '%Sale %' . $sale->id . '%');
+                        })
+                        ->sum('debit');
+                    if ($journalPaid > 0) {
+                        $paidAmount = (float) $journalPaid;
+                    } else if ($sale->total_net > 0 && ($sale->sale_status === 'posted' || $sale->sale_status === null)) {
+                        $paidAmount = (float) $sale->total_net;
+                    }
+                }
+
+                $editSaleData = [
+                    'id' => $sale->id,
+                    'invoice_no' => $sale->invoice_no,
+                    'customer_id' => $sale->customer_id,
+                    'note' => $sale->note ?? '',
+                    'discount' => (float) $sale->total_extradiscount,
+                    'extra_cost' => (float) $sale->extra_cost,
+                    'paid_amount' => $paidAmount,
+                    'payment_account_id' => $paymentAccountId,
+                    'items' => $items
+                ];
+            }
+        }
+
+        return view('admin_panel.pos.index', compact('posProducts', 'customers', 'accounts', 'vendors', 'editSaleData'));
     }
 
     private function matchSaleItemToVariant($saleItem, $variant)

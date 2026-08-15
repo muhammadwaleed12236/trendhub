@@ -1384,9 +1384,9 @@ blockquote span:before {
 }
 
 .rt_nav_header.horizontal-layout .top_nav {
-    /* background: #02007C; */
-    background: #3948ff;
-    background: #408679a1;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
     height: 70px;
 }
 
@@ -1993,21 +1993,21 @@ blockquote span:before {
 }
 
 .rt_nav_header.horizontal-layout.fixed-on-scroll .nav-bottom {
-    position: fixed;
-    top: 0;
-    right: 0;
-    left: 0;
-    z-index: 1030;
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    z-index: 1020;
     border-bottom: 1px solid #f2f2f2;
 }
 
 @media (max-width: 991px) {
     .rt_nav_header.horizontal-layout {
-        position: fixed;
-        z-index: 1030;
-        top: 0;
-        left: 0;
-        right: 0;
+        position: relative;
+        z-index: 1020;
+        top: auto;
+        left: auto;
+        right: auto;
     }
     .rt_nav_header.horizontal-layout .top_nav {
         border-bottom: 1px solid #f2f2f2;

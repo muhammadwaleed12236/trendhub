@@ -595,10 +595,20 @@ class ProductController extends Controller
         } elseif ($mode === 'by_cartons') {
             // By Cartons Mode
             $piecesPerBox = (int) $request->pieces_per_box;
-            $boxesQuantity = (int) $request->boxes_quantity;
+            if ($piecesPerBox <= 0) $piecesPerBox = 1;
+            
+            $boxesQuantityRaw = (string) $request->boxes_quantity;
             $loosePieces = (int) $request->loose_pieces;
-
-            $totalStockQty = ($piecesPerBox * $boxesQuantity) + $loosePieces;
+            
+            if (strpos($boxesQuantityRaw, '.') !== false) {
+                $parts = explode('.', $boxesQuantityRaw);
+                $boxesQuantity = (int)($parts[0] ?? 0);
+                $looseFromDec = (int)($parts[1] ?? 0);
+                $totalStockQty = ($piecesPerBox * $boxesQuantity) + $looseFromDec + $loosePieces;
+            } else {
+                $boxesQuantity = (int) $request->boxes_quantity;
+                $totalStockQty = ($piecesPerBox * $boxesQuantity) + $loosePieces;
+            }
 
             $inputSalePc = (float) $request->sale_price_per_box; // Actually per piece input in this mode
             $inputPurchPc = (float) $request->purchase_price_per_piece;
@@ -693,9 +703,11 @@ class ProductController extends Controller
                 }
 
                 $variantStockSum = 0;
+                $baseConvForCarton = null;
                 for ($i = 0; $i < count($names); $i++) {
                     if (!empty($names[$i])) {
-                        $vStock = (float)($stocks[$i] ?? 0);
+                        $vStockRaw = (string)($stocks[$i] ?? '0');
+                        $vStock = (float)$vStockRaw;
                         $vConvFactor = (float)($conv_factors[$i] ?? 0);
                         $isBase = (int)($is_bases[$i] ?? 0);
                         if ($vConvFactor <= 0) $vConvFactor = 1;
@@ -703,6 +715,18 @@ class ProductController extends Controller
                         if (in_array($mode, ['by_kg', 'by_gm', 'by_ton'])) {
                             if ($isBase === 1) {
                                 $variantStockSum += $vStock;
+                            }
+                        } elseif ($mode === 'by_cartons') {
+                            if ($isBase === 1 || $baseConvForCarton === null) {
+                                $baseConvForCarton = $vConvFactor;
+                            }
+                            if (strpos($vStockRaw, '.') !== false) {
+                                $parts = explode('.', $vStockRaw);
+                                $boxes = (int)($parts[0] ?? 0);
+                                $loose = (int)($parts[1] ?? 0);
+                                $variantStockSum += ($boxes * $vConvFactor) + $loose;
+                            } else {
+                                $variantStockSum += ($vStock * $vConvFactor);
                             }
                         } else {
                             $variantStockSum += $vStock;
@@ -728,6 +752,9 @@ class ProductController extends Controller
                 
                 if (count($variants) > 0) {
                     $totalStockQty = $variantStockSum;
+                    if ($mode === 'by_cartons' && $baseConvForCarton) {
+                        $piecesPerBox = (int)$baseConvForCarton;
+                    }
                     $boxesQuantity = $piecesPerBox > 0 ? $totalStockQty / $piecesPerBox : $totalStockQty;
                 }
             }
@@ -1019,8 +1046,16 @@ class ProductController extends Controller
                     }
                 }
 
+                $baseConvForCarton = null;
                 for ($i = 0; $i < count($names); $i++) {
                     if (!empty($names[$i])) {
+                        $vConvFactor = (float)($conv_factors[$i] ?? 0);
+                        $isBase = (int)($is_bases[$i] ?? 0);
+                        if ($vConvFactor <= 0) $vConvFactor = 1;
+                        if ($mode === 'by_cartons' && ($isBase === 1 || $baseConvForCarton === null)) {
+                            $baseConvForCarton = $vConvFactor;
+                        }
+
                         $variants[] = [
                             'name' => $names[$i],
                             'size' => $sizes[$i] ?? '-',
@@ -1032,11 +1067,14 @@ class ProductController extends Controller
                             'purch_price' => $purch_prices[$i] ?? 0,
                             'alert' => $alerts[$i] ?? 0,
                             'barcode' => $barcodes[$i] ?? '',
-                            'conv_factor' => $conv_factors[$i] ?? 0,
+                            'conv_factor' => $vConvFactor,
                             'is_base_variant' => $is_bases[$i] ?? 0,
                             'unit' => $units[$i] ?? 'Pcs',
                         ];
                     }
+                }
+                if ($mode === 'by_cartons' && $baseConvForCarton) {
+                    $piecesPerBox = (int)$baseConvForCarton;
                 }
             }
 

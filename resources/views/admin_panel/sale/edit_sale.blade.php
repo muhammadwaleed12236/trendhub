@@ -532,20 +532,20 @@
         }
         
         /* Column Widths - Compact & Full Width */
-        .col-product { width: auto; min-width: 280px; }
-        .col-warehouse { min-width: 100px; }
-        .col-stock { width: 70px; min-width: 70px; }
-        .col-qty { width: 70px; min-width: 70px; }
-        .col-price { width: 85px; min-width: 85px; }
-        .col-disc { width: 90px; min-width: 90px; }
-        .col-disc-amt { width: 80px; min-width: 80px; }
-        .col-pieces { width: 70px; min-width: 70px; }
-        .col-price-p { width: 85px; min-width: 85px; }
-        .col-price-m2 { width: 85px; min-width: 85px; }
-        .col-amount { width: 95px; min-width: 95px; }
-        .col-action { width: 35px; min-width: 35px; text-align: center; }
-        .col-size { width: 75px; min-width: 75px; }
-        .col-color { width: 85px; min-width: 85px; }
+        .col-product { width: auto; min-width: 150px; }
+        .col-warehouse { min-width: 90px; }
+        .col-stock { width: 55px; min-width: 55px; }
+        .col-qty, .col-qty-wrapper { width: 95px; min-width: 95px; }
+        .col-price { width: 75px; min-width: 75px; }
+        .col-disc { width: 75px; min-width: 75px; }
+        .col-disc-amt { width: 70px; min-width: 70px; }
+        .col-pieces { width: 55px; min-width: 55px; }
+        .col-price-p { width: 75px; min-width: 75px; }
+        .col-price-m2 { width: 75px; min-width: 75px; }
+        .col-amount { width: 85px; min-width: 85px; }
+        .col-action { width: 32px; min-width: 32px; text-align: center; }
+        .col-size { width: 55px; min-width: 55px; }
+        .col-color { width: 60px; min-width: 60px; }
 
         /* Invalid cells & inputs */
         .invalid-cell {

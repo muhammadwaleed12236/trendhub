@@ -97,12 +97,15 @@
         }
     </style>
 
-    <div class="container-fluid">
-        <div class="card premium-card">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-warehouse me-2 text-success"></i> Warehouse Stock</h5>
+    <div class="container-fluid px-3 px-md-4 py-2">
+        <div class="card premium-card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-warehouse me-2 text-success"></i> Warehouse Stock</h5>
+                    <p class="text-muted mb-0 small">View and manage warehouse stock inventories</p>
+                </div>
                 @can('warehouse.stock.create')
-                    <button onclick="openAddModal()" class="btn btn-success shadow-sm rounded-pill px-4">
+                    <button onclick="openAddModal()" class="btn btn-success shadow-sm rounded-pill px-4 fw-bold">
                         <i class="fas fa-plus me-1"></i> Add Stock
                     </button>
                 @endcan
@@ -184,8 +187,9 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add Stock</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                    <button type="button" class="close text-white" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.9; font-size: 1.5rem; background: transparent; border: none;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
                 <div class="modal-body">
                     <form id="stockForm">

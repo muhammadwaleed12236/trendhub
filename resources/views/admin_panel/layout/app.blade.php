@@ -156,6 +156,200 @@
     <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> -->
     <link rel="stylesheet" href="{{ asset('assets/css/flatpickr.min.css') }}">
 
+    <style>
+        .dropdown-toggle::after,
+        .nav-link::after,
+        .navbar-nav .nav-item .nav-link::after,
+        .count-indicator::after {
+            display: none !important;
+            content: none !important;
+        }
+        .rt_nav_header.horizontal-layout .top_nav {
+            background: #090e1a !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4) !important;
+            height: 66px;
+            padding: 0 12px;
+        }
+        .header-pw-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 9px;
+            background: #0d1527;
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 900;
+            font-size: 19px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            flex-shrink: 0;
+            margin-right: 12px;
+        }
+        .header-company-pill {
+            background: rgba(30, 58, 138, 0.25);
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            border-radius: 10px;
+            padding: 6px 14px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 20px;
+        }
+        .header-support-btn {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(59, 130, 246, 0.45);
+            border-radius: 10px;
+            padding: 6px 14px;
+            color: #ffffff !important;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .header-support-btn:hover {
+            background: rgba(37, 99, 235, 0.25);
+            border-color: rgba(96, 165, 250, 0.6);
+            transform: translateY(-1px);
+        }
+        .header-online-pill {
+            background: rgba(6, 78, 59, 0.6);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 10px;
+            padding: 6px 14px;
+            color: #34d399;
+            font-size: 12.5px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulseGlow 2s infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        /* Mobile Dropdown Fix */
+        @media (max-width: 768px) {
+            .rt_nav_header.horizontal-layout .top_nav {
+                padding: 0 8px !important;
+            }
+            .top_nav .dropdown-menu {
+                position: fixed !important;
+                top: 60px !important;
+                right: 8px !important;
+                left: auto !important;
+                min-width: 220px !important;
+                max-width: calc(100vw - 16px) !important;
+                z-index: 99999 !important;
+                transform: none !important;
+                box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45) !important;
+            }
+            .header-pw-badge {
+                width: 32px !important;
+                height: 32px !important;
+                font-size: 16px !important;
+                margin-right: 6px !important;
+            }
+            .header-online-pill {
+                padding: 5px 8px !important;
+            }
+        }
+
+        /* Fix Navigation Overlapping Page Content Universally */
+        .rt_nav_header.horizontal-layout {
+            position: relative !important;
+            z-index: 1020 !important;
+            margin-bottom: 0 !important;
+            width: 100% !important;
+        }
+        .rt_nav_header.horizontal-layout .nav-bottom,
+        .rt_nav_header.horizontal-layout.fixed-on-scroll .nav-bottom {
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            z-index: 1020 !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        /* Universal App Page Body - Generous Top Clearance */
+        .app-page-body {
+            position: relative;
+            width: 100%;
+            min-height: calc(100vh - 140px);
+            padding-top: 55px !important;
+            padding-bottom: 60px !important;
+            box-sizing: border-box;
+        }
+
+        .main-content {
+            position: relative !important;
+            width: 100% !important;
+            padding-top: 15px !important;
+            padding-bottom: 40px !important;
+            min-height: auto !important;
+        }
+        .main-content-inner {
+            padding: 10px 0 30px 0 !important;
+        }
+        .sale-report-container,
+        .report-page-container,
+        .cat-page,
+        .brand-page,
+        .erp-page {
+            padding-top: 15px !important;
+        }
+        .app-page-body > .card:first-child,
+        .app-page-body > .container:first-child,
+        .app-page-body > .container-fluid:first-child,
+        .app-page-body > form:first-child {
+            margin-top: 10px;
+        }
+        .page-header {
+            margin-top: 5px !important;
+            margin-bottom: 25px !important;
+        }
+
+        /* Modal & Backdrop Stacking Fix */
+        .modal {
+            z-index: 1060 !important;
+        }
+        .modal-backdrop {
+            z-index: 1040 !important;
+        }
+        .modal-dialog {
+            z-index: 1061 !important;
+            position: relative;
+        }
+        @media (max-width: 991px) {
+            .rt_nav_header.horizontal-layout {
+                position: relative !important;
+            }
+            .app-page-body {
+                padding-top: 35px !important;
+            }
+            .main-content {
+                padding-top: 15px !important;
+            }
+        }
+    </style>
+
     @vite(['resources/js/app.js'])
 </head>
 
@@ -172,294 +366,267 @@
               Navigation
     *===========================-->
         <nav class="rt_nav_header horizontal-layout col-lg-12 col-12 p-0">
-            <div class="top_nav flex-grow-1">
-                <div class="container d-flex flex-row h-100 align-items-center">
-                    <!--=========================*
-                              Logo
-                *===========================-->
-                    <div class="text-center rt_nav_wrapper d-flex align-items-center">
-                        {{-- <a class="nav_logo rt_logo" href="index.html"><img  src="{{asset('assets/images/WIJDAN-removebg-preview.png')}}" alt="logo" /></a> --}}
-                        <a class="nav_logo rt_logo text-success" href="{{ url('/') }}">{{ \App\Models\Setting::get('company_name', 'prowave technogies') }}</a>
-                        {{-- <a class="nav_logo nav_logo_mob" href="index.html"><img src="{{asset('assets/images/WIJDAN-removebg-preview.png')}}" alt="logo"/></a> --}}
-                    </div>
-                    <!--=========================*
-                           End Logo
-               *===========================-->
-                    <div class="nav_wrapper_main d-flex align-items-center justify-content-between flex-grow-1">
-                        <ul class="navbar-nav navbar-nav-right mr-0 ml-auto">
-                            <!-- My Attendance Quick Access -->
-                            <li class="nav-item mr-3">
-                                <a href="{{ route('my-attendance') }}" class="nav-link"
-                                    style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border-radius: 8px; padding: 8px 16px;">
-                                    <i class="fa fa-fingerprint"></i> My Attendance
-                                </a>
-                            </li>
+            <div class="top_nav flex-grow-1" style="background: #090e1a !important;">
+                <div class="container-fluid px-3 px-md-4 d-flex flex-row h-100 align-items-center justify-content-between">
+                    
+                    <!-- Left: ProWave Brand Logo + Company Name Pill -->
+                    <div class="d-flex align-items-center">
+                        <a class="nav_logo d-flex align-items-center text-decoration-none" href="{{ url('/') }}">
+                            <div class="header-pw-badge">
+                                <span style="color: #ffffff;">P</span><span style="color: #38bdf8;">W</span>
+                            </div>
+                            <div class="d-flex flex-column text-start justify-content-center">
+                                <span style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 800; color: #ffffff; line-height: 1.15; letter-spacing: -0.2px;">ProWave</span>
+                                <span style="font-size: 11px; font-weight: 700; color: #38bdf8; letter-spacing: 0.6px; line-height: 1;">Technologies</span>
+                            </div>
+                        </a>
 
-                            <!-- Notification Bell -->
-                            <li class="nav-item dropdown mr-2" id="notificationLi">
-                                <a class="nav-link count-indicator dropdown-toggle position-relative"
-                                    id="notificationDropdown" href="#" data-toggle="dropdown"
-                                    aria-expanded="false">
-                                    <i class="fas fa-bell text-secondary"
-                                        style="font-size: 20px; transition: color 0.3s;"></i>
-                                    <span class="badge badge-danger notification-badge"
-                                        style="display: none; position: absolute; top: -2px; right: -2px; font-size: 9px; padding: 3px 5px; border-radius: 50%; box-shadow: 0 2px 5px rgba(220,53,69,0.5);">0</span>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list shadow-lg border-0"
-                                    aria-labelledby="notificationDropdown"
-                                    style="width: 320px; border-radius: 12px; margin-top: 10px; overflow: hidden;">
-                                    <div class="dropdown-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center"
-                                        style="border-radius: 12px 12px 0 0;">
-                                        <p class="mb-0 font-weight-bold text-dark">NOTIFICATIONS</p>
-                                    </div>
-                                    <div id="notificationList" style="max-height: 350px; overflow-y: auto;">
-                                        <!-- Items will be injected here -->
-                                        <div class="text-center p-4">
-                                            <div class="spinner-border text-primary spinner-border-sm" role="status">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- Sticky Footer Button -->
-                                    <div class="dropdown-footer text-center bg-light border-top p-2"
-                                        style="position: sticky; bottom: 0; z-index: 10;">
-                                        <a href="{{ route('notifications.index') }}"
-                                            class="btn btn-primary btn-sm btn-block shadow-sm font-weight-bold">View
-                                            All Notifications</a>
+                        <!-- Company / Branch Pill -->
+                        <div class="header-company-pill d-none d-lg-flex">
+                            <i class="far fa-user" style="color: #38bdf8; font-size: 13px;"></i>
+                            <span style="color: #f1f5f9; font-weight: 600; font-size: 13px;">{{ \App\Models\Setting::get('company_name', 'White Dimond') }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Phone + Support + Online + Sun + Notification + Profile -->
+                    <div class="d-flex align-items-center" style="gap: 10px;">
+                        
+                        <!-- Phone Number -->
+                        <a href="tel:+923173836223" class="d-none d-md-flex align-items-center text-decoration-none" style="gap: 8px; color: #ffffff; font-size: 13.5px; font-weight: 600;">
+                            <div style="width: 26px; height: 26px; border-radius: 50%; background: #2563eb; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; flex-shrink: 0;">
+                                <i class="fas fa-phone-alt"></i>
+                            </div>
+                            <span class="text-white">+92 317 3836223</span>
+                        </a>
+
+                        <!-- Vertical Divider -->
+                        <div class="d-none d-md-block" style="height: 20px; width: 1px; background: rgba(255,255,255,0.18);"></div>
+
+                        <!-- Support Button -->
+                        <a href="https://wa.me/923173836223" target="_blank" class="header-support-btn d-none d-md-flex" title="Contact ProWave Support">
+                            <i class="fas fa-headset" style="color: #38bdf8; font-size: 13.5px;"></i>
+                            <span>Support</span>
+                        </a>
+
+                        <!-- Online Status Pill -->
+                        <div class="header-online-pill">
+                            <span class="online-dot"></span>
+                            <span class="d-none d-sm-inline">Online</span>
+                        </div>
+
+                        <!-- Sun / Theme Toggle -->
+                        <div class="d-none d-sm-flex align-items-center justify-content-center text-white-50" style="width: 28px; height: 28px; cursor: pointer; font-size: 15px;">
+                            <i class="fas fa-sun"></i>
+                        </div>
+
+                        <!-- Settings Link -->
+                        @canany(['settings.view', 'settings.read'])
+                            <a href="{{ route('settings.index') }}" class="d-none d-sm-flex align-items-center justify-content-center text-white-50 text-decoration-none" style="width: 28px; height: 28px; font-size: 15px;" title="Settings">
+                                <i class="fas fa-cog" style="color: #94a3b8;"></i>
+                            </a>
+                        @endcanany
+
+                        <!-- Notification Bell -->
+                        <div class="dropdown position-relative" id="notificationLi">
+                            <a class="d-flex align-items-center justify-content-center text-white-50 p-0 text-decoration-none"
+                                id="notificationDropdown" href="#" data-toggle="dropdown" data-display="static"
+                                aria-expanded="false" style="width: 32px; height: 32px; border-radius: 8px; cursor: pointer;">
+                                <i class="fas fa-bell" style="font-size: 16px; color: #94a3b8;"></i>
+                                <span class="badge badge-danger notification-badge"
+                                    style="display: none; position: absolute; top: -2px; right: -2px; font-size: 9px; padding: 2px 4px; border-radius: 50%;">0</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list shadow-lg border-0"
+                                aria-labelledby="notificationDropdown"
+                                style="width: 320px; border-radius: 12px; margin-top: 10px; overflow: hidden;">
+                                <div class="dropdown-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center"
+                                    style="border-radius: 12px 12px 0 0;">
+                                    <p class="mb-0 font-weight-bold text-dark">NOTIFICATIONS</p>
+                                </div>
+                                <div id="notificationList" style="max-height: 350px; overflow-y: auto;">
+                                    <div class="text-center p-4">
+                                        <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
                                     </div>
                                 </div>
-                            </li>
+                                <div class="dropdown-footer text-center bg-light border-top p-2"
+                                    style="position: sticky; bottom: 0; z-index: 10;">
+                                    <a href="{{ route('notifications.index') }}"
+                                        class="btn btn-primary btn-sm btn-block shadow-sm font-weight-bold">View
+                                        All Notifications</a>
+                                </div>
+                            </div>
+                        </div>
 
-                            <style>
-                                /* Standard Click Dropdown Styling */
+                        <!-- Profile Dropdown -->
+                        <div class="dropdown position-relative">
+                            <a class="d-flex align-items-center justify-content-center p-0 text-decoration-none" 
+                               href="#" data-toggle="dropdown" data-display="static" id="profileDropdown" style="cursor: pointer;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                     style="width: 32px; height: 32px; border: 1.5px solid rgba(255,255,255,0.45); color: #ffffff; font-size: 14px; transition: all 0.2s;">
+                                    <i class="far fa-user"></i>
+                                </div>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right border-0 shadow-lg p-2"
+                                aria-labelledby="profileDropdown" style="border-radius: 12px; margin-top: 10px; min-width: 220px;">
+                                <div class="px-3 py-2 border-bottom mb-2 bg-light rounded">
+                                    <p class="mb-0 text-dark font-weight-bold" style="font-size: 13px;">{{ Auth::user()->name }}</p>
+                                    <small class="text-muted text-break" style="font-size: 11px;">{{ Auth::user()->email ?? '' }}</small>
+                                </div>
+                                @canany(['settings.view', 'settings.read'])
+                                    <a class="dropdown-item d-flex align-items-center text-dark font-weight-bold py-2 mb-1" href="{{ route('settings.index') }}" style="border-radius: 8px;">
+                                        <i class="fas fa-cog text-secondary mr-2"></i> Settings
+                                    </a>
+                                @endcanany
+                                <form method="POST" action="{{ route('logout') }}" class="m-0">
+                                    @csrf
+                                    <button type="submit" class="dropdown-item d-flex align-items-center text-danger font-weight-bold py-2" style="border-radius: 8px; cursor: pointer;">
+                                        <i class="fas fa-power-off text-danger mr-2"></i> Logout Account
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
 
-                                /* Scrollbar */
-                                #notificationList::-webkit-scrollbar {
-                                    width: 5px;
-                                }
+                        <!-- Mobile Hamburger Button -->
+                        <button class="navbar-toggler align-self-center border-0 p-0 text-white ms-1 d-lg-none" type="button" data-toggle="minimize" style="font-size: 18px; outline: none; background: transparent; cursor: pointer;">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
 
-                                #notificationList::-webkit-scrollbar-thumb {
-                                    background: #e0e0e0;
-                                    border-radius: 10px;
-                                }
+            </div>
 
-                                #notificationList::-webkit-scrollbar-track {
-                                    background: transparent;
-                                }
+            <!-- Notifications Polling Script -->
+            <script>
+                let _notifXhr1 = null;
+                let _notifXhr2 = null;
+                let _notifTimer = null;
 
-                                /* Items */
-                                .notification-item {
-                                    transition: all 0.2s ease;
-                                    border-left: 3px solid transparent;
-                                }
+                document.addEventListener('DOMContentLoaded', function() {
+                    setTimeout(function() {
+                        fetchNotifications();
+                        _notifTimer = setInterval(fetchNotifications, 90000);
+                    }, 5000);
+                });
 
-                                .notification-item:hover {
-                                    background-color: #f8f9fa;
-                                    border-left: 3px solid #3b82f6;
-                                    /* Blue accent */
-                                }
+                function fetchNotifications() {
+                    if (typeof $ === 'undefined') return;
+                    if (_notifXhr1) { try { _notifXhr1.abort(); } catch(e){} _notifXhr1 = null; }
+                    if (_notifXhr2) { try { _notifXhr2.abort(); } catch(e){} _notifXhr2 = null; }
 
-                                /* Navigation Bell Hover */
-                                #notificationLi .nav-link:hover .fa-bell {
-                                    color: #3b82f6 !important;
-                                    /* Blue on hover */
-                                }
-                            </style>
+                    _notifXhr1 = $.ajax({
+                        url: "{{ route('notifications.fetch') }}",
+                        method: 'GET',
+                        timeout: 8000,
+                        success: function(data) {
+                            let notifications = data.notifications || [];
+                            let count = data.count || 0;
 
-                            <script>
-                                let _notifXhr1 = null;
-                                let _notifXhr2 = null;
-                                let _notifTimer = null;
+                            _notifXhr2 = $.ajax({
+                                url: "{{ route('customers.reminders') }}",
+                                method: 'GET',
+                                timeout: 8000,
+                                success: function(reminderData) {
+                                    let reminders = reminderData.reminders || [];
+                                    let totalCount = count + reminders.length;
+                                    if (totalCount > 0) {
+                                        $('.notification-badge').text(totalCount).show();
+                                    } else {
+                                        $('.notification-badge').hide();
+                                    }
 
-                                document.addEventListener('DOMContentLoaded', function() {
-                                    // First load after 5 seconds (don't block initial page render)
-                                    setTimeout(function() {
-                                        fetchNotifications();
-                                        // Poll every 90 seconds (was 30s - was killing php artisan serve)
-                                        _notifTimer = setInterval(fetchNotifications, 90000);
-                                    }, 5000);
-                                });
+                                    let html = '';
+                                    reminders.forEach(r => {
+                                        html += `
+                                        <div class="dropdown-item p-3 notification-item reminder-item" style="white-space: normal; background-color: #fef2f2;">
+                                            <div class="d-flex align-items-start">
+                                                <div class="me-3 mt-1" style="min-width: 36px;">
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                                         style="width:36px; height:36px; background-color: #fee2e2; color: #ef4444;">
+                                                        <i class="fas fa-money-bill-wave" style="font-size:14px;"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-grow-1 ms-3">
+                                                    <div class="d-flex justify-content-between align-items-start">
+                                                        <h6 class="font-weight-bold text-dark mb-1" style="font-size:14px; line-height:1.2;">Payment Due: ${r.name}</h6>
+                                                        <button class="btn btn-xs btn-outline-danger snooze-btn" data-id="${r.id}" title="Snooze for today" style="padding: 2px 5px; font-size: 10px;">
+                                                            <i class="fa fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                    <p class="text-danger small mb-1" style="font-size:12px; line-height:1.4;">
+                                                        Remaining Balance: <b>${r.balance}</b>
+                                                    </p>
+                                                    <p class="text-secondary small mb-0" style="font-size:10px; font-weight: 500;">
+                                                        <i class="far fa-calendar-alt me-1"></i> Due Date: ${r.date}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>`;
+                                    });
 
-                                function fetchNotifications() {
-                                    if (typeof $ === 'undefined') return;
-
-                                    // Abort any in-progress requests before starting new ones
-                                    if (_notifXhr1) { try { _notifXhr1.abort(); } catch(e){} _notifXhr1 = null; }
-                                    if (_notifXhr2) { try { _notifXhr2.abort(); } catch(e){} _notifXhr2 = null; }
-
-                                    // Fetch standard notifications with 8s timeout
-                                    _notifXhr1 = $.ajax({
-                                        url: "{{ route('notifications.fetch') }}",
-                                        method: 'GET',
-                                        timeout: 8000,
-                                        success: function(data) {
-                                        let notifications = data.notifications || [];
-                                        let count = data.count || 0;
-
-                                        // Fetch Payment Reminders - also with timeout
-                                        _notifXhr2 = $.ajax({
-                                            url: "{{ route('customers.reminders') }}",
-                                            method: 'GET',
-                                            timeout: 8000,
-                                            success: function(reminderData) {
-                                            let reminders = reminderData.reminders || [];
-                                            
-                                            // Update Badge (Total = Notifications + Reminders)
-                                            let totalCount = count + reminders.length;
-                                            if (totalCount > 0) {
-                                                $('.notification-badge').text(totalCount).show();
-                                                $('.notification-badge').addClass('animate__animated animate__pulse');
-                                            } else {
-                                                $('.notification-badge').hide();
+                                    if (notifications.length === 0 && reminders.length === 0) {
+                                        html = `
+                                            <div class="text-center p-5">
+                                                <i class="fas fa-bell-slash text-muted mb-2" style="font-size: 24px;"></i>
+                                                <p class="text-muted small mb-0">No new notifications</p>
+                                            </div>`;
+                                    } else {
+                                        notifications.forEach(n => {
+                                            let iconBg = '#e3f2fd'; 
+                                            let iconColor = '#2196f3'; 
+                                            let iconClass = 'fa-info';
+                                            if (n.type === 'sale_return') {
+                                                iconBg = '#fff3e0'; 
+                                                iconColor = '#ff9800'; 
+                                                iconClass = 'fa-undo';
                                             }
 
-                                            // Update List
-                                            let html = '';
-                                            
-                                            // Render Payment Reminders First
-                                            reminders.forEach(r => {
-                                                html += `
-                                                <div class="dropdown-item p-3 notification-item reminder-item" style="white-space: normal; background-color: #fef2f2;">
-                                                    <div class="d-flex align-items-start">
-                                                        <div class="me-3 mt-1" style="min-width: 36px;">
-                                                            <div class="rounded-circle d-flex align-items-center justify-content-center" 
-                                                                 style="width:36px; height:36px; background-color: #fee2e2; color: #ef4444;">
-                                                                <i class="fas fa-money-bill-wave" style="font-size:14px;"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="flex-grow-1 ms-3">
-                                                            <div class="d-flex justify-content-between align-items-start">
-                                                                <h6 class="font-weight-bold text-dark mb-1" style="font-size:14px; line-height:1.2;">Payment Due: ${r.name}</h6>
-                                                                <button class="btn btn-xs btn-outline-danger snooze-btn" data-id="${r.id}" title="Snooze for today" style="padding: 2px 5px; font-size: 10px;">
-                                                                    <i class="fa fa-times"></i>
-                                                                </button>
-                                                            </div>
-                                                            <p class="text-danger small mb-1" style="font-size:12px; line-height:1.4;">
-                                                                Remaining Balance: <b>${r.balance}</b>
-                                                            </p>
-                                                            <p class="text-secondary small mb-0" style="font-size:10px; font-weight: 500;">
-                                                                <i class="far fa-calendar-alt me-1"></i> Due Date: ${r.date}
-                                                            </p>
+                                            html += `
+                                            <a class="dropdown-item p-3 notification-item" href="${n.action_url || '#'}" style="white-space: normal;">
+                                                <div class="d-flex align-items-start">
+                                                    <div class="me-3 mt-1" style="min-width: 36px;">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                                             style="width:36px; height:36px; background-color: ${iconBg}; color: ${iconColor};">
+                                                            <i class="fas ${iconClass}" style="font-size:14px;"></i>
                                                         </div>
                                                     </div>
-                                                </div>`;
-                                            });
+                                                    <div class="flex-grow-1 ms-3">
+                                                        <h6 class="font-weight-bold text-dark mb-1" style="font-size:14px; line-height:1.2;">${n.title}</h6>
+                                                        <p class="text-muted small mb-1" style="font-size:12px; line-height:1.4; color: #6c757d;">
+                                                            ${n.message.substring(0, 60)}${n.message.length > 60 ? '...' : ''}
+                                                        </p>
+                                                        <p class="text-secondary small mb-0" style="font-size:10px; font-weight: 500;">
+                                                            <i class="far fa-clock me-1"></i> ${new Date(n.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </a>`;
+                                        });
+                                    }
+                                    $('#notificationList').html(html);
 
-                                            if (notifications.length === 0 && reminders.length === 0) {
-                                                html = `
-                                                    <div class="text-center p-5">
-                                                        <i class="fas fa-bell-slash text-muted mb-2" style="font-size: 24px;"></i>
-                                                        <p class="text-muted small mb-0">No new notifications</p>
-                                                    </div>`;
-                                            } else {
-                                                notifications.forEach(n => {
-                                                    let iconBg = '#e3f2fd'; 
-                                                    let iconColor = '#2196f3'; 
-                                                    let iconClass = 'fa-info';
-
-                                                    if (n.type === 'sale_return') {
-                                                        iconBg = '#fff3e0'; 
-                                                        iconColor = '#ff9800'; 
-                                                        iconClass = 'fa-undo';
+                                    $('.snooze-btn').off('click').on('click', function(e) {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        let id = $(this).data('id');
+                                        let row = $(this).closest('.reminder-item');
+                                        $.post("{{ url('customers/snooze-reminder') }}/" + id, { _token: "{{ csrf_token() }}" }, function(res) {
+                                            if (res.success) {
+                                                row.fadeOut(300, function() {
+                                                    $(this).remove();
+                                                    let currentCount = parseInt($('.notification-badge').text());
+                                                    if (currentCount > 1) {
+                                                        $('.notification-badge').text(currentCount - 1);
+                                                    } else {
+                                                        $('.notification-badge').hide();
                                                     }
-
-                                                    html += `
-                                                    <a class="dropdown-item p-3 notification-item" href="${n.action_url || '#'}" style="white-space: normal;">
-                                                        <div class="d-flex align-items-start">
-                                                            <div class="me-3 mt-1" style="min-width: 36px;">
-                                                                <div class="rounded-circle d-flex align-items-center justify-content-center" 
-                                                                     style="width:36px; height:36px; background-color: ${iconBg}; color: ${iconColor};">
-                                                                    <i class="fas ${iconClass}" style="font-size:14px;"></i>
-                                                                </div>
-                                                            </div>
-                                                            <div class="flex-grow-1 ms-3">
-                                                                <h6 class="font-weight-bold text-dark mb-1" style="font-size:14px; line-height:1.2;">${n.title}</h6>
-                                                                <p class="text-muted small mb-1" style="font-size:12px; line-height:1.4; color: #6c757d;">
-                                                                    ${n.message.substring(0, 60)}${n.message.length > 60 ? '...' : ''}
-                                                                </p>
-                                                                <p class="text-secondary small mb-0" style="font-size:10px; font-weight: 500;">
-                                                                    <i class="far fa-clock me-1"></i> ${new Date(n.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </a>`;
                                                 });
                                             }
-                                            $('#notificationList').html(html);
-
-                                            // Re-bind Snooze Buttons
-                                            $('.snooze-btn').off('click').on('click', function(e) {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                let id = $(this).data('id');
-                                                let row = $(this).closest('.reminder-item');
-                                                
-                                                $.post("{{ url('customers/snooze-reminder') }}/" + id, { _token: "{{ csrf_token() }}" }, function(res) {
-                                                    if (res.success) {
-                                                        row.fadeOut(300, function() {
-                                                            $(this).remove();
-                                                            // Update badge count
-                                                            let currentCount = parseInt($('.notification-badge').text());
-                                                            if (currentCount > 1) {
-                                                                $('.notification-badge').text(currentCount - 1);
-                                                            } else {
-                                                                $('.notification-badge').hide();
-                                                            }
-                                                        });
-                                                    }
-                                                });
-                                            });
-                                        }, // end reminders success
-                                        error: function() { /* silently ignore timeout/errors */ }
-                                        }); // end _notifXhr2 ajax
-                                    }, // end notifications success
-                                    error: function() { /* silently ignore timeout/errors */ }
-                                    }); // end _notifXhr1 ajax
+                                        });
+                                    });
                                 }
-                            </script>
-
-                            <!-- Settings -->
-                            @canany(['settings.view', 'settings.read'])
-                                <li class="nav-item mr-2 d-flex align-items-center">
-                                    <a href="{{ route('settings.index') }}" class="nav-link" title="Settings">
-                                        <i class="fas fa-cog text-secondary" style="font-size: 20px; transition: color 0.3s;"></i>
-                                    </a>
-                                </li>
-                            @endcanany
-
-                            <li class="nav-item nav-profile dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown"
-                                    id="profileDropdown">
-                                    <span class="profile_name">{{ Auth::user()->name }} <i
-                                            class="fas fa-chevron-down"></i></span>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-right navbar-dropdown pt-2"
-                                    aria-labelledby="profileDropdown">
-                                    <span role="separator" class="divider"></span>
-                                    <form method="POST" action="{{ route('logout') }}">
-                                        @csrf
-                                        <button type="submit" class="dropdown-item">
-                                            <i class="fas fa-power-off text-dark mr-3"></i> Logout
-                                        </button>
-                                    </form>
-                                    {{-- </a> --}}
-                                </div>
-                            </li>
-                            <!--==================================*
-                                 End Profile Menu
-                        *====================================-->
-                        </ul>
-                        <!--=========================*
-                               Mobile Menu
-                   *===========================-->
-                        <button class="navbar-toggler align-self-center" type="button" data-toggle="minimize">
-                            <span class="fas fa-bars text-white"></span>
-                        </button>
-                        <!--=========================*
-                           End Mobile Menu
-                   *===========================-->
-                    </div>
-                </div>
-            </div>
+                            });
+                        }
+                    });
+                }
+            </script>
             <div class="nav-bottom">
                 <div class="container-fluid" style="padding: 0 20px;">
                     <ul class="nav page-navigation justify-content-center">
@@ -678,6 +845,7 @@
                                         @can('sale.report.view')
                                             <li><a href="{{ route('report.sale') }}"><i class="fa-solid fa-users"></i> Sale
                                                     Report</a></li>
+                                            <li><a href="{{ route('report.product_sale_customer_wise') }}"><i class="fa-solid fa-users-between-lines"></i> Product Sale (Customer Wise)</a></li>
                                         @endcan
                                         @can('customer.ledger.view')
                                             <li><a href="{{ route('report.customer.ledger') }}"><i
@@ -869,12 +1037,37 @@
                             </li>
                         @endcanany
 
+                        <!-- Mobile User Profile & Direct Logout -->
+                        @if (auth()->check())
+                            <li class="nav-item d-lg-none mt-3 pt-2 border-top" style="border-color: #e2e8f0 !important;">
+                                <div class="px-3 py-2 bg-light rounded d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;">
+                                            {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <span class="d-block text-dark font-weight-bold" style="font-size: 13px;">{{ Auth::user()->name }}</span>
+                                            <small class="text-muted" style="font-size: 11px;">{{ Auth::user()->email }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <form method="POST" action="{{ route('logout') }}" class="px-2">
+                                    @csrf
+                                    <button type="submit" class="btn btn-danger btn-block font-weight-bold d-flex align-items-center justify-content-center py-2" style="border-radius: 8px; font-size: 13px; gap: 6px;">
+                                        <i class="fas fa-power-off"></i> Logout Account
+                                    </button>
+                                </form>
+                            </li>
+                        @endif
+
                     </ul>
                 </div>
             </div>
         </nav>
 
-        @yield('content')
+        <div class="app-page-body">
+            @yield('content')
+        </div>
 
         <footer>
             <div class="footer-area">
@@ -1026,10 +1219,13 @@
                 }
             });
 
-            // Auto-detect freeze: if a click occurs on body but hits nothing interactive, clear overlays
+            // Auto-detect freeze: if a click occurs on body/backdrop with no active modal, clear stuck overlays
             document.body.addEventListener('click', function (e) {
-                if (e.target === document.body || e.target.classList.contains('modal-backdrop')) {
-                    clearStuckOverlays();
+                var openModals = document.querySelectorAll('.modal.show');
+                if (openModals.length === 0) {
+                    if (e.target === document.body || e.target.classList.contains('modal-backdrop')) {
+                        clearStuckOverlays();
+                    }
                 }
             });
 
