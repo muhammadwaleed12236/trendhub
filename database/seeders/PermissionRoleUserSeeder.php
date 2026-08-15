@@ -42,6 +42,7 @@ class PermissionRoleUserSeeder extends Seeder
             'products', 'categories', 'subcategories', 'brands', 'units',
             'inward_gatepass', 'purchases', 'vendors', 'warehouses', 'stock_transfers',
             'sales', 'customers', 'sales_officers', 'zones', 'vouchers', 'reports', 'assembly', 'inventory',
+            'web_products', 'coupons', 'web_orders', 'settings', 'web_users'
         ];
 
         $actions = ['read', 'add', 'edit', 'delete'];
@@ -55,6 +56,13 @@ class PermissionRoleUserSeeder extends Seeder
                     Permission::firstOrCreate(['name' => $name]);
                 }
             }
+
+            Permission::firstOrCreate(['name' => 'website-settings.view']);
+            Permission::firstOrCreate(['name' => 'website-settings.create']);
+            Permission::firstOrCreate(['name' => 'website-settings.edit']);
+            Permission::firstOrCreate(['name' => 'website-settings.delete']);
+            Permission::firstOrCreate(['name' => 'website-settings.update']);
+            Permission::firstOrCreate(['name' => 'website-settings.upload_manage']);
 
             // Create roles
             $admin = Role::firstOrCreate(['name' => 'admin']);

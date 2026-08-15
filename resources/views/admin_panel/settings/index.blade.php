@@ -52,6 +52,9 @@
                             </li>
                         </ul>
 
+                        @php
+                            $canEditSettings = auth()->user()->hasAnyPermission(['settings.edit', 'settings.update']);
+                        @endphp
                         <form id="settingsForm" class="mt-4">
                             @csrf
                             <div class="tab-content" id="settingsTabContent">
@@ -62,10 +65,10 @@
                                             <div class="form-group">
                                                 <label>{{ $setting['label'] }}</label>
                                                 @if ($setting['type'] === 'text')
-                                                    <textarea name="settings[{{ $setting['key'] }}]" class="form-control" rows="3">{{ $setting['value'] }}</textarea>
+                                                    <textarea name="settings[{{ $setting['key'] }}]" class="form-control" rows="3" {{ !$canEditSettings ? 'disabled' : '' }}>{{ $setting['value'] }}</textarea>
                                                 @else
                                                     <input type="text" name="settings[{{ $setting['key'] }}]"
-                                                        class="form-control" value="{{ $setting['value'] }}">
+                                                        class="form-control" value="{{ $setting['value'] }}" {{ !$canEditSettings ? 'disabled' : '' }}>
                                                 @endif
                                                 @if ($setting['description'])
                                                     <small
@@ -83,13 +86,13 @@
                                             <div class="form-group">
                                                 <label>{{ $setting['label'] }}</label>
                                                 @if ($setting['type'] === 'text')
-                                                    <textarea name="settings[{{ $setting['key'] }}]" class="form-control" rows="3">{{ $setting['value'] }}</textarea>
+                                                    <textarea name="settings[{{ $setting['key'] }}]" class="form-control" rows="3" {{ !$canEditSettings ? 'disabled' : '' }}>{{ $setting['value'] }}</textarea>
                                                 @elseif($setting['type'] === 'integer')
                                                     <input type="number" name="settings[{{ $setting['key'] }}]"
-                                                        class="form-control" value="{{ $setting['value'] }}">
+                                                        class="form-control" value="{{ $setting['value'] }}" {{ !$canEditSettings ? 'disabled' : '' }}>
                                                 @else
                                                     <input type="text" name="settings[{{ $setting['key'] }}]"
-                                                        class="form-control" value="{{ $setting['value'] }}">
+                                                        class="form-control" value="{{ $setting['value'] }}" {{ !$canEditSettings ? 'disabled' : '' }}>
                                                 @endif
                                                 @if ($setting['description'])
                                                     <small
@@ -107,7 +110,7 @@
                                             <div class="form-group">
                                                 <label>{{ $setting['label'] }}</label>
                                                 <input type="number" name="settings[{{ $setting['key'] }}]"
-                                                    class="form-control" value="{{ $setting['value'] }}">
+                                                    class="form-control" value="{{ $setting['value'] }}" {{ !$canEditSettings ? 'disabled' : '' }}>
                                                 @if ($setting['description'])
                                                     <small
                                                         class="form-text text-muted">{{ $setting['description'] }}</small>
@@ -124,7 +127,7 @@
                                             <div class="form-group">
                                                 <label>{{ $setting['label'] }}</label>
                                                 <input type="text" name="settings[{{ $setting['key'] }}]"
-                                                    class="form-control" value="{{ $setting['value'] }}">
+                                                    class="form-control" value="{{ $setting['value'] }}" {{ !$canEditSettings ? 'disabled' : '' }}>
                                                 @if ($setting['description'])
                                                     <small
                                                         class="form-text text-muted">{{ $setting['description'] }}</small>
@@ -136,9 +139,15 @@
                             </div>
 
                             <div class="mt-4">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> Save Settings
-                                </button>
+                                @if($canEditSettings)
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Save Settings
+                                    </button>
+                                @else
+                                    <button type="button" class="btn btn-primary" disabled style="opacity: 0.6; cursor: not-allowed;">
+                                        <i class="fas fa-lock"></i> Save Settings (Read Only)
+                                    </button>
+                                @endif
                             </div>
                         </form>
                     </div>

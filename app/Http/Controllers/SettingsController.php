@@ -14,6 +14,10 @@ class SettingsController extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->hasAnyPermission(['settings.view', 'settings.read'])) {
+            abort(403, 'Unauthorized action. You do not have permission to view ERP Settings.');
+        }
+
         $settings = Setting::getAllGrouped();
         
         return view('admin_panel.settings.index', compact('settings'));
@@ -24,6 +28,13 @@ class SettingsController extends Controller
      */
     public function update(Request $request)
     {
+        if (!auth()->user()->hasAnyPermission(['settings.edit', 'settings.update'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized action. You do not have permission to edit ERP Settings.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'settings' => 'required|array',
         ]);
@@ -43,6 +54,10 @@ class SettingsController extends Controller
      */
     public function returnSettings()
     {
+        if (!auth()->user()->hasAnyPermission(['settings.view', 'settings.read'])) {
+            abort(403, 'Unauthorized action. You do not have permission to view Return Policy Settings.');
+        }
+
         $settings = \App\Models\SystemSetting::where('group', 'returns')->get();
         
         return view('admin_panel.settings.return_policy', compact('settings'));
@@ -53,6 +68,10 @@ class SettingsController extends Controller
      */
     public function updateReturnSettings(Request $request)
     {
+        if (!auth()->user()->hasAnyPermission(['settings.edit', 'settings.update'])) {
+            abort(403, 'Unauthorized action. You do not have permission to edit Return Policy Settings.');
+        }
+
         $validated = $request->validate([
             'return_deadline_days' => 'required|integer|min:0|max:365',
             'return_require_approval' => 'nullable|boolean',
@@ -71,6 +90,10 @@ class SettingsController extends Controller
      */
     public function returnApprovers()
     {
+        if (!auth()->user()->hasAnyPermission(['settings.view', 'settings.read'])) {
+            abort(403, 'Unauthorized action. You do not have permission to view Return Approvers Settings.');
+        }
+
         $users = \App\Models\User::with('roles')
             ->where('id', '!=', auth()->id()) // Exclude current user
             ->orderBy('name')
@@ -84,6 +107,13 @@ class SettingsController extends Controller
      */
     public function updateReturnApprovers(Request $request)
     {
+        if (!auth()->user()->hasAnyPermission(['settings.edit', 'settings.update'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized action. You do not have permission to edit Return Approvers Settings.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'can_approve_returns' => 'nullable|boolean',

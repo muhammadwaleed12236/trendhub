@@ -140,6 +140,26 @@ class ProductController extends Controller
                     ->select('total_pieces', 'color')
                     ->get();
 
+                // Fetch confirmed web sales
+                $webSalesList = DB::table('ecommerce_order_items as eoi')
+                    ->join('ecommerce_orders as eo', 'eo.id', '=', 'eoi.ecommerce_order_id')
+                    ->where('eoi.product_id', $p->id)
+                    ->where('eo.is_stock_deducted', 1)
+                    ->select('eoi.quantity as total_pieces', 'eoi.color', 'eoi.size')
+                    ->get();
+
+                $salesListArray = $salesList->toArray();
+                foreach ($webSalesList as $wItem) {
+                    $salesListArray[] = (object) [
+                        'total_pieces' => $wItem->total_pieces,
+                        'color' => json_encode([
+                            'color' => $wItem->color ?: '-',
+                            'size' => $wItem->size ?: '-'
+                        ])
+                    ];
+                }
+                $salesList = collect($salesListArray);
+
                 $returnsList = DB::table('sale_return_items as sri')
                     ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
                     ->where('sri.product_id', $p->id)
@@ -756,6 +776,13 @@ class ProductController extends Controller
 
                 'is_part' => 0,
                 'is_assembled' => 0,
+                'is_web_visible' => $request->has('is_web_visible') ? 1 : 0,
+                'show_on_homepage' => $request->has('show_on_homepage') ? 1 : 0,
+                'auto_hide_out_of_stock' => $request->has('auto_hide_out_of_stock') ? 1 : 0,
+                'promo_tag' => $request->promo_tag,
+                'web_sale_price' => $request->web_sale_price,
+                'meta_title' => $request->meta_title,
+                'meta_description' => $request->meta_description,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -778,6 +805,19 @@ class ProductController extends Controller
                     'ref_type' => 'INIT',
                     'note' => 'Initial Stock',
                 ]);
+            }
+
+            // Upload Website Gallery Images
+            if ($request->hasFile('web_images')) {
+                foreach ($request->file('web_images') as $index => $file) {
+                    $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $file->move(public_path('uploads/products'), $fileName);
+                    \App\Models\ProductWebImage::create([
+                        'product_id' => $product->id,
+                        'image_path' => $fileName,
+                        'sort_order' => $index
+                    ]);
+                }
             }
         });
 
@@ -1057,11 +1097,40 @@ class ProductController extends Controller
 
                 'is_part' => 0,
                 'is_assembled' => 0,
+                'is_web_visible' => $request->has('is_web_visible') ? 1 : 0,
+                'show_on_homepage' => $request->has('show_on_homepage') ? 1 : 0,
+                'auto_hide_out_of_stock' => $request->has('auto_hide_out_of_stock') ? 1 : 0,
+                'promo_tag' => $request->promo_tag,
+                'web_sale_price' => $request->web_sale_price,
+                'meta_title' => $request->meta_title,
+                'meta_description' => $request->meta_description,
                 'updated_at' => now(),
             ]);
 
             // BOM re-save logic removed as table does not exist
             // DB::table('product_boms')->where('product_id', $id)->delete();
+
+            // Upload Website Gallery Images
+            if ($request->hasFile('web_images')) {
+                // Remove old images if new ones are uploaded
+                $oldImages = \App\Models\ProductWebImage::where('product_id', $id)->get();
+                foreach($oldImages as $oldImg) {
+                    if(file_exists(public_path('uploads/products/'.$oldImg->image_path))) {
+                        unlink(public_path('uploads/products/'.$oldImg->image_path));
+                    }
+                    $oldImg->delete();
+                }
+
+                foreach ($request->file('web_images') as $index => $file) {
+                    $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $file->move(public_path('uploads/products'), $fileName);
+                    \App\Models\ProductWebImage::create([
+                        'product_id' => $id,
+                        'image_path' => $fileName,
+                        'sort_order' => $index
+                    ]);
+                }
+            }
 
             // ✅ Update WarehouseStock box quantity based on new pieces_per_box (preserve total_pieces)
             $warehouseStock = \App\Models\WarehouseStock::where('product_id', $id)->first();

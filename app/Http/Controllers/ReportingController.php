@@ -121,6 +121,33 @@ class ReportingController extends Controller
                 if ($dateTo)   $salesQuery->whereDate('created_at', '<=', $dateTo);
                 $salesList = $salesQuery->select('total_pieces', 'total', 'color')->get();
 
+                // Fetch confirmed web sales
+                $webSalesQuery = DB::table('ecommerce_order_items as eoi')
+                    ->join('ecommerce_orders as eo', 'eo.id', '=', 'eoi.ecommerce_order_id')
+                    ->where('eoi.product_id', $product->id)
+                    ->where('eo.is_stock_deducted', 1);
+
+                if ($warehouseId && $warehouseId !== 'all' && $warehouseId != 1) {
+                    $webSalesQuery->whereRaw('1 = 0');
+                }
+                if ($dateFrom) $webSalesQuery->whereDate('eo.created_at', '>=', $dateFrom);
+                if ($dateTo)   $webSalesQuery->whereDate('eo.created_at', '<=', $dateTo);
+
+                $webSalesList = $webSalesQuery->select('eoi.quantity as total_pieces', 'eoi.total', 'eoi.color', 'eoi.size')->get();
+
+                $salesListArray = $salesList->toArray();
+                foreach ($webSalesList as $wItem) {
+                    $salesListArray[] = (object) [
+                        'total_pieces' => $wItem->total_pieces,
+                        'total' => $wItem->total,
+                        'color' => json_encode([
+                            'color' => $wItem->color ?: '-',
+                            'size' => $wItem->size ?: '-'
+                        ])
+                    ];
+                }
+                $salesList = collect($salesListArray);
+
                 $returnsQuery = DB::table('sale_return_items as sri')
                     ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
                     ->where('sri.product_id', $product->id);
@@ -552,6 +579,45 @@ class ReportingController extends Controller
                     'sales.total_extradiscount',
                     'sales.total_bill_amount'
                 )->get();
+
+                // Fetch confirmed web sales
+                $webSalesQuery = DB::table('ecommerce_order_items as eoi')
+                    ->join('ecommerce_orders as eo', 'eo.id', '=', 'eoi.ecommerce_order_id')
+                    ->where('eoi.product_id', $product->id)
+                    ->where('eo.is_stock_deducted', 1);
+
+                if ($start && $end) {
+                    $webSalesQuery->whereBetween('eo.created_at', [$start, $end]);
+                }
+                if ($customerId && $customerId !== 'all') {
+                    $webSalesQuery->whereRaw('1 = 0');
+                }
+
+                $webSalesList = $webSalesQuery->select(
+                    'eoi.quantity as total_pieces',
+                    'eoi.quantity as qty',
+                    'eoi.total',
+                    'eoi.color',
+                    'eoi.size',
+                    'eo.discount as total_extradiscount',
+                    'eo.subtotal as total_bill_amount'
+                )->get();
+
+                $salesListArray = $salesList->toArray();
+                foreach ($webSalesList as $wItem) {
+                    $salesListArray[] = (object) [
+                        'total_pieces' => $wItem->total_pieces,
+                        'qty' => $wItem->qty,
+                        'total' => $wItem->total,
+                        'total_extradiscount' => $wItem->total_extradiscount,
+                        'total_bill_amount' => $wItem->total_bill_amount,
+                        'color' => json_encode([
+                            'color' => $wItem->color ?: '-',
+                            'size' => $wItem->size ?: '-'
+                        ])
+                    ];
+                }
+                $salesList = collect($salesListArray);
 
                 $returnQuery = DB::table('sale_return_items as sri')
                     ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
