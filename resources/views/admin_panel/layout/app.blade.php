@@ -10,96 +10,198 @@
 
 <head>
     <style>
-        /* ERP Mega Menu & Normal Submenu Compact Styling */
+        /* =========================================================
+           ERP Mega Menu & Navbar Responsive Styling
+           ========================================================= */
+        .rt_nav_header.horizontal-layout .nav-bottom {
+            position: relative;
+        }
+
+        /* Base Submenu Styling */
         .nav-item .submenu,
         .mega-menu .submenu {
-            background: #fff;
+            background: #ffffff;
             padding: 12px;
-            /* compact padding */
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04);
+            border: 1px solid #eef2f6;
+            z-index: 1050;
         }
 
         .mega-menu .category-heading {
             font-size: 13px;
-            font-weight: 600;
-            color: #34495e;
+            font-weight: 700;
+            color: #2563eb;
             margin-bottom: 8px;
-            padding-bottom: 4px;
-            border-bottom: 1px solid #eaeaea;
+            padding-bottom: 6px;
+            border-bottom: 1.5px solid #f1f5f9;
+            text-transform: capitalize;
+            letter-spacing: 0.2px;
         }
 
         .nav-item .submenu-item li,
         .mega-menu .submenu-item li {
-            margin-bottom: 4px;
-            /* less spacing */
+            margin-bottom: 3px;
+            list-style: none;
         }
 
         .nav-item .submenu-item li a,
         .mega-menu .submenu-item li a {
             display: flex;
             align-items: center;
-            font-size: 15px;
-            /* smaller font */
-            color: #555;
-            padding: 4px 8px;
-            /* compact padding */
-            border-radius: 4px;
-            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+            color: #475569;
+            padding: 5px 8px;
+            border-radius: 6px;
+            transition: all 0.18s ease;
+            text-decoration: none;
+            white-space: nowrap;
         }
 
         .nav-item .submenu-item li a i,
         .mega-menu .submenu-item li a i {
-            font-size: 14px;
-            margin-right: 6px;
-            color: #2980b9;
+            font-size: 13px;
+            margin-right: 8px;
+            color: #3b82f6;
             min-width: 18px;
             text-align: center;
+            transition: color 0.18s ease;
         }
 
         .nav-item .submenu-item li a:hover,
         .mega-menu .submenu-item li a:hover {
-            background: #f1f7fd;
-            color: #2980b9;
-            font-weight: 500;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-weight: 600;
+            padding-left: 10px;
         }
 
-        /* Dynamic Mega Menu Styling */
-        .mega-menu {
-            position: relative;
+        .nav-item .submenu-item li a:hover i,
+        .mega-menu .submenu-item li a:hover i {
+            color: #1d4ed8;
         }
 
-        .mega-menu .submenu {
-            width: max-content !important;
-            max-width: 95vw;
-            min-width: 220px;
-            left: 0;
-            right: auto;
+        /* Desktop Mega Menu Positioning */
+        @media (min-width: 768px) {
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item.mega-menu {
+                position: static !important;
+            }
+
+            .mega-menu .submenu {
+                position: absolute !important;
+                top: 100% !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                width: max-content !important;
+                max-width: 98vw !important;
+                right: auto !important;
+                padding: 16px 20px !important;
+                border-radius: 10px !important;
+                box-shadow: 0 14px 35px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+                border: 1px solid #eef2f6 !important;
+            }
+
+            .mega-menu .col-group-wrapper {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                gap: 0 !important;
+                margin: 0 !important;
+                align-items: stretch !important;
+            }
+
+            .mega-menu .col-group {
+                width: 215px !important;
+                flex: 0 0 215px !important;
+                min-width: 215px !important;
+                max-width: 215px !important;
+                padding: 0 16px !important;
+                border-right: 1px solid #f1f5f9 !important;
+                margin: 0 !important;
+            }
+
+            .mega-menu .col-group:last-child {
+                border-right: none !important;
+            }
+
+            /* Regular Submenu Right Alignment for last items to prevent screen overflow */
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:nth-last-child(-n+3):not(.mega-menu) .submenu {
+                left: auto !important;
+                right: 0 !important;
+            }
         }
 
-        .mega-menu .col-group-wrapper {
-            display: flex;
-            flex-wrap: nowrap;
-            margin: 0 -8px;
-            /* Offset padding */
-        }
+        /* Mobile / Tablet Responsive Navigation */
+        @media (max-width: 767.98px) {
+            .rt_nav_header.horizontal-layout .nav-bottom.header-toggled {
+                display: block;
+                max-height: calc(100vh - 70px);
+                overflow-y: auto;
+                padding: 10px 15px;
+                background: #ffffff;
+                border-bottom: 2px solid #e2e8f0;
+                box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+            }
 
-        .mega-menu .col-group {
-            width: 240px;
-            /* Consistent column width */
-            flex: 0 0 auto;
-            border-right: 1px solid #f0f0f0;
-            padding: 0 16px;
-        }
+            .mega-menu {
+                position: relative !important;
+            }
 
-        .mega-menu .col-group:last-child {
-            border-right: none;
-        }
+            .mega-menu .submenu {
+                position: relative !important;
+                top: 0 !important;
+                left: 0 !important;
+                transform: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 6px 12px !important;
+                background: #f8fafc !important;
+                border-radius: 6px !important;
+            }
 
-        /* Override Bootstrap col widths inside mega menu */
-        .mega-menu .col-md-3 {
-            flex: none;
-            max-width: none;
+            .mega-menu .col-group-wrapper {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 10px !important;
+                margin: 0 !important;
+            }
+
+            .mega-menu .col-group {
+                width: 100% !important;
+                max-width: 100% !important;
+                border-right: none !important;
+                border-bottom: 1px solid #e2e8f0 !important;
+                padding: 0 0 8px 0 !important;
+                margin: 0 !important;
+            }
+
+            .mega-menu .col-group:last-child {
+                border-bottom: none !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item {
+                display: block;
+                width: 100%;
+                border-bottom: 1px solid #f1f5f9;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item > .nav-link {
+                padding: 12px 6px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item .submenu {
+                position: relative;
+                top: 0;
+                box-shadow: none;
+                background: #f8fafc;
+                border-radius: 6px;
+                padding: 8px 12px;
+            }
         }
     </style>
     <!--=========================*
@@ -648,12 +750,13 @@
                     *===========================-->
                         <li class="nav-item mega-menu">
                             @canany(['products.view', 'discount.products.view', 'categories.view', 'subcategories.view',
-                                'brands.view', 'units.view', 'vendors.view', 'warehouse.view', 'warehouse.stock.view',
-                                'stock.transfer.view', 'sales.view', 'customers.view', 'sales.officers.view'])
+                                'brands.view', 'units.view', 'vendors.view', 'purchases.view', 'purchase_pos.create',
+                                'warehouse.view', 'warehouse.stock.view', 'stock.transfer.view', 'stock.adjust.view', 'stock.adjust.create',
+                                'sales.view', 'sales.create', 'customers.view', 'zones.view', 'sales.officers.view', 'receipts.voucher.view'])
                                 <a href="#" class="nav-link">
-                                    <i class="menu_icon fas fa-cogs"></i>
-                                    <span class="menu-title">Management</span>
-                                    <i class="menu-arrow"></i>
+                                     <i class="menu_icon fas fa-cogs"></i>
+                                     <span class="menu-title">Management</span>
+                                     <i class="menu-arrow"></i>
                                 </a>
                                 <div class="submenu">
                                     <div class="col-group-wrapper row">
@@ -698,7 +801,7 @@
                                             </div>
                                         @endcanany
                                         <!-- Purchase & Inventory -->
-                                        @canany(['vendors.view', 'purchases.view'])
+                                        @canany(['vendors.view', 'purchases.view', 'purchase_pos.create'])
                                             <div class="col-group col-md-3">
                                                 <p class="category-heading">Purchase & Inventory</p>
                                                 <ul class="submenu-item">
@@ -719,8 +822,8 @@
                                                 </ul>
                                             </div>
                                         @endcanany
-                                        <!-- Accounts -->
-                                        @canany(['warehouse.view', 'warehouse.stock.view', 'stock.transfer.view', 'stock.adjust.view'])
+                                        <!-- Accounts / Inventory -->
+                                        @canany(['warehouse.view', 'warehouse.stock.view', 'stock.transfer.view', 'stock.adjust.view', 'stock.adjust.create'])
                                             <div class="col-group col-md-3">
                                                 <p class="category-heading">Inventory Management</p>
                                                 <ul class="submenu-item">
@@ -744,7 +847,7 @@
                                             </div>
                                         @endcanany
                                         <!-- Customers & Sales -->
-                                        @canany(['sales.view', 'customers.view', 'sales.officers.view',
+                                        @canany(['sales.view', 'sales.create', 'customers.view', 'sales.officers.view',
                                             'receipts.voucher.view', 'zones.view'])
                                             <div class="col-group col-md-3">
                                                 <p class="category-heading">Sales & Customers</p>
