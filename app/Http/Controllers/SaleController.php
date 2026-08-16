@@ -1697,11 +1697,13 @@ class SaleController extends Controller
 
             // If AJAX/JSON response needed
             if ($request->ajax() || $request->wantsJson()) {
+                $receiptUrl = route('sales.receipt', $sale->id) . '?from=pos';
                 return response()->json([
                     'ok' => true,
                     'booking_id' => $sale->id,
                     'msg' => 'Sale '.ucfirst($status).' Successfully',
-                    'invoice_url' => route('sales.invoice', $sale->id),
+                    'invoice_url' => $receiptUrl,
+                    'receipt_url' => $receiptUrl,
                 ]);
             }
 

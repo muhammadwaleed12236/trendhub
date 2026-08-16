@@ -1933,33 +1933,14 @@
                 method: 'POST',
                 data: $(this).serialize(),
                 success: function(response) {
-                    $btn.prop('disabled', false).html(origHtml);
                     if (response.ok) {
-                        if (response.invoice_url) {
-                            window.open(response.invoice_url, '_blank');
+                        let receiptUrl = response.receipt_url || response.invoice_url || "{{ route('pos.index') }}";
+                        if (receiptUrl.indexOf('from=pos') === -1) {
+                            receiptUrl += (receiptUrl.indexOf('?') > -1 ? '&' : '?') + 'from=pos';
                         }
-                        
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Sale Processed!',
-                            text: 'POS checkout / exchange completed successfully.',
-                            showConfirmButton: true,
-                            showCloseButton: true
-                        }).then(() => {
-                            cart = [];
-                            $('#summaryDiscount').val(0);
-                            
-                            // Reset payment rows
-                            let $firstRow = $('#paymentRowsContainer .payment-row').first();
-                            $firstRow.find('.receipt-amount').val('');
-                            $('#paymentRowsContainer').empty().append($firstRow);
-
-                            $('#posCheckoutForm')[0].reset();
-                            $('#btnToggleWalkin').trigger('click');
-                            renderCart();
-                            window.location.reload();
-                        });
+                        window.location.href = receiptUrl;
                     } else {
+                        $btn.prop('disabled', false).html(origHtml);
                         Swal.fire('Error', response.message || 'Failed to complete transaction.', 'error');
                     }
                 },

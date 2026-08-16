@@ -260,11 +260,25 @@
     </style>
 </head>
 
-<body>
+    @php
+        $fromPos = request()->query('from') === 'pos' || empty(request()->query('from'));
+    @endphp
 
-    <div class="print-controls no-print">
-        <a href="javascript:window.print()" class="btn btn-primary">🖨️ Print Receipt</a>
-        <a href="{{ route('sale.index') }}" class="btn btn-secondary">← Back</a>
+    <div class="print-controls no-print" style="width: 76mm; margin: 10px auto 14px auto; display: flex; flex-direction: column; gap: 8px;">
+        @if($fromPos)
+        <div id="countdownBanner" style="background: #0f172a; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.12);">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span>⚡</span>
+                <span>Auto POS in <strong id="secondsLeft" style="color: #38bdf8; font-size: 13px;">3</strong>s</span>
+            </div>
+            <button type="button" id="btnPause" onclick="togglePause()" style="background: rgba(255,255,255,0.15); border: none; color: #fff; padding: 2px 7px; border-radius: 4px; font-size: 10.5px; cursor: pointer; font-weight: 600;">Stay Here</button>
+        </div>
+        @endif
+
+        <div style="display: flex; gap: 6px;">
+            <a href="javascript:void(0)" onclick="triggerPrint()" class="btn btn-primary" style="flex: 1; padding: 7px 4px; font-size: 11px; border-radius: 5px; text-decoration: none; text-align: center; background: #000; color: #fff; font-weight: 600;">🖨️ Print Receipt</a>
+            <a href="{{ route('pos.index') }}" class="btn btn-secondary" style="flex: 1; padding: 7px 4px; font-size: 11px; border-radius: 5px; text-decoration: none; text-align: center; background: #2563eb; color: #fff; font-weight: 600;">⬅️ POS Next</a>
+        </div>
     </div>
 
     <div class="receipt-container">
@@ -537,25 +551,78 @@
     </div>
 
     <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                window.print();
-            }, 500);
-        });
+        let countdown = 3;
+        let countdownInterval = null;
+        let isPaused = false;
+        const isFromPos = {{ $fromPos ? 'true' : 'false' }};
 
-        window.onafterprint = function() {
-            setTimeout(() => {
-                try {
-                    if (window.opener) {
-                        window.close();
-                    } else {
-                        window.location.href = "{{ route('pos.index') }}";
-                    }
-                } catch (e) {
+        function startCountdown() {
+            if (!isFromPos || isPaused) return;
+            const timerEl = document.getElementById('secondsLeft');
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            countdownInterval = setInterval(() => {
+                if (isPaused) return;
+                countdown--;
+                if (timerEl) {
+                    timerEl.innerText = countdown;
+                }
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
                     window.location.href = "{{ route('pos.index') }}";
                 }
-            }, 500);
+            }, 1000);
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const btn = document.getElementById('btnPause');
+            const banner = document.getElementById('countdownBanner');
+            if (isPaused) {
+                if (countdownInterval) clearInterval(countdownInterval);
+                if (btn) btn.innerText = "Resume Timer";
+                if (banner) banner.style.opacity = "0.7";
+            } else {
+                countdown = 3;
+                if (btn) btn.innerText = "Stay Here";
+                if (banner) banner.style.opacity = "1";
+                startCountdown();
+            }
+        }
+
+        function triggerPrint() {
+            if (countdownInterval) clearInterval(countdownInterval);
+            window.print();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Automatically open print dialog
+            setTimeout(() => {
+                try {
+                    window.print();
+                } catch(e){}
+            }, 400);
+        });
+
+        // When print dialog closes (printed or cancelled)
+        window.onafterprint = function() {
+            if (isFromPos && !isPaused) {
+                countdown = 3;
+                startCountdown();
+            }
         };
+
+        // Fallback: When window regains focus after print
+        let printFired = false;
+        window.addEventListener('beforeprint', () => {
+            printFired = true;
+        });
+        window.addEventListener('focus', () => {
+            if (printFired && isFromPos && !isPaused && !countdownInterval) {
+                countdown = 3;
+                startCountdown();
+            }
+        });
     </script>
 </body>
 
