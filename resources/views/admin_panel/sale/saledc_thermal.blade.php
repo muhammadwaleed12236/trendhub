@@ -204,11 +204,11 @@
     <div class="receipt-container">
         <!-- Header -->
         @php
-            $companyLogo = \App\Models\Setting::get('company_logo');
+            $companyLogo = \App\Models\Setting::get('company_logo') ?: \App\Models\Setting::get('web_site_logo');
         @endphp
-        @if(!empty($companyLogo) && file_exists(public_path($companyLogo)))
+        @if(!empty($companyLogo))
             <div style="text-align: center; margin-bottom: 6px;">
-                <img src="{{ asset($companyLogo) }}" alt="Company Logo" style="max-width: 140px; max-height: 70px; width: auto; height: auto; object-fit: contain; display: block; margin: 0 auto;">
+                <img src="{{ asset(ltrim($companyLogo, '/')) }}" alt="Company Logo" style="max-width: 140px; max-height: 70px; width: auto; height: auto; object-fit: contain; display: block; margin: 0 auto;">
             </div>
         @endif
         <div class="company-name">{{ \App\Models\Setting::get('company_name', 'prowave technogies') }}</div>

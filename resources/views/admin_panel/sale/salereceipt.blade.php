@@ -299,11 +299,11 @@
     <div class="receipt-container">
         <!-- Header -->
         @php
-            $companyLogo = \App\Models\Setting::get('company_logo');
+            $companyLogo = \App\Models\Setting::get('company_logo') ?: \App\Models\Setting::get('web_site_logo');
         @endphp
-        @if(!empty($companyLogo) && file_exists(public_path($companyLogo)))
+        @if(!empty($companyLogo))
             <div class="receipt-logo">
-                <img src="{{ asset($companyLogo) }}" alt="Company Logo">
+                <img src="{{ asset(ltrim($companyLogo, '/')) }}" alt="Company Logo">
             </div>
         @endif
         <div class="company-name">{{ \App\Models\Setting::get('company_name', 'Three Stars Medical') }}</div>

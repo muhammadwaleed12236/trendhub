@@ -50,36 +50,55 @@ class SettingsController extends Controller
 
         // Handle company logo removal or update
         if ($request->input('remove_company_logo') == '1' || $request->input('remove_company_logo') === 'true') {
-            $oldLogo = Setting::get('company_logo');
+            $oldLogo = Setting::get('company_logo') ?: Setting::get('web_site_logo');
             if ($oldLogo && file_exists(public_path($oldLogo))) {
                 @unlink(public_path($oldLogo));
             }
+            if ($oldLogo && file_exists(base_path($oldLogo))) {
+                @unlink(base_path($oldLogo));
+            }
             Setting::set('company_logo', null, 'company', 'image', 'Company Logo', 'Logo displayed at the top of receipts and invoices');
+            Setting::set('web_site_logo', null, 'website', 'string', 'Site Logo', 'Website Logo');
+            Cache::forget('setting_company_logo');
+            Cache::forget('setting_web_site_logo');
         } elseif ($request->hasFile('company_logo')) {
             $file = $request->file('company_logo');
             $fileName = 'company_logo_' . time() . '.' . $file->getClientOriginalExtension();
             $destinationPath = public_path('uploads/settings');
             if (!file_exists($destinationPath)) {
-                mkdir($destinationPath, 0777, true);
+                @mkdir($destinationPath, 0777, true);
             }
             $file->move($destinationPath, $fileName);
             $logoPath = 'uploads/settings/' . $fileName;
 
+            // Also copy to root uploads/settings if root uploads exists (e.g. shared host cPanel setups)
+            $rootSettingsDir = base_path('uploads/settings');
+            if (file_exists(base_path('uploads'))) {
+                if (!file_exists($rootSettingsDir)) {
+                    @mkdir($rootSettingsDir, 0777, true);
+                }
+                @copy($destinationPath . '/' . $fileName, $rootSettingsDir . '/' . $fileName);
+            }
+
             // Remove old logo if exists
             $oldLogo = Setting::get('company_logo');
-            if ($oldLogo && file_exists(public_path($oldLogo)) && $oldLogo !== $logoPath) {
-                @unlink(public_path($oldLogo));
+            if ($oldLogo && $oldLogo !== $logoPath) {
+                if (file_exists(public_path($oldLogo))) @unlink(public_path($oldLogo));
+                if (file_exists(base_path($oldLogo))) @unlink(base_path($oldLogo));
             }
 
             Setting::set('company_logo', $logoPath, 'company', 'image', 'Company Logo', 'Logo displayed at the top of receipts and invoices');
+            Setting::set('web_site_logo', $logoPath, 'website', 'string', 'Site Logo', 'Website Logo');
+            Cache::forget('setting_company_logo');
+            Cache::forget('setting_web_site_logo');
         }
 
-        $currentLogo = Setting::get('company_logo');
+        $currentLogo = Setting::get('company_logo') ?: Setting::get('web_site_logo');
 
         return response()->json([
             'success' => true,
             'message' => 'Settings updated successfully',
-            'logo_url' => ($currentLogo && file_exists(public_path($currentLogo))) ? asset($currentLogo) : null,
+            'logo_url' => $currentLogo ? asset(ltrim($currentLogo, '/')) : null,
         ]);
     }
 
