@@ -22,32 +22,39 @@ class SubcategoryController extends Controller
 public function store(Request $request)
 {
     $validator = Validator::make($request->all(), [
-        'name' => 'required|unique:subcategories,name,' . $request->edit_id,
+        'name' => 'required|unique:subcategories,name,' . $request->edit_id . ',id',
         'category_id' => 'required',
     ]);
 
-   if ($validator->fails()) {
+    if ($validator->fails()) {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'  => 'error',
+                'error'   => $validator->errors()->first(),
+                'errors'  => $validator->errors(),
+                'message' => $validator->errors()->first()
+            ], 422);
+        }
 
-    return redirect()->back()
-        ->withErrors($validator)
-        ->withInput()
-        ->with('catagory_swal_error', $validator->errors()->first());
-}
+        return redirect()->back()
+            ->withErrors($validator)
+            ->withInput()
+            ->with('catagory_swal_error', $validator->errors()->first());
+    }
 
     // UPDATE
     if ($request->filled('edit_id')) {
-
         $subcategory = Subcategory::find($request->edit_id);
 
         if (!$subcategory) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Record not found'
+                'status'  => 'error',
+                'error'   => 'Subcategory not found',
+                'message' => 'Subcategory not found'
             ], 404);
         }
 
         $message = 'Subcategory Updated Successfully';
-
     }
     // CREATE
     else {
@@ -59,37 +66,48 @@ public function store(Request $request)
     $subcategory->category_id = $request->category_id;
     $subcategory->save();
 
-    // RESPONSE FOR ALERT
+    // RESPONSE FOR PRODUCT PAGE MODAL
     if ($request->page === 'product_page') {
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'id' => $subcategory->id,
-                'name' => $subcategory->name
-            ]);
-        }
-        return redirect()->back()->with('success',$message);
+        return response()->json([
+            'status'  => 'success',
+            'success' => true,
+            'id'      => $subcategory->id,
+            'name'    => $subcategory->name,
+            'message' => $message
+        ]);
     }
 
     return response()->json([
-        'status' => 'success',
+        'status'  => 'success',
+        'success' => $message,
         'message' => $message,
-        'reload' => true
+        'reload'  => true
     ]);
 }
 
     public function delete($id)
     {
-
         $company = Subcategory::find($id);
         if ($company) {
             $company->delete();
             $msg = [
+                'status'  => 'success',
                 'success' => 'Subcategory Deleted Successfully',
-                'reload' =>  route('subcategory.home'),
+                'message' => 'Subcategory Deleted Successfully',
+                'reload'  => route('subcategory.home'),
             ];
+            if (!request()->ajax() && !request()->wantsJson()) {
+                return redirect()->route('subcategory.home')->with('success', 'Subcategory Deleted Successfully');
+            }
         } else {
-            $msg = ['error' => 'Subcategory Not Found'];
+            $msg = [
+                'status'  => 'error',
+                'error'   => 'Subcategory Not Found',
+                'message' => 'Subcategory Not Found'
+            ];
+            if (!request()->ajax() && !request()->wantsJson()) {
+                return redirect()->route('subcategory.home')->with('error', 'Subcategory Not Found');
+            }
         }
         return response()->json($msg);
     }

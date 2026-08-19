@@ -50,6 +50,7 @@
 
 <!-- Main Js -->
 <script src="{{ asset('assets/js/main.js') }}"></script>
+<script src="{{ asset('assets/js/mycode.js') }}"></script>
 
 <!-- Notification Count Script -->
 <script>

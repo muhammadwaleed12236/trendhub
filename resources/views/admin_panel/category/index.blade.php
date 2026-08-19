@@ -334,7 +334,7 @@
                 </div>
                 <div class="modal-footer bg-light px-4 py-3 border-top">
                     <button type="button" class="btn btn-outline-secondary px-4 fw-semibold" data-dismiss="modal" style="border-radius: 8px;">Close</button>
-                    @canany(['categories.add', 'categories.edit'])
+                    @canany(['categories.create', 'categories.edit'])
                         <button type="submit" class="btn btn-primary px-4 fw-bold save-btn" style="border-radius: 8px; background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); border: none;">
                             <i class="fas fa-check me-1"></i> Save Category
                         </button>

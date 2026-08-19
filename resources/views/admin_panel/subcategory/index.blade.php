@@ -279,7 +279,7 @@
                         <tr>
                             <td class="text-center id"><span class="subcat-id-badge">#{{ $company->id }}</span></td>
                             <td class="text-start name fw-semibold text-dark">{{ $company->name }}</td>
-                            <td class="text-start cat-name">
+                            <td class="text-start cat-name" data-category-id="{{ $company->category_id }}">
                                 <span class="parent-cat-badge"><i class="fas fa-folder me-1"></i>{{ $company->category->name ?? 'Unassigned' }}</span>
                             </td>
                             <td class="text-end pe-4">
@@ -303,7 +303,7 @@
         {{-- Mobile Cards View (< 768px) --}}
         <div class="mobile-subcat-cards">
             @foreach ($subcategory as $company)
-                <div class="subcat-mcard">
+                <div class="subcat-mcard" data-category-id="{{ $company->category_id }}">
                     <div class="subcat-mcard-hdr">
                         <span class="subcat-id-badge">#{{ $company->id }}</span>
                         <span class="parent-cat-badge"><i class="fas fa-folder me-1"></i>{{ $company->category->name ?? 'Unassigned' }}</span>
@@ -358,11 +358,11 @@
                 </div>
                 <div class="modal-footer bg-light px-4 py-3 border-top">
                     <button type="button" class="btn btn-outline-secondary px-4 fw-semibold" data-dismiss="modal" style="border-radius: 8px;">Close</button>
-                    @can('subcategories.create')
+                    @canany(['subcategories.create', 'subcategories.edit'])
                         <button type="submit" class="btn btn-primary px-4 fw-bold save-btn" style="border-radius: 8px; background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); border: none;">
                             <i class="fas fa-check me-1"></i> Save Subcategory
                         </button>
-                    @endcan
+                    @endcanany
                 </div>
             </form>
         </div>
@@ -393,16 +393,13 @@
         var tr = $(this).closest("tr, .subcat-mcard");
         var id = tr.find(".id, .subcat-id-badge").text().replace('#', '').trim();
         var name = tr.find(".name, .subcat-mcard-title").text().trim();
-        var catName = tr.find(".cat-name, .parent-cat-badge").text().trim();
+        var catId = tr.find(".cat-name").data('category-id') || tr.data('category-id');
 
         $('#id').val(id);
         $('#name').val(name);
         
-        // Select category by matching text if possible
-        if (catName) {
-            $("#category_id option").filter(function() {
-                return $(this).text().trim() === catName;
-            }).prop('selected', true);
+        if (catId) {
+            $('#category_id').val(catId);
         }
 
         $('#modalTitleText').text('Edit Subcategory');

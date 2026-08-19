@@ -18,83 +18,93 @@ class BrandController extends Controller
     }
 
     public function store(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'name' => 'required|unique:brands,name,' . $request->edit_id,
-    ]);
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|unique:brands,name,' . $request->edit_id . ',id',
+        ]);
 
-  if ($validator->fails()) {
+        if ($validator->fails()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'error'   => $validator->errors()->first(),
+                    'errors'  => $validator->errors(),
+                    'message' => $validator->errors()->first()
+                ], 422);
+            }
 
-    return redirect()->back()
-        ->withErrors($validator)
-        ->withInput()
-        ->with('swal_error', $validator->errors()->first());
-}
-
-
-    // UPDATE
-    if ($request->filled('edit_id')) {
-
-        $brand = Brand::find($request->edit_id);
-
-        if (!$brand) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Brand not found'
-            ], 404);
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('swal_error', $validator->errors()->first());
         }
 
-        $message = 'Brand Updated Successfully';
-    }
-    // CREATE
-    else {
-        $brand = new Brand();
-        $message = 'Brand Created Successfully';
-    }
+        // UPDATE
+        if ($request->filled('edit_id')) {
+            $brand = Brand::find($request->edit_id);
 
-    $brand->name = $request->name;
-    $brand->save();
+            if (!$brand) {
+                return response()->json([
+                    'status'  => 'error',
+                    'error'   => 'Brand not found',
+                    'message' => 'Brand not found'
+                ], 404);
+            }
 
-    // PRODUCT PAGE RESPONSE
-    if ($request->page === 'product_page') {
-        if ($request->ajax()) {
+            $message = 'Brand Updated Successfully';
+        }
+        // CREATE
+        else {
+            $brand = new Brand();
+            $message = 'Brand Created Successfully';
+        }
+
+        $brand->name = $request->name;
+        $brand->save();
+
+        // PRODUCT PAGE RESPONSE
+        if ($request->page === 'product_page') {
             return response()->json([
+                'status'  => 'success',
                 'success' => true,
-                'id' => $brand->id,
-                'name' => $brand->name
+                'id'      => $brand->id,
+                'name'    => $brand->name,
+                'message' => $message
             ]);
         }
-        
-        $msg = 'Brand Created Successfully';
-         return redirect()->back()->with('success',$msg);
-        //response()->json([
-        //     'status' => 'success',
-        //     'message' => $message,
-        //     'redirect' => route('store')
-        // ]);
+
+        // NORMAL RESPONSE
+        return response()->json([
+            'status'  => 'success',
+            'success' => $message,
+            'message' => $message,
+            'reload'  => true
+        ]);
     }
-
-    // NORMAL RESPONSE
-    return response()->json([
-        'status' => 'success',
-        'message' => $message,
-        'reload' => true
-    ]);
-}
-
 
     public function delete($id)
     {
-
         $company = Brand::find($id);
         if ($company) {
             $company->delete();
             $msg = [
+                'status'  => 'success',
                 'success' => 'Brand Deleted Successfully',
-                'reload' =>  route('Brand.home'),
+                'message' => 'Brand Deleted Successfully',
+                'reload'  => route('Brand.home'),
             ];
+            if (!request()->ajax() && !request()->wantsJson()) {
+                return redirect()->route('Brand.home')->with('success', 'Brand Deleted Successfully');
+            }
         } else {
-            $msg = ['error' => 'Brand Not Found'];
+            $msg = [
+                'status'  => 'error',
+                'error'   => 'Brand Not Found',
+                'message' => 'Brand Not Found'
+            ];
+            if (!request()->ajax() && !request()->wantsJson()) {
+                return redirect()->route('Brand.home')->with('error', 'Brand Not Found');
+            }
         }
         return response()->json($msg);
     }

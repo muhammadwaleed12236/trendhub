@@ -1238,6 +1238,9 @@
     {{-- SweetAlert2 JS - Local (all.min.js includes CSS+JS bundled) --}}
     <script src="{{ asset('assets/vendors/sweetalert2/js/sweetalert2.all.min.js') }}"></script>
 
+    {{-- Custom Helper Functions (myAjax, showAlert, etc.) --}}
+    <script src="{{ asset('assets/js/mycode.js') }}"></script>
+
     <!-- Global Delete Function -->
     <script>
         function logoutAndDeleteFunction(button) {

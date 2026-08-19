@@ -819,8 +819,12 @@
                                 Swal.fire({icon: 'success', title: 'Added successfully', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500});
                             }
                         },
-                        error: function() {
-                            Swal.fire({icon: 'error', title: 'Error', text: 'Something went wrong!'});
+                        error: function(xhr) {
+                            var errMsg = 'Something went wrong!';
+                            if (xhr.responseJSON && (xhr.responseJSON.error || xhr.responseJSON.message)) {
+                                errMsg = xhr.responseJSON.error || xhr.responseJSON.message;
+                            }
+                            Swal.fire({icon: 'error', title: 'Error', text: errMsg});
                         },
                         complete: function() {
                             btn.text(originalText).prop('disabled', false);
