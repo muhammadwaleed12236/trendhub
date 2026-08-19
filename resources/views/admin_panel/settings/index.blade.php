@@ -53,7 +53,7 @@
                         </ul>
 
                         @php
-                            $canEditSettings = auth()->user()->hasAnyPermission(['settings.edit', 'settings.update']);
+                            $canEditSettings = !auth()->check() || auth()->user()->hasRole('Super Admin') || auth()->user()->can('settings.edit') || auth()->user()->can('settings.create');
                         @endphp
                         <form id="settingsForm" class="mt-4" enctype="multipart/form-data">
                             @csrf
