@@ -36,16 +36,50 @@ class SettingsController extends Controller
         }
 
         $validated = $request->validate([
-            'settings' => 'required|array',
+            'settings' => 'nullable|array',
+            'company_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:4096',
+            'remove_company_logo' => 'nullable|string',
         ]);
 
-        foreach ($validated['settings'] as $key => $value) {
-            Setting::set($key, $value);
+        if (!empty($validated['settings'])) {
+            foreach ($validated['settings'] as $key => $value) {
+                if ($key === 'company_logo') continue;
+                Setting::set($key, $value);
+            }
         }
+
+        // Handle company logo removal or update
+        if ($request->input('remove_company_logo') == '1' || $request->input('remove_company_logo') === 'true') {
+            $oldLogo = Setting::get('company_logo');
+            if ($oldLogo && file_exists(public_path($oldLogo))) {
+                @unlink(public_path($oldLogo));
+            }
+            Setting::set('company_logo', null, 'company', 'image', 'Company Logo', 'Logo displayed at the top of receipts and invoices');
+        } elseif ($request->hasFile('company_logo')) {
+            $file = $request->file('company_logo');
+            $fileName = 'company_logo_' . time() . '.' . $file->getClientOriginalExtension();
+            $destinationPath = public_path('uploads/settings');
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0777, true);
+            }
+            $file->move($destinationPath, $fileName);
+            $logoPath = 'uploads/settings/' . $fileName;
+
+            // Remove old logo if exists
+            $oldLogo = Setting::get('company_logo');
+            if ($oldLogo && file_exists(public_path($oldLogo)) && $oldLogo !== $logoPath) {
+                @unlink(public_path($oldLogo));
+            }
+
+            Setting::set('company_logo', $logoPath, 'company', 'image', 'Company Logo', 'Logo displayed at the top of receipts and invoices');
+        }
+
+        $currentLogo = Setting::get('company_logo');
 
         return response()->json([
             'success' => true,
             'message' => 'Settings updated successfully',
+            'logo_url' => ($currentLogo && file_exists(public_path($currentLogo))) ? asset($currentLogo) : null,
         ]);
     }
 

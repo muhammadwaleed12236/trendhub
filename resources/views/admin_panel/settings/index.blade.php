@@ -55,13 +55,60 @@
                         @php
                             $canEditSettings = auth()->user()->hasAnyPermission(['settings.edit', 'settings.update']);
                         @endphp
-                        <form id="settingsForm" class="mt-4">
+                        <form id="settingsForm" class="mt-4" enctype="multipart/form-data">
                             @csrf
                             <div class="tab-content" id="settingsTabContent">
                                 <!-- Company Tab -->
                                 <div class="tab-pane fade show active" id="company" role="tabpanel">
+                                    <!-- Company Logo Section -->
+                                    @php
+                                        $companyLogo = \App\Models\Setting::get('company_logo');
+                                        $hasLogo = !empty($companyLogo) && file_exists(public_path($companyLogo));
+                                    @endphp
+                                    <div class="card mb-4 border shadow-sm" style="background-color: #f8fafc;">
+                                        <div class="card-header bg-white font-weight-bold d-flex align-items-center">
+                                            <i class="fas fa-image text-primary mr-2"></i> Company Logo (Sale Receipt & Invoice)
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="text-muted small mb-3">
+                                                Upload your official company logo. When uploaded, this logo will appear at the top of thermal sale receipts and invoices.
+                                            </p>
+                                            <div class="row align-items-center">
+                                                <div class="col-md-4 text-center mb-3 mb-md-0">
+                                                    <div id="logoPreviewContainer" class="p-3 bg-white border rounded shadow-sm d-inline-flex align-items-center justify-content-center" style="min-width: 170px; min-height: 110px; width: 100%; max-width: 220px; height: 110px;">
+                                                        <img id="logoPreview" 
+                                                             src="{{ $hasLogo ? asset($companyLogo) : '' }}" 
+                                                             alt="Company Logo Preview" 
+                                                             style="max-width: 100%; max-height: 90px; object-fit: contain; {{ !$hasLogo ? 'display: none;' : '' }}" />
+                                                        <div id="noLogoText" class="text-muted text-center" style="{{ $hasLogo ? 'display: none;' : '' }}">
+                                                            <i class="fas fa-image fa-2x d-block mb-1 text-secondary"></i>
+                                                            <small>No Logo Uploaded</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <div class="custom-file mb-2">
+                                                        <input type="file" name="company_logo" id="companyLogoInput" class="custom-file-input" accept="image/png, image/jpeg, image/jpg, image/webp, image/svg+xml" {{ !$canEditSettings ? 'disabled' : '' }}>
+                                                        <label class="custom-file-label text-truncate" for="companyLogoInput" id="companyLogoLabel">Choose logo image file...</label>
+                                                    </div>
+                                                    <input type="hidden" name="remove_company_logo" id="removeCompanyLogoInput" value="0">
+                                                    
+                                                    <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnRemoveLogo" style="{{ $hasLogo ? '' : 'display: none;' }}" {{ !$canEditSettings ? 'disabled' : '' }}>
+                                                            <i class="fas fa-trash-alt mr-1"></i> Remove Logo
+                                                        </button>
+                                                        <small class="text-muted ml-md-2">Formats: PNG, JPG, WebP, SVG (Max: 4MB). Transparent PNG is recommended.</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     @if (isset($settings['company']))
                                         @foreach ($settings['company'] as $setting)
+                                            @if ($setting['key'] === 'company_logo')
+                                                @continue
+                                            @endif
                                             <div class="form-group">
                                                 <label>{{ $setting['label'] }}</label>
                                                 @if ($setting['type'] === 'text')
@@ -140,12 +187,12 @@
 
                             <div class="mt-4">
                                 @if($canEditSettings)
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save"></i> Save Settings
+                                    <button type="submit" class="btn btn-primary" id="btnSaveSettings">
+                                        <i class="fas fa-save mr-1"></i> Save Settings
                                     </button>
                                 @else
                                     <button type="button" class="btn btn-primary" disabled style="opacity: 0.6; cursor: not-allowed;">
-                                        <i class="fas fa-lock"></i> Save Settings (Read Only)
+                                        <i class="fas fa-lock mr-1"></i> Save Settings (Read Only)
                                     </button>
                                 @endif
                             </div>
@@ -159,26 +206,83 @@
     @push('scripts')
         <script>
             $(document).ready(function() {
+                // Live preview logo on file select
+                $('#companyLogoInput').on('change', function(e) {
+                    var file = e.target.files[0];
+                    if (file) {
+                        $('#companyLogoLabel').text(file.name);
+                        $('#removeCompanyLogoInput').val('0');
+                        var reader = new FileReader();
+                        reader.onload = function(evt) {
+                            $('#logoPreview').attr('src', evt.target.result).show();
+                            $('#noLogoText').hide();
+                            $('#btnRemoveLogo').show();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+
+                // Remove logo action
+                $('#btnRemoveLogo').on('click', function() {
+                    $('#companyLogoInput').val('');
+                    $('#companyLogoLabel').text('Choose logo image file...');
+                    $('#removeCompanyLogoInput').val('1');
+                    $('#logoPreview').attr('src', '').hide();
+                    $('#noLogoText').show();
+                    $(this).hide();
+                });
+
                 $('#settingsForm').on('submit', function(e) {
                     e.preventDefault();
+
+                    var submitBtn = $('#btnSaveSettings');
+                    var origHtml = submitBtn.html();
+                    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
+
+                    var formData = new FormData(this);
 
                     $.ajax({
                         url: '{{ route('settings.update') }}',
                         method: 'POST',
-                        data: $(this).serialize(),
+                        data: formData,
+                        processData: false,
+                        contentType: false,
                         success: function(response) {
+                            submitBtn.prop('disabled', false).html(origHtml);
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Success!',
                                 text: response.message,
-                                timer: 2000
+                                timer: 2000,
+                                showConfirmButton: false
                             });
+
+                            if (response.logo_url) {
+                                $('#logoPreview').attr('src', response.logo_url).show();
+                                $('#noLogoText').hide();
+                                $('#btnRemoveLogo').show();
+                                $('#removeCompanyLogoInput').val('0');
+                                $('#companyLogoInput').val('');
+                                $('#companyLogoLabel').text('Choose logo image file...');
+                            } else if ($('#removeCompanyLogoInput').val() === '1') {
+                                $('#logoPreview').attr('src', '').hide();
+                                $('#noLogoText').show();
+                                $('#btnRemoveLogo').hide();
+                            }
                         },
                         error: function(xhr) {
+                            submitBtn.prop('disabled', false).html(origHtml);
+                            var errorMsg = 'Failed to update settings';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMsg = xhr.responseJSON.message;
+                            } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                                var errs = Object.values(xhr.responseJSON.errors).flat();
+                                if (errs.length > 0) errorMsg = errs.join('\n');
+                            }
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error!',
-                                text: 'Failed to update settings',
+                                text: errorMsg,
                             });
                         }
                     });

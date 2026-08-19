@@ -61,6 +61,21 @@
 
         h1, h2, h3, p { margin: 0; padding: 0; }
 
+        .receipt-logo {
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .receipt-logo img {
+            max-width: 140px;
+            max-height: 70px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: inline-block;
+            margin: 0 auto;
+        }
+
         .company-name {
             font-size: 22px;
             font-weight: 700;
@@ -283,6 +298,14 @@
 
     <div class="receipt-container">
         <!-- Header -->
+        @php
+            $companyLogo = \App\Models\Setting::get('company_logo');
+        @endphp
+        @if(!empty($companyLogo) && file_exists(public_path($companyLogo)))
+            <div class="receipt-logo">
+                <img src="{{ asset($companyLogo) }}" alt="Company Logo">
+            </div>
+        @endif
         <div class="company-name">{{ \App\Models\Setting::get('company_name', 'Three Stars Medical') }}</div>
         <div class="company-info">
             <div>{{ \App\Models\Setting::get('company_address', 'Hyderabad') }}</div>

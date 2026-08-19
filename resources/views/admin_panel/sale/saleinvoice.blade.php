@@ -396,6 +396,14 @@
         <!-- Company Header -->
         @if(!($isEstimate ?? false))
         <div class="company-info">
+            @php
+                $companyLogo = \App\Models\Setting::get('company_logo');
+            @endphp
+            @if(!empty($companyLogo) && file_exists(public_path($companyLogo)))
+                <div style="text-align: center; margin-bottom: 8px;">
+                    <img src="{{ asset($companyLogo) }}" alt="Company Logo" style="max-width: 160px; max-height: 75px; object-fit: contain; display: block; margin: 0 auto;">
+                </div>
+            @endif
             <div class="company-name">{{ \App\Models\Setting::get('company_name', 'prowave technogies') }}</div>
             <div style="font-size: 12px;">{{ \App\Models\Setting::get('company_address', 'Hyderabad') }}</div>
             <p>{{ \App\Models\Setting::get('company_phone', '0327-9226901') }}</p>
@@ -799,6 +807,14 @@
     <!-- ========================================== -->
     <div class="receipt-container">
         <!-- Header -->
+        @php
+            $companyLogo = \App\Models\Setting::get('company_logo');
+        @endphp
+        @if(!empty($companyLogo) && file_exists(public_path($companyLogo)))
+            <div style="text-align: center; margin-bottom: 6px;">
+                <img src="{{ asset($companyLogo) }}" alt="Company Logo" style="max-width: 140px; max-height: 70px; width: auto; height: auto; object-fit: contain; display: block; margin: 0 auto;">
+            </div>
+        @endif
         <div class="company-name">{{ \App\Models\Setting::get('company_name', 'Three Stars Medical') }}</div>
         <div class="company-info">
             <div>{{ \App\Models\Setting::get('company_address', 'Hyderabad') }}</div>
