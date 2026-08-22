@@ -14,7 +14,7 @@
         background-color: #f8fafc;
         border-bottom: 1px solid #e2e8f0;
         border-radius: 12px 12px 0 0 !important;
-        padding: 16px 20px;
+        padding: 14px 20px;
         font-weight: 700;
         color: #1e293b;
     }
@@ -40,7 +40,7 @@
     .form-control, .form-select {
         border: 1px solid #cbd5e1;
         border-radius: 8px;
-        padding: 10px 15px;
+        padding: 8px 12px;
         transition: all 0.2s;
     }
     .form-control:focus, .form-select:focus {
@@ -59,11 +59,11 @@
         text-transform: uppercase;
         font-size: 12px;
         letter-spacing: 0.5px;
-        padding: 14px 15px;
+        padding: 12px 15px;
         border-bottom: 2px solid #e2e8f0;
     }
     .premium-table tbody td {
-        padding: 12px 15px;
+        padding: 10px 15px;
         vertical-align: middle;
         border-bottom: 1px solid #e2e8f0;
     }
@@ -89,10 +89,52 @@
     }
     .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
         line-height: calc(1.5em + .75rem) !important;
-        padding-left: 15px !important;
+        padding-left: 12px !important;
     }
     .select2-container--bootstrap4 .select2-selection--single .select2-selection__arrow {
         height: calc(1.5em + .75rem) !important;
+    }
+
+    /* Z-Index Stacking to prevent dropdown clipping */
+    .card-section-1 {
+        position: relative;
+        z-index: 1050;
+        overflow: visible !important;
+    }
+    .card-section-2 {
+        position: relative;
+        z-index: 20;
+    }
+    .card-section-3 {
+        position: relative;
+        z-index: 10;
+    }
+
+    /* Clean Floating Product Autocomplete Dropdown */
+    .product-autocomplete-dropdown {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        z-index: 99999 !important;
+        background: #ffffff;
+        border: 1px solid #94a3b8;
+        border-radius: 8px;
+        box-shadow: 0 14px 35px rgba(0, 0, 0, 0.22) !important;
+        display: none;
+        overflow: hidden;
+    }
+    .product-suggest-item {
+        padding: 10px 14px;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .product-suggest-item:hover {
+        background-color: #e0f2fe;
+    }
+    .product-suggest-item:last-child {
+        border-bottom: none;
     }
 </style>
 
@@ -115,16 +157,30 @@
             <form action="{{ route('purchase.quick_store') }}" method="POST" id="quickPurchaseForm">
                 @csrf
                 
-                <!-- Vendor & Product Details -->
-                <div class="card premium-card">
-                    <div class="card-header-premium">
-                        <i class="fas fa-info-circle me-2 text-primary"></i> 1. Purchase Details
+                <!-- Hidden Product ID Field -->
+                <input type="hidden" name="product_id" id="product_id" value="">
+
+                <!-- 1. Purchase & Product Details -->
+                <div class="card premium-card card-section-1">
+                    <div class="card-header-premium d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-info-circle me-2 text-primary"></i> 1. Purchase & Product Details
+                        </div>
+                        <div id="productLinkedBadgeContainer" style="display: none;">
+                            <span class="badge bg-success px-3 py-2" style="font-size: 0.82rem;">
+                                <i class="fas fa-link me-1"></i> Linked: <strong id="badgeProductName">-</strong>
+                                <a href="javascript:void(0)" class="text-white text-decoration-underline ms-2 fw-bold" id="unlinkProductBtn" title="Switch to creating as new product">
+                                    <i class="fas fa-times ms-1"></i> Switch to New
+                                </a>
+                            </span>
+                        </div>
                     </div>
                     <div class="card-body p-4">
+                        <!-- Vendor Row -->
                         <div class="row mb-4">
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="fw-bold text-dark">Vendor <span class="text-danger">*</span></label>
+                                <div class="form-group mb-0">
+                                    <label class="fw-bold text-dark mb-1">Vendor <span class="text-danger">*</span></label>
                                     <select class="form-select select2" id="vendor_id" name="vendor_id" style="width: 100%;">
                                         <option value="">-- Select Existing Vendor --</option>
                                         @foreach($Vendor as $v)
@@ -134,14 +190,14 @@
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="fw-bold text-dark">Or Create New Vendor</label>
+                                <div class="form-group mb-0">
+                                    <label class="fw-bold text-dark mb-1">Or Create New Vendor</label>
                                     <input type="text" class="form-control" name="new_vendor_name" id="new_vendor_name" placeholder="Type new vendor name...">
                                 </div>
                             </div>
                             <div class="col-md-4" id="openingBalanceWrapper" style="display: none;">
-                                <div class="form-group">
-                                    <label class="fw-bold text-dark">Opening Balance (New Vendor)</label>
+                                <div class="form-group mb-0">
+                                    <label class="fw-bold text-dark mb-1">Opening Balance (New Vendor)</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-end-0 text-muted">Rs</span>
                                         <input type="number" step="0.01" class="form-control border-start-0" name="opening_balance" id="opening_balance" placeholder="0.00">
@@ -150,10 +206,11 @@
                             </div>
                         </div>
 
+                        <!-- Product Row -->
                         <div class="row">
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="fw-bold text-dark">Category <span class="text-danger">*</span></label>
+                                <div class="form-group mb-0">
+                                    <label class="fw-bold text-dark mb-1">Category <span class="text-danger">*</span></label>
                                     <select class="form-select select2" name="category_id" id="category_id" style="width: 100%;" required>
                                         <option value="">-- Select Category --</option>
                                         @foreach($categories as $cat)
@@ -163,25 +220,43 @@
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="fw-bold text-dark">Sub Category</label>
+                                <div class="form-group mb-0">
+                                    <label class="fw-bold text-dark mb-1">Sub Category</label>
                                     <select class="form-select select2" name="sub_category_id" id="sub_category_id" style="width: 100%;">
                                         <option value="">-- Select Subcategory --</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="fw-bold text-dark">Base Product Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control fw-bold" name="base_product_name" required placeholder='e.g., "Floral Kurti"'>
+                                <div class="form-group mb-0 position-relative">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="fw-bold text-dark mb-0">Base Product Name <span class="text-danger">*</span></label>
+                                        <span id="productLiveStatus"></span>
+                                    </div>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control fw-bold" name="base_product_name" id="base_product_name" required placeholder='e.g., "Floral Kurti" or code' autocomplete="off">
+                                        <span class="input-group-text bg-white" id="productCheckSpinner" style="display: none;">
+                                            <i class="fas fa-spinner fa-spin text-primary"></i>
+                                        </span>
+                                    </div>
+
+                                    <!-- Clean Floating Suggestions Dropdown -->
+                                    <div id="productSuggestionsBox" class="product-autocomplete-dropdown">
+                                        <div class="d-flex justify-content-between align-items-center py-2 px-3 bg-light border-bottom">
+                                            <span class="fw-bold small text-dark"><i class="fas fa-boxes text-primary me-1"></i> Existing Matching Products:</span>
+                                            <button type="button" class="btn-close btn-sm" id="closeSuggestionsBtn" style="font-size: 8px;"></button>
+                                        </div>
+                                        <div id="productSuggestionsList" style="max-height: 220px; overflow-y: auto;">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Variants Table -->
-                <div class="card premium-card">
+                <!-- 2. Variants Table -->
+                <div class="card premium-card card-section-2">
                     <div class="card-header-premium d-flex justify-content-between align-items-center">
                         <div><i class="fas fa-boxes me-2 text-primary"></i> 2. Variants & Pricing</div>
                         <button type="button" class="btn btn-sm btn-outline-primary fw-bold" id="addRowBtn" style="border-radius: 6px;">
@@ -223,8 +298,8 @@
                     </div>
                 </div>
 
-                <!-- Payment Section -->
-                <div class="card premium-card">
+                <!-- 3. Immediate Payment -->
+                <div class="card premium-card card-section-3">
                     <div class="card-header-premium">
                         <i class="fas fa-wallet me-2 text-primary"></i> 3. Immediate Payment
                     </div>
@@ -296,14 +371,13 @@
 $(document).ready(function() {
     var vendorBalances = @json($vendorBalances ?? []);
 
-    // Initialize Select2 with modern theme
+    // Initialize Select2
     $('.select2').select2({
         theme: 'bootstrap4',
         width: '100%'
     });
 
-    // CRITICAL FIX: Ensure the search box actually gets focus when opened.
-    // If it doesn't get focus, Up/Down arrow keys will just scroll the page instead of navigating the dropdown!
+    // CRITICAL FIX: Ensure the search box gets focus when opened.
     $(document).on('select2:open', function() {
         let searchField = document.querySelector('.select2-search__field');
         if (searchField) {
@@ -311,22 +385,203 @@ $(document).ready(function() {
         }
     });
 
-    // Make Select2 open on focus (when tabbing into it)
+    // Make Select2 open on focus
     $(document).on('focus', '.select2-selection.select2-selection--single', function (e) {
         var $select = $(this).closest(".select2-container").siblings('select:enabled');
-        if (!$select.data('select2').isOpen()) {
+        if ($select.length && $select.data('select2') && !$select.data('select2').isOpen()) {
             $select.select2('open');
         }
     });
 
-    // Prevent double-open bug when clicking with mouse
+    // Prevent double-open bug
     $('select.select2').on('select2:closing', function (e) {
-        $(e.target).data("select2").$selection.one('focus focusin', function (e) {
-            e.stopPropagation();
-        });
+        if ($(e.target).data("select2") && $(e.target).data("select2").$selection) {
+            $(e.target).data("select2").$selection.one('focus focusin', function (e) {
+                e.stopPropagation();
+            });
+        }
     });
 
-    // Update Summary Logic
+    // ── Apply Existing Product ──────────────────────────────────
+    window.applyExistingProduct = function(p) {
+        $('#product_id').val(p.id);
+        $('#base_product_name').val(p.item_name);
+
+        // Update header badge
+        var displayLabel = (p.item_code ? '[' + p.item_code + '] ' : '') + p.item_name;
+        $('#badgeProductName').text(displayLabel);
+        $('#productLinkedBadgeContainer').fadeIn(150);
+
+        // Hide floating suggestions & clear indicator
+        $('#productSuggestionsBox').hide();
+        $('#productLiveStatus').html('<small class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i> Linked</small>');
+
+        // Set Category & Subcategory
+        if (p.category_id) {
+            $('#category_id').val(p.category_id).trigger('change.select2');
+            
+            $.get('/get-subcategories/' + p.category_id, function(d) {
+                $('#sub_category_id').empty().append('<option value="">-- Select Subcategory --</option>');
+                $.each(d, function(_, v) {
+                    var selected = (p.sub_category_id && v.id == p.sub_category_id) ? 'selected' : '';
+                    $('#sub_category_id').append('<option value="' + v.id + '" ' + selected + '>' + v.name + '</option>');
+                });
+                if (p.sub_category_id) {
+                    $('#sub_category_id').val(p.sub_category_id).trigger('change.select2');
+                }
+            });
+        }
+
+        // Populate Variants Table
+        if (p.variants && p.variants.length > 0) {
+            $('#variantsTable tbody').empty();
+            $.each(p.variants, function(idx, v) {
+                var size = v.size || '';
+                var color = v.color || '';
+                var pPrice = v.purch_price || p.purchase_price || 0;
+                var sPrice = v.sale_price || p.sale_price || 0;
+
+                var rowHtml = `
+                    <tr class="variant-row">
+                        <td><input type="text" class="form-control form-control-sm" name="variant_size[]" value="${size}" placeholder="M, L, XL" required></td>
+                        <td><input type="text" class="form-control form-control-sm" name="variant_color[]" value="${color}" placeholder="Red, Blue" required></td>
+                        <td><input type="number" class="form-control form-control-sm calc-qty text-center" name="qty[]" value="1" min="1" required></td>
+                        <td><input type="number" step="0.01" class="form-control form-control-sm calc-pprice text-end" name="purchase_price[]" value="${pPrice}" placeholder="0.00" required></td>
+                        <td><input type="number" step="0.01" class="form-control form-control-sm text-end" name="sale_price[]" value="${sPrice}" placeholder="0.00" required></td>
+                        <td><input type="text" class="form-control form-control-sm calc-line-total bg-light text-end fw-bold" readonly value="0.00"></td>
+                        <td class="text-center align-middle">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-light duplicate-row-btn border text-primary" title="Duplicate"><i class="fas fa-copy"></i></button>
+                                <button type="button" class="btn btn-sm btn-light remove-row-btn border text-danger" title="Remove"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                $('#variantsTable tbody').append(rowHtml);
+            });
+            updateSummary();
+        } else if (p.purchase_price || p.sale_price) {
+            var $firstRow = $('#variantsTable tbody tr:first');
+            if ($firstRow.length) {
+                if (p.purchase_price) $firstRow.find('input[name="purchase_price[]"]').val(p.purchase_price);
+                if (p.sale_price) $firstRow.find('input[name="sale_price[]"]').val(p.sale_price);
+                updateSummary();
+            }
+        }
+    };
+
+    // Unlink / Switch to New Product
+    $('#unlinkProductBtn').on('click', function() {
+        $('#product_id').val('');
+        $('#productLinkedBadgeContainer').fadeOut(150);
+        $('#productLiveStatus').html('<small class="text-secondary fw-bold"><i class="fas fa-plus me-1"></i> New Product</small>');
+    });
+
+    // Close suggestions box
+    $('#closeSuggestionsBtn').on('click', function(e) {
+        e.stopPropagation();
+        $('#productSuggestionsBox').hide();
+    });
+
+    // Click outside to close suggestions
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#base_product_name, #productSuggestionsBox').length) {
+            $('#productSuggestionsBox').hide();
+        }
+    });
+
+    // ── Live Product Detection on Typing ─────────────────────────
+    var productSearchTimer = null;
+    var rawProductsData = {};
+
+    $('#base_product_name').on('input', function() {
+        var query = $(this).val().trim();
+        var currentProductId = $('#product_id').val();
+
+        if (currentProductId) {
+            $('#product_id').val('');
+            $('#productLinkedBadgeContainer').fadeOut(150);
+        }
+
+        clearTimeout(productSearchTimer);
+
+        if (query.length < 2) {
+            $('#productLiveStatus').empty();
+            $('#productCheckSpinner').hide();
+            $('#productSuggestionsBox').hide();
+            return;
+        }
+
+        $('#productCheckSpinner').show();
+
+        productSearchTimer = setTimeout(function() {
+            $.ajax({
+                url: '{{ route("purchase.quick_search_products") }}',
+                method: 'GET',
+                data: { q: query },
+                success: function(products) {
+                    $('#productCheckSpinner').hide();
+                    rawProductsData = {};
+
+                    if (products && products.length > 0) {
+                        var hasExact = products.some(p => p.is_exact);
+                        
+                        if (hasExact) {
+                            $('#productLiveStatus').html('<small class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i> Already Exists</small>');
+                        } else {
+                            $('#productLiveStatus').html('<small class="text-primary fw-bold"><i class="fas fa-search me-1"></i> ' + products.length + ' Found</small>');
+                        }
+
+                        // Build suggestions list
+                        var listHtml = '';
+                        $.each(products, function(i, item) {
+                            rawProductsData[item.id] = item;
+                            var varCount = item.variants ? item.variants.length : 0;
+                            var varBadge = varCount > 0 ? `<span class="badge bg-light text-dark border ms-1">${varCount} variants</span>` : '';
+                            var exactBadge = item.is_exact ? `<span class="badge bg-danger text-white ms-1">Exact Match</span>` : '';
+
+                            listHtml += `
+                                <div class="product-suggest-item d-flex justify-content-between align-items-center select-suggestion-btn" data-id="${item.id}">
+                                    <div>
+                                        <div class="fw-bold text-dark" style="font-size: 0.9rem;">
+                                            [${item.item_code}] ${item.item_name} ${exactBadge}
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.78rem;">
+                                            Cat: ${item.category_name || '-'} | Price: Rs ${item.purchase_price || 0} ${varBadge}
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-primary py-1 px-2" style="font-size: 0.78rem; border-radius: 6px;">
+                                        <i class="fas fa-check me-1"></i> Select
+                                    </button>
+                                </div>
+                            `;
+                        });
+
+                        $('#productSuggestionsList').html(listHtml);
+                        $('#productSuggestionsBox').show();
+                    } else {
+                        $('#productLiveStatus').html('<small class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i> New Product</small>');
+                        $('#productSuggestionsBox').hide();
+                    }
+                },
+                error: function() {
+                    $('#productCheckSpinner').hide();
+                }
+            });
+        }, 300);
+    });
+
+    // Handle suggestion click
+    $(document).on('click', '.select-suggestion-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var pId = $(this).data('id');
+        if (rawProductsData[pId]) {
+            applyExistingProduct(rawProductsData[pId]);
+        }
+    });
+
+    // ── Calculations & Summary ──────────────────────────────────
     function updateSummary() {
         var purchaseTotal = 0;
         $('#variantsTable tbody tr').each(function() {
@@ -357,7 +612,7 @@ $(document).ready(function() {
         $('#displayRemainingBalance').text(remaining.toFixed(2));
     }
 
-    // Auto-fill payment amount when account is selected, ONLY if payment is currently 0 or empty
+    // Auto-fill payment amount when account is selected
     $('#payment_account_id').on('change', function() {
         if($(this).val() !== '') {
             var purchaseTotal = parseFloat($('#displayPurchaseTotal').text()) || 0;
@@ -393,7 +648,7 @@ $(document).ready(function() {
         updateSummary();
     });
 
-    $('#opening_balance, #payment_amount, .calc-qty, .calc-pprice').on('input', function() {
+    $(document).on('input', '#opening_balance, #payment_amount, .calc-qty, .calc-pprice', function() {
         updateSummary();
     });
 
@@ -484,7 +739,7 @@ $(document).ready(function() {
         });
     });
 
-    // Subcategory load
+    // Subcategory load on manual category change
     $('#category_id').on('change', function() {
         var cid = $(this).val();
         if (cid) {

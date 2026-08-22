@@ -182,6 +182,54 @@ class PurchaseController extends Controller
         return view('admin_panel.purchase.quick_create', compact('Vendor', 'Warehouse', 'accounts', 'categories', 'vendorBalances'));
     }
 
+    public function quickSearchProducts(Request $request)
+    {
+        $term = trim($request->get('q', ''));
+        if (empty($term)) {
+            return response()->json([]);
+        }
+
+        $products = Product::with(['category_relation', 'sub_category_relation'])
+            ->where('is_active', true)
+            ->where(function ($q) use ($term) {
+                $q->where('item_name', 'like', "%{$term}%")
+                  ->orWhere('item_code', 'like', "%{$term}%")
+                  ->orWhere('barcode_path', 'like', "%{$term}%");
+            })
+            ->limit(20)
+            ->get();
+
+        $results = $products->map(function ($p) use ($term) {
+            $variants = [];
+            if ($p->color) {
+                try {
+                    $parsed = is_string($p->color) ? json_decode($p->color, true) : $p->color;
+                    if (is_array($parsed)) {
+                        $variants = $parsed;
+                    }
+                } catch (\Exception $e) {}
+            }
+
+            $isExactMatch = strtolower(trim($p->item_name)) === strtolower($term) || strtolower(trim($p->item_code)) === strtolower($term);
+
+            return [
+                'id' => $p->id,
+                'item_code' => $p->item_code,
+                'item_name' => $p->item_name,
+                'category_id' => $p->category_id,
+                'category_name' => $p->category_relation->name ?? '',
+                'sub_category_id' => $p->sub_category_id,
+                'sub_category_name' => $p->sub_category_relation->name ?? '',
+                'purchase_price' => (float) ($p->purchase_price_per_piece ?? 0),
+                'sale_price' => (float) ($p->sale_price_per_piece ?? 0),
+                'variants' => $variants,
+                'is_exact' => $isExactMatch,
+            ];
+        });
+
+        return response()->json($results);
+    }
+
     public function quickStore(Request $request)
     {
         try {
@@ -189,6 +237,7 @@ class PurchaseController extends Controller
                 'vendor_id' => 'nullable',
                 'new_vendor_name' => 'nullable|string',
                 'opening_balance' => 'nullable|numeric',
+                'product_id' => 'nullable|exists:products,id',
                 'category_id' => 'required',
                 'sub_category_id' => 'nullable',
                 'base_product_name' => 'required|string',
@@ -213,7 +262,7 @@ class PurchaseController extends Controller
 
         $purchase = DB::transaction(function () use ($validated, $request) {
             // 1. Resolve Vendor
-            $vendorId = $validated['vendor_id'];
+            $vendorId = $validated['vendor_id'] ?? null;
             if (!$vendorId && !empty($validated['new_vendor_name'])) {
                 $vendor = Vendor::create([
                     'name' => $validated['new_vendor_name'],
@@ -262,15 +311,15 @@ class PurchaseController extends Controller
             $pPrices = $validated['purchase_price'];
             $sPrices = $validated['sale_price'];
 
-            // 3. Build Variant JSON array for single Product
-            $variantsArray = [];
+            // 3. Build Variant JSON array for this transaction
+            $incomingVariants = [];
             foreach ($sizes as $i => $sizeStr) {
                 $qty = (float) $qtys[$i];
                 if ($qty <= 0) continue;
                 
                 $colorStr = $colors[$i];
                 
-                $variantsArray[] = [
+                $incomingVariants[] = [
                     'name' => $baseName, // Ensure name is set for POS display
                     'size' => $sizeStr,
                     'color' => $colorStr,
@@ -282,22 +331,64 @@ class PurchaseController extends Controller
                 ];
             }
 
-            // Create ONE master Product
-            $lastProduct = Product::orderBy('id', 'desc')->first();
-            $nextCode = $lastProduct ? ('ITEM-'.str_pad($lastProduct->id + 1, 4, '0', STR_PAD_LEFT)) : 'ITEM-0001';
+            // 3. Resolve Product (Existing vs New)
+            if (!empty($validated['product_id'])) {
+                $product = Product::findOrFail($validated['product_id']);
 
-            $product = Product::create([
-                'item_name' => $baseName,
-                'category_id' => $validated['category_id'] ?? null,
-                'sub_category_id' => $validated['sub_category_id'] ?? null,
-                'color' => json_encode($variantsArray), // Store variants here!
-                'item_code' => $nextCode,
-                'purchase_price_per_piece' => (float) ($pPrices[0] ?? 0),
-                'sale_price_per_piece' => (float) ($sPrices[0] ?? 0),
-                'size_mode' => 'pieces',
-                'total_m2' => 0,
-                'is_active' => 1
-            ]);
+                // Merge variants into existing product
+                $existingVariants = [];
+                if ($product->color) {
+                    $parsed = is_string($product->color) ? json_decode($product->color, true) : $product->color;
+                    if (is_array($parsed)) {
+                        $existingVariants = $parsed;
+                    }
+                }
+
+                foreach ($incomingVariants as $inVar) {
+                    $matched = false;
+                    foreach ($existingVariants as &$exVar) {
+                        $exSize = $exVar['size'] ?? '';
+                        $exColor = $exVar['color'] ?? '';
+                        if (strcasecmp(trim($exSize), trim($inVar['size'])) === 0 && strcasecmp(trim($exColor), trim($inVar['color'])) === 0) {
+                            $exVar['sale_price'] = $inVar['sale_price'];
+                            $exVar['purch_price'] = $inVar['purch_price'];
+                            $matched = true;
+                            break;
+                        }
+                    }
+                    unset($exVar);
+
+                    if (!$matched) {
+                        $existingVariants[] = $inVar;
+                    }
+                }
+
+                $product->color = json_encode(array_values($existingVariants));
+                if (!empty($validated['category_id'])) {
+                    $product->category_id = $validated['category_id'];
+                }
+                if (!empty($validated['sub_category_id'])) {
+                    $product->sub_category_id = $validated['sub_category_id'];
+                }
+                $product->save();
+            } else {
+                // Create ONE master Product
+                $lastProduct = Product::orderBy('id', 'desc')->first();
+                $nextCode = $lastProduct ? ('ITEM-'.str_pad($lastProduct->id + 1, 4, '0', STR_PAD_LEFT)) : 'ITEM-0001';
+
+                $product = Product::create([
+                    'item_name' => $baseName,
+                    'category_id' => $validated['category_id'] ?? null,
+                    'sub_category_id' => $validated['sub_category_id'] ?? null,
+                    'color' => json_encode($incomingVariants), // Store variants here!
+                    'item_code' => $nextCode,
+                    'purchase_price_per_piece' => (float) ($pPrices[0] ?? 0),
+                    'sale_price_per_piece' => (float) ($sPrices[0] ?? 0),
+                    'size_mode' => 'pieces',
+                    'total_m2' => 0,
+                    'is_active' => 1
+                ]);
+            }
 
             // 4. Create Purchase Items linking to the single master Product
             foreach ($sizes as $i => $sizeStr) {

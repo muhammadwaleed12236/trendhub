@@ -278,6 +278,7 @@ Route::middleware('auth')->group(function () {
     route::get('/add/Purchase', [PurchaseController::class, 'add_purchase'])->middleware('permission:purchases.create')->name('add_purchase');
     Route::get('/purchase/quick', [PurchaseController::class, 'quickCreate'])->middleware('permission:purchases.create')->name('purchase.quick_create');
     Route::post('/purchase/quick', [PurchaseController::class, 'quickStore'])->middleware('permission:purchases.create')->name('purchase.quick_store');
+    Route::get('/purchase/quick-search-products', [PurchaseController::class, 'quickSearchProducts'])->middleware('permission:purchases.create')->name('purchase.quick_search_products');
     
     // Purchase POS Routes
     Route::get('/purchase-pos', [App\Http\Controllers\PurchasePOSController::class, 'index'])->middleware('permission:purchase_pos.create')->name('purchase-pos.index');
