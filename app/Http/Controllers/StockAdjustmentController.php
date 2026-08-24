@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class StockAdjustmentController extends Controller
 {
     /**
-     * Check if user is authorized for stock adjustments
+     * Check m,dmd if user is authorized for stock adjustments
      */
     private function checkPermission()
     {
