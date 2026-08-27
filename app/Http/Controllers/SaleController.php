@@ -1742,21 +1742,6 @@ class SaleController extends Controller
                 continue;
             }
 
-            $targetWhId = $item->warehouse_id ?: (auth()->user()->warehouse_id ?? 1);
-            $stock = WarehouseStock::where('product_id', $item->product_id)
-                ->where('warehouse_id', $targetWhId)
-                ->lockForUpdate() // LOCK ROW
-                ->first();
-
-            if (! $stock) {
-                $stock = WarehouseStock::where('product_id', $item->product_id)->lockForUpdate()->first();
-            }
-
-            if (! $stock) {
-                // Create if missing? Or fail? User said "Validate warehouse stock".
-                throw new \Exception('Stock not found for product: '.$item->product_name);
-            }
-
             // Calculate stock deduction quantity (for Kg products, total_pieces in WarehouseStock = total Kg)
             $productMode = $item->product->size_mode ?? '';
             $qtyPieces = (float)$item->total_pieces;
@@ -1795,12 +1780,68 @@ class SaleController extends Controller
                 }
             }
 
+            $targetWhId = $item->warehouse_id ?: (auth()->user()->warehouse_id ?? 1);
+            $stock = WarehouseStock::where('product_id', $item->product_id)
+                ->where('warehouse_id', $targetWhId)
+                ->lockForUpdate() // LOCK ROW
+                ->first();
+
+            // Auto-recovery: if total_pieces is 0 but quantity (boxes) > 0
+            $ppb = ($item->product && $item->product->pieces_per_box > 0) ? (float)$item->product->pieces_per_box : 1.0;
+            if ($stock && (float)$stock->total_pieces <= 0 && (float)$stock->quantity > 0) {
+                $stock->total_pieces = round($stock->quantity * $ppb, 2);
+                $stock->save();
+            }
+
+            // Fallback: If target warehouse stock is missing or insufficient, check if another warehouse has stock
+            if ($type === 'out' && (! $stock || (float)$stock->total_pieces < ((float)$qtyPieces - 0.0001))) {
+                $altStock = WarehouseStock::where('product_id', $item->product_id)
+                    ->where('total_pieces', '>=', $qtyPieces)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($altStock && (! $stock || (float)$stock->total_pieces <= 0)) {
+                    $stock = $altStock;
+                    $item->warehouse_id = $stock->warehouse_id;
+                    $item->save();
+                }
+            }
+
+            if (! $stock) {
+                $stock = WarehouseStock::where('product_id', $item->product_id)->lockForUpdate()->first();
+                if ($stock && (float)$stock->total_pieces <= 0 && (float)$stock->quantity > 0) {
+                    $stock->total_pieces = round($stock->quantity * $ppb, 2);
+                    $stock->save();
+                }
+            }
+
+            if (! $stock) {
+                throw new \Exception('Stock record not found in warehouse for product: '.$item->product_name);
+            }
+
             if ($type === 'out') {
-                // Deduct
-                if ($stock->total_pieces < $qtyPieces) {
+                // Deduct with float tolerance
+                if ((float)$stock->total_pieces < ((float)$qtyPieces - 0.0001)) {
                     $availFormatted = number_format($stock->total_pieces, 3);
                     $unitLabel = ($productMode === 'by_kg' || $productMode === 'by_gm') ? 'Kg' : 'Pcs';
-                    throw new \Exception('Insufficient stock for '.$item->product_name.'. Available: '.$availFormatted.' '.$unitLabel);
+                    $whObj = \App\Models\Warehouse::find($stock->warehouse_id);
+                    $whName = $whObj ? $whObj->warehouse_name : "Warehouse #{$stock->warehouse_id}";
+
+                    $otherStocks = WarehouseStock::where('product_id', $item->product_id)
+                        ->where('warehouse_id', '!=', $stock->warehouse_id)
+                        ->where('total_pieces', '>', 0)
+                        ->get();
+
+                    $otherInfo = '';
+                    if ($otherStocks->isNotEmpty()) {
+                        $whList = $otherStocks->map(function($ws) {
+                            $name = \App\Models\Warehouse::find($ws->warehouse_id)->warehouse_name ?? "WH #{$ws->warehouse_id}";
+                            return "{$name}: ".number_format($ws->total_pieces, 2);
+                        })->join(', ');
+                        $otherInfo = " (Stock in other warehouse(s): {$whList})";
+                    }
+
+                    throw new \Exception("Insufficient stock for {$item->product_name} in {$whName}. Available: {$availFormatted} {$unitLabel}, Required: {$qtyPieces} {$unitLabel}.{$otherInfo}");
                 }
                 $stock->total_pieces -= $qtyPieces;
                 // Update approx boxes for display

@@ -70,15 +70,27 @@ class ProductController extends Controller
             ->lockForUpdate()
             ->first();
 
+        $product = Product::find($productId);
+        $ppb = ($product && $product->pieces_per_box > 0) ? (float)$product->pieces_per_box : 1.0;
+
+        // If product is by cartons or size and qtyDelta is entered as cartons, convert to pieces
+        $deltaPieces = $qtyDelta;
+        if ($product && in_array($product->size_mode, ['by_cartons', 'by_size']) && $ppb > 1) {
+            $deltaPieces = $qtyDelta * $ppb;
+        }
+
         if ($stock) {
-            $stock->quantity += $qtyDelta;
+            $stock->total_pieces = max(0, (float)$stock->total_pieces + $deltaPieces);
+            $stock->quantity = $ppb > 0 ? round($stock->total_pieces / $ppb, 2) : $stock->total_pieces;
             $stock->save();
         } else {
             \App\Models\WarehouseStock::create([
                 'warehouse_id' => $warehouseId,
                 'product_id' => $productId,
-                'quantity' => $qtyDelta,
+                'total_pieces' => max(0, $deltaPieces),
+                'quantity' => $ppb > 0 ? round(max(0, $deltaPieces) / $ppb, 2) : max(0, $deltaPieces),
                 'price' => 0,
+                'remarks' => 'Manual Stock Adjustment',
             ]);
         }
     }
@@ -1176,9 +1188,24 @@ class ProductController extends Controller
             $ppb = $piecesPerBox > 0 ? $piecesPerBox : 1;
 
             if ($warehouseStock) {
+                // If total_pieces was 0 but quantity was set, recover total_pieces
+                if ((float)$warehouseStock->total_pieces <= 0 && (float)$warehouseStock->quantity > 0) {
+                    $warehouseStock->total_pieces = round($warehouseStock->quantity * $ppb, 2);
+                }
                 // Keep the actual pieces we have, just update the box display approximation
                 $warehouseStock->quantity = round($warehouseStock->total_pieces / $ppb, 2);
                 $warehouseStock->save();
+            } else {
+                $defaultWhId = \App\Models\Warehouse::first()->id ?? 1;
+                $initialPieces = count($variants) > 0 ? array_sum(array_column($variants, 'stock')) : 0;
+                $warehouseStock = \App\Models\WarehouseStock::create([
+                    'warehouse_id' => $defaultWhId,
+                    'product_id' => $id,
+                    'total_pieces' => $initialPieces,
+                    'quantity' => $ppb > 0 ? round($initialPieces / $ppb, 2) : $initialPieces,
+                    'price' => 0,
+                    'remarks' => 'Auto-created on product update',
+                ]);
             }
 
             // Manual stock adjustment (extra on top)
