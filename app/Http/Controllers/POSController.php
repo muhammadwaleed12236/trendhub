@@ -411,13 +411,46 @@ class POSController extends Controller
             return response()->json(['error' => 'Please enter an invoice number.'], 422);
         }
 
+        // 1. Exact invoice_no match (case-insensitive)
         $sale = \App\Models\Sale::with(['items.product'])
-            ->where(function($q) use ($term) {
-                $q->where('invoice_no', $term)
-                  ->orWhere('id', $term);
-            })
+            ->whereRaw('LOWER(invoice_no) = ?', [strtolower($term)])
             ->whereIn('sale_status', ['posted', 'returned'])
             ->first();
+
+        // 2. If not found, search variations of invoice_no (e.g. 0357, 357, INV-357, etc.)
+        if (!$sale) {
+            $numericOnly = preg_replace('/[^0-9]/', '', $term);
+            $cleanTerm = strtoupper(str_replace([' ', '_'], ['-', '-'], $term));
+
+            $sale = \App\Models\Sale::with(['items.product'])
+                ->where(function($q) use ($term, $numericOnly, $cleanTerm) {
+                    $q->where('invoice_no', 'LIKE', '%' . $term . '%')
+                      ->orWhere('invoice_no', 'LIKE', '%' . $cleanTerm . '%');
+
+                    if (!empty($numericOnly)) {
+                        $padded4 = 'INV-' . str_pad((int)$numericOnly, 4, '0', STR_PAD_LEFT);
+                        $padded5 = 'INV-' . str_pad((int)$numericOnly, 5, '0', STR_PAD_LEFT);
+                        $rawWithPrefix = 'INV-' . $numericOnly;
+
+                        $q->orWhere('invoice_no', $padded4)
+                          ->orWhere('invoice_no', $padded5)
+                          ->orWhere('invoice_no', $rawWithPrefix)
+                          ->orWhere('invoice_no', 'LIKE', '%-' . $numericOnly)
+                          ->orWhere('invoice_no', 'LIKE', '%-' . str_pad((int)$numericOnly, 4, '0', STR_PAD_LEFT));
+                    }
+                })
+                ->whereIn('sale_status', ['posted', 'returned'])
+                ->orderBy('id', 'desc')
+                ->first();
+        }
+
+        // 3. Fallback: Search by primary database ID only if term is numeric and NO invoice_no matched
+        if (!$sale && is_numeric($term)) {
+            $sale = \App\Models\Sale::with(['items.product'])
+                ->where('id', (int)$term)
+                ->whereIn('sale_status', ['posted', 'returned'])
+                ->first();
+        }
 
         if (!$sale) {
             return response()->json(['error' => 'Invoice not found or is not posted.'], 404);

@@ -28,6 +28,43 @@ class Sale extends Model
         return \App\Models\InvoiceSeries::generateNextNo($prefix);
     }
 
+    public static function resolveByIdOrInvoice($id, array $with = [])
+    {
+        $query = self::query();
+        if (!empty($with)) {
+            $query->with($with);
+        }
+
+        // 1. Exact ID match (if numeric)
+        if (is_numeric($id)) {
+            $sale = (clone $query)->find((int)$id);
+            if ($sale) {
+                return $sale;
+            }
+        }
+
+        // 2. Exact invoice_no match
+        $sale = (clone $query)->where('invoice_no', $id)->first();
+        if ($sale) {
+            return $sale;
+        }
+
+        // 3. Normalized / padded invoice match
+        $numericOnly = preg_replace('/[^0-9]/', '', (string)$id);
+        if (!empty($numericOnly)) {
+            $padded4 = 'INV-' . str_pad((int)$numericOnly, 4, '0', STR_PAD_LEFT);
+            $padded5 = 'INV-' . str_pad((int)$numericOnly, 5, '0', STR_PAD_LEFT);
+            $sale = (clone $query)->whereIn('invoice_no', [$padded4, $padded5, 'INV-' . $numericOnly])
+                ->orWhere('invoice_no', 'LIKE', '%-' . $numericOnly)
+                ->first();
+            if ($sale) {
+                return $sale;
+            }
+        }
+
+        return null;
+    }
+
     public function items()
     {
         return $this->hasMany(SaleItem::class);

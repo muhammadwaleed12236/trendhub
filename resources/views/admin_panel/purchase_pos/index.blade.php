@@ -2171,6 +2171,14 @@
             $('#exchangeInvoiceDetails').addClass('d-none');
             $('#exchangeItemsList').html('<tr><td colspan="6" class="text-center text-muted py-3">Enter invoice number to load items.</td></tr>');
             $('#posExchangeModal').modal('show');
+            setTimeout(function() { $('#exchangeInvoiceNo').focus(); }, 400);
+        });
+
+        $('#exchangeInvoiceNo').on('keypress', function(e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                $('#btnSearchExchangeInvoice').click();
+            }
         });
 
         // Search Invoice handler

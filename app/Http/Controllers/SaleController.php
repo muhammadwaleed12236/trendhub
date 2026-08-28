@@ -872,7 +872,10 @@ class SaleController extends Controller
 
     public function saleinvoice($id)
     {
-        $sale = Sale::with(['customer_relation.salesOfficer'])->findOrFail($id);
+        $sale = Sale::resolveByIdOrInvoice($id, ['customer_relation.salesOfficer']);
+        if (!$sale) {
+            abort(404, 'Sale invoice not found');
+        }
         $items = $this->_getSaleItems($sale);
         $isEstimate = request()->query('type') === 'estimate';
 
@@ -918,7 +921,10 @@ class SaleController extends Controller
     {
         // 1. Fetch Sale with relations (including nested items.product for pre-fill)
         // Eager load warehouseStocks to display stock in edit view
-        $sale = Sale::with(['items.product.warehouseStocks', 'customer_relation'])->findOrFail($id);
+        $sale = Sale::resolveByIdOrInvoice($id, ['items.product.warehouseStocks', 'customer_relation']);
+        if (!$sale) {
+            abort(404, 'Sale not found');
+        }
 
         if (in_array($sale->sale_status, ['cancelled', 'returned'])) {
             return redirect()->route('sale.index')->with('error', 'Cannot edit a '.$sale->sale_status.' sale.');
@@ -943,7 +949,10 @@ class SaleController extends Controller
 
     public function updatesale(Request $request, $id)
     {
-        $sale = Sale::findOrFail($id);
+        $sale = Sale::resolveByIdOrInvoice($id);
+        if (!$sale) {
+            abort(404, 'Sale not found');
+        }
         if (in_array($sale->sale_status, ['cancelled', 'returned'])) {
             return redirect()->back()->with('error', 'Cannot edit a '.$sale->sale_status.' sale.');
         }
@@ -953,7 +962,10 @@ class SaleController extends Controller
 
     public function saledc($id)
     {
-        $sale = Sale::with('customer_relation')->findOrFail($id);
+        $sale = Sale::resolveByIdOrInvoice($id, ['customer_relation']);
+        if (!$sale) {
+            abort(404, 'Sale not found');
+        }
         $items = $this->_getSaleItems($sale);
 
         return view('admin_panel.sale.saledc', ['sale' => $sale, 'saleItems' => $items]);
@@ -961,7 +973,10 @@ class SaleController extends Controller
 
     public function saledcThermal($id)
     {
-        $sale = Sale::with('customer_relation')->findOrFail($id);
+        $sale = Sale::resolveByIdOrInvoice($id, ['customer_relation']);
+        if (!$sale) {
+            abort(404, 'Sale not found');
+        }
         $items = $this->_getSaleItems($sale);
 
         return view('admin_panel.sale.saledc_thermal', ['sale' => $sale, 'saleItems' => $items]);
@@ -969,7 +984,10 @@ class SaleController extends Controller
 
     public function salereceipt($id)
     {
-        $sale = Sale::with('customer_relation')->findOrFail($id);
+        $sale = Sale::resolveByIdOrInvoice($id, ['customer_relation']);
+        if (!$sale) {
+            abort(404, 'Sale receipt not found');
+        }
         $items = $this->_getSaleItems($sale);
 
         // Logic for Previous Balance (copied from saleinvoice)

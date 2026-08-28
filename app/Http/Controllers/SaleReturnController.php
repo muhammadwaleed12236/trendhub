@@ -19,7 +19,11 @@ class SaleReturnController extends Controller
 {
     public function showReturnForm($id)
     {
-        $sale = Sale::with(['customer_relation', 'items.product.brand'])->findOrFail($id);
+        $sale = Sale::resolveByIdOrInvoice($id, ['customer_relation', 'items.product.brand']);
+        if (!$sale) {
+            abort(404, 'Sale not found');
+        }
+        $id = $sale->id;
         $accounts = Account::whereHas('head', function($q) {
             $q->whereIn('name', ['Cash', 'Bank']);
         })->where('status', 1)->orderBy('title')->get();
