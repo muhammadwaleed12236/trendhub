@@ -646,7 +646,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('login') }}" autocomplete="on">
+            <form method="POST" action="{{ route('software.login') }}" autocomplete="on">
                 @csrf
 
                 <!-- Email / Username Input -->
