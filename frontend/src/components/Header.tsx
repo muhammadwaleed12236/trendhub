@@ -167,7 +167,7 @@ export default function Header() {
               >
                 {settings?.web_site_logo ? (
                   <img
-                    src={`http://127.0.0.1:8000/${settings.web_site_logo}`}
+                    src={getAssetUrl(settings.web_site_logo)}
                     alt={settings?.web_site_name || "TrendHub"}
                     className={`h-7 sm:h-12 w-auto max-w-[130px] min-[375px]:max-w-[160px] sm:max-w-[240px] object-contain transition-all duration-300 ${
                       isHome && !isScrolled ? "invert" : ""
@@ -455,9 +455,9 @@ export default function Header() {
                       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-6">
                         {searchResults.map((product) => {
                           const pMainImage = product.web_main_image
-                            ? `http://127.0.0.1:8000/uploads/products/${product.web_main_image}`
+                            ? getAssetUrl(`uploads/products/${product.web_main_image}`)
                             : product.image
-                            ? `http://127.0.0.1:8000/uploads/products/${product.image}`
+                            ? getAssetUrl(`uploads/products/${product.image}`)
                             : getProductFallbackImage(product.id);
                             
                           const price = product.web_sale_price || product.sale_price_per_piece;

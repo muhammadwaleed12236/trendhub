@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useSettings } from "@/hooks/useSettings";
+import { getAssetUrl } from "@/lib/imageHelper";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
@@ -25,7 +26,7 @@ export default function Footer() {
         <div className="space-y-4 lg:col-span-2 pr-6">
           {settings?.web_site_logo ? (
             <img 
-              src={`http://127.0.0.1:8000/${settings.web_site_logo}`} 
+              src={getAssetUrl(settings.web_site_logo)} 
               alt={settings?.web_site_name || "Logo"} 
               className="h-8 sm:h-10 object-contain"
             />

@@ -6,7 +6,7 @@ import { Heart, ShoppingBag, Eye, X, ChevronLeft, ChevronRight, ArrowRight, Plus
 import { useWishlistStore } from "@/store/wishlistStore";
 import { useCartStore } from "@/store/cartStore";
 import Link from "next/link";
-import { getProductFallbackImage } from "@/lib/imageHelper";
+import { getProductFallbackImage, getAssetUrl } from "@/lib/imageHelper";
 import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
@@ -27,26 +27,24 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [quantity, setQuantity] = useState(1);
   const [modalActiveImg, setModalActiveImg] = useState("");
 
-  const assetUrl = process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000";
-
   // Compute Primary and Secondary Image urls
   const mainImage = product.web_main_image
-    ? `${assetUrl}/uploads/products/${product.web_main_image}`
+    ? getAssetUrl(`uploads/products/${product.web_main_image}`)
     : product.image
-    ? `${assetUrl}/uploads/products/${product.image}`
+    ? getAssetUrl(`uploads/products/${product.image}`)
     : getProductFallbackImage(product.id);
 
   // Use first gallery image as secondary/hover image if available
   let hoverImage = mainImage;
   if (product.web_images && product.web_images.length > 0) {
-    hoverImage = `${assetUrl}/uploads/products/${product.web_images[0].image_path}`;
+    hoverImage = getAssetUrl(`uploads/products/${product.web_images[0].image_path}`);
   }
 
   // Pre-calculate image list for Quick View Modal
   const allImages = [mainImage];
   if (product.web_images) {
     product.web_images.forEach(img => {
-      allImages.push(`${assetUrl}/uploads/products/${img.image_path}`);
+      allImages.push(getAssetUrl(`uploads/products/${img.image_path}`));
     });
   }
 

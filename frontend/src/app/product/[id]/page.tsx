@@ -9,7 +9,7 @@ import { useWishlistStore } from "@/store/wishlistStore";
 import ProductCard from "@/components/ProductCard";
 import Link from "next/link";
 import { Heart, Plus, Minus, Info, Loader2, Star } from "lucide-react";
-import { getProductFallbackImage } from "@/lib/imageHelper";
+import { getProductFallbackImage, getAssetUrl } from "@/lib/imageHelper";
 
 interface ProductPageProps {
   params: Promise<{ id: string }>;
@@ -66,8 +66,6 @@ export default function ProductDetail({ params }: ProductPageProps) {
   const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
   const isInWishlist = useWishlistStore((state) => state.isInWishlist(parseInt(productId)));
 
-  const assetUrl = process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000";
-
   // 1. Fetch Product details
   const { data: product, isLoading } = useQuery<Product>({
     queryKey: ["product-detail", productId],
@@ -89,9 +87,9 @@ export default function ProductDetail({ params }: ProductPageProps) {
 
   // Pre-calculate image list (guarded against loading state)
   const defaultMain = product && product.web_main_image
-    ? `${assetUrl}/uploads/products/${product.web_main_image}`
+    ? getAssetUrl(`uploads/products/${product.web_main_image}`)
     : product && product.image
-    ? `${assetUrl}/uploads/products/${product.image}`
+    ? getAssetUrl(`uploads/products/${product.image}`)
     : product
     ? getProductFallbackImage(product.id)
     : "";
@@ -99,7 +97,7 @@ export default function ProductDetail({ params }: ProductPageProps) {
   const allImages = [defaultMain];
   if (product && product.web_images) {
     product.web_images.forEach(img => {
-      allImages.push(`${assetUrl}/uploads/products/${img.image_path}`);
+      allImages.push(getAssetUrl(`uploads/products/${img.image_path}`));
     });
   }
 

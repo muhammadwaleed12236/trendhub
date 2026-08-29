@@ -9,7 +9,7 @@ import Link from "next/link";
 import { ArrowRight, Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSettings } from "@/hooks/useSettings";
-import { getProductFallbackImage } from "@/lib/imageHelper";
+import { getProductFallbackImage, getAssetUrl } from "@/lib/imageHelper";
 
 export default function Home() {
   const { data: settings } = useSettings();
@@ -123,15 +123,13 @@ export default function Home() {
     const items = [];
     const productsWithImages = homeProducts ? homeProducts.filter(p => p.web_main_image || p.image) : [];
 
-    const baseUrl = process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000";
-
     for (let i = 0; i < 5; i++) {
       if (productsWithImages[i]) {
         const product = productsWithImages[i];
         const image = product.web_main_image
-          ? `${baseUrl}/uploads/products/${product.web_main_image}`
+          ? getAssetUrl(`uploads/products/${product.web_main_image}`)
           : product.image
-          ? `${baseUrl}/uploads/products/${product.image}`
+          ? getAssetUrl(`uploads/products/${product.image}`)
           : getProductFallbackImage(product.id);
         items.push({
           id: product.id,
@@ -161,7 +159,7 @@ export default function Home() {
         <div className="absolute inset-0 w-full h-full overflow-hidden">
           {settings?.web_home_hero_media_type === "image" && settings?.web_home_hero_image ? (
             <img
-              src={`${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_home_hero_image}`}
+              src={getAssetUrl(settings.web_home_hero_image)}
               alt="Hero Background"
               className="w-full h-full object-cover scale-[1.03]"
             />
@@ -175,7 +173,7 @@ export default function Home() {
               className="w-full h-full object-cover scale-[1.03]"
             >
               <source
-                src={settings?.web_home_hero_video ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_home_hero_video}` : "/hero-video.mp4"}
+                src={settings?.web_home_hero_video ? getAssetUrl(settings.web_home_hero_video) : "/hero-video.mp4"}
                 type="video/mp4"
               />
             </video>
@@ -329,7 +327,7 @@ export default function Home() {
             {/* Left: Large Featured Image */}
             <div className="w-full lg:w-[38%] xl:w-[32%] relative aspect-[4/5] sm:aspect-[3/4] lg:aspect-[4/5] bg-gray-200 overflow-hidden group rounded-[2px] z-0">
               <img 
-                src={settings?.web_home_banner_image ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_home_banner_image}` : "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800"} 
+                src={settings?.web_home_banner_image ? getAssetUrl(settings.web_home_banner_image) : "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=800"} 
                 alt="New Arrivals" 
                 className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                 loading="lazy"
@@ -376,9 +374,9 @@ export default function Home() {
                 
                 {newArrivals.map((product) => {
                   const pMainImage = product.web_main_image
-                    ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/uploads/products/${product.web_main_image}`
+                    ? getAssetUrl(`uploads/products/${product.web_main_image}`)
                     : product.image
-                    ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/uploads/products/${product.image}`
+                    ? getAssetUrl(`uploads/products/${product.image}`)
                     : getProductFallbackImage(product.id);
 
                   return (
@@ -462,7 +460,7 @@ export default function Home() {
         <Link href="/store-locator" className="block relative w-full h-[300px] sm:h-[450px] overflow-hidden group">
           <img
             src={settings?.web_store_locator_banner_image 
-              ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_store_locator_banner_image}` 
+              ? getAssetUrl(settings.web_store_locator_banner_image) 
               : "https://images.unsplash.com/photo-1582037917273-10250df7a230?q=80&w=1600"}
             alt="Store Locator"
             className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 filter brightness-[0.85] contrast-[0.95]"

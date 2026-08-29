@@ -22,7 +22,11 @@ return [
     'allowed_origins' => [
         'http://localhost:3000',
         'http://127.0.0.1:3000',
-        'http://192.168.100.10:3000'
+        'http://192.168.100.10:3000',
+        'https://trendhub.binsultansweet.com',
+        'http://trendhub.binsultansweet.com',
+        env('FRONTEND_URL', 'https://trendhub.binsultansweet.com'),
+        env('APP_URL', 'https://trendhub.binsultansweet.com'),
     ],
 
     'allowed_origins_patterns' => [],
