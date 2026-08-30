@@ -22,11 +22,18 @@ export const getProductFallbackImage = (productId: number | string | undefined):
 
 export const getAssetUrl = (path: string | undefined | null): string => {
   if (!path) return "";
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
+  let clean = path;
+  if (clean.includes("127.0.0.1:8000")) {
+    clean = clean.replace(/https?:\/\/127\.0\.0\.1:8000\/?/, "");
+  }
+  if (clean.includes("localhost:8000")) {
+    clean = clean.replace(/https?:\/\/localhost:8000\/?/, "");
+  }
+  if (clean.startsWith("http://") || clean.startsWith("https://")) {
+    return clean;
   }
   const base = (process.env.NEXT_PUBLIC_ASSET_URL || "").replace(/\/$/, "");
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const cleanPath = clean.startsWith("/") ? clean : `/${clean}`;
   return base ? `${base}${cleanPath}` : cleanPath;
 };
 
