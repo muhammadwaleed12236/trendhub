@@ -270,7 +270,7 @@
                                     <tr>
                                         <th style="width: 18%;">Size <span class="text-danger">*</span></th>
                                         <th style="width: 18%;">Color <span class="text-danger">*</span></th>
-                                        <th style="width: 12%;">Qty <span class="text-danger">*</span></th>
+                                        <th style="width: 12%;">QTY <span class="text-danger">*</span></th>
                                         <th style="width: 15%;">Purchase Price <span class="text-danger">*</span></th>
                                         <th style="width: 15%;">Sale Price <span class="text-danger">*</span></th>
                                         <th style="width: 15%;">Line Total</th>
@@ -339,19 +339,23 @@
                     <div class="col-12">
                         <div class="summary-card" style="margin-bottom: 0;">
                             <div class="row text-center">
-                                <div class="col-md-3 border-end border-secondary">
+                                <div class="col-6 col-md border-end border-secondary">
+                                    <div class="summary-label">Total Qty</div>
+                                    <div class="summary-value text-white" id="displayTotalQty">0</div>
+                                </div>
+                                <div class="col-6 col-md border-end border-secondary">
                                     <div class="summary-label">Previous Balance</div>
                                     <div class="summary-value text-info" id="displayPrevBalance">0.00</div>
                                 </div>
-                                <div class="col-md-3 border-end border-secondary">
+                                <div class="col-6 col-md border-end border-secondary">
                                     <div class="summary-label">Purchase Total</div>
                                     <div class="summary-value text-warning" id="displayPurchaseTotal">0.00</div>
                                 </div>
-                                <div class="col-md-3 border-end border-secondary">
+                                <div class="col-6 col-md border-end border-secondary">
                                     <div class="summary-label">Paid Now</div>
                                     <div class="summary-value text-success" id="displayPaidAmount">0.00</div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-12 col-md">
                                     <div class="summary-label">Remaining Balance</div>
                                     <div class="summary-value text-danger" id="displayRemainingBalance">0.00</div>
                                 </div>
@@ -583,15 +587,18 @@ $(document).ready(function() {
 
     // ── Calculations & Summary ──────────────────────────────────
     function updateSummary() {
+        var totalQty = 0;
         var purchaseTotal = 0;
         $('#variantsTable tbody tr').each(function() {
             var qty = parseFloat($(this).find('.calc-qty').val()) || 0;
             var price = parseFloat($(this).find('.calc-pprice').val()) || 0;
             var lineTotal = qty * price;
             $(this).find('.calc-line-total').val(lineTotal.toFixed(2));
+            totalQty += qty;
             purchaseTotal += lineTotal;
         });
 
+        $('#displayTotalQty').text(Number.isInteger(totalQty) ? totalQty : totalQty.toFixed(2));
         $('#displayPurchaseTotal').text(purchaseTotal.toFixed(2));
 
         var prevBalance = 0;
@@ -648,7 +655,7 @@ $(document).ready(function() {
         updateSummary();
     });
 
-    $(document).on('input', '#opening_balance, #payment_amount, .calc-qty, .calc-pprice', function() {
+    $(document).on('input change', '#opening_balance, #payment_amount, .calc-qty, .calc-pprice', function() {
         updateSummary();
     });
 

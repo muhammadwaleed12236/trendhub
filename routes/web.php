@@ -138,7 +138,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('productget', [ProductController::class, 'productget'])->name('productget');
 
-    Route::get('/product', [ProductController::class, 'Product'])->middleware('permission:products.view')->name('product');
+    Route::get('/admin/products', [ProductController::class, 'Product'])->middleware('permission:products.view')->name('product');
+    Route::get('/product', fn() => redirect()->route('product'));
     Route::get('/productview/{id}', [ProductController::class, 'productview'])->name('productview');
     Route::get('/products/search', [ProductController::class, 'searchProducts'])->name('products.search');
 

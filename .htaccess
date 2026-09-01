@@ -1,32 +1,30 @@
 <IfModule mod_rewrite.c>
-    <IfModule mod_negotiation.c>
-        Options -MultiViews -Indexes
-    </IfModule>
-
     RewriteEngine On
 
-    # Handle Authorization Header
+    # 1. Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # Block access to sensitive files and directories
-    RewriteRule ^\.env$ - [F,L]
-    RewriteRule ^composer\.(json|lock)$ - [F,L]
-    RewriteRule ^package\.(json|lock)$ - [F,L]
-    RewriteRule ^artisan$ - [F,L]
-    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests)(/|$) - [F,L]
+    # 2. Directly serve existing physical files (images, css, js)
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
 
-    # Force /vendor and /sale routes to be handled by Laravel's index.php instead of the physical directories
-    RewriteRule ^(vendor|sale)($|/.*) index.php [L,QSA]
+    # 3. Serve uploads from public/uploads if located there
+    RewriteCond %{DOCUMENT_ROOT}/public/uploads/$1 -f
+    RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]
 
-    # Redirect Trailing Slashes If Not A Folder...
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} (.+)/$
-    RewriteRule ^ %1 [L,R=301]
-
-    # Send Requests To Front Controller...
-    RewriteCond %{REQUEST_FILENAME} !-d
+    # 4. Route Software, ERP, Products, API and Admin to Laravel's index.php
+    RewriteCond %{REQUEST_URI} ^/(api|software|storage|build|assets|home|pos|sale|sales|Purchase|purchases?|purchase-pos|add/Purchase|InwardGatepass|inward-gatepass|add/InwardGatepass|product/?$|products|productget|productview|create_prodcut|store-product|generate-barcode-image|customers?|salecustomers|customer-payments|vendor|vendors?|vendors-ledger|warehouses?|warehouse_stocks|stock_transfers|stock-adjustments|stock|stocks|branch|roles|permissions|users|zone|zones|sales-officers|bookings?|booking|vouchers|all_recepit_vochers|all_Payment_vochers|all_expense_vochers|recepit_vochers|Payment_vochers|expense_vochers|print|Paymentprint|expenseprint|report|reports|website-settings|web-orders|web-products|coupons|web-users|checkbook|day-closing|drawer-transaction|notifications|discount|category|categories|subcategory|subcategories|Brand|brands|Unit|units|expense-categories|profile|accounts|accounts-head|view_all|narrations|party-list|receipt-vouchers|invoice-series|search-products|get-price|get-items|modules|admin|logout|login|index\.php) [NC]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# 2. Next.js Frontend Storefront Website
+<IfModule mod_passenger.c>
+    PassengerAppRoot /home2/binsult1/domains/trendhub.binsultansweet.com/public_html/frontend
+    PassengerBaseURI /
+    PassengerAppType node
+    PassengerStartupFile server.js
+</IfModule>
+
 
