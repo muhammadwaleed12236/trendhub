@@ -333,35 +333,43 @@ class VoucherController extends Controller
 
     public function getAccountsByHead($headId)
     {
-        $accounts = Account::where('head_id', $headId)->where('status', 1)->get();
+        try {
+            $accounts = DB::table('accounts')
+                ->where('head_id', $headId)
+                ->where('status', 1)
+                ->orderBy('title', 'asc')
+                ->get();
 
-        // echo "<pre>";
-        // print_r($accounts);
-        // echo "</pre>";
-        // dd();
-        return response()->json($accounts);
+            return response()->json($accounts);
+        } catch (\Throwable $e) {
+            \Log::error('getAccountsByHead Error: ' . $e->getMessage());
+
+            return response()->json([], 200);
+        }
     }
 
     public function getOpeningBalance($type, $id)
     {
-        if ($type === 'customer' || $type === 'walkin') {
-            $customer = Customer::find($id);
+        try {
+            if ($type === 'customer' || $type === 'walkin') {
+                $customer = Customer::find($id);
 
-            // echo "<pre>";
-            // print_r($customer);
-            // echo "<pre>";
-            // dd();
+                return response()->json([
+                    'opening_balance' => $customer->opening_balance ?? 0,
+                ]);
+            }
+
+            // Account case
+            $account = DB::table('account_heads')->where('id', $id)->first();
+
             return response()->json([
-                'opening_balance' => $customer->opening_balance ?? 0,
+                'opening_balance' => $account->opening_balance ?? 0,
             ]);
+        } catch (\Throwable $e) {
+            \Log::error('getOpeningBalance Error: ' . $e->getMessage());
+
+            return response()->json(['opening_balance' => 0], 200);
         }
-
-        // Account case
-        $account = AccountHead::find($id);
-
-        return response()->json([
-            'opening_balance' => $account->opening_balance ?? 0,
-        ]);
     }
 
     public function recepit_vochers()

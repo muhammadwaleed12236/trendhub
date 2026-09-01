@@ -362,15 +362,23 @@
                                 `<option value="${item.id}" data-phone="${item.mobile || ''}" data-bal="${item.closing_balance}">${item.text}</option>`
                             );
                         });
+                    }).fail(function() {
+                        $select.empty().append('<option disabled selected>Error loading party</option>');
                     });
                 } else if (type) {
                     $.get('{{ url("get-accounts-by-head") }}/' + type, function(data) {
                         $select.empty().append('<option disabled selected>Select Account</option>');
-                        data.forEach(function(acc) {
-                            $select.append(
-                                `<option value="${acc.id}" data-phone="${acc.account_code}" data-bal="${acc.current_balance || 0}">${acc.title}</option>`
-                            );
-                        });
+                        if (data && data.length > 0) {
+                            data.forEach(function(acc) {
+                                $select.append(
+                                    `<option value="${acc.id}" data-phone="${acc.account_code || ''}" data-bal="${acc.current_balance || 0}">${acc.title}</option>`
+                                );
+                            });
+                        } else {
+                            $select.append('<option disabled>No accounts found</option>');
+                        }
+                    }).fail(function() {
+                        $select.empty().append('<option disabled selected>Error loading accounts</option>');
                     });
                 }
             }
@@ -410,12 +418,19 @@
                     return;
                 }
 
+                $subSelect.html('<option disabled selected>Loading...</option>');
                 $.get('{{ url("get-accounts-by-head") }}/' + headId, function(res) {
                     let html = '<option value="">Select Account</option>';
-                    res.forEach(acc => {
-                        html += `<option value="${acc.id}">${acc.title}</option>`;
-                    });
+                    if (res && res.length > 0) {
+                        res.forEach(acc => {
+                            html += `<option value="${acc.id}">${acc.title}</option>`;
+                        });
+                    } else {
+                        html += '<option disabled>No accounts found</option>';
+                    }
                     $subSelect.html(html);
+                }).fail(function() {
+                    $subSelect.html('<option disabled selected>Error loading accounts</option>');
                 });
             });
 

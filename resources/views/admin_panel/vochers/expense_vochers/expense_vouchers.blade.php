@@ -517,11 +517,17 @@
                 } else if (type) {
                     $.get('{{ url("get-accounts-by-head") }}/' + type, function(data) {
                         $select.empty().append('<option disabled selected>Select Account</option>');
-                        data.forEach(function(acc) {
-                            $select.append(
-                                `<option value="${acc.id}" data-code="${acc.account_code}" data-bal="${acc.current_balance || acc.opening_balance || 0}">${acc.title}</option>`
-                            );
-                        });
+                        if (data && data.length > 0) {
+                            data.forEach(function(acc) {
+                                $select.append(
+                                    `<option value="${acc.id}" data-code="${acc.account_code || ''}" data-bal="${acc.current_balance || acc.opening_balance || 0}">${acc.title}</option>`
+                                );
+                            });
+                        } else {
+                            $select.append('<option disabled>No accounts found</option>');
+                        }
+                    }).fail(function() {
+                        $select.empty().append('<option disabled selected>Error loading accounts</option>');
                     });
                 }
             }
