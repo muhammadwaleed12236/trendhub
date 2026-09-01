@@ -314,7 +314,7 @@
                                             {{-- <li class="nav-item"><a class="nav-link" href="ionicons.html"><i class="menu_icon ion-ionic"></i><span>Ionicons V2</span></a></li> --}}
                                             @if (auth()->user()->can('View Product') || auth()->user()->email === 'admin@admin.com')
                                                 <li class="nav-item"><a class="nav-link"
-                                                        href="{{ route('product') }}"><i
+                                                        href="{{ url('product-catalog') }}"><i
                                                             class="menu_icon icon-basket"></i><span>Products</span></a>
                                                 </li>
                                             @endif

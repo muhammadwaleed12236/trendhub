@@ -768,7 +768,7 @@
                                                 <ul class="submenu-item">
 
                                                     @can('products.view')
-                                                        <li><a href="{{ route('product') }}"><i class="fas fa-box"></i>
+                                                        <li><a href="{{ url('product-catalog') }}"><i class="fas fa-box"></i>
                                                                 Products</a></li>
                                                     @endcan
 
