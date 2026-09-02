@@ -334,9 +334,30 @@ class VoucherController extends Controller
     public function getAccountsByHead($headId)
     {
         try {
-            $accounts = DB::table('accounts')
-                ->where('head_id', $headId)
-                ->where('status', 1)
+            $query = DB::table('accounts');
+
+            if (is_numeric($headId)) {
+                $query->where('head_id', $headId);
+            } else {
+                // Find head ID by head name (e.g. 'cash', 'bank', etc.)
+                $head = DB::table('account_heads')
+                    ->where('name', 'LIKE', $headId)
+                    ->orWhere('name', 'LIKE', '%' . $headId . '%')
+                    ->first();
+
+                if ($head) {
+                    $query->where('head_id', $head->id);
+                } else {
+                    $query->where('head_id', $headId);
+                }
+            }
+
+            // Exclude system control accounts from voucher selection
+            $excludedCodes = ['AR', 'AP', 'SALES', 'PURCHASE'];
+            $accounts = $query->where(function ($q) {
+                    $q->where('status', 1)->orWhereNull('status');
+                })
+                ->whereNotIn('account_code', $excludedCodes)
                 ->orderBy('title', 'asc')
                 ->get();
 
@@ -359,8 +380,11 @@ class VoucherController extends Controller
                 ]);
             }
 
-            // Account case
-            $account = DB::table('account_heads')->where('id', $id)->first();
+            // Account case: check accounts table first, then account_heads fallback
+            $account = DB::table('accounts')->where('id', $id)->first();
+            if (! $account) {
+                $account = DB::table('account_heads')->where('id', $id)->first();
+            }
 
             return response()->json([
                 'opening_balance' => $account->opening_balance ?? 0,
@@ -376,7 +400,10 @@ class VoucherController extends Controller
     {
         $narrations = \App\Models\Narration::where('expense_head', 'Receipts Voucher')
             ->pluck('narration', 'id');
-        $AccountHeads = AccountHead::whereIn('name', ['Cash', 'bank', 'cash', 'Bank'])->get();
+        $AccountHeads = AccountHead::where(function ($q) {
+            $q->where('name', 'LIKE', '%cash%')
+              ->orWhere('name', 'LIKE', '%bank%');
+        })->get();
 
         // echo "<pre>";
         // print_r($AccountHeads) ;
@@ -545,7 +572,10 @@ class VoucherController extends Controller
     {
         $narrations = \App\Models\Narration::where('expense_head', 'Payment voucher')
             ->pluck('narration', 'id');
-        $AccountHeads = AccountHead::whereIn('name', ['Cash', 'bank', 'cash', 'Bank'])->get();
+        $AccountHeads = AccountHead::where(function ($q) {
+            $q->where('name', 'LIKE', '%cash%')
+              ->orWhere('name', 'LIKE', '%bank%');
+        })->get();
         // echo"<pre>";
         // print_r($AccountHeads);
         // echo"</pre>";
@@ -1013,7 +1043,10 @@ class VoucherController extends Controller
         $narrations = \App\Models\Narration::where('expense_head', 'Expense voucher')
             ->pluck('narration', 'id');
         $expenseCategories = \App\Models\ExpenseCategory::orderBy('name')->get();
-        $AccountHeads = AccountHead::whereIn('name', ['Cash', 'bank', 'cash', 'Bank'])->get();
+        $AccountHeads = AccountHead::where(function ($q) {
+            $q->where('name', 'LIKE', '%cash%')
+              ->orWhere('name', 'LIKE', '%bank%');
+        })->get();
 
         // Last RVID nikalna
         $lastVoucher = \App\Models\ExpenseVoucher::latest('id')->first();

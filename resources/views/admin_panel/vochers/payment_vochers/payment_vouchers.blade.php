@@ -347,7 +347,8 @@
                 updateSourceBalance(0);
 
                 if (headId) {
-                    $.get('{{ url("get-accounts-by-head") }}/' + headId, function(data) {
+                    let fetchUrl = '{{ route("get.accounts.by.head", ":id") }}'.replace(':id', headId);
+                    $.get(fetchUrl, function(data) {
                         $accSelect.empty().append('<option disabled selected>Select Account</option>');
                         if (data && data.length > 0) {
                             data.forEach(function(acc) {
@@ -394,16 +395,21 @@
                 if (type === 'vendor' || type === 'customer' || type === 'walkin') {
                     $.get('{{ route("party.list") }}?type=' + type, function(data) {
                         $select.empty().append('<option disabled selected>Select Party</option>');
-                        data.forEach(function(item) {
-                            $select.append(
-                                `<option value="${item.id}">${item.text}</option>`
-                            );
-                        });
+                        if (data && data.length > 0) {
+                            data.forEach(function(item) {
+                                $select.append(
+                                    `<option value="${item.id}">${item.text}</option>`
+                                );
+                            });
+                        } else {
+                            $select.append('<option disabled>No parties found</option>');
+                        }
                     }).fail(function() {
                         $select.empty().append('<option disabled selected>Error loading party</option>');
                     });
                 } else if (type) {
-                    $.get('{{ url("get-accounts-by-head") }}/' + type, function(data) {
+                    let fetchUrl = '{{ route("get.accounts.by.head", ":id") }}'.replace(':id', type);
+                    $.get(fetchUrl, function(data) {
                         $select.empty().append('<option disabled selected>Select Account</option>');
                         if (data && data.length > 0) {
                             data.forEach(function(acc) {

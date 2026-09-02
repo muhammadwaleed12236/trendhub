@@ -431,8 +431,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/expenseprint/{id}', [VoucherController::class, 'expenseprint'])->name('expenseprint');
 
     // AJAX helpers for vouchers
-    Route::get('/get-accounts-by-head/{id}', [VoucherController::class, 'getAccountsByHead']);
-    Route::get('/getOpeningBalance/{type}/{id}', [VoucherController::class, 'getOpeningBalance']);
+    Route::get('/get-accounts-by-head/{id}', [VoucherController::class, 'getAccountsByHead'])->name('get.accounts.by.head');
+    Route::get('/getOpeningBalance/{type}/{id}', [VoucherController::class, 'getOpeningBalance'])->name('get.opening.balance');
     Route::get('/party-list', [VoucherController::class, 'partyList'])->name('party.list');
     Route::get('/receipt-vouchers/fetch', [VoucherController::class, 'fetchReceiptVouchers'])->name('receipt_vouchers.fetch');
 
