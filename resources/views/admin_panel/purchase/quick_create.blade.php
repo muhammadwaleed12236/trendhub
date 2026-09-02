@@ -98,16 +98,16 @@
     /* Z-Index Stacking to prevent dropdown clipping */
     .card-section-1 {
         position: relative;
-        z-index: 1050;
+        z-index: 5;
         overflow: visible !important;
     }
     .card-section-2 {
         position: relative;
-        z-index: 20;
+        z-index: 4;
     }
     .card-section-3 {
         position: relative;
-        z-index: 10;
+        z-index: 3;
     }
 
     /* Clean Floating Product Autocomplete Dropdown */
@@ -281,7 +281,7 @@
                                     <tr class="variant-row">
                                         <td><input type="text" class="form-control form-control-sm" name="variant_size[]" placeholder="M, L, XL" required></td>
                                         <td><input type="text" class="form-control form-control-sm" name="variant_color[]" placeholder="Red, Blue" required></td>
-                                        <td><input type="number" class="form-control form-control-sm calc-qty text-center" name="qty[]" value="1" min="1" required></td>
+                                        <td><input type="number" class="form-control form-control-sm calc-qty text-center" name="qty[]" value="0" min="0" required></td>
                                         <td><input type="number" step="0.01" class="form-control form-control-sm calc-pprice text-end" name="purchase_price[]" placeholder="0.00" required></td>
                                         <td><input type="number" step="0.01" class="form-control form-control-sm text-end" name="sale_price[]" placeholder="0.00" required></td>
                                         <td><input type="text" class="form-control form-control-sm calc-line-total bg-light text-end fw-bold" readonly value="0.00"></td>
@@ -449,7 +449,7 @@ $(document).ready(function() {
                     <tr class="variant-row">
                         <td><input type="text" class="form-control form-control-sm" name="variant_size[]" value="${size}" placeholder="M, L, XL" required></td>
                         <td><input type="text" class="form-control form-control-sm" name="variant_color[]" value="${color}" placeholder="Red, Blue" required></td>
-                        <td><input type="number" class="form-control form-control-sm calc-qty text-center" name="qty[]" value="1" min="1" required></td>
+                        <td><input type="number" class="form-control form-control-sm calc-qty text-center" name="qty[]" value="0" min="0" required></td>
                         <td><input type="number" step="0.01" class="form-control form-control-sm calc-pprice text-end" name="purchase_price[]" value="${pPrice}" placeholder="0.00" required></td>
                         <td><input type="number" step="0.01" class="form-control form-control-sm text-end" name="sale_price[]" value="${sPrice}" placeholder="0.00" required></td>
                         <td><input type="text" class="form-control form-control-sm calc-line-total bg-light text-end fw-bold" readonly value="0.00"></td>
@@ -665,7 +665,7 @@ $(document).ready(function() {
             <tr class="variant-row">
                 <td><input type="text" class="form-control form-control-sm" name="variant_size[]" placeholder="M, L, XL" required></td>
                 <td><input type="text" class="form-control form-control-sm" name="variant_color[]" placeholder="Red, Blue" required></td>
-                <td><input type="number" class="form-control form-control-sm calc-qty text-center" name="qty[]" value="1" min="1" required></td>
+                <td><input type="number" class="form-control form-control-sm calc-qty text-center" name="qty[]" value="0" min="0" required></td>
                 <td><input type="number" step="0.01" class="form-control form-control-sm calc-pprice text-end" name="purchase_price[]" placeholder="0.00" required></td>
                 <td><input type="number" step="0.01" class="form-control form-control-sm text-end" name="sale_price[]" placeholder="0.00" required></td>
                 <td><input type="text" class="form-control form-control-sm calc-line-total bg-light text-end fw-bold" readonly value="0.00"></td>
@@ -688,9 +688,10 @@ $(document).ready(function() {
         
         $newRow.find('input[name="variant_size[]"]').val('');
         $newRow.find('input[name="variant_color[]"]').val('');
-        $newRow.find('.calc-qty').val(1);
+        $newRow.find('.calc-qty').val(0).attr('min', 0);
         $newRow.find('input[name="purchase_price[]"]').val($currentRow.find('input[name="purchase_price[]"]').val());
         $newRow.find('input[name="sale_price[]"]').val($currentRow.find('input[name="sale_price[]"]').val());
+        $newRow.find('.calc-line-total').val('0.00');
         
         $currentRow.after($newRow);
         updateSummary();
@@ -712,6 +713,16 @@ $(document).ready(function() {
 
         if($('#vendor_id').val() === '' && $('#new_vendor_name').val().trim() === '') {
             Swal.fire('Error', 'Please select a vendor or type a new vendor name.', 'error');
+            return;
+        }
+
+        var totalQty = 0;
+        $('.calc-qty').each(function() {
+            totalQty += parseFloat($(this).val()) || 0;
+        });
+
+        if (totalQty <= 0) {
+            Swal.fire('Warning', 'Please enter a quantity greater than 0 for at least one variant to record a purchase.', 'warning');
             return;
         }
 

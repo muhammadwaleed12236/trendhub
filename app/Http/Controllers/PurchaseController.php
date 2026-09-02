@@ -247,12 +247,31 @@ class PurchaseController extends Controller
                 'variant_size' => 'required|array|min:1',
                 'variant_color' => 'required|array|min:1',
                 'qty' => 'required|array|min:1',
-                'qty.*' => 'required|numeric|min:1',
+                'qty.*' => 'required|numeric|min:0',
                 'purchase_price' => 'required|array',
                 'purchase_price.*' => 'required|numeric|min:0',
                 'sale_price' => 'required|array',
                 'sale_price.*' => 'required|numeric|min:0',
             ]);
+
+            $hasPositiveQty = false;
+            foreach ($validated['qty'] as $q) {
+                if ((float)$q > 0) {
+                    $hasPositiveQty = true;
+                    break;
+                }
+            }
+
+            if (!$hasPositiveQty) {
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Please enter a quantity greater than 0 for at least one variant.',
+                        'errors' => ['qty' => ['At least one variant must have quantity greater than 0.']]
+                    ], 422);
+                }
+                return back()->withErrors(['qty' => 'At least one variant must have quantity greater than 0.'])->withInput();
+            }
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'errors' => $e->errors(), 'message' => 'Validation Error'], 422);
@@ -311,21 +330,20 @@ class PurchaseController extends Controller
             $pPrices = $validated['purchase_price'];
             $sPrices = $validated['sale_price'];
 
-            // 3. Build Variant JSON array for this transaction
-            $incomingVariants = [];
+            // 3. Build Catalog Variants (All defined variants in table to persist to product catalog)
+            $catalogVariants = [];
             foreach ($sizes as $i => $sizeStr) {
-                $qty = (float) $qtys[$i];
-                if ($qty <= 0) continue;
-                
-                $colorStr = $colors[$i];
-                
-                $incomingVariants[] = [
+                $sizeVal = trim($sizeStr ?? '');
+                $colorVal = trim($colors[$i] ?? '');
+                if ($sizeVal === '' && $colorVal === '') continue;
+
+                $catalogVariants[] = [
                     'name' => $baseName, // Ensure name is set for POS display
-                    'size' => $sizeStr,
-                    'color' => $colorStr,
-                    'sale_price' => (float) $sPrices[$i],
-                    'wholesale_price' => (float) $sPrices[$i],
-                    'purch_price' => (float) $pPrices[$i],
+                    'size' => $sizeVal,
+                    'color' => $colorVal,
+                    'sale_price' => (float) ($sPrices[$i] ?? 0),
+                    'wholesale_price' => (float) ($sPrices[$i] ?? 0),
+                    'purch_price' => (float) ($pPrices[$i] ?? 0),
                     'weight_per_piece' => 0,
                     'stock' => 0
                 ];
@@ -344,7 +362,7 @@ class PurchaseController extends Controller
                     }
                 }
 
-                foreach ($incomingVariants as $inVar) {
+                foreach ($catalogVariants as $inVar) {
                     $matched = false;
                     foreach ($existingVariants as &$exVar) {
                         $exSize = $exVar['size'] ?? '';
@@ -380,7 +398,7 @@ class PurchaseController extends Controller
                     'item_name' => $baseName,
                     'category_id' => $validated['category_id'] ?? null,
                     'sub_category_id' => $validated['sub_category_id'] ?? null,
-                    'color' => json_encode($incomingVariants), // Store variants here!
+                    'color' => json_encode($catalogVariants), // Store all defined variants in catalog!
                     'item_code' => $nextCode,
                     'purchase_price_per_piece' => (float) ($pPrices[0] ?? 0),
                     'sale_price_per_piece' => (float) ($sPrices[0] ?? 0),
