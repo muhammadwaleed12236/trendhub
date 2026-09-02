@@ -23,6 +23,11 @@
                                 data-toggle="modal" data-target="#addHeadModal">
                                 <i class="fas fa-folder-plus" style="margin-right: 5px;"></i> Add Category
                             </button>
+                            <button class="btn btn-outline-secondary fw-bold d-inline-flex align-items-center justify-content-center text-nowrap flex-fill"
+                                style="height: 36px; border-radius: 6px; font-size: .80rem; padding: 4px 8px; background: #ffffff; border-color: #64748b; color: #475569;"
+                                data-toggle="modal" data-target="#manageHeadsModal">
+                                <i class="fas fa-layer-group" style="margin-right: 5px;"></i> All Categories ({{ $heads->count() }})
+                            </button>
                         </div>
                     @endcan
                 </div>
@@ -412,21 +417,26 @@
                 </div>
 
                 <!-- Add Head Modal -->
+                {{-- ADD CATEGORY / HEAD MODAL --}}
                 <div class="modal fade" id="addHeadModal" tabindex="-1" role="dialog" aria-labelledby="addHeadLabel" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered" role="document">
                         <form class="modal-content border-0 shadow-lg rounded-4" action="{{ route('account-heads.store') }}" method="POST">
                             @csrf
                             <div class="modal-header border-bottom bg-light px-4 py-3">
-                                <h5 class="modal-title fw-bold text-dark mb-0" id="addHeadLabel">Add New Category</h5>
+                                <h5 class="modal-title fw-bold text-dark mb-0" id="addHeadLabel">
+                                    <i class="fas fa-folder-plus text-primary me-2"></i>Add New Category / Head
+                                </h5>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                     <span aria-hidden="true">&times;</span>
                                 </button>
                             </div>
                             <div class="modal-body p-4">
-                                <p class="text-muted small mb-3">Create a new account category/head.</p>
+                                <div class="alert alert-info py-2 px-3 small border-0 rounded-3 mb-3">
+                                    <i class="fas fa-info-circle me-1"></i> <strong>Note:</strong> Categories / Heads are top-level parent groups (e.g. <strong>Cash</strong>, <strong>Bank</strong>). Individual accounts (like <em>Meezan Bank</em>, <em>Jazz Cash</em>) should be created via <strong>Add New Account</strong> under a head.
+                                </div>
                                 <div class="form-group mb-0">
-                                    <label class="small text-secondary fw-bold mb-1">Head Name</label>
-                                    <input type="text" name="name" class="form-control" placeholder="e.g., Current Assets" required>
+                                    <label class="small text-secondary fw-bold mb-1">Category / Head Name <span class="text-danger">*</span></label>
+                                    <input type="text" name="name" class="form-control" placeholder="e.g., Cash, Bank" required>
                                 </div>
                             </div>
                             <div class="modal-footer bg-light border-top px-4 py-3">
@@ -436,6 +446,107 @@
                         </form>
                     </div>
                 </div>
+
+                {{-- MANAGE CATEGORIES / HEADS MODAL --}}
+                <div class="modal fade" id="manageHeadsModal" tabindex="-1" role="dialog" aria-labelledby="manageHeadsLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                            <div class="modal-header bg-light border-bottom px-4 py-3">
+                                <h5 class="modal-title fw-bold text-dark mb-0" id="manageHeadsLabel">
+                                    <i class="fas fa-layer-group text-primary me-2"></i>Account Categories / Heads Management
+                                </h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th style="width: 10%;">#</th>
+                                                <th style="width: 45%;">Category / Head Name</th>
+                                                <th style="width: 20%;">Accounts Linked</th>
+                                                <th style="width: 25%;" class="text-center">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse ($heads as $h)
+                                                <tr>
+                                                    <td class="fw-bold text-muted">{{ $loop->iteration }}</td>
+                                                    <td>
+                                                        <span class="fw-bold text-dark">{{ $h->name }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2">
+                                                            {{ $h->accounts_count }} {{ Str::plural('Account', $h->accounts_count) }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                                            {{-- Edit Head Button --}}
+                                                            <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#editHeadModal{{ $h->id }}" data-dismiss="modal" title="Edit Head Name">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            
+                                                            {{-- Delete Head Form (only if 0 accounts) --}}
+                                                            @if ($h->accounts_count == 0)
+                                                                <form action="{{ route('account-heads.delete', $h->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this Category/Head?');" style="display: inline-block;">
+                                                                    @csrf
+                                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Unused Head">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </button>
+                                                                </form>
+                                                            @else
+                                                                <span class="text-muted small" title="Cannot delete: Accounts are linked to this head" style="font-size: 0.75rem;">In Use</span>
+                                                            @endif
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="4" class="text-center py-3 text-muted">No Categories / Heads found.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light border-top px-4 py-3">
+                                <button type="button" class="btn btn-secondary btn-sm px-3" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- EDIT HEAD MODALS --}}
+                @foreach ($heads as $h)
+                    <div class="modal fade" id="editHeadModal{{ $h->id }}" tabindex="-1" role="dialog" aria-labelledby="editHeadLabel{{ $h->id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                            <form class="modal-content border-0 shadow-lg rounded-4" action="{{ route('account-heads.update', $h->id) }}" method="POST">
+                                @csrf
+                                <div class="modal-header border-bottom bg-light px-4 py-3">
+                                    <h5 class="modal-title fw-bold text-dark mb-0" id="editHeadLabel{{ $h->id }}">
+                                        <i class="fas fa-edit text-primary me-2"></i>Edit Category / Head
+                                    </h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <div class="form-group mb-0">
+                                        <label class="small text-secondary fw-bold mb-1">Category / Head Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="name" class="form-control" value="{{ $h->name }}" required>
+                                    </div>
+                                </div>
+                                <div class="modal-footer bg-light border-top px-4 py-3">
+                                    <button type="button" class="btn btn-secondary btn-sm px-3" data-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm">Update Category</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                @endforeach
 
             </div>
         </div>

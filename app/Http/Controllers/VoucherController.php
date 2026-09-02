@@ -400,10 +400,7 @@ class VoucherController extends Controller
     {
         $narrations = \App\Models\Narration::where('expense_head', 'Receipts Voucher')
             ->pluck('narration', 'id');
-        $AccountHeads = AccountHead::where(function ($q) {
-            $q->where('name', 'LIKE', '%cash%')
-              ->orWhere('name', 'LIKE', '%bank%');
-        })->get();
+        $AccountHeads = AccountHead::orderBy('name')->get();
 
         // echo "<pre>";
         // print_r($AccountHeads) ;
@@ -572,10 +569,7 @@ class VoucherController extends Controller
     {
         $narrations = \App\Models\Narration::where('expense_head', 'Payment voucher')
             ->pluck('narration', 'id');
-        $AccountHeads = AccountHead::where(function ($q) {
-            $q->where('name', 'LIKE', '%cash%')
-              ->orWhere('name', 'LIKE', '%bank%');
-        })->get();
+        $AccountHeads = AccountHead::orderBy('name')->get();
         // echo"<pre>";
         // print_r($AccountHeads);
         // echo"</pre>";
@@ -1043,10 +1037,7 @@ class VoucherController extends Controller
         $narrations = \App\Models\Narration::where('expense_head', 'Expense voucher')
             ->pluck('narration', 'id');
         $expenseCategories = \App\Models\ExpenseCategory::orderBy('name')->get();
-        $AccountHeads = AccountHead::where(function ($q) {
-            $q->where('name', 'LIKE', '%cash%')
-              ->orWhere('name', 'LIKE', '%bank%');
-        })->get();
+        $AccountHeads = AccountHead::orderBy('name')->get();
 
         // Last RVID nikalna
         $lastVoucher = \App\Models\ExpenseVoucher::latest('id')->first();

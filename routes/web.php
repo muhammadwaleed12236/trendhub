@@ -437,6 +437,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/receipt-vouchers/fetch', [VoucherController::class, 'fetchReceiptVouchers'])->name('receipt_vouchers.fetch');
 
     Route::post('/accounts-head/store', [AccountsHeadController::class, 'storeHead'])->name('account-heads.store');
+    Route::post('/accounts-head/{id}/update', [AccountsHeadController::class, 'updateHead'])->name('account-heads.update');
+    Route::post('/accounts-head/{id}/delete', [AccountsHeadController::class, 'deleteHead'])->name('account-heads.delete');
     Route::post('/accounts/store', [AccountsHeadController::class, 'storeAccount'])->name('accounts.store');
     Route::post('/accounts/{id}/update', [AccountsHeadController::class, 'updateAccount'])->name('accounts.update');
     Route::post('/accounts/{id}/toggle-status', [AccountsHeadController::class, 'toggleStatus'])->name('accounts.toggleStatus');

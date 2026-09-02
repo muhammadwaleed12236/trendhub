@@ -12,7 +12,7 @@ class AccountsHeadController extends Controller
 {
     public function index()
     {
-        $heads = AccountHead::all();
+        $heads = AccountHead::withCount('accounts')->orderBy('name', 'asc')->get();
 
         // Exclude system control accounts (AR, AP, SALES, PURCHASE)
         $excludedCodes = ['AR', 'AP', 'SALES', 'PURCHASE'];
@@ -34,10 +34,38 @@ class AccountsHeadController extends Controller
         ]);
 
         AccountHead::create([
-            'name' => $request->name,
+            'name' => trim($request->name),
         ]);
 
-        return back()->with('success', 'Account Head added successfully!');
+        return back()->with('success', 'Category / Head added successfully!');
+    }
+
+    public function updateHead(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|unique:account_heads,name,' . $id,
+        ]);
+
+        $head = AccountHead::findOrFail($id);
+        $head->update([
+            'name' => trim($request->name),
+        ]);
+
+        return back()->with('success', 'Category / Head updated successfully!');
+    }
+
+    public function deleteHead($id)
+    {
+        $head = AccountHead::withCount('accounts')->findOrFail($id);
+
+        if ($head->accounts_count > 0) {
+            return back()->with('error', 'Cannot delete "' . $head->name . '" because it has ' . $head->accounts_count . ' associated account(s). Please move or delete those accounts first.');
+        }
+
+        $headName = $head->name;
+        $head->delete();
+
+        return back()->with('success', 'Category / Head "' . $headName . '" deleted successfully!');
     }
 
     public function storeAccount(Request $request)
