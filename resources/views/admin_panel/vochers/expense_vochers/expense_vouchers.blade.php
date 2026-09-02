@@ -332,7 +332,7 @@
                                 <select name="vendor_type" class="ex-input" id="partyType" required>
                                     <option value="" disabled selected>Select Source Head</option>
                                     @foreach ($AccountHeads as $head)
-                                        <option value="{{ $head->id }}">{{ $head->name }}</option>
+                                        <option value="{{ $head->id }}">{{ ucfirst(strtolower($head->name)) }}</option>
                                     @endforeach
                                 </select>
                             </div>

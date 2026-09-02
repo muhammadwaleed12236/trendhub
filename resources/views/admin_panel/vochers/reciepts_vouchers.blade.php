@@ -281,7 +281,7 @@
                                             <select name="row_account_head[]" class="rv-input rowAccountHead">
                                                 <option value="">Select Head</option>
                                                 @foreach ($AccountHeads as $head)
-                                                    <option value="{{ $head->id }}">{{ $head->name }}</option>
+                                                    <option value="{{ $head->id }}">{{ ucfirst(strtolower($head->name)) }}</option>
                                                 @endforeach
                                             </select>
                                         </td>
