@@ -72,6 +72,11 @@ class Product extends Model
         return $q->withSum('movements as available_qty', 'qty'); // sum of ledger
     }
 
+    public function webImages()
+    {
+        return $this->hasMany(ProductWebImage::class)->orderBy('sort_order', 'asc');
+    }
+
     protected static function booted()
     {
         static::saved(function ($product) {

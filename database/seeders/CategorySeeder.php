@@ -22,12 +22,13 @@ class CategorySeeder extends Seeder
             'Hardware' => ['Nails', 'Screws', 'Bolts', 'Hinges', 'Brackets'],
             'Electrical' => ['Light', 'Switch', 'Wire', 'Cable'],
             'Automotive' => ['Engine Oil', 'Brake Pads', 'Tires', 'Batteries', 'Filters'],
-
-
         ];
 
         foreach ($data as $categoryName => $subcategories) {
-            $category = Category::create(['name' => $categoryName]);
+            $category = Category::create([
+                'name' => $categoryName,
+                'show_on_website' => 0
+            ]);
 
             foreach ($subcategories as $sub) {
                 Subcategory::create([
@@ -35,6 +36,14 @@ class CategorySeeder extends Seeder
                     'name' => $sub,
                 ]);
             }
+        }
+
+        // Website Fashion Categories
+        foreach (['Men', 'Women', 'Boys', 'Girls'] as $catName) {
+            Category::create([
+                'name' => $catName,
+                'show_on_website' => 1
+            ]);
         }
     }
 }
