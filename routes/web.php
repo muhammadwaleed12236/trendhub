@@ -46,7 +46,35 @@ use Illuminate\Support\Facades\Route;
     */
 
 Route::get('/', function () {
+    $indexPath = base_path('frontend/.next/server/app/index.html');
+    if (file_exists($indexPath)) {
+        return response()->file($indexPath);
+    }
     return auth()->check() ? redirect()->route('home') : redirect()->route('login');
+});
+
+Route::get('/shop', function () {
+    $path = base_path('frontend/.next/server/app/shop.html');
+    if (file_exists($path)) return response()->file($path);
+    return abort(404);
+});
+
+Route::get('/checkout', function () {
+    $path = base_path('frontend/.next/server/app/checkout.html');
+    if (file_exists($path)) return response()->file($path);
+    return abort(404);
+});
+
+Route::get('/wishlist', function () {
+    $path = base_path('frontend/.next/server/app/wishlist.html');
+    if (file_exists($path)) return response()->file($path);
+    return abort(404);
+});
+
+Route::get('/store-locator', function () {
+    $path = base_path('frontend/.next/server/app/store-locator.html');
+    if (file_exists($path)) return response()->file($path);
+    return abort(404);
 });
 
 Route::get('/software', function () {

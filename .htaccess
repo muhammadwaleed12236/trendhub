@@ -16,6 +16,9 @@
     RewriteRule ^artisan$ - [F,L]
     RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests)(/|$) - [F,L]
 
+    # Serve Next.js static build assets directly from frontend/.next
+    RewriteRule ^_next/(.*)$ frontend/.next/$1 [L]
+
     # Force /software, /vendor and /sale routes to be handled by Laravel's index.php instead of physical directories
     RewriteRule ^(software|vendor|sale)($|/.*) index.php [L,QSA]
 
