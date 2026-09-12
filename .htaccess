@@ -16,8 +16,8 @@
     RewriteRule ^artisan$ - [F,L]
     RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests)(/|$) - [F,L]
 
-    # Force /vendor and /sale routes to be handled by Laravel's index.php instead of the physical directories
-    RewriteRule ^(vendor|sale)($|/.*) index.php [L,QSA]
+    # Force /software, /vendor and /sale routes to be handled by Laravel's index.php instead of physical directories
+    RewriteRule ^(software|vendor|sale)($|/.*) index.php [L,QSA]
 
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d

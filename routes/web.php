@@ -49,6 +49,10 @@ Route::get('/', function () {
     return auth()->check() ? redirect()->route('home') : redirect()->route('login');
 });
 
+Route::get('/software', function () {
+    return auth()->check() ? redirect()->route('home') : redirect()->route('login');
+});
+
 Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name('home');
 Route::post('/admin/sync-to-cloud', [SyncController::class, 'syncToCloud'])->middleware('auth')->name('admin.sync_to_cloud');
 
