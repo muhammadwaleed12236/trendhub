@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   reactStrictMode: false,
   compress: true,
   poweredByHeader: false,
+  outputFileTracingRoot: path.join(__dirname, "../"),
   typescript: {
     ignoreBuildErrors: true,
   },
