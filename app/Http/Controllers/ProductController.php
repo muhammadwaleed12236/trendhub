@@ -96,12 +96,13 @@ class ProductController extends Controller
             ->where(function ($q) use ($term) {
                 $q->where('item_name', 'like', "%{$term}%")
                     ->orWhere('item_code', 'like', "%{$term}%")
-                    ->orWhere('barcode_path', 'like', "%{$term}%");
+                    ->orWhere('barcode_path', 'like', "%{$term}%")
+                    ->orWhere('color', 'like', "%{$term}%");
             });
 
         $products = $query->paginate(10); // Lazy loading (10 per request)
 
-        $results = $products->getCollection()->flatMap(function ($p) {
+        $results = $products->getCollection()->flatMap(function ($p) use ($term) {
             $stockPieces = (float) ($p->warehouse_stocks_sum_total_pieces ?? 0);
             $ppb = $p->pieces_per_box > 0 ? $p->pieces_per_box : 1;
 
@@ -198,6 +199,13 @@ class ProductController extends Controller
                     $size = (isset($v['size']) && $v['size'] !== '-') ? " {$v['size']}" : '';
                     $color = (isset($v['color']) && $v['color'] !== '-') ? " ({$v['color']})" : '';
                     $vName = ($v['name'] ?? $p->item_name) . $size . $color;
+                    $vBarcode = $v['barcode'] ?? '';
+
+                    if ($term !== '' && stripos($p->item_name, $term) === false && stripos($p->item_code, $term) === false) {
+                        if (stripos($vName, $term) === false && stripos($vBarcode, $term) === false && stripos($v['size'] ?? '', $term) === false && stripos($v['color'] ?? '', $term) === false) {
+                            continue;
+                        }
+                    }
                     
                     $initial = (float) ($v['stock'] ?? 0);
                     $vBalance = 0;
@@ -391,6 +399,92 @@ class ProductController extends Controller
         }));
     }
 
+    /**
+     * Calculate Stock-Weighted Average Purchase Price and Latest Base Purchase Price for a product (Report formula)
+     */
+    private function calculateProductCostMetrics($product): array
+    {
+        $ppb = $product->pieces_per_box > 0 ? (float)$product->pieces_per_box : 1;
+
+        // 1. Default / base purchase price per piece
+        $productPurchPrice = 0;
+        if ($product->size_mode === 'by_size') {
+            $m2PerPiece = ($product->height && $product->width) ? (float)(($product->height * $product->width) / 10000) : 0;
+            $purchPerM2 = (float) ($product->purchase_price_per_m2 ?? 0);
+            $productPurchPrice = $m2PerPiece * $purchPerM2;
+        } else {
+            $productPurchPrice = (float) ($product->purchase_price_per_piece ?? 0);
+        }
+
+        // 2. Initial Stock from movements
+        $initial = (float) DB::table('stock_movements')
+            ->where('product_id', $product->id)
+            ->where('ref_type', 'INIT')
+            ->sum('qty');
+
+        // 3. Purchase items (Approved, Posted, Returned, Partial)
+        $purchaseResult = DB::table('purchase_items')
+            ->join('purchases', 'purchases.id', '=', 'purchase_items.purchase_id')
+            ->where('purchase_items.product_id', $product->id)
+            ->whereIn('purchases.status_purchase', ['approved', 'posted', 'Returned', 'Partial'])
+            ->select(DB::raw("
+                COALESCE(SUM(purchase_items.qty), 0) as total_qty,
+                COALESCE(SUM(
+                    CASE
+                        WHEN COALESCE(purchases.subtotal, 0) > 0
+                        THEN purchase_items.line_total / purchases.subtotal * purchases.net_amount
+                        ELSE purchase_items.line_total
+                    END
+                ), 0) as total_net_amount
+            "))->first();
+
+        $purchased = (float) ($purchaseResult->total_qty ?? 0);
+        $purchaseAmount = (float) ($purchaseResult->total_net_amount ?? 0);
+
+        $initialAmount = $initial * $productPurchPrice;
+        $totalQtyIn = $initial + $purchased;
+        $totalAmountIn = $initialAmount + $purchaseAmount;
+        $averagePrice = $totalQtyIn > 0 ? ($totalAmountIn / $totalQtyIn) : $productPurchPrice;
+
+        // 4. Latest Purchase Price
+        $latestPurchaseItem = DB::table('purchase_items')
+            ->join('purchases', 'purchases.id', '=', 'purchase_items.purchase_id')
+            ->where('purchase_items.product_id', $product->id)
+            ->whereIn('purchases.status_purchase', ['approved', 'posted', 'draft', 'Partial'])
+            ->orderBy('purchases.purchase_date', 'desc')
+            ->orderBy('purchase_items.id', 'desc')
+            ->select('purchase_items.price', 'purchase_items.size_mode')
+            ->first();
+
+        $latestPrice = $productPurchPrice;
+        if ($latestPurchaseItem) {
+            if ($product->size_mode === 'by_size') {
+                $m2PerPiece = ($product->height && $product->width) ? (float)(($product->height * $product->width) / 10000) : 0;
+                $latestPrice = $m2PerPiece * (float)$latestPurchaseItem->price;
+            } else {
+                $latestPrice = (float)$latestPurchaseItem->price;
+            }
+        }
+
+        // 5. Current Sale Price per piece
+        $salePrice = 0;
+        if ($product->size_mode === 'by_size') {
+            $m2PerPiece = ($product->height && $product->width) ? (float)(($product->height * $product->width) / 10000) : 0;
+            $salePrice = $m2PerPiece * (float)($product->price_per_m2 ?? 0);
+        } else {
+            $salePrice = (float)($product->sale_price_per_piece ?: $product->sale_price_per_box ?: 0);
+        }
+
+        return [
+            'base_purchase_price' => $latestPrice > 0 ? $latestPrice : $productPurchPrice,
+            'latest_purchase_price' => $latestPrice > 0 ? $latestPrice : $productPurchPrice,
+            'average_purchase_price' => $averagePrice > 0 ? $averagePrice : ($latestPrice > 0 ? $latestPrice : $productPurchPrice),
+            'sale_price' => $salePrice,
+            'purchased_qty' => $purchased,
+            'initial_qty' => $initial,
+        ];
+    }
+
     // ===== List page =====
     public function product(Request $request)
     {
@@ -423,6 +517,65 @@ class ProductController extends Controller
         }
 
         $products   = $query->latest()->paginate(20)->withQueryString();
+
+        // ── Efficient batch pricing calculations for current page ──
+        $productIds = $products->pluck('id')->toArray();
+        if (!empty($productIds)) {
+            // Initial movements
+            $initialMap = DB::table('stock_movements')
+                ->whereIn('product_id', $productIds)
+                ->where('ref_type', 'INIT')
+                ->groupBy('product_id')
+                ->select('product_id', DB::raw('SUM(qty) as init_qty'))
+                ->pluck('init_qty', 'product_id');
+
+            // Purchases
+            $purchasesMap = DB::table('purchase_items')
+                ->join('purchases', 'purchases.id', '=', 'purchase_items.purchase_id')
+                ->whereIn('purchase_items.product_id', $productIds)
+                ->whereIn('purchases.status_purchase', ['approved', 'posted', 'Returned', 'Partial'])
+                ->groupBy('purchase_items.product_id')
+                ->select(
+                    'purchase_items.product_id',
+                    DB::raw('COALESCE(SUM(purchase_items.qty), 0) as total_qty'),
+                    DB::raw('COALESCE(SUM(CASE WHEN COALESCE(purchases.subtotal, 0) > 0 THEN purchase_items.line_total / purchases.subtotal * purchases.net_amount ELSE purchase_items.line_total END), 0) as total_net_amount')
+                )->get()->keyBy('product_id');
+
+            // Latest Purchase Item
+            $latestPurchases = DB::table('purchase_items')
+                ->join('purchases', 'purchases.id', '=', 'purchase_items.purchase_id')
+                ->whereIn('purchase_items.product_id', $productIds)
+                ->whereIn('purchases.status_purchase', ['approved', 'posted', 'draft', 'Partial'])
+                ->orderBy('purchases.purchase_date', 'desc')
+                ->orderBy('purchase_items.id', 'desc')
+                ->select('purchase_items.product_id', 'purchase_items.price')
+                ->get()
+                ->groupBy('product_id')
+                ->map(fn($items) => $items->first()->price);
+
+            foreach ($products as $p) {
+                $m2 = ($p->height && $p->width) ? (($p->height * $p->width) / 10000) : 0;
+                $defaultPurch = ($p->size_mode === 'by_size') ? ($m2 * (float)$p->purchase_price_per_m2) : (float)$p->purchase_price_per_piece;
+
+                $init = (float)($initialMap[$p->id] ?? 0);
+                $purchItem = $purchasesMap[$p->id] ?? null;
+                $purchQty = (float)($purchItem->total_qty ?? 0);
+                $purchAmt = (float)($purchItem->total_net_amount ?? 0);
+
+                $totQty = $init + $purchQty;
+                $totAmt = ($init * $defaultPurch) + $purchAmt;
+                $avgPrice = $totQty > 0 ? ($totAmt / $totQty) : $defaultPurch;
+
+                $latestPrice = isset($latestPurchases[$p->id]) ? (float)$latestPurchases[$p->id] : $defaultPurch;
+                if ($p->size_mode === 'by_size' && isset($latestPurchases[$p->id])) {
+                    $latestPrice = $m2 * (float)$latestPurchases[$p->id];
+                }
+
+                $p->calculated_base_price = $latestPrice > 0 ? $latestPrice : $defaultPurch;
+                $p->calculated_avg_price = $avgPrice > 0 ? $avgPrice : $p->calculated_base_price;
+            }
+        }
+
         $categories = Category::orderBy('name')->get();
         $brands     = Brand::orderBy('name')->get();
 
@@ -454,16 +607,80 @@ class ProductController extends Controller
             $boxes = floor($totalPieces / $ppb);
             $loose = $totalPieces % $ppb;
         } else {
-            // For by_pieces, boxes is essentially the piece count if we treat it largely
-            // But strict interpretation:
             $boxes = $totalPieces;
             $loose = 0;
+        }
+
+        $metrics = $this->calculateProductCostMetrics($product);
+
+        // Calculate variant-level latest price and avg cost
+        if (! empty($product->color)) {
+            $prodVariants = is_string($product->color) ? json_decode($product->color, true) : $product->color;
+            if (is_array($prodVariants) && count($prodVariants) > 0 && isset($prodVariants[0]['name'])) {
+                $purchaseItems = DB::table('purchase_items')
+                    ->join('purchases', 'purchases.id', '=', 'purchase_items.purchase_id')
+                    ->where('purchase_items.product_id', $product->id)
+                    ->whereIn('purchases.status_purchase', ['approved', 'posted', 'draft', 'Partial', 'Returned'])
+                    ->select('purchase_items.price', 'purchase_items.qty', 'purchase_items.line_total', 'purchase_items.color', 'purchases.subtotal', 'purchases.net_amount', 'purchases.purchase_date', 'purchase_items.id as item_id')
+                    ->orderBy('purchases.purchase_date', 'desc')
+                    ->orderBy('purchase_items.id', 'desc')
+                    ->get();
+
+                foreach ($prodVariants as &$v) {
+                    $vInitStock = (float)($v['stock'] ?? 0);
+                    $vBasePurch = (float)($v['purch_price'] ?? ($v['purchase_price'] ?? ($v['variant_purchase_price'] ?? $metrics['base_purchase_price'])));
+
+                    $vPurchQty = 0;
+                    $vPurchAmt = 0;
+                    $vLatestPrice = null;
+
+                    foreach ($purchaseItems as $pItem) {
+                        if ($this->matchSaleItemToVariant($pItem, $v)) {
+                            if ($vLatestPrice === null) {
+                                $vLatestPrice = (float)$pItem->price;
+                            }
+                            $vPurchQty += (float)$pItem->qty;
+                            $netAmount = ((float)$pItem->subtotal > 0) 
+                                ? ((float)$pItem->line_total / (float)$pItem->subtotal * (float)$pItem->net_amount)
+                                : (float)$pItem->line_total;
+                            $vPurchAmt += $netAmount;
+                        }
+                    }
+
+                    if ($vLatestPrice !== null) {
+                        $v['purch_price'] = round($vLatestPrice, 2);
+                        $v['latest_purch_price'] = round($vLatestPrice, 2);
+                    } else {
+                        $v['purch_price'] = round($vBasePurch, 2);
+                        $v['latest_purch_price'] = round($vBasePurch, 2);
+                    }
+
+                    $totQty = $vInitStock + $vPurchQty;
+                    $totAmt = ($vInitStock * $vBasePurch) + $vPurchAmt;
+                    $vAvgPrice = $totQty > 0 ? ($totAmt / $totQty) : ($vLatestPrice ?? $vBasePurch);
+
+                    $v['avg_purch_price'] = round($vAvgPrice > 0 ? $vAvgPrice : $metrics['average_purchase_price'], 2);
+                }
+                unset($v);
+                $product->setAttribute('color', json_encode($prodVariants));
+                $product->setAttribute('parsed_variants', $prodVariants);
+            }
         }
 
         // Append these purely for the view (not saved in DB)
         $product->setAttribute('calculated_total_stock_qty', $totalPieces);
         $product->setAttribute('calculated_boxes_quantity', $boxes);
         $product->setAttribute('calculated_loose_pieces', $loose);
+        $product->setAttribute('base_purchase_price', round($metrics['base_purchase_price'], 2));
+        $product->setAttribute('latest_purchase_price', round($metrics['latest_purchase_price'], 2));
+        $product->setAttribute('avg_purchase_price', round($metrics['average_purchase_price'], 2));
+        $product->setAttribute('current_sale_price', round($metrics['sale_price'], 2));
+
+        $margin = 0;
+        if ($metrics['sale_price'] > 0) {
+            $margin = (($metrics['sale_price'] - $metrics['average_purchase_price']) / $metrics['sale_price']) * 100;
+        }
+        $product->setAttribute('calculated_margin_percent', round($margin, 1));
 
         return response()->json($product);
     }
@@ -803,8 +1020,8 @@ class ProductController extends Controller
 
                 'is_part' => 0,
                 'is_assembled' => 0,
-                'is_web_visible' => $request->has('is_web_visible') ? 1 : 0,
-                'show_on_homepage' => $request->has('show_on_homepage') ? 1 : 0,
+                'is_web_visible' => $request->has('is_web_visible') ? ($request->is_web_visible ? 1 : 0) : 1,
+                'show_on_homepage' => $request->has('show_on_homepage') ? ($request->show_on_homepage ? 1 : 0) : 1,
                 'auto_hide_out_of_stock' => $request->has('auto_hide_out_of_stock') ? 1 : 0,
                 'promo_tag' => $request->promo_tag,
                 'web_sale_price' => $request->web_sale_price,
@@ -1305,6 +1522,187 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Fast inline/double-click price update for a single product
+     */
+    public function quickUpdatePrice(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'sale_price' => 'nullable|numeric|min:0',
+            'purchase_price' => 'nullable|numeric|min:0',
+        ]);
+
+        $product = Product::findOrFail($request->product_id);
+        $updateData = [
+            'creater_id' => auth()->id() ?? $product->creater_id,
+            'updated_at' => now()
+        ];
+
+        $ppb = $product->pieces_per_box > 0 ? (float)$product->pieces_per_box : 1;
+
+        if ($request->has('sale_price')) {
+            $retailPrice = (float) $request->input('sale_price');
+
+            if ($product->size_mode === 'by_size') {
+                $m2PerPiece = ($product->height && $product->width) ? (($product->height * $product->width) / 10000) : 0;
+                $m2PerBox = $m2PerPiece * $ppb;
+
+                $updateData['sale_price_per_piece'] = $retailPrice;
+                $pricePerM2 = $m2PerPiece > 0 ? ($retailPrice / $m2PerPiece) : 0;
+                $updateData['price_per_m2'] = $pricePerM2;
+                $updateData['sale_price_per_box'] = $m2PerBox * $pricePerM2;
+            } elseif ($product->size_mode === 'by_cartons') {
+                $updateData['sale_price_per_piece'] = $retailPrice;
+                $updateData['sale_price_per_box'] = $retailPrice * $ppb;
+            } else {
+                $updateData['sale_price_per_piece'] = $retailPrice;
+                $updateData['sale_price_per_box'] = $retailPrice;
+            }
+
+            // Also update variants if product has color variants
+            if (!empty($product->color)) {
+                $variants = is_string($product->color) ? json_decode($product->color, true) : $product->color;
+                if (is_array($variants)) {
+                    foreach ($variants as &$v) {
+                        $v['sale_price'] = $retailPrice;
+                        $v['variant_sale_price'] = $retailPrice;
+                    }
+                    unset($v);
+                    $updateData['color'] = json_encode($variants);
+                }
+            }
+        }
+
+        if ($request->has('purchase_price')) {
+            $tradePrice = (float) $request->input('purchase_price');
+
+            if ($product->size_mode === 'by_size') {
+                $m2PerPiece = ($product->height && $product->width) ? (($product->height * $product->width) / 10000) : 0;
+                $m2PerBox = $m2PerPiece * $ppb;
+
+                $updateData['purchase_price_per_piece'] = $tradePrice;
+                $purchPerM2 = $m2PerPiece > 0 ? ($tradePrice / $m2PerPiece) : 0;
+                $updateData['purchase_price_per_m2'] = $purchPerM2;
+                $updateData['purchase_price_per_box'] = $m2PerBox * $purchPerM2;
+            } elseif ($product->size_mode === 'by_cartons') {
+                $updateData['purchase_price_per_piece'] = $tradePrice;
+                $updateData['purchase_price_per_box'] = $tradePrice * $ppb;
+            } else {
+                $updateData['purchase_price_per_piece'] = $tradePrice;
+                $updateData['purchase_price_per_box'] = $tradePrice;
+            }
+        }
+
+        $product->update($updateData);
+
+        $newSalePrice = $product->sale_price_per_piece ?: $product->sale_price_per_box ?: 0;
+        if ($product->size_mode === 'by_size') {
+            $m2 = ($product->height && $product->width) ? (($product->height * $product->width) / 10000) : 0;
+            $newSalePrice = $m2 * (float)$product->price_per_m2;
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Sale price updated successfully!',
+            'product_id' => $product->id,
+            'sale_price' => round($newSalePrice, 2),
+            'formatted_price' => 'Rs. ' . number_format($newSalePrice, 2),
+        ]);
+    }
+
+    /**
+     * Update individual variant Sale & Purchase prices from Product View Modal
+     */
+    public function updateVariantPrice(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'variant_index' => 'required|integer|min:0',
+            'sale_price' => 'required|numeric|min:0',
+            'purch_price' => 'required|numeric|min:0',
+        ]);
+
+        $product = Product::findOrFail($request->product_id);
+        $salePrice = (float) $request->input('sale_price');
+        $purchPrice = (float) $request->input('purch_price');
+        $index = (int) $request->input('variant_index');
+
+        $variants = [];
+        if (! empty($product->color)) {
+            $parsed = is_string($product->color) ? json_decode($product->color, true) : $product->color;
+            if (is_array($parsed)) {
+                $variants = $parsed;
+            }
+        }
+
+        if (isset($variants[$index])) {
+            $variants[$index]['sale_price'] = $salePrice;
+            $variants[$index]['variant_sale_price'] = $salePrice;
+            $variants[$index]['purch_price'] = $purchPrice;
+            $variants[$index]['purchase_price'] = $purchPrice;
+            $variants[$index]['variant_purchase_price'] = $purchPrice;
+
+            // If it's the base variant or 0th index, also sync base product prices
+            if (!empty($variants[$index]['is_base_variant']) || $index === 0 || count($variants) === 1) {
+                $ppb = $product->pieces_per_box > 0 ? (float)$product->pieces_per_box : 1;
+                if ($product->size_mode === 'by_size') {
+                    $m2 = ($product->height && $product->width) ? (($product->height * $product->width) / 10000) : 0;
+                    $product->purchase_price_per_m2 = $purchPrice;
+                    $product->purchase_price_per_piece = $m2 * $purchPrice;
+                    $product->price_per_m2 = $salePrice;
+                    $product->sale_price_per_piece = $m2 * $salePrice;
+                } else {
+                    $product->purchase_price_per_piece = $purchPrice;
+                    $product->purchase_price_per_box = $purchPrice * $ppb;
+                    $product->sale_price_per_piece = $salePrice;
+                    $product->sale_price_per_box = $salePrice * $ppb;
+                }
+            }
+
+            $product->color = json_encode($variants);
+            $product->save();
+        } else {
+            // If product has no color JSON, update base product
+            $ppb = $product->pieces_per_box > 0 ? (float)$product->pieces_per_box : 1;
+            if ($product->size_mode === 'by_size') {
+                $m2 = ($product->height && $product->width) ? (($product->height * $product->width) / 10000) : 0;
+                $product->purchase_price_per_m2 = $purchPrice;
+                $product->purchase_price_per_piece = $m2 * $purchPrice;
+                $product->price_per_m2 = $salePrice;
+                $product->sale_price_per_piece = $m2 * $salePrice;
+            } else {
+                $product->purchase_price_per_piece = $purchPrice;
+                $product->purchase_price_per_box = $purchPrice * $ppb;
+                $product->sale_price_per_piece = $salePrice;
+                $product->sale_price_per_box = $salePrice * $ppb;
+            }
+            $product->save();
+        }
+
+        $metrics = $this->calculateProductCostMetrics($product);
+
+        $margin = 0;
+        if ($metrics['sale_price'] > 0) {
+            $margin = (($metrics['sale_price'] - $metrics['average_purchase_price']) / $metrics['sale_price']) * 100;
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Variant prices updated successfully!',
+            'product_id' => $product->id,
+            'variant_index' => $index,
+            'sale_price' => round($salePrice, 2),
+            'purch_price' => round($purchPrice, 2),
+            'formatted_sale_price' => 'Rs. ' . number_format($salePrice, 2),
+            'formatted_purch_price' => 'Rs. ' . number_format($purchPrice, 2),
+            'base_purchase_price' => round($metrics['base_purchase_price'], 2),
+            'avg_purchase_price' => round($metrics['average_purchase_price'], 2),
+            'current_sale_price' => round($metrics['sale_price'], 2),
+            'margin_percent' => round($margin, 1),
+        ]);
     }
 
     // ===== Edit view =====

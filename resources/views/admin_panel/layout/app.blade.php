@@ -10,14 +10,65 @@
 
 <head>
     <style>
-        /* ERP Mega Menu & Normal Submenu Compact Styling */
-        .nav-item .submenu,
-        .mega-menu .submenu {
-            background: #fff;
-            padding: 12px;
-            /* compact padding */
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        /* Horizontal Navigation & Dropdown Layout Fixes */
+        .rt_nav_header.horizontal-layout .nav-bottom .page-navigation {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            list-style: none !important;
+        }
+        .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item {
+            position: relative !important;
+            list-style: none !important;
+        }
+        .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item > .nav-link {
+            display: flex !important;
+            align-items: center !important;
+            padding: 12px 18px !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            color: #334155 !important;
+            white-space: nowrap !important;
+            text-decoration: none !important;
+        }
+        .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item > .nav-link:hover {
+            color: #2563eb !important;
+        }
+
+        /* ERP Submenu & Mega Menu Hidden by Default */
+        .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item .submenu {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            animation-name: none !important;
+            -webkit-animation-name: none !important;
+            animation-fill-mode: none !important;
+            position: absolute !important;
+            top: 100% !important;
+            left: 0 !important;
+            z-index: 99999 !important;
+            background: #ffffff !important;
+            padding: 16px !important;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+            border: 1px solid #e2e8f0 !important;
+            width: max-content !important;
+            min-width: 220px !important;
+            max-width: 95vw !important;
+            pointer-events: none !important;
+        }
+
+        /* Show Submenu on Hover */
+        .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:hover > .submenu,
+        .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item.show-submenu > .submenu {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            animation: dropdownAnimation 0.25s ease-out !important;
         }
 
         .mega-menu .category-heading {
@@ -32,26 +83,25 @@
         .nav-item .submenu-item li,
         .mega-menu .submenu-item li {
             margin-bottom: 4px;
-            /* less spacing */
+            list-style: none !important;
         }
 
         .nav-item .submenu-item li a,
         .mega-menu .submenu-item li a {
             display: flex;
             align-items: center;
-            font-size: 15px;
-            /* smaller font */
+            font-size: 14px;
             color: #555;
-            padding: 4px 8px;
-            /* compact padding */
+            padding: 5px 8px;
             border-radius: 4px;
             transition: all 0.2s ease;
+            text-decoration: none !important;
         }
 
         .nav-item .submenu-item li a i,
         .mega-menu .submenu-item li a i {
             font-size: 14px;
-            margin-right: 6px;
+            margin-right: 8px;
             color: #2980b9;
             min-width: 18px;
             text-align: center;
@@ -64,39 +114,24 @@
             font-weight: 500;
         }
 
-        /* Dynamic Mega Menu Styling */
-        .mega-menu {
-            position: relative;
-        }
-
-        .mega-menu .submenu {
-            width: max-content !important;
-            max-width: 95vw;
-            min-width: 220px;
-            left: 0;
-            right: auto;
-        }
-
+        /* Dynamic Mega Menu Columns */
         .mega-menu .col-group-wrapper {
             display: flex;
             flex-wrap: nowrap;
             margin: 0 -8px;
-            /* Offset padding */
         }
 
         .mega-menu .col-group {
-            width: 240px;
-            /* Consistent column width */
+            width: 230px;
             flex: 0 0 auto;
             border-right: 1px solid #f0f0f0;
-            padding: 0 16px;
+            padding: 0 14px;
         }
 
         .mega-menu .col-group:last-child {
             border-right: none;
         }
 
-        /* Override Bootstrap col widths inside mega menu */
         .mega-menu .col-md-3 {
             flex: none;
             max-width: none;
@@ -615,51 +650,7 @@
                     });
                 }
             </script>
-
-                            <!-- Settings -->
-                            @canany(['settings.view', 'settings.read'])
-                                <li class="nav-item mr-2 d-flex align-items-center">
-                                    <a href="{{ route('settings.index') }}" class="nav-link" title="Settings">
-                                        <i class="fas fa-cog text-secondary" style="font-size: 20px; transition: color 0.3s;"></i>
-                                    </a>
-                                </li>
-                            @endcanany
-
-                            <li class="nav-item nav-profile dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown"
-                                    id="profileDropdown">
-                                    <span class="profile_name">{{ Auth::user()->name }} <i
-                                            class="fas fa-chevron-down"></i></span>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-right navbar-dropdown pt-2"
-                                    aria-labelledby="profileDropdown">
-                                    <span role="separator" class="divider"></span>
-                                    <form method="POST" action="{{ route('logout') }}">
-                                        @csrf
-                                        <button type="submit" class="dropdown-item">
-                                            <i class="fas fa-power-off text-dark mr-3"></i> Logout
-                                        </button>
-                                    </form>
-                                    {{-- </a> --}}
-                                </div>
-                            </li>
-                            <!--==================================*
-                                 End Profile Menu
-                        *====================================-->
-                        </ul>
-                        <!--=========================*
-                               Mobile Menu
-                   *===========================-->
-                        <button class="navbar-toggler align-self-center" type="button" data-toggle="minimize">
-                            <span class="fas fa-bars text-white"></span>
-                        </button>
-                        <!--=========================*
-                           End Mobile Menu
-                   *===========================-->
-                    </div>
-                </div>
             </div>
->>>>>>> ecommerce
             <div class="nav-bottom">
                 <div class="container-fluid" style="padding: 0 20px;">
                     <ul class="nav page-navigation justify-content-center">

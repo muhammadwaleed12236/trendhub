@@ -86,7 +86,7 @@ class ProductApiController extends Controller
                     if (!empty($calculated_variants)) {
                         $product->color = json_encode($calculated_variants);
                     }
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     // Fail silently
                 }
             }
@@ -117,7 +117,7 @@ class ProductApiController extends Controller
                 if (!empty($calculated_variants)) {
                     $product->color = json_encode($calculated_variants);
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // Fail silently
             }
         }
@@ -203,6 +203,9 @@ class ProductApiController extends Controller
             ->get();
 
         foreach ($variants as $idx => $v) {
+            if (!is_array($v)) {
+                continue;
+            }
             $initial = (float) ($v['stock'] ?? 0);
 
             // Purchased

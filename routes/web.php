@@ -119,6 +119,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/store-product', [ProductController::class, 'store_product'])->middleware('permission:products.create|products.edit')->name('store-product');
     Route::put('/product/update/{id}', [ProductController::class, 'update'])->middleware('permission:products.edit')->name('product.update');
     Route::post('/products/bulk-update', [ProductController::class, 'bulkUpdate'])->middleware('permission:products.edit')->name('products.bulk-update');
+    Route::post('/products/quick-update-price', [ProductController::class, 'quickUpdatePrice'])->middleware('permission:products.edit')->name('products.quick-update-price');
+    Route::post('/products/update-variant-price', [ProductController::class, 'updateVariantPrice'])->middleware('permission:products.edit')->name('products.update-variant-price');
     Route::post('/product/{id}/toggle-active', [ProductController::class, 'toggleActive'])->middleware('permission:products.edit')->name('product.toggle.active');
 
     Route::post('/product/validate-form', [ProductController::class, 'validateForm'])->name('product.validate');

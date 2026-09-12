@@ -265,6 +265,119 @@
     .price-purchase { color: var(--erp-muted); font-weight: 600; font-size: .81rem; white-space: nowrap; }
     .price-sale     { color: var(--erp-success); font-weight: 800; font-size: .84rem; white-space: nowrap; }
 
+    /* Avg price tag */
+    .avg-price-tag {
+        font-size: .69rem;
+        color: #4f46e5;
+        background: #eef2ff;
+        border: 1px solid #e0e7ff;
+        border-radius: 4px;
+        padding: 1px 6px;
+        display: inline-block;
+        margin-top: 3px;
+        font-weight: 700;
+        letter-spacing: .2px;
+    }
+
+    /* ── Double-Click Inline Editable Sale Price ── */
+    .td-editable-sale {
+        cursor: pointer;
+        position: relative;
+        user-select: none;
+        transition: background .15s ease;
+        padding-right: 22px !important;
+    }
+    .td-editable-sale:hover {
+        background: #ecfdf5 !important;
+    }
+    .sale-price-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .sale-edit-icon {
+        opacity: 0;
+        font-size: .68rem;
+        color: #059669;
+        transition: opacity .15s ease;
+    }
+    .td-editable-sale:hover .sale-edit-icon {
+        opacity: 1;
+    }
+    .inline-price-editor {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .inline-price-input {
+        width: 95px;
+        height: 32px;
+        font-size: .84rem;
+        font-weight: 700;
+        color: #0f172a;
+        border: 2px solid #10b981;
+        border-radius: 6px;
+        padding: 0 6px;
+        outline: none;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    }
+    .btn-inline-save, .btn-inline-cancel {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .75rem;
+        cursor: pointer;
+        transition: all .12s ease;
+    }
+    .btn-inline-save {
+        background: #10b981;
+        color: #fff;
+    }
+    .btn-inline-save:hover {
+        background: #059669;
+    }
+    .btn-inline-cancel {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+    .btn-inline-cancel:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+    .price-highlight-updated {
+        animation: highlightPulse 1.4s ease-out;
+    }
+    @keyframes highlightPulse {
+        0% { background-color: #a7f3d0 !important; }
+        100% { background-color: transparent !important; }
+    }
+
+    /* Floating bulk selection bar */
+    .bulk-select-bar {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(120px);
+        background: #0f172a;
+        color: #fff;
+        padding: 10px 24px;
+        border-radius: 50px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+        z-index: 1050;
+        transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .bulk-select-bar.show {
+        transform: translateX(-50%) translateY(0);
+    }
+
     /* Status badge */
     .status-active {
         background: var(--erp-success-lt); color: var(--erp-success);
@@ -492,7 +605,7 @@
         <div class="erp-card-header">
             <div>
                 <p class="page-title"><i class="fas fa-box me-2" style="color:var(--erp-primary);"></i>Product Catalog</p>
-                <p class="page-sub">Manage, filter and bulk-edit your entire product inventory</p>
+                <p class="page-sub">Manage, filter, double-click to edit prices, or view product cost history</p>
             </div>
             <div class="erp-hdr-actions">
                 <a href="{{ route('products.template') }}" class="btn-hdr btn-hdr-outline" title="Download blank CSV template">
@@ -501,6 +614,11 @@
                 <a href="{{ route('products.export') }}" class="btn-hdr btn-hdr-success" title="Export all products to CSV">
                     <i class="fas fa-file-download"></i> Export CSV
                 </a>
+                @if (auth()->user()->can('products.edit') || auth()->user()->email === 'admin@admin.com')
+                    <button type="button" class="btn-hdr btn-hdr-outline" id="openBulkEditBtn" title="Bulk edit selected products">
+                        <i class="fas fa-edit"></i> Bulk Edit
+                    </button>
+                @endif
                 @if (auth()->user()->can('products.create') || auth()->user()->email === 'admin@admin.com')
                     <button type="button" class="btn-hdr btn-hdr-warning" id="openImportModalBtn">
                         <i class="fas fa-file-upload"></i> Import CSV
@@ -624,7 +742,7 @@
                             <th>Item Details</th>
                             <th>Stock</th>
                             <th>Purchase Price</th>
-                            <th>Sale Price</th>
+                            <th>Sale Price <small class="text-muted fw-normal" style="font-size:.6rem;">(Double click to edit)</small></th>
                             <th style="width:90px;">Status</th>
                             <th class="text-center" style="width:180px;">Actions</th>
                         </tr>
@@ -647,12 +765,13 @@
 
                                 if ($product->size_mode === 'by_size') {
                                     $m2 = ($product->height * $product->width) / 10000;
-                                    $tradePrice  = $m2 * (float)$product->purchase_price_per_m2;
                                     $retailPrice = $m2 * (float)$product->price_per_m2;
                                 } else {
-                                    $tradePrice  = (float)$product->purchase_price_per_piece;
                                     $retailPrice = (float)$product->sale_price_per_piece ?: (float)$product->sale_price_per_box;
                                 }
+
+                                $basePrice = $product->calculated_base_price ?? ((float)$product->purchase_price_per_piece);
+                                $avgPrice  = $product->calculated_avg_price ?? $basePrice;
                             @endphp
                             <tr id="product-row-{{ $product->id }}" class="{{ $product->is_active ? '' : 'row-inactive' }}">
                                 <td><input type="checkbox" class="selectProduct row-check" value="{{ $product->id }}"></td>
@@ -684,8 +803,18 @@
                                         <span class="stock-unit">{{ $stockUnit }}</span>
                                     </span>
                                 </td>
-                                <td class="price-purchase">Rs. {{ number_format($tradePrice, 2) }}</td>
-                                <td class="price-sale">Rs. {{ number_format($retailPrice, 2) }}</td>
+                                <td class="price-purchase">
+                                    <div class="fw-bold text-dark" style="font-size: .83rem;">Rs. {{ number_format($basePrice, 2) }}</div>
+                                    <div class="avg-price-tag" title="Weighted average cost from stock & purchases">
+                                        <i class="fas fa-chart-line me-1" style="font-size: .65rem; opacity: .8;"></i>Avg: Rs. {{ number_format($avgPrice, 2) }}
+                                    </div>
+                                </td>
+                                <td class="price-sale td-editable-sale" data-id="{{ $product->id }}" data-price="{{ $retailPrice }}" title="Double-click to edit Sale Price">
+                                    <div class="sale-price-wrapper">
+                                        <span class="sale-price-text">Rs. {{ number_format($retailPrice, 2) }}</span>
+                                        <span class="sale-edit-icon" title="Double click to edit"><i class="fas fa-pencil-alt"></i></span>
+                                    </div>
+                                </td>
                                 <td>
                                     @if($product->is_active)
                                         <span class="status-active" id="status-badge-{{ $product->id }}">Active</span>
@@ -701,7 +830,7 @@
                                         </button>
                                         @if (auth()->user()->can('products.edit') || auth()->user()->email === 'admin@admin.com')
                                             <a href="{{ route('products.edit', $product->id) }}"
-                                                class="btn-act btn-act-edit" title="Edit Product">
+                                                 class="btn-act btn-act-edit" title="Edit Product">
                                                 <i class="fas fa-pencil-alt"></i> Edit
                                             </a>
                                         @endif
@@ -746,12 +875,13 @@
 
                     if ($product->size_mode === 'by_size') {
                         $m2 = ($product->height * $product->width) / 10000;
-                        $tradePrice  = $m2 * (float)$product->purchase_price_per_m2;
                         $retailPrice = $m2 * (float)$product->price_per_m2;
                     } else {
-                        $tradePrice  = (float)$product->purchase_price_per_piece;
                         $retailPrice = (float)$product->sale_price_per_piece ?: (float)$product->sale_price_per_box;
                     }
+
+                    $basePrice = $product->calculated_base_price ?? ((float)$product->purchase_price_per_piece);
+                    $avgPrice  = $product->calculated_avg_price ?? $basePrice;
                 @endphp
                 <div class="prod-mcard {{ $product->is_active ? '' : 'row-inactive' }}" id="pmcard-{{ $product->id }}">
                     <div class="prod-mcard-hd">
@@ -784,8 +914,13 @@
                     <div class="prod-mcard-body">
                         <div>
                             <div style="font-size:.68rem; font-weight:700; color:var(--erp-muted); text-transform:uppercase;">Sale Price</div>
-                            <div class="prod-mcard-price">Rs. {{ number_format($retailPrice, 2) }}</div>
-                            <div style="font-size:.7rem; color:var(--erp-muted);">Cost: Rs. {{ number_format($tradePrice, 2) }}</div>
+                            <div class="prod-mcard-price td-editable-sale" data-id="{{ $product->id }}" data-price="{{ $retailPrice }}">
+                                <span class="sale-price-text">Rs. {{ number_format($retailPrice, 2) }}</span>
+                                <i class="fas fa-pencil-alt ms-1 text-muted" style="font-size:.7rem; cursor:pointer;" title="Tap/click to edit"></i>
+                            </div>
+                            <div style="font-size:.72rem; color:var(--erp-muted); margin-top:2px;">
+                                Base: <strong>Rs. {{ number_format($basePrice, 2) }}</strong> &bull; Avg: <strong>Rs. {{ number_format($avgPrice, 2) }}</strong>
+                            </div>
                         </div>
                         <div class="text-end">
                             <div style="font-size:.68rem; font-weight:700; color:var(--erp-muted); text-transform:uppercase; margin-bottom:2px;">Stock</div>
@@ -834,6 +969,18 @@
         </div>{{-- /container-fluid --}}
     </div>{{-- /main-content-inner --}}
 </div>{{-- /main-content --}}
+
+
+{{-- ── Floating Selection Action Bar ── --}}
+<div class="bulk-select-bar" id="bulkSelectBar">
+    <span class="fw-bold fs-7" id="selectedCountText">0 products selected</span>
+    <button type="button" class="btn btn-sm btn-light fw-bold" id="barBulkEditBtn">
+        <i class="fas fa-pencil-alt me-1" style="color:var(--erp-primary);"></i> Bulk Edit
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-light" id="barDeselectBtn">
+        Clear
+    </button>
+</div>
 
 
 {{-- ══════════════════════════════════════════════════════════════
@@ -899,7 +1046,7 @@
 </div>
 
 {{-- ══════════════════════════════════════════════════════════════
-     PRODUCT VIEW MODAL
+     PRODUCT VIEW MODAL (Enhanced with Base Price, Avg Cost & Metrics)
 ══════════════════════════════════════════════════════════════ --}}
 <div class="modal fade" id="productViewModal" tabindex="-1" aria-labelledby="productViewModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -915,6 +1062,48 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
+            
+            {{-- Top KPI Cards Row --}}
+            <div class="p-3 bg-light border-bottom" id="modalKpiRow">
+                <div class="row g-2 text-center">
+                    <div class="col-md col-6">
+                        <div class="bg-white p-2 rounded-3 border shadow-sm h-100">
+                            <div class="text-muted small fw-bold text-uppercase" style="font-size:.65rem;">Total Stock</div>
+                            <div class="fw-bold text-dark fs-6 mt-1" id="view_stock_qty">-</div>
+                            <small class="text-muted" style="font-size:.65rem;">In Warehouse</small>
+                        </div>
+                    </div>
+                    <div class="col-md col-6">
+                        <div class="bg-white p-2 rounded-3 border shadow-sm h-100">
+                            <div class="text-muted small fw-bold text-uppercase" style="font-size:.65rem;">Base Purch Price</div>
+                            <div class="fw-bold text-dark fs-6 mt-1" id="view_base_purch_price">-</div>
+                            <small class="text-muted" style="font-size:.65rem;">Latest Purchase Rate</small>
+                        </div>
+                    </div>
+                    <div class="col-md col-6">
+                        <div class="bg-white p-2 rounded-3 border shadow-sm h-100">
+                            <div class="text-muted small fw-bold text-uppercase" style="font-size:.65rem;">Avg Purch Price</div>
+                            <div class="fw-bold fs-6 mt-1" style="color:#6366f1;" id="view_avg_purch_price">-</div>
+                            <small class="text-muted" style="font-size:.65rem;">Stock-Weighted Cost</small>
+                        </div>
+                    </div>
+                    <div class="col-md col-6">
+                        <div class="bg-white p-2 rounded-3 border shadow-sm h-100">
+                            <div class="text-muted small fw-bold text-uppercase" style="font-size:.65rem;">Sale Price</div>
+                            <div class="fw-bold fs-6 mt-1" style="color:#10b981;" id="view_sale_price">-</div>
+                            <small class="text-muted" style="font-size:.65rem;">Retail Rate</small>
+                        </div>
+                    </div>
+                    <div class="col-md col-6">
+                        <div class="bg-white p-2 rounded-3 border shadow-sm h-100">
+                            <div class="text-muted small fw-bold text-uppercase" style="font-size:.65rem;">Gross Margin %</div>
+                            <div class="mt-1"><span class="badge py-1 px-2 fw-bold" id="view_margin_percent" style="font-size:.82rem;">0%</span></div>
+                            <small class="text-muted" style="font-size:.65rem;">(Sale - Avg) / Sale</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="modal-body p-0">
                 <div id="modalLoadingSpinner" class="text-center py-5 d-none">
                     <div class="spinner-border text-primary" role="status">
@@ -931,9 +1120,11 @@
                                 <th style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#475569;">Color</th>
                                 <th style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#475569;">Stock</th>
                                 <th style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#475569;">Sale Price</th>
-                                <th style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#475569;">Purch Price</th>
+                                <th style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#475569;">Base Purch Price</th>
+                                <th style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#475569;">Avg Purch Price</th>
                                 <th style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#475569;">Alert</th>
-                                <th class="text-end pe-4" style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#475569;">Barcode</th>
+                                <th style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#475569;">Barcode</th>
+                                <th class="text-end pe-4" style="font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#475569;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="variantTableBody"></tbody>
@@ -948,6 +1139,84 @@
 </div>
 
 
+{{-- ══════════════════════════════════════════════════════════════
+     BULK EDIT MODAL
+══════════════════════════════════════════════════════════════ --}}
+<div class="modal fade" id="bulkEditModal" tabindex="-1" aria-labelledby="bulkEditModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px; overflow:hidden;">
+            <div class="modal-header bg-white border-bottom px-4 py-3">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark mb-0" id="bulkEditModalLabel">
+                        <i class="fas fa-edit me-2" style="color:var(--erp-primary);"></i>Bulk Edit Products
+                    </h5>
+                    <small class="text-muted">Edit prices, discounts, and inventory settings across multiple items simultaneously</small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            
+            {{-- Quick Batch Tools Bar --}}
+            <div class="p-3 bg-light border-bottom">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <span class="fw-bold small text-muted text-uppercase me-2" style="font-size:.7rem;"><i class="fas fa-magic me-1"></i> Quick Adjust:</span>
+                    
+                    <div class="input-group input-group-sm" style="width: auto;">
+                        <span class="input-group-text bg-white">Sale Price</span>
+                        <select id="batchPriceMode" class="form-select form-select-sm" style="width: 80px;">
+                            <option value="percent_add">+ %</option>
+                            <option value="percent_sub">- %</option>
+                            <option value="fixed_set">Set =</option>
+                        </select>
+                        <input type="number" id="batchPriceVal" step="any" min="0" class="form-control form-control-sm" placeholder="Value" style="width: 90px;">
+                        <button type="button" class="btn btn-sm btn-primary" id="applyBatchSalePriceBtn">Apply</button>
+                    </div>
+
+                    <div class="input-group input-group-sm ms-auto" style="width: auto;">
+                        <span class="input-group-text bg-white">Category</span>
+                        <select id="batchCategorySelect" class="form-select form-select-sm" style="max-width: 160px;">
+                            <option value="">Select Category</option>
+                            @foreach ($categories as $cat)
+                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="applyBatchCategoryBtn">Apply All</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body p-0">
+                <form id="bulkEditForm">
+                    @csrf
+                    <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0" id="bulkEditTable">
+                            <thead class="sticky-top" style="background:#f8fafc; z-index:2;">
+                                <tr>
+                                    <th class="ps-3" style="width: 220px; font-size:.7rem; font-weight:700; text-transform:uppercase; color:#475569;">Product</th>
+                                    <th style="width: 140px; font-size:.7rem; font-weight:700; text-transform:uppercase; color:#475569;">Category</th>
+                                    <th style="width: 120px; font-size:.7rem; font-weight:700; text-transform:uppercase; color:#475569;">Sale Price (Rs)</th>
+                                    <th style="width: 120px; font-size:.7rem; font-weight:700; text-transform:uppercase; color:#475569;">Purch Price (Rs)</th>
+                                    <th style="width: 95px; font-size:.7rem; font-weight:700; text-transform:uppercase; color:#475569;">Purch Disc %</th>
+                                    <th style="width: 95px; font-size:.7rem; font-weight:700; text-transform:uppercase; color:#475569;">Sale Disc %</th>
+                                    <th class="pe-3" style="width: 100px; font-size:.7rem; font-weight:700; text-transform:uppercase; color:#475569;">Alert Ctn</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bulkEditTbody"></tbody>
+                        </table>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-white py-3 px-4 d-flex justify-content-between">
+                <button type="button" class="btn btn-light btn-sm px-4" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4 fw-bold" id="saveBulkEditBtn">
+                    <i class="fas fa-save me-1"></i> Save All Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 @endsection
 
@@ -960,12 +1229,7 @@ $(document).ready(function () {
         $('#importModal').modal('show');
     });
 
-    // ── Select All ──
-    $('#selectAll').click(function() {
-        $('.selectProduct').prop('checked', this.checked);
-    });
-
-    // ── DataTable init ── (responsive:false – we use CSS horizontal scroll instead)
+    // ── DataTable init ──
     let table = $('#productTable').DataTable({
         responsive: false,
         paging:     false,
@@ -975,17 +1239,154 @@ $(document).ready(function () {
         dom:        'rt',
         scrollX:    false,
         columnDefs: [{ targets: [0, 8], orderable: false, searchable: false }]
-    });   // DataTable closes here
-
-    // ── Select All ──
-    $('#selectAll').click(function() {
-        $('.selectProduct').prop('checked', this.checked);
     });
 
-    // ── View Product Modal ──
+    // ── Update Floating Action Bar based on Selection ──
+    function updateSelectionBar() {
+        let checkedCount = $('.selectProduct:checked').length;
+        if (checkedCount > 0) {
+            $('#selectedCountText').text(checkedCount + ' product' + (checkedCount > 1 ? 's' : '') + ' selected');
+            $('#bulkSelectBar').addClass('show');
+        } else {
+            $('#bulkSelectBar').removeClass('show');
+        }
+    }
+
+    // ── Select All Checkbox ──
+    $('#selectAll').click(function() {
+        $('.selectProduct').prop('checked', this.checked);
+        updateSelectionBar();
+    });
+
+    $(document).on('change', '.selectProduct', function() {
+        updateSelectionBar();
+    });
+
+    $('#barDeselectBtn').click(function() {
+        $('.selectProduct, #selectAll').prop('checked', false);
+        updateSelectionBar();
+    });
+
+
+    // ══════════════════════════════════════════════════════════════
+    //  DOUBLE-CLICK INLINE EDIT ON SALE PRICE (Press Enter to Save)
+    // ══════════════════════════════════════════════════════════════
+    $(document).on('dblclick', '.td-editable-sale', function(e) {
+        e.stopPropagation();
+        let cell = $(this);
+        if (cell.find('.inline-price-editor').length > 0) return; // already in edit mode
+
+        let productId = cell.data('id');
+        let currentPrice = cell.data('price') !== undefined ? cell.data('price') : '';
+        let currentHtml = cell.html();
+
+        cell.data('prev-html', currentHtml);
+
+        let editorHtml = `
+            <div class="inline-price-editor" data-id="${productId}">
+                <input type="number" step="any" min="0" class="inline-price-input" value="${currentPrice}">
+                <button type="button" class="btn-inline-save" title="Save (Enter)"><i class="fas fa-check"></i></button>
+                <button type="button" class="btn-inline-cancel" title="Cancel (Esc)"><i class="fas fa-times"></i></button>
+            </div>
+        `;
+
+        cell.html(editorHtml);
+        let input = cell.find('.inline-price-input');
+        input.focus().select();
+
+        function savePrice() {
+            let newPrice = input.val();
+            if (newPrice === '' || isNaN(newPrice) || parseFloat(newPrice) < 0) {
+                cell.html(cell.data('prev-html'));
+                return;
+            }
+
+            cell.find('.btn-inline-save').html('<i class="fas fa-spinner fa-spin"></i>');
+
+            $.ajax({
+                url: "{{ route('products.quick-update-price') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    product_id: productId,
+                    sale_price: newPrice
+                },
+                success: function(res) {
+                    if (res.status === 'success') {
+                        cell.data('price', res.sale_price);
+                        let formatted = res.formatted_price;
+                        let displayHtml = `
+                            <div class="sale-price-wrapper">
+                                <span class="sale-price-text">${formatted}</span>
+                                <span class="sale-edit-icon" title="Double click to edit"><i class="fas fa-pencil-alt"></i></span>
+                            </div>
+                        `;
+                        cell.html(displayHtml);
+                        cell.addClass('price-highlight-updated');
+                        setTimeout(() => cell.removeClass('price-highlight-updated'), 1500);
+
+                        // Update corresponding mobile card if present
+                        let mcardPrice = $(`#pmcard-${productId} .prod-mcard-price`);
+                        if (mcardPrice.length) {
+                            mcardPrice.data('price', res.sale_price);
+                            mcardPrice.find('.sale-price-text').text(formatted);
+                        }
+
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: res.message || 'Sale price updated!',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: true
+                        });
+                    } else {
+                        cell.html(cell.data('prev-html'));
+                        Swal.fire('Error', res.message || 'Could not update price', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    cell.html(cell.data('prev-html'));
+                    let err = xhr.responseJSON?.message || 'Server error updating price';
+                    Swal.fire('Error', err, 'error');
+                }
+            });
+        }
+
+        function cancelEdit() {
+            cell.html(cell.data('prev-html'));
+        }
+
+        // Key handlers
+        input.on('keydown', function(ev) {
+            if (ev.key === 'Enter') {
+                ev.preventDefault();
+                savePrice();
+            } else if (ev.key === 'Escape') {
+                ev.preventDefault();
+                cancelEdit();
+            }
+        });
+
+        cell.find('.btn-inline-save').on('click', function(ev) {
+            ev.stopPropagation();
+            savePrice();
+        });
+
+        cell.find('.btn-inline-cancel').on('click', function(ev) {
+            ev.stopPropagation();
+            cancelEdit();
+        });
+    });
+
+
+    // ══════════════════════════════════════════════════════════════
+    //  VIEW PRODUCT MODAL (Enhanced Base Price & Avg Purch Cost)
+    // ══════════════════════════════════════════════════════════════
     $(document).on('click', '.viewProductBtn', function() {
         let productId = $(this).data('id');
-        $('#modalContentRow').addClass('d-none');
+        $('#modalContentRow, #modalKpiRow').addClass('d-none');
         $('#modalLoadingSpinner').removeClass('d-none');
         $('#productViewModal').modal('show');
 
@@ -994,14 +1395,35 @@ $(document).ready(function () {
             type: "GET",
             success: function(product) {
                 $('#modalLoadingSpinner').addClass('d-none');
-                $('#modalContentRow').removeClass('d-none');
+                $('#modalContentRow, #modalKpiRow').removeClass('d-none');
 
                 $('#view_item_name').text(product.item_name ?? 'Unknown');
                 $('#view_item_subtext').text(
                     (product.item_code ?? '') + ' | ' +
-                    (product.category_relation?.name ?? '') + ' | ' +
-                    (product.brand?.name ?? '')
+                    (product.category_relation?.name ?? 'No Category') + ' | ' +
+                    (product.brand?.name ?? 'No Brand')
                 );
+
+                // Populate Top Metric Cards
+                let ppb = product.pieces_per_box > 0 ? product.pieces_per_box : 1;
+                let totalPieces = product.calculated_total_stock_qty ?? 0;
+                let stockFormatted = '';
+                if ((product.size_mode === 'by_cartons' || product.size_mode === 'by_size') && ppb > 1) {
+                    let boxes = Math.floor(totalPieces / ppb);
+                    let loose = totalPieces % ppb;
+                    stockFormatted = loose > 0 ? `${boxes} Ctn . ${loose} Pcs` : `${boxes} Cartons`;
+                } else {
+                    let unit = product.unit?.name ?? 'Pcs';
+                    stockFormatted = `${totalPieces} ${unit}`;
+                }
+                $('#view_stock_qty').text(stockFormatted);
+                $('#view_base_purch_price').text('Rs. ' + parseFloat(product.base_purchase_price ?? 0).toFixed(2));
+                $('#view_avg_purch_price').text('Rs. ' + parseFloat(product.avg_purchase_price ?? 0).toFixed(2));
+                $('#view_sale_price').text('Rs. ' + parseFloat(product.current_sale_price ?? 0).toFixed(2));
+                
+                let margin = parseFloat(product.calculated_margin_percent ?? 0);
+                $('#view_margin_percent').text((margin >= 0 ? '+' : '') + margin.toFixed(1) + '%');
+                $('#view_margin_percent').css('background', margin >= 0 ? '#ecfdf5' : '#fef2f2').css('color', margin >= 0 ? '#059669' : '#dc2626');
 
                 let tbody = $('#variantTableBody');
                 tbody.empty();
@@ -1035,9 +1457,10 @@ $(document).ready(function () {
 
                 let stock     = product.calculated_total_stock_qty ?? 0;
                 let alertDef  = product.alert_carton_quantity != null ? product.alert_carton_quantity + '' : '-';
-                let salePrice = product.size_mode === 'by_size' ? product.price_per_m2 : (product.sale_price_per_piece || product.sale_price_per_box || 0);
-                let purchPrice= product.size_mode === 'by_size' ? product.purchase_price_per_m2 : (product.purchase_price_per_piece || 0);
-                let priceLabel= product.size_mode === 'by_size' ? '/m²' : '/pc';
+                let basePurch = product.base_purchase_price ?? 0;
+                let avgPurch  = product.avg_purchase_price ?? 0;
+                let salePrice = product.current_sale_price ?? 0;
+                let priceLabel= product.size_mode === 'by_size' ? '/m²' : (product.unit?.name ? '/' + product.unit.name : '/pc');
 
                 function stockBadgeHtml(qty, alert) {
                     let isLow = qty > 0 && alert != null && qty <= alert;
@@ -1046,47 +1469,70 @@ $(document).ready(function () {
                 }
 
                 if (variants.length > 0) {
-                    variants.forEach(v => {
+                    variants.forEach((v, index) => {
                         let vName     = v.name || v.variant_name || product.item_name;
                         let vSize     = v.size || v.variant_size || '-';
                         let vColorVal = v.color || v.variant_color || '-';
                         let vStock    = (v.stock !== undefined && v.stock !== null && v.stock !== '') ? v.stock : (v.variant_stock ?? 0);
-                        let vSale     = (v.sale_price !== undefined && v.sale_price !== null && v.sale_price !== '') ? v.sale_price : (v.variant_sale_price ?? 0);
-                        let vPurch    = (v.purch_price !== undefined && v.purch_price !== null && v.purch_price !== '') ? v.purch_price : (v.purchase_price ?? v.variant_purchase_price ?? 0);
+                        let vSale     = (v.sale_price !== undefined && v.sale_price !== null && v.sale_price !== '') ? v.sale_price : (v.variant_sale_price ?? salePrice);
+                        let vPurch    = (v.purch_price !== undefined && v.purch_price !== null && v.purch_price !== '') ? v.purch_price : (v.purchase_price ?? v.variant_purchase_price ?? basePurch);
+                        let vAvgPurch = (v.avg_purch_price !== undefined && v.avg_purch_price !== null && v.avg_purch_price !== '') ? v.avg_purch_price : avgPurch;
                         let vAlert    = (v.alert !== undefined && v.alert !== null && v.alert !== '') ? v.alert : (v.variant_alert_qty ?? 0);
                         let vBarcode  = v.barcode || v.variant_barcode || (product.barcode_path ?? product.item_code);
                         let vUnit     = v.unit || v.variant_unit || (product.unit ? product.unit.name : 'Pcs');
 
                         let colorBadge = (vColorVal && vColorVal !== '-') ? `<span style="background:#e2e8f0;border-radius:4px;padding:2px 6px;font-size:.72rem;">${vColorVal}</span>` : '<span style="color:#94a3b8;">—</span>';
                         let alertQty  = (vAlert != null && vAlert != 0) ? vAlert : '-';
-                        
+
                         if (product.size_mode === 'by_kg' && v.conv_factor != 1 && !v.unit) vUnit = 'Pcs';
                         let vPriceLabel = product.size_mode === 'by_size' ? '/m²' : '/' + vUnit;
 
-                        tbody.append(`<tr>
+                        tbody.append(`
+                        <tr id="vrow-${product.id}-${index}" data-product-id="${product.id}" data-index="${index}" data-sale="${vSale}" data-purch="${vPurch}" data-pricelabel="${vPriceLabel}">
                             <td class="text-start ps-4 fw-semibold">${vName}</td>
                             <td>${vSize}</td>
                             <td>${colorBadge}</td>
                             <td>${stockBadgeHtml(vStock, vAlert)}</td>
-                            <td class="fw-bold" style="color:#059669;">Rs. ${parseFloat(vSale||0).toFixed(2)} <small class="fw-normal text-muted">${vPriceLabel}</small></td>
-                            <td class="text-muted">Rs. ${parseFloat(vPurch||0).toFixed(2)} <small>${vPriceLabel}</small></td>
+                            <td class="td-v-sale fw-bold" style="color:#059669;">
+                                <span class="v-sale-txt">Rs. ${parseFloat(vSale||0).toFixed(2)}</span> <small class="fw-normal text-muted">${vPriceLabel}</small>
+                            </td>
+                            <td class="td-v-purch fw-semibold text-dark">
+                                <span class="v-purch-txt">Rs. ${parseFloat(vPurch||0).toFixed(2)}</span> <small class="text-muted">${vPriceLabel}</small>
+                            </td>
+                            <td><span style="background:#eef2ff;color:#4f46e5;border:1px solid #c7d2fe;border-radius:4px;padding:2px 6px;font-size:.75rem;font-weight:700;">Rs. ${parseFloat(vAvgPurch||0).toFixed(2)}</span></td>
                             <td><span style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:4px;padding:2px 6px;font-size:.72rem;">${alertQty}</span></td>
-                            <td class="text-end pe-4"><code style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:2px 6px;font-size:.75rem;">${vBarcode}</code></td>
+                            <td><code style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:2px 6px;font-size:.75rem;">${vBarcode}</code></td>
+                            <td class="text-end pe-4 td-v-action">
+                                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 btn-edit-variant-prices" title="Edit Sale & Purchase Price" style="font-size:.75rem; border-radius:6px;">
+                                    <i class="fas fa-pencil-alt me-1"></i> Edit
+                                </button>
+                            </td>
                         </tr>`);
                     });
                 } else {
                     colorList.forEach((color, index) => {
                         let barcode   = (product.barcode_path ?? product.item_code ?? '') + (index > 0 ? '-' + String(index+1).padStart(2,'0') : '');
                         let colorBadge = (color && color !== '-') ? `<span style="background:#e2e8f0;border-radius:4px;padding:2px 6px;font-size:.72rem;">${color}</span>` : '<span style="color:#94a3b8;">—</span>';
-                        tbody.append(`<tr>
+                        tbody.append(`
+                        <tr id="vrow-${product.id}-${index}" data-product-id="${product.id}" data-index="${index}" data-sale="${salePrice}" data-purch="${basePurch}" data-pricelabel="${priceLabel}">
                             <td class="text-start ps-4 fw-semibold">${product.item_name}</td>
                             <td>${sizeStr}</td>
                             <td>${colorBadge}</td>
                             <td>${stockBadgeHtml(stock, product.alert_carton_quantity)}</td>
-                            <td class="fw-bold" style="color:#059669;">Rs. ${parseFloat(salePrice||0).toFixed(2)} <small class="fw-normal text-muted">${priceLabel}</small></td>
-                            <td class="text-muted">Rs. ${parseFloat(purchPrice||0).toFixed(2)} <small>${priceLabel}</small></td>
+                            <td class="td-v-sale fw-bold" style="color:#059669;">
+                                <span class="v-sale-txt">Rs. ${parseFloat(salePrice||0).toFixed(2)}</span> <small class="fw-normal text-muted">${priceLabel}</small>
+                            </td>
+                            <td class="td-v-purch fw-semibold text-dark">
+                                <span class="v-purch-txt">Rs. ${parseFloat(basePurch||0).toFixed(2)}</span> <small class="text-muted">${priceLabel}</small>
+                            </td>
+                            <td><span style="background:#eef2ff;color:#4f46e5;border:1px solid #c7d2fe;border-radius:4px;padding:2px 6px;font-size:.75rem;font-weight:700;">Rs. ${parseFloat(avgPurch||0).toFixed(2)}</span></td>
                             <td><span style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:4px;padding:2px 6px;font-size:.72rem;">${alertDef}</span></td>
-                            <td class="text-end pe-4"><code style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:2px 6px;font-size:.75rem;">${barcode}</code></td>
+                            <td><code style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:2px 6px;font-size:.75rem;">${barcode}</code></td>
+                            <td class="text-end pe-4 td-v-action">
+                                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 btn-edit-variant-prices" title="Edit Sale & Purchase Price" style="font-size:.75rem; border-radius:6px;">
+                                    <i class="fas fa-pencil-alt me-1"></i> Edit
+                                </button>
+                            </td>
                         </tr>`);
                     });
                 }
@@ -1097,6 +1543,301 @@ $(document).ready(function () {
             }
         });
     });
+
+
+    // ══════════════════════════════════════════════════════════════
+    //  EDIT VARIANT PRICES IN MODAL (Sale & Purchase Price)
+    // ══════════════════════════════════════════════════════════════
+    $(document).on('click', '.btn-edit-variant-prices', function() {
+        let row = $(this).closest('tr');
+        if (row.hasClass('is-editing')) return;
+        row.addClass('is-editing');
+
+        let sale = row.data('sale') ?? 0;
+        let purch = row.data('purch') ?? 0;
+
+        row.find('.td-v-sale').html(`
+            <input type="number" step="any" min="0" class="form-control form-control-sm text-center fw-bold input-v-sale" value="${sale}" style="width:90px; margin:0 auto; border:2px solid #10b981; border-radius:6px; font-size:.82rem;">
+        `);
+
+        row.find('.td-v-purch').html(`
+            <input type="number" step="any" min="0" class="form-control form-control-sm text-center fw-bold input-v-purch" value="${purch}" style="width:90px; margin:0 auto; border:2px solid #6366f1; border-radius:6px; font-size:.82rem;">
+        `);
+
+        row.find('.td-v-action').html(`
+            <div class="d-inline-flex gap-1 justify-content-end">
+                <button type="button" class="btn btn-sm btn-success py-1 px-2 btn-save-v-prices" title="Save changes (Enter)" style="font-size:.75rem; border-radius:6px;">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-light py-1 px-2 btn-cancel-v-prices" title="Cancel (Esc)" style="font-size:.75rem; border-radius:6px;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `);
+
+        row.find('.input-v-sale').focus().select();
+    });
+
+    function saveVariantPrices(row) {
+        let productId = row.data('product-id');
+        let index = row.data('index');
+        let newSale = parseFloat(row.find('.input-v-sale').val());
+        let newPurch = parseFloat(row.find('.input-v-purch').val());
+        let priceLabel = row.data('pricelabel') ?? '';
+
+        if (isNaN(newSale) || newSale < 0 || isNaN(newPurch) || newPurch < 0) {
+            Swal.fire('Notice', 'Please enter valid positive price numbers.', 'warning');
+            return;
+        }
+
+        let saveBtn = row.find('.btn-save-v-prices');
+        saveBtn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+
+        $.ajax({
+            url: "{{ route('products.update-variant-price') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                product_id: productId,
+                variant_index: index,
+                sale_price: newSale,
+                purch_price: newPurch
+            },
+            success: function(res) {
+                if (res.status === 'success') {
+                    row.data('sale', res.sale_price);
+                    row.data('purch', res.purch_price);
+
+                    row.find('.td-v-sale').html(`
+                        <span class="v-sale-txt">Rs. ${parseFloat(res.sale_price).toFixed(2)}</span> <small class="fw-normal text-muted">${priceLabel}</small>
+                    `);
+                    row.find('.td-v-purch').html(`
+                        <span class="v-purch-txt">Rs. ${parseFloat(res.purch_price).toFixed(2)}</span> <small class="text-muted">${priceLabel}</small>
+                    `);
+                    row.find('.td-v-action').html(`
+                        <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 btn-edit-variant-prices" title="Edit Sale & Purchase Price" style="font-size:.75rem; border-radius:6px;">
+                            <i class="fas fa-pencil-alt me-1"></i> Edit
+                        </button>
+                    `);
+
+                    row.removeClass('is-editing');
+                    row.addClass('price-highlight-updated');
+                    setTimeout(() => row.removeClass('price-highlight-updated'), 1500);
+
+                    // Update Top Metric Cards in modal
+                    $('#view_base_purch_price').text('Rs. ' + parseFloat(res.base_purchase_price).toFixed(2));
+                    $('#view_sale_price').text('Rs. ' + parseFloat(res.current_sale_price).toFixed(2));
+                    let margin = parseFloat(res.margin_percent ?? 0);
+                    $('#view_margin_percent').text((margin >= 0 ? '+' : '') + margin.toFixed(1) + '%')
+                        .css('background', margin >= 0 ? '#ecfdf5' : '#fef2f2')
+                        .css('color', margin >= 0 ? '#059669' : '#dc2626');
+
+                    // Update main table if this is the base product / index 0
+                    let mainRow = $(`#product-row-${productId}`);
+                    if (mainRow.length && (index === 0 || index === '0')) {
+                        let saleCell = mainRow.find('.td-editable-sale');
+                        saleCell.data('price', res.sale_price);
+                        saleCell.find('.sale-price-text').text('Rs. ' + parseFloat(res.sale_price).toFixed(2));
+
+                        let purchCell = mainRow.find('.price-purchase .fw-bold');
+                        purchCell.text('Rs. ' + parseFloat(res.base_purchase_price).toFixed(2));
+                    }
+
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: res.message || 'Prices updated successfully!',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
+                } else {
+                    saveBtn.html('<i class="fas fa-check"></i>').prop('disabled', false);
+                    Swal.fire('Error', res.message || 'Could not update prices.', 'error');
+                }
+            },
+            error: function(xhr) {
+                saveBtn.html('<i class="fas fa-check"></i>').prop('disabled', false);
+                let err = xhr.responseJSON?.message || 'Server error updating variant prices.';
+                Swal.fire('Error', err, 'error');
+            }
+        });
+    }
+
+    function cancelVariantPrices(row) {
+        let sale = row.data('sale') ?? 0;
+        let purch = row.data('purch') ?? 0;
+        let priceLabel = row.data('pricelabel') ?? '';
+
+        row.find('.td-v-sale').html(`
+            <span class="v-sale-txt">Rs. ${parseFloat(sale).toFixed(2)}</span> <small class="fw-normal text-muted">${priceLabel}</small>
+        `);
+        row.find('.td-v-purch').html(`
+            <span class="v-purch-txt">Rs. ${parseFloat(purch).toFixed(2)}</span> <small class="text-muted">${priceLabel}</small>
+        `);
+        row.find('.td-v-action').html(`
+            <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 btn-edit-variant-prices" title="Edit Sale & Purchase Price" style="font-size:.75rem; border-radius:6px;">
+                <i class="fas fa-pencil-alt me-1"></i> Edit
+            </button>
+        `);
+        row.removeClass('is-editing');
+    }
+
+    $(document).on('click', '.btn-save-v-prices', function() {
+        saveVariantPrices($(this).closest('tr'));
+    });
+
+    $(document).on('click', '.btn-cancel-v-prices', function() {
+        cancelVariantPrices($(this).closest('tr'));
+    });
+
+    $(document).on('keydown', '.input-v-sale, .input-v-purch', function(e) {
+        let row = $(this).closest('tr');
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveVariantPrices(row);
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelVariantPrices(row);
+        }
+    });
+
+
+    // ══════════════════════════════════════════════════════════════
+    //  BULK EDIT MODAL LOGIC
+    // ══════════════════════════════════════════════════════════════
+    function populateBulkEditModal(selectedIds) {
+        let tbody = $('#bulkEditTbody');
+        tbody.empty();
+
+        let categoryOptions = `<option value="">Select Category</option>`;
+        @foreach($categories as $c)
+            categoryOptions += `<option value="{{ $c->id }}">{{ addslashes($c->name) }}</option>`;
+        @endforeach
+
+        let targetRows = selectedIds.length > 0
+            ? selectedIds.map(id => $(`#product-row-${id}`))
+            : $('#productTable tbody tr').toArray().map(el => $(el));
+
+        if (targetRows.length === 0) {
+            Swal.fire('Notice', 'No products available for bulk edit.', 'info');
+            return;
+        }
+
+        targetRows.forEach(row => {
+            if (!row || !row.length) return;
+            let id = row.find('.selectProduct').val();
+            if (!id) return;
+
+            let name = row.find('.item-name').text().trim();
+            let code = row.find('.item-code').text().trim();
+            let rawSale = row.find('.td-editable-sale').data('price') ?? 0;
+            let rawPurch = parseFloat(row.find('.price-purchase .fw-bold').text().replace(/[^\d.]/g, '')) || 0;
+
+            tbody.append(`
+                <tr data-product-id="${id}">
+                    <td class="ps-3">
+                        <div class="fw-bold text-dark text-truncate" style="max-width:210px;">${name}</div>
+                        <small class="text-muted font-monospace">${code}</small>
+                    </td>
+                    <td>
+                        <select name="products[${id}][category_id]" class="form-select form-select-sm bulk-cat-select" style="font-size:.78rem;">
+                            ${categoryOptions}
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0" name="products[${id}][sale_price_per_piece]" class="form-control form-control-sm bulk-sale-input fw-bold text-success" value="${rawSale}">
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0" name="products[${id}][purchase_price_per_piece]" class="form-control form-control-sm bulk-purch-input" value="${rawPurch}">
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0" max="100" name="products[${id}][purchase_discount_percent]" class="form-control form-control-sm" value="0">
+                    </td>
+                    <td>
+                        <input type="number" step="any" min="0" max="100" name="products[${id}][sale_discount_percent]" class="form-control form-control-sm" value="0">
+                    </td>
+                    <td class="pe-3">
+                        <input type="number" step="1" min="0" name="products[${id}][alert_carton_quantity]" class="form-control form-control-sm" placeholder="Opt">
+                    </td>
+                </tr>
+            `);
+        });
+
+        $('#bulkEditModal').modal('show');
+    }
+
+    $('#openBulkEditBtn, #barBulkEditBtn').on('click', function() {
+        let selectedIds = $('.selectProduct:checked').map(function() { return $(this).val(); }).get();
+        populateBulkEditModal(selectedIds);
+    });
+
+    // Apply batch sale price adjustment
+    $('#applyBatchSalePriceBtn').on('click', function() {
+        let mode = $('#batchPriceMode').val();
+        let val = parseFloat($('#batchPriceVal').val());
+        if (isNaN(val) || val <= 0) {
+            Swal.fire('Notice', 'Please enter a valid positive number.', 'warning');
+            return;
+        }
+
+        $('#bulkEditTbody tr').each(function() {
+            let input = $(this).find('.bulk-sale-input');
+            let current = parseFloat(input.val()) || 0;
+            let updated = current;
+            if (mode === 'percent_add') {
+                updated = current * (1 + (val / 100));
+            } else if (mode === 'percent_sub') {
+                updated = Math.max(0, current * (1 - (val / 100)));
+            } else if (mode === 'fixed_set') {
+                updated = val;
+            }
+            input.val(updated.toFixed(2));
+        });
+    });
+
+    // Apply batch category
+    $('#applyBatchCategoryBtn').on('click', function() {
+        let catId = $('#batchCategorySelect').val();
+        if (!catId) return;
+        $('#bulkEditTbody .bulk-cat-select').val(catId);
+    });
+
+    // Save Bulk Edit
+    $('#saveBulkEditBtn').on('click', function() {
+        let btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving Changes…');
+
+        let formData = $('#bulkEditForm').serialize();
+
+        $.ajax({
+            url: "{{ route('products.bulk-update') }}",
+            type: "POST",
+            data: formData,
+            success: function(res) {
+                btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save All Changes');
+                if (res.status === 'success') {
+                    $('#bulkEditModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: res.message || 'Products bulk updated successfully!',
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', res.message || 'Error updating products', 'error');
+                }
+            },
+            error: function(xhr) {
+                btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i> Save All Changes');
+                let err = xhr.responseJSON?.message || 'Server error occurred during bulk update.';
+                Swal.fire('Error', err, 'error');
+            }
+        });
+    });
+
 
     // ── Toggle Active ──
     $(document).on('click', '.toggle-active-btn', function () {
@@ -1148,22 +1889,6 @@ $(document).ready(function () {
                 error: () => Swal.fire('Error', 'Could not update product status.', 'error')
             });
         });
-    });
-
-    // ── Subcategory fetch helpers ──
-    $('#categorySelect').change(function() {
-        var id = $(this).val();
-        $('#subCategorySelect').html('<option value="">Loading...</option>');
-        if (id) {
-            $.get("/get-subcategories/" + id, { category_id: id }, function(data) {
-                $('#subCategorySelect').html('<option value="">Select Sub-Category</option>');
-                $.each(data, function(k, sub) {
-                    $('#subCategorySelect').append('<option value="' + sub.id + '">' + sub.name + '</option>');
-                });
-            }).fail(() => alert('Error fetching subcategories.'));
-        } else {
-            $('#subCategorySelect').html('<option value="">Select Sub-Category</option>');
-        }
     });
 
 });  // ── end $(document).ready ──

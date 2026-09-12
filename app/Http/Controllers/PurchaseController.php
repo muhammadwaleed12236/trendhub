@@ -360,6 +360,129 @@ class PurchaseController extends Controller
         return redirect()->route('Purchase.home')->with('success', 'Quick Purchase saved successfully!');
     }
 
+    /**
+     * Match a purchase item to a specific variant based on color/size/barcode
+     */
+    private function matchPurchaseItemToVariant($item, $variant): bool
+    {
+        $itemColor = $item->color;
+        if (empty($itemColor)) {
+            return false;
+        }
+
+        $itemVariant = null;
+        $b64Decoded = base64_decode($itemColor, true);
+        if ($b64Decoded !== false) {
+            $json = json_decode($b64Decoded, true);
+            if (is_array($json)) $itemVariant = $json;
+        }
+        if (!$itemVariant) {
+            $json = json_decode($itemColor, true);
+            if (is_array($json)) $itemVariant = $json;
+        }
+
+        if (!$itemVariant) {
+            return strtolower(trim($itemColor)) === strtolower(trim($variant['color'] ?? ''));
+        }
+
+        // 1. Compare by barcode
+        if (!empty($itemVariant['barcode']) && !empty($variant['barcode'])) {
+            if (trim($itemVariant['barcode']) === trim($variant['barcode'])) {
+                return true;
+            }
+        }
+
+        // 2. Compare by color and size
+        $vColor = strtolower(trim($variant['color'] ?? ($variant['variant_color'] ?? '-')));
+        $vSize = strtolower(trim($variant['size'] ?? ($variant['variant_size'] ?? '-')));
+
+        $itemVColor = strtolower(trim($itemVariant['color'] ?? ($itemVariant['variant_color'] ?? ($itemVariant['color_val'] ?? '-'))));
+        $itemVSize = strtolower(trim($itemVariant['size'] ?? ($itemVariant['variant_size'] ?? ($itemVariant['size_val'] ?? '-'))));
+
+        if ($vColor === '') $vColor = '-';
+        if ($vSize === '') $vSize = '-';
+        if ($itemVColor === '') $itemVColor = '-';
+        if ($itemVSize === '') $itemVSize = '-';
+
+        if ($vColor === $itemVColor && $vSize === $itemVSize && ($vColor !== '-' || $vSize !== '-')) {
+            return true;
+        }
+
+        // 3. Compare by name
+        $vName = strtolower(trim($variant['name'] ?? ($variant['variant_name'] ?? '')));
+        $itemVName = strtolower(trim($itemVariant['name'] ?? ($itemVariant['variant_name'] ?? '')));
+        if ($vName && $itemVName && $vName === $itemVName) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Update product base purchase price from purchase items (only updating purchased variant)
+     */
+    private function syncProductPurchasePrices(Purchase $purchase): void
+    {
+        $purchase->loadMissing('items');
+        foreach ($purchase->items as $item) {
+            $product = Product::find($item->product_id);
+            if (! $product) {
+                continue;
+            }
+
+            $price = (float) $item->price;
+            if ($price <= 0) {
+                continue;
+            }
+
+            $ppb = $product->pieces_per_box > 0 ? (float)$product->pieces_per_box : 1;
+
+            if ($product->size_mode === 'by_size') {
+                $m2PerPiece = ($product->height * $product->width) / 10000;
+                $m2PerBox = $m2PerPiece * $ppb;
+
+                $product->purchase_price_per_m2 = $price;
+                $product->purchase_price_per_piece = $m2PerPiece * $price;
+                $product->purchase_price_per_box = $m2PerBox * $price;
+            } elseif ($product->size_mode === 'by_cartons') {
+                $product->purchase_price_per_piece = $price;
+                $product->purchase_price_per_box = $price * $ppb;
+            } else {
+                $product->purchase_price_per_piece = $price;
+                $product->purchase_price_per_box = $price;
+            }
+
+            // ONLY update the specific purchased variant if product has color/variants
+            if (! empty($product->color)) {
+                $prodVariants = is_string($product->color) ? json_decode($product->color, true) : $product->color;
+                if (is_array($prodVariants) && count($prodVariants) > 0) {
+                    $updatedVariants = false;
+                    foreach ($prodVariants as &$v) {
+                        $match = false;
+                        if (! empty($item->color)) {
+                            $match = $this->matchPurchaseItemToVariant($item, $v);
+                        } elseif (count($prodVariants) === 1) {
+                            $match = true;
+                        }
+
+                        if ($match) {
+                            $v['purch_price'] = $price;
+                            $v['purchase_price'] = $price;
+                            $v['variant_purchase_price'] = $price;
+                            $updatedVariants = true;
+                        }
+                    }
+                    unset($v);
+                    if ($updatedVariants) {
+                        $product->color = json_encode($prodVariants);
+                    }
+                }
+            }
+
+            $product->save();
+        }
+    }
+
     private function approvePurchase(Purchase $purchase)
     {
         // 1. Stock Movements & Warehouse Stock
@@ -370,6 +493,9 @@ class PurchaseController extends Controller
 
         $branchId = $purchase->branch_id;
         $warehouseId = $purchase->warehouse_id;
+
+        // Sync product base purchase price with latest purchase
+        $this->syncProductPurchasePrices($purchase);
 
         // Check for Gatepass link (if linked, no stock movement needed usually, logic from store method)
         $hasGatepass = \App\Models\InwardGatepass::where('purchase_id', $purchase->id)->exists();
@@ -1361,6 +1487,9 @@ class PurchaseController extends Controller
                     ->where('account_id', $apAccountId)
                     ->update(['credit' => $purchase->net_amount]);
             }
+
+            // Sync updated purchase prices with product base prices
+            $this->syncProductPurchasePrices($purchase);
         });
 
         return redirect()->route('Purchase.home')->with('success', 'Purchase updated successfully!');

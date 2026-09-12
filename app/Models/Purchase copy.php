@@ -14,7 +14,20 @@ class Purchase extends Model
     // app/Models/Purchase.php
     protected $table = 'purchases'; // if it's not default
 
-   
+
+//     DB_DATABASE=binsult1_sweetsultan_db
+// DB_USERNAME=binsult1_sweetsultan_db
+// DB_PASSWORD=fywW8BpmDgGBF5uKXAvy
+
+// main wala
+
+
+// DB_DATABASE=binsult1_biz
+// DB_USERNAME=binsult1_biz
+// DB_PASSWORD=waleed@123
+// local wala
+
+//    CHECK KA CONCEPT SET KARNA HAI PAYMENT VOUCHER MAI AGAR MAINY CHEQUE DIYA 4 TAREKH KA TOU OS DATE KO MINUS HO
 
     protected $fillable = [
         'invoice_no',

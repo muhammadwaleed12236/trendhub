@@ -292,7 +292,7 @@
                             @endif
                             @if (!empty($item['color']))
                                 <br>
-                                @foreach ($item['color'] as $clr)
+                                @foreach ($item['color'] as     $clr)
                                     <span class="badge bg-light text-dark border">{{ $clr }}</span>
                                 @endforeach
                             @endif
