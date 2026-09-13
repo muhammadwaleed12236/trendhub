@@ -14,7 +14,28 @@ import { getProductFallbackImage, getAssetUrl } from "@/lib/imageHelper";
 export default function Home() {
   const { data: settings } = useSettings();
   const sliderRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoError, setVideoError] = useState(false);
   const [activeCollectionTab, setActiveCollectionTab] = useState<string>("");
+
+  // Pause heavy background video when scrolled down to save mobile memory/GPU
+  useEffect(() => {
+    const handleVideoPauseOnScroll = () => {
+      if (videoRef.current) {
+        if (window.scrollY > window.innerHeight) {
+          if (!videoRef.current.paused) {
+            videoRef.current.pause();
+          }
+        } else {
+          if (videoRef.current.paused) {
+            videoRef.current.play().catch(() => {});
+          }
+        }
+      }
+    };
+    window.addEventListener("scroll", handleVideoPauseOnScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleVideoPauseOnScroll);
+  }, []);
 
   const scrollCategories = (direction: "left" | "right") => {
     if (sliderRef.current) {
@@ -157,19 +178,21 @@ export default function Home() {
       <section className="fixed top-0 left-0 w-full bg-neutral-950 flex flex-col justify-center overflow-hidden h-[100vh] -z-10">
         {/* Full-width Background Autoplay Fashion Video or Image */}
         <div className="absolute inset-0 w-full h-full overflow-hidden">
-          {settings?.web_home_hero_media_type === "image" && settings?.web_home_hero_image ? (
+          {videoError || (settings?.web_home_hero_media_type === "image" && settings?.web_home_hero_image) ? (
             <img
-              src={getAssetUrl(settings.web_home_hero_image)}
+              src={settings?.web_home_hero_image ? getAssetUrl(settings.web_home_hero_image) : "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=1600"}
               alt="Hero Background"
               className="w-full h-full object-cover scale-[1.03]"
             />
           ) : (
             <video
+              ref={videoRef}
               autoPlay
               muted
               loop
               playsInline
-              key={settings?.web_home_hero_video || "/hero-video.mp4"}
+              preload="metadata"
+              onError={() => setVideoError(true)}
               className="w-full h-full object-cover scale-[1.03]"
             >
               <source
@@ -241,9 +264,9 @@ export default function Home() {
             {homeProducts && homeProducts.length > 0 ? (
               [...homeProducts, ...homeProducts, ...homeProducts].map((product, index) => {
                 const pMainImage = product.web_main_image
-                  ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/uploads/products/${product.web_main_image}`
+                  ? getAssetUrl(`uploads/products/${product.web_main_image}`)
                   : product.image
-                  ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/uploads/products/${product.image}`
+                  ? getAssetUrl(`uploads/products/${product.image}`)
                   : getProductFallbackImage(product.id);
                 
                 return (

@@ -1,3 +1,10 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home3/binsult1/domains/trendhubstore.pk/public_html/frontend"
+PassengerBaseURI "/"
+PassengerNodejs "/home3/binsult1/nodevenv/domains/trendhubstore.pk/public_html/frontend/20/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
@@ -35,7 +42,7 @@
     RewriteRule ^(.+)$ frontend/public/$1 [L]
 
     # 7. Route Software, ERP, API and Admin routes to Laravel index.php
-    RewriteCond %{REQUEST_URI} ^/(api|software|sanctum|home|dashboard|pos|sale|sales|Purchase|purchases?|purchase-pos|add/Purchase|InwardGatepass|inward-gatepass|add/InwardGatepass|product-catalog|products-list|productget|productview|create_prodcut|store-product|generate-barcode-image|customers?|salecustomers|customer-payments|vendor|vendors?|vendors-ledger|warehouses?|warehouse_stocks|warehouse-stock.*|stock_transfers|stock-adjustments|stock|stocks|branch|roles|permissions|users|zone|zones|sales-officers|bookings?|booking|vouchers|all_recepit_vochers|all_Payment_vochers|all_expense_vochers|recepit_vochers|Payment_vochers|expense_vochers|store_rec_vochers|store_Pay_vochers|store_expense_vochers|print|Paymentprint|expenseprint|report|reports|website-settings|web-orders|web-products|coupons|web-users|checkbook|day-closing|drawer-transaction|notifications|discount|category|categories|subcategory|subcategories|Brand|brands|Unit|units|expense-categories|profile|accounts|accounts-head|view_all|narrations|party-list|receipt-vouchers|invoice-series|search-products|search-product-name|get-.*|getOpeningBalance|hr|my-attendance|debug-perms|confirm-password|forgot-password|reset-password|settings|modules|admin|logout|login|verify-email|index\.php) [NC]
+    RewriteCond %{REQUEST_URI} ^/(api|software|sanctum|home|pos|sale|sales|Purchase|purchases?|purchase-pos|add/Purchase|InwardGatepass|inward-gatepass|add/InwardGatepass|product-catalog|products-list|productget|productview|create_prodcut|store-product|generate-barcode-image|customers?|salecustomers|customer-payments|vendor|vendors?|vendors-ledger|warehouses?|warehouse_stocks|warehouse-stock.*|stock_transfers|stock-adjustments|stock|stocks|branch|roles|permissions|users|zone|zones|sales-officers|bookings?|booking|vouchers|all_recepit_vochers|all_Payment_vochers|all_expense_vochers|recepit_vochers|Payment_vochers|expense_vochers|store_rec_vochers|store_Pay_vochers|store_expense_vochers|print|Paymentprint|expenseprint|report|reports|website-settings|web-orders|web-products|coupons|web-users|checkbook|day-closing|drawer-transaction|notifications|discount|category|categories|subcategory|subcategories|Brand|brands|Unit|units|expense-categories|profile|accounts|accounts-head|view_all|narrations|party-list|receipt-vouchers|invoice-series|search-products|search-product-name|get-.*|getOpeningBalance|hr|my-attendance|debug-perms|confirm-password|forgot-password|reset-password|settings|modules|admin|logout|verify-email|index\.php) [NC]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L,QSA]
 </IfModule>
@@ -46,14 +53,6 @@
         PassengerEnabled off
     </IfModule>
 </Files>
-
-# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
-PassengerAppRoot "/home3/binsult1/domains/trendhubstore.pk/public_html/frontend"
-PassengerBaseURI "/"
-PassengerNodejs "/home3/binsult1/nodevenv/domains/trendhubstore.pk/public_html/frontend/20/bin/node"
-PassengerAppType node
-PassengerStartupFile server.js
-# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
 
 # DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION BEGIN
 <IfModule Litespeed>
