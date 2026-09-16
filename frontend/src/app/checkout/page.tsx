@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import api from "@/lib/api";
 import Link from "next/link";
 import { CheckCircle, ShoppingBag, Loader2 } from "lucide-react";
+import { getAssetUrl } from "@/lib/imageHelper";
 
 export default function Checkout() {
   const { items, getTotalPrice, getDiscountAmount, getFinalTotal, appliedCoupon, applyCoupon, removeCoupon, clearCart } = useCartStore();
@@ -314,7 +315,7 @@ export default function Checkout() {
 
                   <div className="flex flex-col items-center justify-center border border-gray-100 bg-white p-3 rounded-lg shadow-sm">
                     <img 
-                      src={settings?.web_easypaisa_qr_code ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_easypaisa_qr_code}` : "/easypaisa_qr.png"} 
+                      src={settings?.web_easypaisa_qr_code ? getAssetUrl(settings.web_easypaisa_qr_code) : "/easypaisa_qr.png"} 
                       alt="Easypaisa QR Code" 
                       className="w-32 h-32 object-contain"
                     />

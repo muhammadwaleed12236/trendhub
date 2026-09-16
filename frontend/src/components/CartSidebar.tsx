@@ -5,7 +5,7 @@ import { X, Plus, Minus, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { getProductFallbackImage } from "@/lib/imageHelper";
+import { getProductFallbackImage, getAssetUrl } from "@/lib/imageHelper";
 
 interface CartSidebarProps {
   isOpen: boolean;
@@ -14,7 +14,6 @@ interface CartSidebarProps {
 
 export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
   const { items, updateQuantity, removeItem, getTotalPrice } = useCartStore();
-  const assetUrl = process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000";
 
   return (
     <AnimatePresence>
@@ -69,9 +68,9 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                 items.map((item, idx) => {
                   const product = item.product;
                   const imageSrc = product.web_main_image
-                    ? `${assetUrl}/uploads/products/${product.web_main_image}`
+                    ? getAssetUrl(`uploads/products/${product.web_main_image}`)
                     : product.image
-                    ? `${assetUrl}/uploads/products/${product.image}`
+                    ? getAssetUrl(`uploads/products/${product.image}`)
                     : getProductFallbackImage(product.id);
 
                   return (

@@ -19,3 +19,14 @@ export const getProductFallbackImage = (productId: number | string | undefined):
   const index = Math.abs(idNum) % FALLBACK_IMAGES.length;
   return FALLBACK_IMAGES[index];
 };
+
+export const getAssetUrl = (path: string | undefined | null): string => {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  const base = (process.env.NEXT_PUBLIC_ASSET_URL || "").replace(/\/$/, "");
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return base ? `${base}${cleanPath}` : cleanPath;
+};
+

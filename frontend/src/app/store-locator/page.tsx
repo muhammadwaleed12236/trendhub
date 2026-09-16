@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSettings } from "@/hooks/useSettings";
 import { Loader2, MapPin, Phone, ArrowLeft } from "lucide-react";
+import { getAssetUrl } from "@/lib/imageHelper";
 
 interface StoreLocation {
   name: string;
@@ -60,7 +61,7 @@ export default function StoreLocatorPage() {
   }
 
   const bannerImg = settings?.web_store_locator_banner_image
-    ? `${process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000"}/${settings.web_store_locator_banner_image}`
+    ? getAssetUrl(settings.web_store_locator_banner_image)
     : "https://images.unsplash.com/photo-1582037917273-10250df7a230?q=80&w=1600";
 
   return (
