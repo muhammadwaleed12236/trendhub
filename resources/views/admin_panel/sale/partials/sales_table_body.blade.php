@@ -61,6 +61,11 @@
                 <span class="fw-medium text-dark">{{ optional($sale->customer_relation)->customer_name ?? 'N/A' }}</span>
             </div>
         </td>
+        <td>
+            <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 11px; white-space: nowrap;">
+                <i class="fas fa-user-circle text-primary me-1"></i>{{ optional($sale->user)->name ?? 'System' }}
+            </span>
+        </td>
         <td class="font-monospace text-dark">{{ $sale->reference ?? '-' }}</td>
         <td title="{{ $pNames }}" class="text-muted small">
             {{ \Illuminate\Support\Str::limit($pNames, 40) }}
@@ -105,13 +110,14 @@
                 Rs. {{ number_format($sale->total_net, 2) }}
             @endif
         </td>
-        <td class="text-nowrap small text-muted">
-            {{ $sale->created_at->format('d/m/Y') }}
+        <td class="text-nowrap small text-muted font-monospace">
+            <div><i class="far fa-calendar-alt me-1 text-secondary"></i>{{ $sale->created_at ? $sale->created_at->format('d/m/Y') : '-' }}</div>
+            <div style="font-size: 11px;"><i class="far fa-clock me-1 text-muted"></i>{{ $sale->created_at ? $sale->created_at->format('h:i A') : '' }}</div>
         </td>
         <td>{!! $statusBadge !!}</td>
         <td class="pe-3 text-center">
             <div class="dropdown">
-                <button class="btn btn-premium-action dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
+                <button class="btn btn-premium-action dropdown-toggle" type="button" data-toggle="dropdown" data-boundary="window" aria-expanded="false">
                     <i class="fas fa-ellipsis-v small me-1"></i> Actions
                 </button>
                 <ul class="dropdown-menu dropdown-menu-right border-0 shadow-lg rounded-3">
@@ -141,9 +147,7 @@
                         @endcan
                     @endif
 
-                    <li><hr class="dropdown-divider"></li>
-
-                    @can('sales.view')
+                    @canany(['sales.view', 'sales.view_own'])
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('sales.invoice', $sale->id) }}" target="_blank">
                                 <i class="fas fa-file-invoice text-info fa-fw"></i> View Invoice
@@ -169,7 +173,7 @@
                                 <i class="fas fa-receipt text-success fa-fw"></i> Receipt
                             </a>
                         </li>
-                    @endcan
+                    @endcanany
 
                     @if ($sale->sale_status !== 'returned')
                         @can('sales.create')
@@ -210,7 +214,8 @@
                     <div>
                         <div class="fw-bold text-dark small">{{ optional($sale->customer_relation)->customer_name ?? 'Walk-in Customer' }}</div>
                         <div class="text-muted small" style="font-size: 11px;">
-                            <i class="far fa-calendar-alt me-1"></i> {{ $sale->created_at->format('d/m/Y') }}
+                            <i class="far fa-calendar-alt me-1"></i> {{ $sale->created_at ? $sale->created_at->format('d/m/Y h:i A') : '-' }}
+                            <span class="ms-2"><i class="fas fa-user-circle text-primary me-1"></i> {{ optional($sale->user)->name ?? 'System' }}</span>
                             <span class="ms-2"><i class="fas fa-box me-1"></i> {{ $sale->total_items > 0 ? $sale->total_items : $sale->qty }} Items</span>
                         </div>
                     </div>
@@ -249,7 +254,7 @@
                         @endcan
                     @endif
 
-                    @can('sales.view')
+                    @canany(['sales.view', 'sales.view_own'])
                         <a href="{{ route('sales.invoice', $sale->id) }}" target="_blank" class="btn btn-sm btn-outline-info fw-bold" style="border-radius: 8px;">
                             <i class="fas fa-file-invoice me-1"></i> Invoice
                         </a>
@@ -259,7 +264,7 @@
                         <a href="{{ route('sales.dc', $sale->id) }}" target="_blank" class="btn btn-sm btn-outline-warning fw-bold text-dark" style="border-radius: 8px;">
                             <i class="fas fa-shipping-fast me-1"></i> DC
                         </a>
-                    @endcan
+                    @endcanany
 
                     @if ($sale->sale_status !== 'returned')
                         @can('sales.create')

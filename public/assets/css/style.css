@@ -928,8 +928,9 @@ blockquote {
 }
 
 blockquote:before {
-    content: "\e67f";
-    font-family: themify;
+    content: "\f10d";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
     font-size: 45px;
     color: #e7e6e6;
     left: 50%;
@@ -1211,7 +1212,8 @@ blockquote span:before {
 .metismenu li a:after {
     position: absolute;
     content: '\f107';
-    font-family: fontawesome;
+    font-family: "Font Awesome 6 Free", "FontAwesome";
+    font-weight: 900;
     right: 15px;
     top: 6px;
     color: #fff;
@@ -1766,12 +1768,12 @@ blockquote span:before {
 }
 
 .rt_nav_header.horizontal-layout .nav-bottom .page-navigation>.nav-item>.nav-link .menu-arrow:before {
-    font-family: 'ionicons';
-    content: "\f3d0";
+    font-family: "Font Awesome 6 Free";
+    content: "\f078";
     speak: none;
-    font-size: .625rem;
+    font-size: .65rem;
     font-style: normal;
-    font-weight: 600;
+    font-weight: 900;
     font-variant: normal;
     text-transform: none;
     line-height: 1;
@@ -3063,7 +3065,8 @@ blockquote span:before {
 
 .accordion.accordion-style-2 .card-header a:before {
     content: "\f106";
-    font-family: fontawesome;
+    font-family: "Font Awesome 6 Free", "FontAwesome";
+    font-weight: 900;
     position: absolute;
     right: 13px;
     color: #444;
@@ -3088,8 +3091,9 @@ blockquote span:before {
 /* Accordion Style 3 */
 
 .accordion-style-3 .card-header a:before {
-    content: "\e622";
-    font-family: 'themify';
+    content: "\f068";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
     position: absolute;
     right: 13px;
     color: #444;
@@ -3097,7 +3101,7 @@ blockquote span:before {
 }
 
 .accordion-style-3 .card-header a.collapsed:before {
-    content: "\e61a";
+    content: "\f067";
 }
 
 /* ============================ */
@@ -4196,8 +4200,9 @@ blockquote span:before {
 }
 
 .dropdown-toggle:after {
-    font-family: themify;
-    content: "\e64b";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    content: "\f0d7";
     border: none;
     font-size: 12px;
     vertical-align: middle;
@@ -4205,8 +4210,9 @@ blockquote span:before {
 }
 
 .dropup .dropdown-toggle:after {
-    font-family: themify;
-    content: "\e648";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    content: "\f0d8";
     border: none;
     font-size: 12px;
     vertical-align: middle;
@@ -4214,8 +4220,9 @@ blockquote span:before {
 }
 
 .dropright .dropdown-toggle:after {
-    font-family: themify;
-    content: "\e649";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    content: "\f0da";
     border: none;
     font-size: 12px;
     vertical-align: middle;
@@ -4223,8 +4230,9 @@ blockquote span:before {
 }
 
 .dropleft .dropdown-toggle:after {
-    font-family: themify;
-    content: "\e64a";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    content: "\f0d9";
     border: none;
     font-size: 12px;
     vertical-align: middle;
@@ -4995,9 +5003,10 @@ table.dataTable thead td {
 .dataTables_wrapper .dataTable thead .sorting_asc_disabled:before,
 .dataTables_wrapper .dataTable thead .sorting_desc:before,
 .dataTables_wrapper .dataTable thead .sorting_desc_disabled:before {
-    content: "\f3d7";
+    content: "\f0de";
     right: 17px;
-    font-family: Ionicons;
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
 }
 
 .dataTables_wrapper .dataTable thead .sorting:after,
@@ -5005,9 +5014,10 @@ table.dataTable thead td {
 .dataTables_wrapper .dataTable thead .sorting_asc_disabled:after,
 .dataTables_wrapper .dataTable thead .sorting_desc:after,
 .dataTables_wrapper .dataTable thead .sorting_desc_disabled:after {
-    content: "\f3d4";
+    content: "\f0dd";
     right: 7px !important;
-    font-family: Ionicons;
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
 }
 
 table.dataTable thead .sorting,
@@ -6643,7 +6653,7 @@ label {
 .custom_checkbox .custom_check_label input[type="checkbox"]+.input-helper:after {
     -webkit-transition-duration: 250ms;
     transition-duration: 250ms;
-    font-family: Ionicons;
+    font-family: "Font Awesome 6 Free";
     font-style: normal;
     opacity: 0;
     filter: alpha(opacity=0);
@@ -6651,11 +6661,11 @@ label {
     -ms-transform: scale(0);
     -o-transform: scale(0);
     transform: scale(0);
-    content: "\f3fd";
-    font-weight: bold;
+    content: "\f00c";
+    font-weight: 900;
     color: #FFFFFF;
     left: 4px;
-    font-size: 26px;
+    font-size: 14px;
     top: 1px;
 }
 

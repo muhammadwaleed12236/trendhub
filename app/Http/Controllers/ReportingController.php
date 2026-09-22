@@ -1157,7 +1157,8 @@ class ReportingController extends Controller
 
     public function sale_report()
     {
-        return view('admin_panel.reporting.sale_report');
+        $users = \App\Models\User::orderBy('name')->get();
+        return view('admin_panel.reporting.sale_report', compact('users'));
     }
 
     public function fetchsaleReport(Request $request)
@@ -1167,13 +1168,17 @@ class ReportingController extends Controller
             $end = $request->end_date;
 
             // Use Eloquent to handle relations and new table structure
-            $query = \App\Models\Sale::with(['customer_relation', 'items.product', 'returns']);
+            $query = \App\Models\Sale::with(['user', 'customer_relation', 'items.product', 'returns']);
 
             if ($start && $end) {
                 $query->whereBetween('created_at', [
                     \Carbon\Carbon::parse($start)->format('Y-m-d H:i:s'),
                     \Carbon\Carbon::parse($end)->format('Y-m-d H:i:s')
                 ]);
+            }
+
+            if ($request->filled('user_id')) {
+                $query->where('user_id', $request->user_id);
             }
 
             $sales = $query->orderBy('created_at', 'asc')->get();
@@ -1281,6 +1286,7 @@ class ReportingController extends Controller
                     'total_net' => $netAmount,
                     'created_at' => $sale->created_at->format('Y-m-d h:i:s A'),
                     'customer_name' => $sale->customer_relation ? $sale->customer_relation->customer_name : 'Walk-in',
+                    'cashier' => optional($sale->user)->name ?? 'System',
                     'returns' => $sale->returns->map(function($ret) {
                          // Robust return display handling both legacy strings and new relation items
                          $retItems = $ret->items;

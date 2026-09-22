@@ -105,10 +105,20 @@
             background-color: #ffffff;
         }
 
+        .table-responsive {
+            min-height: 440px !important;
+            padding-bottom: 90px;
+        }
+
         .premium-table {
             border: 2px solid #475569 !important;
             border-radius: 8px !important;
-            overflow: hidden;
+            overflow: visible !important;
+        }
+
+        .table-responsive .dropdown-menu {
+            z-index: 1060 !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(0, 0, 0, 0.08) !important;
         }
         
         .premium-table thead th {
@@ -362,18 +372,31 @@
                                         <label class="form-label mb-1">From Date</label>
                                         <input type="text" class="form-control datepicker-custom bg-white" name="from_date" id="filter_from_date" placeholder="dd/mm/yyyy">
                                     </div>
+                                    <div class="col-6 col-md-1">
+                                        <label class="form-label mb-1">From Time</label>
+                                        <input type="time" class="form-control bg-white" name="from_time" id="filter_from_time">
+                                    </div>
                                     <div class="col-6 col-md-2">
                                         <label class="form-label mb-1">To Date</label>
                                         <input type="text" class="form-control datepicker-custom bg-white" name="to_date" id="filter_to_date" placeholder="dd/mm/yyyy">
                                     </div>
                                     <div class="col-6 col-md-1">
-                                        <label class="form-label mb-1">Bill#</label>
-                                        <input type="text" class="form-control" name="bill_no" id="filter_bill_no" placeholder="Search bill...">
+                                        <label class="form-label mb-1">To Time</label>
+                                        <input type="time" class="form-control bg-white" name="to_time" id="filter_to_time">
                                     </div>
-                                    <div class="col-6 col-md-1">
-                                        <label class="form-label mb-1">M.Bill / Ref</label>
-                                        <input type="text" class="form-control" name="reference" id="filter_reference" placeholder="M.Bill...">
+                                    @if(empty($isOwnOnly))
+                                    <div class="col-6 col-md-2">
+                                        <label class="form-label mb-1">User / Cashier</label>
+                                        <select class="form-select" name="user_id" id="filter_user_id">
+                                            <option value="">All Users</option>
+                                            @if(isset($users))
+                                                @foreach ($users as $u)
+                                                    <option value="{{ $u->id }}">{{ $u->name }}</option>
+                                                @endforeach
+                                            @endif
+                                        </select>
                                     </div>
+                                    @endif
                                     <div class="col-6 col-md-2">
                                         <label class="form-label mb-1">Customer</label>
                                         <select class="form-select" name="customer_id" id="filter_customer_id">
@@ -383,11 +406,19 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-12 col-md-2 d-flex gap-2 mt-3 mt-md-0">
-                                        <button type="button" class="btn btn-premium-secondary w-50" id="btnReset">
+                                    <div class="col-6 col-md-2">
+                                        <label class="form-label mb-1">Bill#</label>
+                                        <input type="text" class="form-control" name="bill_no" id="filter_bill_no" placeholder="Search bill...">
+                                    </div>
+                                    <div class="col-6 col-md-2">
+                                        <label class="form-label mb-1">M.Bill / Ref</label>
+                                        <input type="text" class="form-control" name="reference" id="filter_reference" placeholder="M.Bill...">
+                                    </div>
+                                    <div class="col-12 col-md-8 d-flex justify-content-end gap-2 mt-3 mt-md-0">
+                                        <button type="button" class="btn btn-premium-secondary px-4" id="btnReset">
                                             <i class="fas fa-undo me-1"></i>Reset
                                         </button>
-                                        <button type="submit" class="btn btn-premium-primary w-50" id="btnSearch">
+                                        <button type="submit" class="btn btn-premium-primary px-4" id="btnSearch">
                                             <i class="fas fa-search me-1"></i>Search
                                         </button>
                                     </div>
@@ -402,6 +433,7 @@
                                     <tr>
                                         <th class="py-3 ps-3 rounded-start text-secondary fw-semibold text-uppercase small">Bill#</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small">Customer</th>
+                                        <th class="py-3 text-secondary fw-semibold text-uppercase small">Cashier</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small">M.Bill</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small">Products</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small text-center">Qty</th>
@@ -409,7 +441,7 @@
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Inline Disc</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Add. Disc</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small text-end">Net Total</th>
-                                        <th class="py-3 text-secondary fw-semibold text-uppercase small">Date</th>
+                                        <th class="py-3 text-secondary fw-semibold text-uppercase small">Date & Time</th>
                                         <th class="py-3 text-secondary fw-semibold text-uppercase small">Status</th>
                                         <th class="py-3 pe-3 rounded-end text-secondary fw-semibold text-uppercase small text-center">Action</th>
                                     </tr>
@@ -451,6 +483,23 @@
 
             // Initial call
             initDataTable();
+
+            // Auto flip dropdown to dropup if near bottom of viewport
+            $(document).on('show.bs.dropdown', '.table-responsive .dropdown', function () {
+                var $dropdown = $(this);
+                var $btn = $dropdown.find('.dropdown-toggle');
+                var offset = $btn.offset();
+                if (!offset) return;
+                var offsetTop = offset.top - $(window).scrollTop();
+                var windowHeight = $(window).height();
+                var spaceBelow = windowHeight - offsetTop - $btn.outerHeight();
+
+                if (spaceBelow < 320 && offsetTop > 320) {
+                    $dropdown.addClass('dropup');
+                } else {
+                    $dropdown.removeClass('dropup');
+                }
+            });
 
             // Mobile Filter Panel Toggle
             $('#toggleFilterPanel').on('click', function() {

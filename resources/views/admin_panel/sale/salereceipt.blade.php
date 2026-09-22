@@ -388,7 +388,7 @@
                         $qtyDisplay = $totalPieces . ' Pcs';
                         if ($variantUnit === 'pcs' || $variantUnit === 'piece' || $variantUnit === 'pieces') {
                             $qtyDisplay = $totalPieces . ' Pcs';
-                            if ($weightGrams > 0) {
+                            if ($weightGrams > 0 && in_array($sizeMode, ['by_kg', 'by_gm', 'by_ton'])) {
                                 $qtyDisplay .= ' (' . ($weightGrams == (int)$weightGrams ? (int)$weightGrams : $weightGrams) . 'g)';
                             }
                         } elseif (in_array($sizeMode, ['by_kg', 'by_gm', 'by_feet', 'by_meter'])) {

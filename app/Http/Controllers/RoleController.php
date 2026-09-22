@@ -51,7 +51,10 @@ class RoleController extends Controller
             // Web Users permissions
             'web_users.view', 'web_users.read',
             'web_users.create', 'web_users.add',
-            'web_users.edit', 'web_users.delete'
+            'web_users.edit', 'web_users.delete',
+
+            // Dashboard & Sales View Own permissions
+            'dashboard.view', 'sales.view_own'
         ] as $permName) {
             Permission::firstOrCreate(['name' => $permName]);
         }

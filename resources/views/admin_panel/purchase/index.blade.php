@@ -704,7 +704,7 @@
 
                 let btn = $(this);
                 let origHtml = btn.html();
-                btn.prop('disabled', true).html('<i class="las la-spinner la-spin me-1"></i> Saving...');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving...');
 
                 $.ajax({
                     url: '{{ route("purchases.bulk-additional-discount") }}',

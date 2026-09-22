@@ -11,6 +11,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\SaleReturn;
 use App\Models\Stock;
+use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\WarehouseStock;
 use Illuminate\Http\Request;
@@ -20,7 +21,10 @@ class SaleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Sale::with(['customer_relation', 'items.product', 'returns'])
+        $user = auth()->user();
+        $isOwnOnly = $user && !$user->can('sales.view') && $user->can('sales.view_own');
+
+        $query = Sale::with(['user', 'customer_relation', 'items.product', 'returns'])
             ->whereIn('sale_status', ['draft', 'booked', 'posted', 'returned']);
 
         // Apply Status Filter
@@ -28,12 +32,31 @@ class SaleController extends Controller
             $query->where('sale_status', $request->status);
         }
 
-        // Apply Date Filters
+        // Apply User / Cashier Filter or Enforce Own-Only
+        if ($isOwnOnly) {
+            $query->where('user_id', $user->id);
+        } elseif ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // Apply Date and Time Filters
         if ($request->filled('from_date')) {
-            $query->whereDate('created_at', '>=', $request->from_date);
+            $fromDate = $request->from_date;
+            if ($request->filled('from_time')) {
+                $fromDateTime = \Carbon\Carbon::parse($fromDate . ' ' . $request->from_time)->format('Y-m-d H:i:s');
+                $query->where('created_at', '>=', $fromDateTime);
+            } else {
+                $query->whereDate('created_at', '>=', $fromDate);
+            }
         }
         if ($request->filled('to_date')) {
-            $query->whereDate('created_at', '<=', $request->to_date);
+            $toDate = $request->to_date;
+            if ($request->filled('to_time')) {
+                $toDateTime = \Carbon\Carbon::parse($toDate . ' ' . $request->to_time)->format('Y-m-d H:i:s');
+                $query->where('created_at', '<=', $toDateTime);
+            } else {
+                $query->whereDate('created_at', '<=', $toDate);
+            }
         }
 
         // Apply Mobile Number Filter
@@ -89,10 +112,11 @@ class SaleController extends Controller
             ]);
         }
 
-        // Load all customers for filter dropdown
+        // Load all customers and users for filter dropdown
         $customers = Customer::orderBy('customer_name')->get();
+        $users = $isOwnOnly ? collect([$user]) : User::orderBy('name')->get();
 
-        return view('admin_panel.sale.index', compact('sales', 'customers', 'stats'));
+        return view('admin_panel.sale.index', compact('sales', 'customers', 'stats', 'users', 'isOwnOnly'));
     }
 
     public function addsale()
@@ -870,12 +894,24 @@ class SaleController extends Controller
         ));
     }
 
+    private function checkSaleViewPermission(Sale $sale)
+    {
+        $user = auth()->user();
+        if ($user && !$user->can('sales.view') && $user->can('sales.view_own')) {
+            if ((int) $sale->user_id !== (int) $user->id) {
+                abort(403, 'Unauthorized. You are only allowed to view your own sales.');
+            }
+        }
+    }
+
     public function saleinvoice($id)
     {
         $sale = Sale::resolveByIdOrInvoice($id, ['customer_relation.salesOfficer']);
         if (!$sale) {
             abort(404, 'Sale invoice not found');
         }
+        $this->checkSaleViewPermission($sale);
+
         $items = $this->_getSaleItems($sale);
         $isEstimate = request()->query('type') === 'estimate';
 
@@ -925,6 +961,7 @@ class SaleController extends Controller
         if (!$sale) {
             abort(404, 'Sale not found');
         }
+        $this->checkSaleViewPermission($sale);
 
         if (in_array($sale->sale_status, ['cancelled', 'returned'])) {
             return redirect()->route('sale.index')->with('error', 'Cannot edit a '.$sale->sale_status.' sale.');
@@ -953,6 +990,7 @@ class SaleController extends Controller
         if (!$sale) {
             abort(404, 'Sale not found');
         }
+        $this->checkSaleViewPermission($sale);
         if (in_array($sale->sale_status, ['cancelled', 'returned'])) {
             return redirect()->back()->with('error', 'Cannot edit a '.$sale->sale_status.' sale.');
         }
@@ -966,6 +1004,7 @@ class SaleController extends Controller
         if (!$sale) {
             abort(404, 'Sale not found');
         }
+        $this->checkSaleViewPermission($sale);
         $items = $this->_getSaleItems($sale);
 
         return view('admin_panel.sale.saledc', ['sale' => $sale, 'saleItems' => $items]);
@@ -977,6 +1016,7 @@ class SaleController extends Controller
         if (!$sale) {
             abort(404, 'Sale not found');
         }
+        $this->checkSaleViewPermission($sale);
         $items = $this->_getSaleItems($sale);
 
         return view('admin_panel.sale.saledc_thermal', ['sale' => $sale, 'saleItems' => $items]);
@@ -988,6 +1028,7 @@ class SaleController extends Controller
         if (!$sale) {
             abort(404, 'Sale receipt not found');
         }
+        $this->checkSaleViewPermission($sale);
         $items = $this->_getSaleItems($sale);
 
         // Logic for Previous Balance (copied from saleinvoice)
@@ -1080,6 +1121,10 @@ class SaleController extends Controller
             $sale->reference = $request->reference;
             $sale->total_amount_Words = $request->total_amount_Words; // Consider auto-generating this too?
             $sale->sale_status = $status;
+
+            if ($isNew || empty($sale->user_id)) {
+                $sale->user_id = auth()->id();
+            }
 
             // Credit Days & Due Date (Optional)
             if ($request->filled('credit_days') && $request->credit_days > 0) {

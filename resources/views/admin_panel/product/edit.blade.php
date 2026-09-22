@@ -192,7 +192,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
             <div class="d-flex align-items-center gap-3">
                 <a href="{{ route('product') }}" class="btn btn-white border shadow-sm rounded-circle p-0" style="width: 36px; height: 36px; display: grid; place-items: center;">
-                    <i class="las la-arrow-left"></i>
+                    <i class="fas fa-arrow-left"></i>
                 </a>
                 <div>
                     <h5 class="fw-bold mb-0 text-dark">Edit Product</h5>
@@ -213,7 +213,7 @@
                     {{-- CARD 1: Identity & Categorization --}}
                     <div class="section-card">
                         <div class="card-header-pro">
-                            <h5 class="card-title-pro"><i class="las la-tag text-primary"></i> Product Identity</h5>
+                            <h5 class="card-title-pro"><i class="fas fa-tag text-primary"></i> Product Identity</h5>
                         </div>
                         <div class="card-body-pro">
                             <div class="row g-3">
@@ -229,7 +229,7 @@
                                             <label class="form-label-pro">Barcode Auto-Gen</label>
                                             <div class="d-flex">
                                                 <input type="text" class="form-control-pro" id="barcodeInput" name="barcode_path" value="{{ $product->barcode_path }}" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
-                                                <button type="button" class="btn btn-light border" id="generateBarcodeBtn" style="border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; border-top-right-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md);"><i class="las la-magic"></i></button>
+                                                <button type="button" class="btn btn-light border" id="generateBarcodeBtn" style="border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; border-top-right-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md);"><i class="fas fa-magic"></i></button>
                                             </div>
                                         </div>
                                         
@@ -283,13 +283,13 @@
                                         @if($product->image)
                                             <img id="preview" src="{{ asset('uploads/products/' . $product->image) }}" style="max-height: 100px;">
                                             <div id="uploadPlaceholder" class="text-center p-2 d-none">
-                                                <i class="las la-camera fs-3 text-primary"></i>
+                                                <i class="fas fa-camera fs-3 text-primary"></i>
                                                 <div class="fw-bold" style="font-size: 11px;">Upload</div>
                                             </div>
                                         @else
                                             <img id="preview" class="d-none" style="max-height: 100px;">
                                             <div id="uploadPlaceholder" class="text-center p-2">
-                                                <i class="las la-camera fs-3 text-primary"></i>
+                                                <i class="fas fa-camera fs-3 text-primary"></i>
                                                 <div class="fw-bold" style="font-size: 11px;">Upload</div>
                                             </div>
                                         @endif
@@ -344,7 +344,7 @@
                     {{-- CARD 2: Stock Specifications & Pricing --}}
                     <div class="section-card" style="display:none !important;">
                         <div class="card-header-pro d-flex flex-wrap justify-content-between align-items-center gap-3">
-                            <h5 class="card-title-pro"><i class="las la-box-open text-info"></i> Stock & Pricing</h5>
+                            <h5 class="card-title-pro"><i class="fas fa-box-open text-info"></i> Stock & Pricing</h5>
                             
                             <div class="d-flex align-items-center flex-wrap gap-3">
                                 <div class="bg-light px-3 py-1 rounded border d-flex gap-3 text-nowrap align-items-center" style="font-size: 0.82rem;">
@@ -446,7 +446,7 @@
                     <div class="d-flex justify-content-end align-items-center bg-white p-3 rounded shadow-sm border mb-4 gap-2">
                         <a href="{{ route('product') }}" class="btn btn-outline-secondary px-4 py-2" style="border-radius: var(--radius-md); font-size: 0.9rem;">Cancel</a>
                         <button type="submit" class="btn btn-primary px-5 py-2 fw-bold" style="background: var(--primary); border: none; border-radius: var(--radius-md); font-size: 0.9rem;">
-                            <i class="las la-check-circle me-1"></i> UPDATE PRODUCT
+                            <i class="fas fa-check-circle me-1"></i> UPDATE PRODUCT
                         </button>
                     </div>
 
@@ -750,7 +750,7 @@
 
                 const btn = document.querySelector('button[type="submit"]');
                 const originalContent = btn.innerHTML;
-                btn.innerHTML = '<i class="las la-spinner la-spin"></i> Updating...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
                 btn.disabled = true;
 
                 const formData = new FormData(form);
@@ -938,7 +938,7 @@
                 const unitVal = v ? (v.unit || (isCartonMode ? 'Carton' : baseUnitName)) : (isCartonMode ? 'Carton' : baseUnitName);
                 const stockVal = v ? (v.stock || 0) : '0';
                 const convVal = v ? (v.conv_factor || (isCartonMode ? '0' : '1')) : (isCartonMode ? '0' : '1');
-                const weightVal = v ? (v.weight_per_piece || 1000) : 1000;
+                const weightVal = (variantMode === 'weight') ? (v ? (v.weight_per_piece || 1000) : 1000) : 0;
                 const saleVal = v ? (v.sale_price || '') : '';
                 const wholesaleVal = v ? (v.wholesale_price || '') : '0';
                 const purchVal = v ? (v.purch_price || '') : '';

@@ -318,7 +318,7 @@
                 <!-- Holiday Alert -->
                 @if ($isHoliday)
                     <div class="holiday-banner">
-                        <i class="fa fa-calendar-star fa-lg"></i>
+                        <i class="fa fa-calendar-check fa-lg"></i>
                         <div>
                             <div style="font-size: 0.9rem; opacity: 0.9;">Today is a Holiday</div>
                             <div style="font-size: 1.1rem; font-weight: 700;">{{ $holiday->name }}</div>

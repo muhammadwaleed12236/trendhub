@@ -8,10 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class Sale extends Model
 {
     protected $fillable = [
-        'customer_id', 'reference', 'total_amount_Words', 'total_bill_amount',
+        'customer_id', 'user_id', 'reference', 'total_amount_Words', 'total_bill_amount',
         'total_extradiscount', 'total_net', 'cash', 'card', 'change',
         'total_items', 'discount_type', 'sale_status', 'invoice_no', 'is_booking'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
     public function customer_relation()
     {

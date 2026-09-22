@@ -157,7 +157,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/product/validate-form', [ProductController::class, 'validateForm'])->name('product.validate');
     Route::get('/products/{id}/edit', [ProductController::class, 'edit'])->middleware('permission:products.edit')->name('products.edit');
-    Route::get('/generate-barcode-image', [ProductController::class, 'generateBarcode'])->name('generate-barcode-image');
+    Route::get('/generate-barcode-image/{id?}', [ProductController::class, 'generateBarcode'])->name('generate-barcode-image');
 
     // ── Product Import / Export ──
     Route::get('/products/export',   [App\Http\Controllers\ProductImportExportController::class, 'export'])
@@ -175,7 +175,6 @@ Route::middleware('auth')->group(function () {
 
     // Route::get('/barcode/{id}', [ProductController::class, 'barcode'])->name('product.barcode');
     // Searches
-    Route::get('/generate-barcode-image', [ProductController::class, 'generateBarcode'])->name('generate-barcode-image');
     Route::get('/get-subcategories/{category_id}', [ProductController::class, 'getSubcategories'])->name('fetch-subcategories');
     Route::get('/get-all-subcategories', [ProductController::class, 'getAllSubcategoriesJson'])->name('get-all-subcategories');
     Route::get('/get-categories', [ProductController::class, 'getCategoriesJson'])->name('get-categories');
@@ -334,7 +333,7 @@ Route::middleware('auth')->group(function () {
     // Route::get('/get-product-details/{productName}', [ProductController::class, 'getProductDetails'])->name('get-product-details');
 
     // Route::get('booking/system', [SaleController::class,'booking-system'])->name('booking.index');
-    Route::get('sale', [SaleController::class, 'index'])->middleware('permission:sales.view')->name('sale.index');
+    Route::get('sale', [SaleController::class, 'index'])->middleware('permission:sales.view|sales.view_own')->name('sale.index');
     Route::get('sale/create', [SaleController::class, 'addsale'])->middleware('permission:sales.create')->name('sale.add');
     Route::get('/invoice-series/fetch', [SaleController::class, 'fetchInvoiceSeries'])->name('invoice_series.fetch');
     Route::post('/invoice-series/store', [SaleController::class, 'storeInvoiceSeries'])->name('invoice_series.store');
@@ -352,12 +351,12 @@ Route::middleware('auth')->group(function () {
     Route::get('sale/return/{id}', [App\Http\Controllers\SaleReturnController::class, 'showReturnForm'])->middleware('permission:sales.create')->name('sale.return.show');
     Route::post('sale/return/store', [App\Http\Controllers\SaleReturnController::class, 'processSaleReturn'])->middleware('permission:sales.create')->name('sale.return.store');
 
-    Route::get('/sales/{id}/invoice', [SaleController::class, 'saleinvoice'])->middleware('permission:sales.view')->name('sales.invoice');
+    Route::get('/sales/{id}/invoice', [SaleController::class, 'saleinvoice'])->middleware('permission:sales.view|sales.view_own')->name('sales.invoice');
     Route::get('/sales/{id}/edit', [SaleController::class, 'saleedit'])->middleware('permission:sales.edit')->name('sales.edit');
     Route::put('/sales/{id}', [SaleController::class, 'updatesale'])->middleware('permission:sales.edit')->name('sales.update');
-    Route::get('/sales/{id}/dc', [SaleController::class, 'saledc'])->middleware('permission:sales.view')->name('sales.dc');
-    Route::get('/sales/{id}/dc-thermal', [SaleController::class, 'saledcThermal'])->middleware('permission:sales.view')->name('sales.dc_thermal');
-    Route::get('/sales/{id}/recepit', [SaleController::class, 'salereceipt'])->middleware('permission:sales.view')->name('sales.receipt');
+    Route::get('/sales/{id}/dc', [SaleController::class, 'saledc'])->middleware('permission:sales.view|sales.view_own')->name('sales.dc');
+    Route::get('/sales/{id}/dc-thermal', [SaleController::class, 'saledcThermal'])->middleware('permission:sales.view|sales.view_own')->name('sales.dc_thermal');
+    Route::get('/sales/{id}/recepit', [SaleController::class, 'salereceipt'])->middleware('permission:sales.view|sales.view_own')->name('sales.receipt');
 
     // booking system
 

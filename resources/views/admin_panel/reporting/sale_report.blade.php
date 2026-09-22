@@ -157,6 +157,19 @@
                     <input type="datetime-local" name="end_date" id="end_date_desk" class="form-control form-control-sm fw-bold endDateInput" style="height: 36px; width: 185px; font-size: .78rem; border-radius: 6px;">
                 </div>
 
+                {{-- Cashier / User --}}
+                <div class="sale-filter-group" style="margin-right: 18px;">
+                    <label for="user_id_desk" class="sale-filter-label">Cashier:</label>
+                    <select name="user_id" id="user_id_desk" class="form-select form-select-sm fw-bold userIdInput" style="height: 36px; width: 140px; font-size: .78rem; border-radius: 6px;">
+                        <option value="">All Cashiers</option>
+                        @if(isset($users))
+                            @foreach($users as $u)
+                                <option value="{{ $u->id }}">{{ $u->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+
                 {{-- Search Input --}}
                 <div class="flex-grow-1" style="min-width: 210px; margin-right: 18px;">
                     <div class="position-relative">
@@ -195,6 +208,17 @@
                     <div class="col-6 mb-1">
                         <label class="form-label mb-1 fw-bold text-secondary" style="font-size: 11px;">End Date</label>
                         <input type="datetime-local" name="end_date" id="end_date_mob" class="form-control form-control-sm endDateInput" style="font-size: 11px;">
+                    </div>
+                    <div class="col-12 mb-1">
+                        <label class="form-label mb-1 fw-bold text-secondary" style="font-size: 11px;">Cashier</label>
+                        <select name="user_id" id="user_id_mob" class="form-select form-select-sm userIdInput" style="font-size: 11px;">
+                            <option value="">All Cashiers</option>
+                            @if(isset($users))
+                                @foreach($users as $u)
+                                    <option value="{{ $u->id }}">{{ $u->name }}</option>
+                                @endforeach
+                            @endif
+                        </select>
                     </div>
                     <div class="col-12 mb-2">
                         <label class="form-label mb-1 fw-bold text-secondary" style="font-size: 11px;">Search</label>
@@ -332,6 +356,7 @@
                             <th style="width:130px;">Date &amp; Time</th>
                             <th style="width:110px;">Invoice</th>
                             <th style="width:110px;">Customer</th>
+                            <th style="width:100px;">Cashier</th>
                             <th style="width:90px;">Ref</th>
                             <th>Products</th>
                             <th style="width:75px;">Qty</th>
@@ -367,15 +392,17 @@
         let currentExpenses = 0;
         let currentCogs = 0;
 
-        // Sync Date Inputs between Desktop & Mobile
+        // Sync Date & Cashier Inputs between Desktop & Mobile
         $('.startDateInput').on('change', function() { $('.startDateInput').val($(this).val()); });
         $('.endDateInput').on('change', function() { $('.endDateInput').val($(this).val()); });
+        $('.userIdInput').on('change', function() { $('.userIdInput').val($(this).val()); });
         $('.searchProductInput').on('input', function() { $('.searchProductInput').val($(this).val()); });
 
         // Auto Search Trigger
         $(document).on('click', '.btnSearchTrigger', function() {
-            let start = $('#start_date_desk').val() || $('#start_date_mob').val();
-            let end   = $('#end_date_desk').val() || $('#end_date_mob').val();
+            let start  = $('#start_date_desk').val() || $('#start_date_mob').val();
+            let end    = $('#end_date_desk').val() || $('#end_date_mob').val();
+            let userId = $('#user_id_desk').val() || $('#user_id_mob').val();
             $('.searchProductInput').val('');
 
             $(".loader").show();
@@ -384,7 +411,8 @@
                 type: "GET",
                 data: {
                     start_date: start,
-                    end_date: end
+                    end_date: end,
+                    user_id: userId
                 },
                 success: function(res) {
                     $(".loader").hide();
@@ -431,6 +459,7 @@
                             <td class="small text-nowrap">${s.created_at}</td>
                             <td class="font-monospace fw-bold text-primary">INVSLE-${s.id}</td>
                             <td>${s.customer_name ?? '-'}</td>
+                            <td><span class="badge bg-light text-dark border px-2 py-1"><i class="fas fa-user-circle text-primary me-1"></i>${s.cashier || 'System'}</span></td>
                             <td>${s.reference ?? '-'}</td>
                             <td>${products}</td>
                             <td class="fw-semibold">${qtyArr.join('<br>')}</td>
@@ -442,7 +471,7 @@
 
                         // Mobile Card
                         mobHtml += `
-                        <div class="mob-card p-2.5 p-2 mb-2 mob-sale-card" data-search="${(s.product + ' INVSLE-' + s.id + ' ' + (s.customer_name||'') + ' ' + (s.reference||'')).toLowerCase()}">
+                        <div class="mob-card p-2.5 p-2 mb-2 mob-sale-card" data-search="${(s.product + ' INVSLE-' + s.id + ' ' + (s.customer_name||'') + ' ' + (s.cashier||'') + ' ' + (s.reference||'')).toLowerCase()}">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <div class="d-flex align-items-center gap-1">
                                     <span class="badge bg-light text-muted border" style="font-size: 10px;">#${i+1}</span>
@@ -451,7 +480,10 @@
                                 <small class="text-muted" style="font-size: 10.5px;">${s.created_at}</small>
                             </div>
                             <div class="mb-1">
-                                <strong class="text-dark d-block" style="font-size: 12.5px;">${s.customer_name ?? 'Walking Customer'}</strong>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <strong class="text-dark" style="font-size: 12.5px;">${s.customer_name ?? 'Walking Customer'}</strong>
+                                    <span class="badge bg-light text-dark border" style="font-size: 10px;"><i class="fas fa-user-circle text-primary me-1"></i>${s.cashier || 'System'}</span>
+                                </div>
                                 <small class="text-muted" style="font-size: 10.5px;">Ref: ${s.reference ?? '-'}</small>
                             </div>
                             <div class="bg-light rounded p-2 mb-1" style="font-size: 11px;">
@@ -479,7 +511,7 @@
 
                     // Grand total row inside desktop table
                     html += `<tr class="fw-bold bg-light" id="grandTotalRow">
-                        <td colspan="6" class="text-end">Grand Total:</td>
+                        <td colspan="7" class="text-end">Grand Total:</td>
                         <td id="grandQty">${grandQty.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
                         <td>-</td>
                         <td id="grandTotal">${grandTotal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
@@ -551,7 +583,7 @@
         // Export CSV Handler
         $(document).on('click', '.btnExportCsvTrigger', function() {
             let csv = [];
-            csv.push(['#', 'Date & Time', 'Invoice', 'Customer', 'Reference', 'Products', 'Qty', 'Price', 'Total', 'Net Amount', 'Returns'].join(','));
+            csv.push(['#', 'Date & Time', 'Invoice', 'Customer', 'Cashier', 'Reference', 'Products', 'Qty', 'Price', 'Total', 'Net Amount', 'Returns'].join(','));
             $('#saleBody tr').each(function() {
                 if ($(this).attr('id') === 'grandTotalRow') return;
                 let row = [];

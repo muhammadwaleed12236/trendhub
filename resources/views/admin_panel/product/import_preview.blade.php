@@ -10,11 +10,11 @@
                     <h5 class="m-0 text-dark fw-bold">Import Products (Preview)</h5>
                 </div>
                 <div class="col-sm-6 text-right">
-                    <a href="{{ route('product') }}" class="btn btn-outline-secondary btn-sm"><i class="las la-arrow-left"></i> Cancel</a>
+                    <a href="{{ route('product') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i> Cancel</a>
                     @if(count($payload['products']) > 0)
                     <form action="{{ route('products.import.confirm') }}" method="POST" class="d-inline">
                         @csrf
-                        <button type="submit" class="btn btn-success btn-sm"><i class="las la-check"></i> Confirm & Import</button>
+                        <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check"></i> Confirm & Import</button>
                     </form>
                     @endif
                 </div>
@@ -28,7 +28,7 @@
             <div class="row">
                 <div class="col-md-3 col-sm-6 col-12">
                     <div class="info-box shadow-sm">
-                        <span class="info-box-icon bg-success"><i class="las la-plus"></i></span>
+                        <span class="info-box-icon bg-success"><i class="fas fa-plus"></i></span>
                         <div class="info-box-content">
                             <span class="info-box-text">Products to Create</span>
                             <span class="info-box-number">{{ $payload['preview_stats']['products_create'] }}</span>
@@ -37,7 +37,7 @@
                 </div>
                 <div class="col-md-3 col-sm-6 col-12">
                     <div class="info-box shadow-sm">
-                        <span class="info-box-icon bg-info"><i class="las la-edit"></i></span>
+                        <span class="info-box-icon bg-info"><i class="fas fa-edit"></i></span>
                         <div class="info-box-content">
                             <span class="info-box-text">Products to Update</span>
                             <span class="info-box-number">{{ $payload['preview_stats']['products_update'] }}</span>
@@ -46,7 +46,7 @@
                 </div>
                 <div class="col-md-3 col-sm-6 col-12">
                     <div class="info-box shadow-sm">
-                        <span class="info-box-icon bg-warning"><i class="las la-tags"></i></span>
+                        <span class="info-box-icon bg-warning"><i class="fas fa-tags"></i></span>
                         <div class="info-box-content">
                             <span class="info-box-text">Variants to Process</span>
                             <span class="info-box-number">{{ $payload['preview_stats']['variants_create'] + $payload['preview_stats']['variants_update'] }}</span>
@@ -55,7 +55,7 @@
                 </div>
                 <div class="col-md-3 col-sm-6 col-12">
                     <div class="info-box shadow-sm">
-                        <span class="info-box-icon bg-secondary"><i class="las la-database"></i></span>
+                        <span class="info-box-icon bg-secondary"><i class="fas fa-database"></i></span>
                         <div class="info-box-content">
                             <span class="info-box-text">Master Data to Auto-create</span>
                             <span class="info-box-number">{{ $payload['preview_stats']['master_create'] }}</span>
@@ -66,7 +66,7 @@
 
             @if(isset($payload['errors']) && count($payload['errors']) > 0)
             <div class="alert alert-danger shadow-sm">
-                <strong><i class="las la-times-circle"></i> Validation Errors ({{ count($payload['errors']) }}):</strong>
+                <strong><i class="fas fa-times-circle"></i> Validation Errors ({{ count($payload['errors']) }}):</strong>
                 <ul class="mb-0 mt-2" style="max-height: 150px; overflow-y: auto;">
                     @foreach($payload['errors'] as $error)
                         <li>Row {{ $error['row'] }}: {{ $error['msg'] }}</li>
@@ -78,7 +78,7 @@
 
             @if(count($payload['master_data']['categories']) > 0 || count($payload['master_data']['brands']) > 0)
             <div class="alert alert-warning shadow-sm">
-                <strong><i class="las la-exclamation-triangle"></i> Notice:</strong> The following master data is missing and will be auto-created:<br>
+                <strong><i class="fas fa-exclamation-triangle"></i> Notice:</strong> The following master data is missing and will be auto-created:<br>
                 @if(count($payload['master_data']['categories']) > 0)
                     <strong>Categories:</strong> {{ implode(', ', $payload['master_data']['categories']) }}<br>
                 @endif

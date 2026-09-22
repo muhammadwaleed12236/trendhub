@@ -550,7 +550,7 @@
                             @if ($variantUnit === 'pcs' || $variantUnit === 'piece' || $variantUnit === 'pieces')
                                 <div style="font-weight: bold; color: #2c3e50;">
                                     {{ $totalPieces }} Pcs
-                                    @if ($weightGrams > 0)
+                                    @if ($weightGrams > 0 && in_array($sizeMode, ['by_kg', 'by_gm', 'by_ton']))
                                         <small class="d-block text-muted" style="font-size: 10px;">({{ $weightGrams == (int)$weightGrams ? (int)$weightGrams : $weightGrams }}g)</small>
                                     @endif
                                 </div>
@@ -897,7 +897,7 @@
                         $qtyDisplay = $totalPieces . ' Pcs';
                         if ($variantUnit === 'pcs' || $variantUnit === 'piece' || $variantUnit === 'pieces') {
                             $qtyDisplay = $totalPieces . ' Pcs';
-                            if ($weightGrams > 0) {
+                            if ($weightGrams > 0 && in_array($sizeMode, ['by_kg', 'by_gm', 'by_ton'])) {
                                 $qtyDisplay .= ' (' . ($weightGrams == (int)$weightGrams ? (int)$weightGrams : $weightGrams) . 'g)';
                             }
                         } elseif (in_array($sizeMode, ['by_kg', 'by_gm', 'by_feet', 'by_meter'])) {

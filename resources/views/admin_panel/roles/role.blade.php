@@ -682,6 +682,11 @@
             color: #1e40af;
         }
 
+        .perm-action-badge.view_own {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
         .perm-action-badge.create {
             background: #dcfce7;
             color: #166534;
@@ -1085,6 +1090,7 @@
                 // Group permissions by module
                 var groups = {};
                 var moduleIcons = {
+                    'dashboard': 'fa-tachometer-alt',
                     'hr': 'fa-users',
                     'users': 'fa-user',
                     'roles': 'fa-user-shield',
@@ -1116,13 +1122,14 @@
                     // Custom sort order
                     var order = {
                         'view': 1,
-                        'create': 2,
-                        'edit': 3,
-                        'delete': 4,
-                        'approve': 5,
-                        'mark': 6,
-                        'print': 7,
-                        'export': 8
+                        'view_own': 2,
+                        'create': 3,
+                        'edit': 4,
+                        'delete': 5,
+                        'approve': 6,
+                        'mark': 7,
+                        'print': 8,
+                        'export': 9
                     };
                     perms.sort(function(a, b) {
                         var actionA = a.name.split('.').pop();
@@ -1166,7 +1173,7 @@
                     perms.forEach(function(p) {
                         var checked = assignedPerms.includes(p.name);
                         var action = p.name.split('.').pop();
-                        var knownActions = ['view', 'create', 'edit', 'delete', 'approve', 'mark',
+                        var knownActions = ['view', 'view_own', 'create', 'edit', 'delete', 'approve', 'mark',
                             'print', 'export'
                         ];
                         var actionClass = knownActions.includes(action) ? action : 'other';

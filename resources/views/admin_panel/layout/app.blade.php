@@ -248,6 +248,7 @@
   
     <link rel="stylesheet" href="{{ asset('assets/vendors/font-awesome/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/vendors/font-awesome/css/brands.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/vendors/bootstrap-icons/css/bootstrap-icons.min.css') }}">
     {{-- Select2 CSS - Local --}}
     <link rel="stylesheet" href="{{ asset('assets/vendors/select2/css/select2.min.css') }}">
 
@@ -740,11 +741,13 @@
                         <!--=========================*
                               Home
                     *===========================-->
+                        @canany(['dashboard.view', 'home.view'])
                         <li class="nav-item">
                             <a href="{{ url('/home') }}" class="nav-link"><i
                                     class="menu_icon fas fa-home"></i><span class="menu-title">Dashboard</span></a>
 
                         </li>
+                        @endcanany
                         <!--=========================*
                               UI Features
                     *===========================-->
@@ -752,7 +755,7 @@
                             @canany(['products.view', 'discount.products.view', 'categories.view', 'subcategories.view',
                                 'brands.view', 'units.view', 'vendors.view', 'purchases.view', 'purchase_pos.create',
                                 'warehouse.view', 'warehouse.stock.view', 'stock.transfer.view', 'stock.adjust.view', 'stock.adjust.create',
-                                'sales.view', 'sales.create', 'customers.view', 'zones.view', 'sales.officers.view', 'receipts.voucher.view'])
+                                'sales.view', 'sales.view_own', 'sales.create', 'customers.view', 'zones.view', 'sales.officers.view', 'receipts.voucher.view'])
                                 <a href="#" class="nav-link">
                                      <i class="menu_icon fas fa-cogs"></i>
                                      <span class="menu-title">Management</span>
@@ -847,15 +850,15 @@
                                             </div>
                                         @endcanany
                                         <!-- Customers & Sales -->
-                                        @canany(['sales.view', 'sales.create', 'customers.view', 'sales.officers.view',
+                                        @canany(['sales.view', 'sales.view_own', 'sales.create', 'customers.view', 'sales.officers.view',
                                             'receipts.voucher.view', 'zones.view'])
                                             <div class="col-group col-md-3">
                                                 <p class="category-heading">Sales & Customers</p>
                                                 <ul class="submenu-item">
-                                                    @can('sales.view')
+                                                    @canany(['sales.view', 'sales.view_own'])
                                                         <li><a href="{{ url('sale') }}"><i class="fas fa-receipt"></i>
                                                                 Sales</a></li>
-                                                    @endcan
+                                                    @endcanany
                                                     @can('sales.create')
                                                         <li><a href="{{ route('pos.index') }}"><i class="fas fa-cash-register"></i>
                                                                 POS System</a></li>

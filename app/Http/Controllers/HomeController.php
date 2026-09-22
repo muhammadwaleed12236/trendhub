@@ -16,8 +16,22 @@ class HomeController extends Controller
             return redirect()->route('login');
         }
 
-        $usertype = Auth::user()->usertype;
+        $user = Auth::user();
+        $usertype = $user->usertype;
         $userId = Auth::id();
+
+        // Check Dashboard permission: if user lacks dashboard.view and home.view
+        if (!$user->can('dashboard.view') && !$user->can('home.view')) {
+            if ($user->can('sales.view') || $user->can('sales.view_own')) {
+                return redirect()->route('sale.index');
+            } elseif ($user->can('sales.create')) {
+                return redirect()->route('pos.index');
+            } elseif ($user->can('purchases.view')) {
+                return redirect()->route('Purchase.home');
+            } else {
+                abort(403, 'Unauthorized access to dashboard.');
+            }
+        }
 
         if ($usertype == 'user') {
             return view('user_panel.dashboard', compact('userId'));
@@ -31,12 +45,21 @@ class HomeController extends Controller
             // Stats
             $totalPurchases = Auth::user()->can('purchases.view') ? DB::table('purchases')->sum('net_amount') : 0;
             $totalPurchaseReturns = Auth::user()->can('purchase.returns.view') ? DB::table('purchase_returns')->sum('net_amount') : 0;
-            $totalSales = Auth::user()->can('sales.view') ? DB::table('sales')->sum('total_net') : 0;
+            
+            $canAllSales = Auth::user()->can('sales.view');
+            $canOwnSales = Auth::user()->can('sales.view_own');
+            $totalSales = 0;
+            if ($canAllSales) {
+                $totalSales = DB::table('sales')->sum('total_net');
+            } elseif ($canOwnSales) {
+                $totalSales = DB::table('sales')->where('user_id', $userId)->sum('total_net');
+            }
+
             $totalSalesReturns = Auth::user()->can('sales.returns.view') ? DB::table('sale_returns')->sum('net_amount') : 0;
 
             // Financial Summary (Accounting Based)
             $financialSummary = [];
-            if (Auth::user()->can('purchases.view') || Auth::user()->can('sales.view')) {
+            if (Auth::user()->can('purchases.view') || $canAllSales || $canOwnSales) {
                 try {
                     $balanceService = app(\App\Services\BalanceService::class);
                     $fromDate = request('from_date', now()->startOfMonth()->format('Y-m-d'));
@@ -49,33 +72,40 @@ class HomeController extends Controller
 
             // ===== SALES REPORT CHARTS =====
             $salesChartStats = ['daily' => ['series' => [], 'categories' => []]];
-            if (Auth::user()->can('sales.view')) {
+            if ($canAllSales || $canOwnSales) {
                 // DAILY (last 7 days)
                 $dailyLabels = collect(range(6, 0))->map(fn($i) => \Carbon\Carbon::today()->subDays($i)->format('Y-m-d'));
-                $dailyData = $dailyLabels->map(function ($date) {
-                    return DB::table('sales')
-                        ->whereDate('created_at', $date)
-                        ->sum('total_net');
+                $dailyData = $dailyLabels->map(function ($date) use ($canAllSales, $userId) {
+                    $q = DB::table('sales')->whereDate('created_at', $date);
+                    if (!$canAllSales) {
+                        $q->where('user_id', $userId);
+                    }
+                    return $q->sum('total_net');
                 });
 
                 // WEEKLY (This + Last 2 weeks)
                 $weeklyLabels = ['This Week', 'Last Week', '2 Weeks Ago'];
-                $weeklyData = collect([0, 1, 2])->map(function ($i) {
+                $weeklyData = collect([0, 1, 2])->map(function ($i) use ($canAllSales, $userId) {
                     $start = \Carbon\Carbon::now()->startOfWeek()->subWeeks($i);
                     $end = $start->copy()->endOfWeek();
-                    return DB::table('sales')
-                        ->whereBetween('created_at', [$start, $end])
-                        ->sum('total_net');
+                    $q = DB::table('sales')->whereBetween('created_at', [$start, $end]);
+                    if (!$canAllSales) {
+                        $q->where('user_id', $userId);
+                    }
+                    return $q->sum('total_net');
                 })->reverse()->values();
 
                 // MONTHLY (Jan → Current month)
                 $months = range(1, \Carbon\Carbon::now()->month);
                 $monthLabels = collect($months)->map(fn($m) => \Carbon\Carbon::create()->month($m)->format('F'));
-                $monthlyData = collect($months)->map(function ($month) {
-                    return DB::table('sales')
+                $monthlyData = collect($months)->map(function ($month) use ($canAllSales, $userId) {
+                    $q = DB::table('sales')
                         ->whereMonth('created_at', $month)
-                        ->whereYear('created_at', \Carbon\Carbon::now()->year)
-                        ->sum('total_net');
+                        ->whereYear('created_at', \Carbon\Carbon::now()->year);
+                    if (!$canAllSales) {
+                        $q->where('user_id', $userId);
+                    }
+                    return $q->sum('total_net');
                 });
 
                 $salesChartStats = [

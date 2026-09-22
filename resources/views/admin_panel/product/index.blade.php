@@ -1050,7 +1050,7 @@ $(document).ready(function () {
                         let vName     = v.name || v.variant_name || product.item_name;
                         let vSize     = v.size || v.variant_size || '-';
                         let vColorVal = v.color || v.variant_color || '-';
-                        let vStock    = (v.stock !== undefined && v.stock !== null && v.stock !== '') ? v.stock : (v.variant_stock ?? 0);
+                        let vStock    = (v.available_stock !== undefined && v.available_stock !== null) ? v.available_stock : ((v.current_stock !== undefined && v.current_stock !== null) ? v.current_stock : ((v.stock !== undefined && v.stock !== null && v.stock !== '') ? v.stock : (v.variant_stock ?? 0)));
                         let vSale     = (v.sale_price !== undefined && v.sale_price !== null && v.sale_price !== '') ? v.sale_price : (v.variant_sale_price ?? 0);
                         let vPurch    = (v.purch_price !== undefined && v.purch_price !== null && v.purch_price !== '') ? v.purch_price : (v.purchase_price ?? v.variant_purchase_price ?? 0);
                         let vAlert    = (v.alert !== undefined && v.alert !== null && v.alert !== '') ? v.alert : (v.variant_alert_qty ?? 0);

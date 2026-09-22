@@ -1054,7 +1054,7 @@
                     </td>
                     <td class="p-0 piece-wt-only-col">
                         <div style="position:relative;">
-                            <input type="number" class="form-control-pro form-control-sm" name="variant_weight_per_piece[]" step="any" value="1000" readonly title="Auto from Conv Factor" style="padding-right:18px; border-radius:0; border:1px solid #dee2e6; height:30px; background:#f8f8f8;">
+                            <input type="number" class="form-control-pro form-control-sm" name="variant_weight_per_piece[]" step="any" value="${variantMode === 'weight' ? 1000 : 0}" readonly title="Auto from Conv Factor" style="padding-right:18px; border-radius:0; border:1px solid #dee2e6; height:30px; background:#f8f8f8;">
                             <span style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:9px;color:#999;pointer-events:none;font-weight:600;">g</span>
                         </div>
                     </td>
