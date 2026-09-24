@@ -310,7 +310,7 @@
                                                         <th class="text-uppercase text-muted p-1" style="width: 80px; font-size: 10px;">Size</th>
                                                         <th class="text-uppercase text-muted p-1" style="width: 80px; font-size: 10px;">Color</th>
                                                         <th class="text-uppercase text-muted p-1" style="width: 75px; font-size: 10px;">Unit</th>
-                                                        <th class="text-uppercase text-muted p-1 text-center" style="width: 90px; font-size: 10px;">Initial Stock</th>
+                                                        <th class="text-uppercase text-muted p-1 text-center" style="width: 90px; font-size: 10px;">Available Stock</th>
                                                         <th class="text-uppercase text-muted p-1 text-center conv-col" id="convFactorHeader" style="width: 95px; font-size: 10px;">Pcs / Carton</th>
                                                         <th class="text-uppercase text-muted p-1 text-center piece-wt-only-col" style="width: 90px; font-size: 10px;">Piece Wt (g)</th>
                                                         <th class="text-uppercase text-muted p-1" style="width: 90px; font-size: 10px;">Sale Price</th>
@@ -965,7 +965,9 @@
                         </select>
                     </td>
                     <td class="p-1">
-                        <input type="number" class="form-control-pro form-control-sm text-center fw-bold text-primary" name="variant_stock[]" step="any" value="${stockVal}" placeholder="0" title="${isCartonMode ? 'Initial Stock (Cartons)' : 'Initial Stock'}">
+                        <input type="number" class="form-control-pro form-control-sm text-center fw-bold text-primary" name="variant_stock[]" step="any" value="${stockVal}" placeholder="0" title="${isCartonMode ? 'Available Stock (Cartons)' : 'Available Stock'}">
+                        <input type="hidden" name="variant_prev_stock[]" value="${stockVal}">
+                        <input type="hidden" name="variant_orig_initial[]" value="${v ? (v.orig_initial_stock ?? v.stock ?? 0) : stockVal}">
                     </td>
                     <td class="p-0 conv-col">
                         <input type="number" class="form-control-pro form-control-sm conv-factor-input text-center fw-bold ${isCartonMode ? 'text-primary' : ''}" name="variant_conv_factor[]" step="any" value="${convVal}" ${isCartonMode ? '' : 'readonly'} placeholder="0" title="${isCartonMode ? 'Pieces per Carton' : 'Base Conv Factor = 1'}" style="border-radius:0; border:1px solid #dee2e6; height:30px; ${isCartonMode ? 'background:#fff;' : 'background:#f8f8f8;'}">
@@ -1138,7 +1140,9 @@
                         </select>
                     </td>
                     <td class="p-1">
-                        <input type="number" class="form-control-pro form-control-sm text-center fw-bold text-primary stock-input" name="variant_stock[]" step="any" value="${stockVal}" placeholder="0" title="${isCartonMode ? 'Initial Stock (Cartons)' : 'Initial Stock'}" ${variantMode === 'weight' ? 'readonly style="background:#f8f9ff;color:#0d6efd;font-weight:bold;"' : ''}>
+                        <input type="number" class="form-control-pro form-control-sm text-center fw-bold text-primary stock-input" name="variant_stock[]" step="any" value="${stockVal}" placeholder="0" title="${isCartonMode ? 'Available Stock (Cartons)' : 'Available Stock'}" ${variantMode === 'weight' ? 'readonly style="background:#f8f9ff;color:#0d6efd;font-weight:bold;"' : ''}>
+                        <input type="hidden" name="variant_prev_stock[]" value="${stockVal}">
+                        <input type="hidden" name="variant_orig_initial[]" value="${v ? (v.orig_initial_stock ?? v.stock ?? 0) : stockVal}">
                     </td>
                     <td class="p-0 conv-col">
                         <input type="text" inputmode="decimal" class="form-control-pro form-control-sm conv-factor-input text-center fw-bold text-success" name="variant_conv_factor[]" value="${convVal}" placeholder="0" title="${isCartonMode ? 'Pieces per Carton' : 'Conv Factor: weight per Pcs in base unit'}" style="border-radius:0; border:1px solid #198754; height:30px; border-width:1.5px;">
@@ -1427,7 +1431,7 @@
                     <div class="mob-section-label"><i class="fas fa-boxes me-1"></i>Stock & Pricing</div>
 
                     <div class="mob-field-group">
-                        <div class="mob-label">Initial Stock ${isBase ? '' : (isWeightMode ? '🔵 Auto' : '')}</div>
+                        <div class="mob-label">Available Stock ${isBase ? '' : (isWeightMode ? '🔵 Auto' : '')}</div>
                         <input type="number" class="mob-input mob-sync ${!isBase && isWeightMode ? 'auto-field mob-stock-auto' : ''}" data-field="variant_stock[]" value="${stockVal}" placeholder="${!isBase && isWeightMode ? 'Auto' : '0'}" ${!isBase && isWeightMode ? 'readonly' : ''} step="any">
                     </div>
 

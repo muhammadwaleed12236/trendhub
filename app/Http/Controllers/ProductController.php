@@ -205,6 +205,14 @@ class ProductController extends Controller
                     ->select('pri.qty', 'pri.color')
                     ->get();
 
+                // Fetch Stock Adjustments
+                $adjList = DB::table('stock_movements')
+                    ->where('product_id', $p->id)
+                    ->where('type', 'adjustment')
+                    ->whereNotIn('ref_type', ['INIT'])
+                    ->select('qty', 'note')
+                    ->get();
+
                 $expanded = [];
                 foreach ($variants as $v) {
                     $size = (isset($v['size']) && $v['size'] !== '-') ? " {$v['size']}" : '';
@@ -265,7 +273,15 @@ class ProductController extends Controller
                             }
                         }
 
-                        $vBalance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned);
+                        // Calculate Adjustments
+                        $adjustments = 0;
+                        foreach ($adjList as $adjItem) {
+                            if ($this->matchAdjustmentToVariant($adjItem, $v)) {
+                                $adjustments += (float) $adjItem->qty;
+                            }
+                        }
+
+                        $vBalance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned + $adjustments);
                     }
 
                     $vStockDisplay = $vBalance;
@@ -1244,6 +1260,15 @@ class ProductController extends Controller
                     }
                 }
 
+                $hasHistory = DB::table('sale_items')->where('product_id', $id)->exists()
+                    || DB::table('purchase_items')->where('product_id', $id)->exists()
+                    || DB::table('stock_movements')->where('product_id', $id)->whereNotIn('ref_type', ['INIT'])->exists();
+
+                $prevStocks   = $request->variant_prev_stock ?? [];
+                $origInitials = $request->variant_orig_initial ?? [];
+                $defaultWhId  = \App\Models\Warehouse::first()->id ?? 1;
+                $warehouseStock = \App\Models\WarehouseStock::where('product_id', $id)->first();
+
                 $baseConvForCarton = null;
                 for ($i = 0; $i < count($names); $i++) {
                     if (!empty($names[$i])) {
@@ -1254,11 +1279,86 @@ class ProductController extends Controller
                             $baseConvForCarton = $vConvFactor;
                         }
 
+                        $vName = $names[$i];
+                        $vSize = $sizes[$i] ?? '-';
+                        $vColor = $colors[$i] ?? '-';
+                        $vUnit = $units[$i] ?? 'Pcs';
+                        $isCarton = ($mode === 'by_cartons' || strtolower($vUnit) === 'carton');
+
+                        $sRaw = (string)($stocks[$i] ?? '0');
+                        if ($isCarton && $vConvFactor > 1) {
+                            if (strpos($sRaw, '.') !== false) {
+                                $p = explode('.', $sRaw);
+                                $newPieces = ((int)($p[0] ?? 0) * $vConvFactor) + (int)($p[1] ?? 0);
+                            } else {
+                                $newPieces = (float)$sRaw * $vConvFactor;
+                            }
+                        } else {
+                            $newPieces = (float)$sRaw;
+                        }
+
+                        $hasPrev = isset($prevStocks[$i]);
+                        $pRaw = (string)($prevStocks[$i] ?? $sRaw);
+                        if ($isCarton && $vConvFactor > 1) {
+                            if (strpos($pRaw, '.') !== false) {
+                                $p = explode('.', $pRaw);
+                                $oldPieces = ((int)($p[0] ?? 0) * $vConvFactor) + (int)($p[1] ?? 0);
+                            } else {
+                                $oldPieces = (float)$pRaw * $vConvFactor;
+                            }
+                        } else {
+                            $oldPieces = (float)$pRaw;
+                        }
+
+                        $deltaPieces = $newPieces - $oldPieces;
+                        $origInitial = isset($origInitials[$i]) ? (float)$origInitials[$i] : $newPieces;
+
+                        if ($hasHistory) {
+                            if ($hasPrev && round($deltaPieces, 4) != 0) {
+                                DB::table('stock_movements')->insert([
+                                    'product_id'   => $id,
+                                    'type'         => 'adjustment',
+                                    'qty'          => $deltaPieces,
+                                    'ref_type'     => 'PRODUCT_EDIT',
+                                    'ref_id'       => null,
+                                    'note'         => "Warehouse #{$defaultWhId} | Variant: {$vName} (Size: {$vSize}, Color: {$vColor}) | Reason: Stock updated via Product Edit ({$pRaw} -> {$sRaw})",
+                                    'created_at'   => now(),
+                                    'updated_at'   => now(),
+                                ]);
+
+                                if (class_exists(\App\Models\StockAdjustment::class)) {
+                                    \App\Models\StockAdjustment::create([
+                                        'user_id'      => auth()->id() ?? 1,
+                                        'warehouse_id' => $defaultWhId,
+                                        'product_id'   => $id,
+                                        'variant_key'  => $vName . '|' . $vSize . '|' . $vColor,
+                                        'variant_name' => $vName,
+                                        'type'         => $deltaPieces >= 0 ? 'add' : 'subtract',
+                                        'qty'          => abs($deltaPieces),
+                                        'old_stock'    => $oldPieces,
+                                        'new_stock'    => $newPieces,
+                                        'reason'       => "Stock updated via Product Edit ({$pRaw} -> {$sRaw})",
+                                    ]);
+                                }
+
+                                if ($warehouseStock) {
+                                    $warehouseStock->total_pieces = max(0, (float)$warehouseStock->total_pieces + $deltaPieces);
+                                    $ppbVal = $piecesPerBox > 0 ? $piecesPerBox : 1;
+                                    $warehouseStock->quantity = round($warehouseStock->total_pieces / $ppbVal, 2);
+                                    $warehouseStock->save();
+                                }
+                            }
+                            $savedInitial = $origInitial;
+                        } else {
+                            $savedInitial = $stocks[$i] ?? 0;
+                        }
+
                         $variants[] = [
-                            'name' => $names[$i],
-                            'size' => $sizes[$i] ?? '-',
-                            'color' => $colors[$i] ?? '-',
-                            'stock' => $stocks[$i] ?? 0,
+                            'name' => $vName,
+                            'size' => $vSize,
+                            'color' => $vColor,
+                            'stock' => $savedInitial,
+                            'orig_initial_stock' => $savedInitial,
                             'sale_price' => $sale_prices[$i] ?? 0,
                             'wholesale_price' => $wholesale_prices[$i] ?? 0,
                             'weight_per_piece' => $weight_factors[$i] ?? 0,
@@ -1267,7 +1367,7 @@ class ProductController extends Controller
                             'barcode' => $barcodes[$i] ?? '',
                             'conv_factor' => $vConvFactor,
                             'is_base_variant' => $is_bases[$i] ?? 0,
-                            'unit' => $units[$i] ?? 'Pcs',
+                            'unit' => $vUnit,
                         ];
                     }
                 }
@@ -1396,31 +1496,76 @@ class ProductController extends Controller
             }
 
             if ($warehouseStock) {
-                $hasHistory = DB::table('sale_items')->where('product_id', $id)->exists()
-                    || DB::table('purchase_items')->where('product_id', $id)->exists()
-                    || DB::table('stock_movements')->where('product_id', $id)->whereNotIn('ref_type', ['INIT'])->exists();
+                if (count($variants) === 0) {
+                    if ($hasHistory) {
+                        $newPieces = (float) ($request->piece_quantity ?? $request->boxes_quantity ?? 0);
+                        $oldPieces = (float) $warehouseStock->total_pieces;
+                        $deltaPieces = $newPieces - $oldPieces;
 
-                if (!$hasHistory || ((float)$warehouseStock->total_pieces <= 0 && $initialPieces > 0)) {
-                    $warehouseStock->total_pieces = $initialPieces;
-                    $warehouseStock->quantity = $ppb > 0 ? round($initialPieces / $ppb, 2) : $initialPieces;
-                    $warehouseStock->save();
+                        if (round($deltaPieces, 4) != 0) {
+                            DB::table('stock_movements')->insert([
+                                'product_id'   => $id,
+                                'type'         => 'adjustment',
+                                'qty'          => $deltaPieces,
+                                'ref_type'     => 'PRODUCT_EDIT',
+                                'ref_id'       => null,
+                                'note'         => "Warehouse #{$defaultWhId} | Reason: Stock updated via Product Edit ({$oldPieces} -> {$newPieces})",
+                                'created_at'   => now(),
+                                'updated_at'   => now(),
+                            ]);
 
-                    StockMovement::updateOrCreate(
-                        ['product_id' => $id, 'ref_type' => 'INIT'],
-                        [
-                            'type' => 'adjustment',
-                            'qty' => $initialPieces,
-                            'note' => 'Initial Stock',
-                        ]
-                    );
-                } else {
-                    // If total_pieces was 0 but quantity was set, recover total_pieces
-                    if ((float)$warehouseStock->total_pieces <= 0 && (float)$warehouseStock->quantity > 0) {
-                        $warehouseStock->total_pieces = round($warehouseStock->quantity * $ppb, 2);
+                            if (class_exists(\App\Models\StockAdjustment::class)) {
+                                \App\Models\StockAdjustment::create([
+                                    'user_id'      => auth()->id() ?? 1,
+                                    'warehouse_id' => $defaultWhId,
+                                    'product_id'   => $id,
+                                    'variant_key'  => null,
+                                    'variant_name' => null,
+                                    'type'         => $deltaPieces >= 0 ? 'add' : 'subtract',
+                                    'qty'          => abs($deltaPieces),
+                                    'old_stock'    => $oldPieces,
+                                    'new_stock'    => $newPieces,
+                                    'reason'       => "Stock updated via Product Edit ({$oldPieces} -> {$newPieces})",
+                                ]);
+                            }
+
+                            $warehouseStock->total_pieces = max(0, $newPieces);
+                            $warehouseStock->quantity = $ppb > 0 ? round($warehouseStock->total_pieces / $ppb, 2) : $warehouseStock->total_pieces;
+                            $warehouseStock->save();
+                        }
+                    } else {
+                        $warehouseStock->total_pieces = $initialPieces;
+                        $warehouseStock->quantity = $ppb > 0 ? round($initialPieces / $ppb, 2) : $initialPieces;
+                        $warehouseStock->save();
+
+                        StockMovement::updateOrCreate(
+                            ['product_id' => $id, 'ref_type' => 'INIT'],
+                            [
+                                'type' => 'adjustment',
+                                'qty' => $initialPieces,
+                                'note' => 'Initial Stock',
+                            ]
+                        );
                     }
-                    // Keep the actual pieces we have, just update the box display approximation
-                    $warehouseStock->quantity = round($warehouseStock->total_pieces / $ppb, 2);
-                    $warehouseStock->save();
+                } else {
+                    // Product has variants
+                    if (!$hasHistory || (float)$warehouseStock->total_pieces <= 0) {
+                        $warehouseStock->total_pieces = $initialPieces;
+                        $warehouseStock->quantity = $ppb > 0 ? round($initialPieces / $ppb, 2) : $initialPieces;
+                        $warehouseStock->save();
+
+                        StockMovement::updateOrCreate(
+                            ['product_id' => $id, 'ref_type' => 'INIT'],
+                            [
+                                'type' => 'adjustment',
+                                'qty' => $initialPieces,
+                                'note' => 'Initial Stock',
+                            ]
+                        );
+                    } else {
+                        $warehouseStock->quantity = round($warehouseStock->total_pieces / $ppb, 2);
+                        $warehouseStock->save();
+                    }
                 }
             } else {
                 $defaultWhId = \App\Models\Warehouse::first()->id ?? 1;
@@ -1592,6 +1737,14 @@ class ProductController extends Controller
             $product->loose_pieces    = 0;
         }
 
+        // If product has variants, compute live available stock for each variant
+        if (!empty($product->color)) {
+            $parsed = is_string($product->color) ? json_decode($product->color, true) : $product->color;
+            if (is_array($parsed) && count($parsed) > 0 && (isset($parsed[0]['name']) || isset($parsed[0]['color']))) {
+                $product->color = json_encode($this->computeVariantsWithAvailableStock($product, $parsed));
+            }
+        }
+
         return view('admin_panel.product.edit', compact('product', 'categories', 'subcategories', 'brands'));
     }
 
@@ -1720,5 +1873,213 @@ class ProductController extends Controller
         if ($itemVSize === '') $itemVSize = '-';
 
         return $vColor === $itemVColor && $vSize === $itemVSize;
+    }
+
+    /**
+     * Match a stock adjustment note to a specific variant based on variant name, size, and color.
+     */
+    private function matchAdjustmentToVariant($adjItem, $variant)
+    {
+        $note = strtolower($adjItem->note ?? '');
+        if (empty($note)) {
+            return false;
+        }
+
+        $vName  = strtolower(trim($variant['name'] ?? ''));
+        $vSize  = strtolower(trim($variant['size'] ?? '-'));
+        $vColor = strtolower(trim($variant['color'] ?? '-'));
+
+        // 1. If note contains explicit Variant name: "Variant: <name>"
+        if (preg_match('/variant:\s*([^|\(]+)/i', $note, $matches)) {
+            $noteVariantName = strtolower(trim($matches[1]));
+            if (!empty($vName) && $noteVariantName !== $vName) {
+                return false;
+            }
+            if (!empty($vName) && $noteVariantName === $vName) {
+                $sizeMatch = true;
+                if ($vSize !== '-' && !empty($vSize)) {
+                    $sizeMatch = preg_match('/\b' . preg_quote($vSize, '/') . '\b/i', $note) === 1;
+                }
+                $colorMatch = true;
+                if ($vColor !== '-' && !empty($vColor)) {
+                    $colorMatch = preg_match('/\b' . preg_quote($vColor, '/') . '\b/i', $note) === 1;
+                }
+                return $sizeMatch && $colorMatch;
+            }
+        }
+
+        // 2. If size or color is specified on variant, match against note
+        $hasSpecificAttributes = ($vSize !== '-' && !empty($vSize)) || ($vColor !== '-' && !empty($vColor));
+        if ($hasSpecificAttributes) {
+            $sizeMatch = true;
+            if ($vSize !== '-' && !empty($vSize)) {
+                $sizeMatch = preg_match('/\b' . preg_quote($vSize, '/') . '\b/i', $note) === 1;
+            }
+            $colorMatch = true;
+            if ($vColor !== '-' && !empty($vColor)) {
+                $colorMatch = preg_match('/\b' . preg_quote($vColor, '/') . '\b/i', $note) === 1;
+            }
+            return $sizeMatch && $colorMatch;
+        }
+
+        // 3. If variant has no size and no color, check if the variant name appears in the note
+        if (!empty($vName)) {
+            return preg_match('/\b' . preg_quote($vName, '/') . '\b/i', $note) === 1;
+        }
+
+        return false;
+    }
+
+    /**
+     * Compute current live available stock for all variants of a product.
+     */
+    public function computeVariantsWithAvailableStock(Product $product, array $variants): array
+    {
+        $salesList = DB::table('sale_items')
+            ->where('product_id', $product->id)
+            ->select('total_pieces', 'color')
+            ->get();
+
+        $webSalesList = DB::table('ecommerce_order_items as eoi')
+            ->join('ecommerce_orders as eo', 'eo.id', '=', 'eoi.ecommerce_order_id')
+            ->where('eoi.product_id', $product->id)
+            ->where('eo.is_stock_deducted', 1)
+            ->select('eoi.quantity as total_pieces', 'eoi.color', 'eoi.size')
+            ->get();
+
+        $salesListArray = $salesList->toArray();
+        foreach ($webSalesList as $wItem) {
+            $salesListArray[] = (object) [
+                'total_pieces' => $wItem->total_pieces,
+                'color' => json_encode([
+                    'color' => $wItem->color ?: '-',
+                    'size' => $wItem->size ?: '-'
+                ])
+            ];
+        }
+        $salesList = collect($salesListArray);
+
+        $returnsList = DB::table('sale_return_items as sri')
+            ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
+            ->where('sri.product_id', $product->id)
+            ->select('sri.qty', 'sri.color', 'sr.sale_id')
+            ->get();
+
+        $saleIds = $returnsList->pluck('sale_id')->unique()->toArray();
+        $saleItemsMap = [];
+        if (!empty($saleIds)) {
+            $siList = DB::table('sale_items')
+                ->whereIn('sale_id', $saleIds)
+                ->where('product_id', $product->id)
+                ->select('sale_id', 'color')
+                ->get();
+            foreach ($siList as $si) {
+                $saleItemsMap[$si->sale_id][] = $si->color;
+            }
+        }
+
+        $purchasesList = DB::table('purchase_items as pi')
+            ->join('purchases as pur', 'pur.id', '=', 'pi.purchase_id')
+            ->where('pi.product_id', $product->id)
+            ->whereIn('pur.status_purchase', ['approved', 'Returned', 'Partial'])
+            ->select('pi.qty as total_pieces', 'pi.color')
+            ->get();
+
+        $purchaseReturnsList = DB::table('purchase_return_items as pri')
+            ->where('pri.product_id', $product->id)
+            ->select('pri.qty', 'pri.color')
+            ->get();
+
+        $adjList = DB::table('stock_movements')
+            ->where('product_id', $product->id)
+            ->where('type', 'adjustment')
+            ->whereNotIn('ref_type', ['INIT'])
+            ->select('qty', 'note')
+            ->get();
+
+        $isCartonMode = ($product->size_mode === 'by_cartons');
+        $ppb = $product->pieces_per_box > 0 ? (float)$product->pieces_per_box : 1;
+
+        $results = [];
+        foreach ($variants as $v) {
+            $vUnitName = $v['unit'] ?? ($product->unit->name ?? 'Pcs');
+            $vCarton = $isCartonMode || (strtolower($vUnitName) === 'carton');
+            $vConv = (float)($v['conv_factor'] ?? 1);
+            if ($vConv <= 0) $vConv = $ppb > 0 ? $ppb : 1;
+
+            $vRawStock = (string)($v['stock'] ?? '0');
+            if ($vCarton && $vConv > 1) {
+                if (strpos($vRawStock, '.') !== false) {
+                    $parts = explode('.', $vRawStock);
+                    $boxes = (int)($parts[0] ?? 0);
+                    $looseP = (int)($parts[1] ?? 0);
+                    $initial = ($boxes * $vConv) + $looseP;
+                } else {
+                    $initial = (float)$vRawStock * $vConv;
+                }
+            } else {
+                $initial = (float)$vRawStock;
+            }
+
+            $purchased = 0;
+            foreach ($purchasesList as $pItem) {
+                if ($this->matchSaleItemToVariant($pItem, $v)) {
+                    $purchased += (float)$pItem->total_pieces;
+                }
+            }
+
+            $pReturned = 0;
+            foreach ($purchaseReturnsList as $prItem) {
+                if ($this->matchSaleItemToVariant($prItem, $v)) {
+                    $pReturned += (float)$prItem->qty;
+                }
+            }
+
+            $sold = 0;
+            foreach ($salesList as $sItem) {
+                if ($this->matchSaleItemToVariant($sItem, $v)) {
+                    $sold += (float)$sItem->total_pieces;
+                }
+            }
+
+            $returnedQty = 0;
+            foreach ($returnsList as $rItem) {
+                $rColor = $rItem->color;
+                if (empty($rColor)) {
+                    $saleColors = $saleItemsMap[$rItem->sale_id] ?? [];
+                    $rColor = !empty($saleColors) ? $saleColors[0] : '';
+                }
+                $rItemCopy = (object)['qty' => $rItem->qty, 'color' => $rColor];
+                if ($this->matchSaleItemToVariant($rItemCopy, $v)) {
+                    $returnedQty += (float)$rItem->qty;
+                }
+            }
+
+            $adjustments = 0;
+            foreach ($adjList as $adjItem) {
+                if ($this->matchAdjustmentToVariant($adjItem, $v)) {
+                    $adjustments += (float)$adjItem->qty;
+                }
+            }
+
+            $vBalance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned + $adjustments);
+
+            if ($vCarton && $vConv > 1) {
+                $cartons = (int)floor($vBalance / $vConv);
+                $loose = (int)($vBalance % (int)$vConv);
+                $stockDisplay = ($loose > 0) ? ($cartons . '.' . $loose) : (string)$cartons;
+            } else {
+                $stockDisplay = (string)$vBalance;
+            }
+
+            $origInitial = $v['orig_initial_stock'] ?? $v['stock'] ?? $initial;
+            $v['orig_initial_stock'] = $origInitial;
+            $v['available_stock'] = $stockDisplay;
+            $v['stock'] = $stockDisplay;
+
+            $results[] = $v;
+        }
+
+        return $results;
     }
 }

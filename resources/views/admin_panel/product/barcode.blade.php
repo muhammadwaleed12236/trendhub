@@ -111,8 +111,10 @@
         /* Optimized for Zebra & Thermal Barcode Roll Printers (e.g. 50mm x 25mm / 38mm x 25mm) */
         .label {
             border: 1px dashed #777;
-            padding: 4px 6px;
-            width: 190px;
+            padding: 6px 8px;
+            width: 260px;
+            max-width: 100%;
+            margin: 0 auto;
             text-align: center;
             background: #fff;
             box-sizing: border-box;
@@ -130,6 +132,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             margin-bottom: 2px;
+            text-align: center;
         }
         .variant-info {
             font-size: 10px;
@@ -140,18 +143,29 @@
             overflow: hidden;
             text-overflow: ellipsis;
             margin-bottom: 2px;
+            text-align: center;
         }
         .barcode-wrap {
-            margin: 2px 0;
+            margin: 3px auto;
+            width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
+            text-align: center;
             overflow: hidden;
+        }
+        .barcode-wrap img, .barcode-img {
+            display: block;
+            margin: 0 auto;
             max-width: 100%;
+            height: 26px;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: pixelated;
         }
         .barcode-wrap > div {
-            max-width: 100% !important;
+            display: inline-block !important;
             margin: 0 auto !important;
+            position: relative !important;
         }
         .barcode-number {
             font-size: 10px;
@@ -159,8 +173,9 @@
             color: #000;
             letter-spacing: 1px;
             line-height: 1.1;
-            margin-top: 1px;
-            margin-bottom: 1px;
+            margin-top: 2px;
+            margin-bottom: 2px;
+            text-align: center;
         }
         .price {
             font-size: 12px;
@@ -168,6 +183,7 @@
             color: #000;
             line-height: 1.1;
             margin-top: 2px;
+            text-align: center;
         }
         .btn-print-single {
             padding: 4px 10px;
@@ -187,35 +203,54 @@
 
         @media print {
             @page {
-                size: auto;
+                /* size: 50.8mm 55.0mm; */
                 margin: 0mm;
             }
-            html, body { 
-                background: #fff !important; 
-                padding: 0 !important; 
-                margin: 0 !important; 
+            html, body {
+                background: #fff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
             }
-            .actions, h2, .card-btns, .card-select-wrap { 
-                display: none !important; 
+            .actions, h2, .card-btns, .card-select-wrap {
+                display: none !important;
             }
-            .grid { 
+            .grid {
                 display: block !important;
-                gap: 0 !important; 
-            }
-            .barcode-card {
+                gap: 0 !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                width: 100% !important;
+            }
+            .barcode-card {
+                margin: 0 auto !important;
+                padding: 0 !important;
+                width: 100% !important;
                 page-break-after: always;
                 page-break-inside: avoid;
-                display: flex !important;
-                justify-content: center;
-                align-items: center;
+                display: block !important;
+                text-align: center !important;
             }
             .label {
                 border: none !important;
                 box-shadow: none !important;
                 margin: 0 auto !important;
+                padding: 2mm 0 !important;
+                width: 100% !important;
+                max-width: 50mm !important;
+                text-align: center !important;
                 page-break-inside: avoid;
+            }
+            .barcode-wrap {
+                margin: 1mm auto !important;
+                width: 100% !important;
+                text-align: center !important;
+                display: block !important;
+            }
+            .barcode-wrap img, .barcode-img {
+                display: block !important;
+                margin: 0 auto !important;
+                max-width: 90% !important;
             }
 
             /* Single or Selected print mode */
@@ -223,7 +258,7 @@
                 display: none !important;
             }
             body.print-selective-mode .barcode-card.printing-this {
-                display: flex !important;
+                display: block !important;
                 page-break-after: always;
             }
         }
@@ -258,7 +293,7 @@
             </div>
             <div class="barcode-wrap">
                 @if(!empty($variant['barcode']))
-                    {!! DNS1D::getBarcodeHTML($variant['barcode'], 'C128', 1.1, 24) !!}
+                    <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($variant['barcode'], 'C128', 2, 30) }}" alt="{{ $variant['barcode'] }}" class="barcode-img">
                 @else
                     <span style="color:#ef4444;font-size:10px;">No barcode</span>
                 @endif
@@ -282,7 +317,12 @@
         <div class="label" id="label-main">
             <div class="product-name">{{ $product->item_name }}</div>
             <div class="barcode-wrap">
-                {!! DNS1D::getBarcodeHTML($product->barcode_path ?: $product->item_code, 'C128', 1.1, 24) !!}
+                @php $fallbackCode = $product->barcode_path ?: $product->item_code; @endphp
+                @if(!empty($fallbackCode))
+                    <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($fallbackCode, 'C128', 2, 30) }}" alt="{{ $fallbackCode }}" class="barcode-img">
+                @else
+                    <span style="color:#ef4444;font-size:10px;">No barcode</span>
+                @endif
             </div>
             <div class="barcode-number">{{ $product->barcode_path ?? $product->item_code }}</div>
             <div class="price">PKR: {{ number_format((float)($product->sale_price_per_piece ?: $product->sale_price_per_box ?: 0)) }}</div>

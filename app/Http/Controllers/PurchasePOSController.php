@@ -92,6 +92,13 @@ class PurchasePOSController extends Controller
                 $variantItems = [];
                 $totalStockPieces = 0;
 
+                $adjList = DB::table('stock_movements')
+                    ->where('product_id', $p->id)
+                    ->where('type', 'adjustment')
+                    ->whereNotIn('ref_type', ['INIT'])
+                    ->select('qty', 'note')
+                    ->get();
+
                 foreach ($variants as $v) {
                     $size = (isset($v['size']) && $v['size'] !== '-') ? " {$v['size']}" : '';
                     $color = (isset($v['color']) && $v['color'] !== '-') ? " ({$v['color']})" : '';
@@ -140,7 +147,15 @@ class PurchasePOSController extends Controller
                         }
                     }
 
-                    $vBalance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned);
+                    // Calculate Adjustments
+                    $adjustments = 0;
+                    foreach ($adjList as $adjItem) {
+                        if ($this->matchAdjustmentToVariant($adjItem, $v)) {
+                            $adjustments += (float) $adjItem->qty;
+                        }
+                    }
+
+                    $vBalance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned + $adjustments);
                     $totalStockPieces += $vBalance;
 
                     $vStockDisplay = $vBalance;
@@ -438,5 +453,57 @@ class PurchasePOSController extends Controller
         if ($itemVSize === '') $itemVSize = '-';
 
         return $vColor === $itemVColor && $vSize === $itemVSize;
+    }
+
+    private function matchAdjustmentToVariant($adjItem, $variant)
+    {
+        $note = strtolower($adjItem->note ?? '');
+        if (empty($note)) {
+            return false;
+        }
+
+        $vName  = strtolower(trim($variant['name'] ?? ''));
+        $vSize  = strtolower(trim($variant['size'] ?? '-'));
+        $vColor = strtolower(trim($variant['color'] ?? '-'));
+
+        // 1. If note contains explicit Variant name: "Variant: <name>"
+        if (preg_match('/variant:\s*([^|\(]+)/i', $note, $matches)) {
+            $noteVariantName = strtolower(trim($matches[1]));
+            if (!empty($vName) && $noteVariantName !== $vName) {
+                return false;
+            }
+            if (!empty($vName) && $noteVariantName === $vName) {
+                $sizeMatch = true;
+                if ($vSize !== '-' && !empty($vSize)) {
+                    $sizeMatch = preg_match('/\b' . preg_quote($vSize, '/') . '\b/i', $note) === 1;
+                }
+                $colorMatch = true;
+                if ($vColor !== '-' && !empty($vColor)) {
+                    $colorMatch = preg_match('/\b' . preg_quote($vColor, '/') . '\b/i', $note) === 1;
+                }
+                return $sizeMatch && $colorMatch;
+            }
+        }
+
+        // 2. If size or color is specified on variant, match against note
+        $hasSpecificAttributes = ($vSize !== '-' && !empty($vSize)) || ($vColor !== '-' && !empty($vColor));
+        if ($hasSpecificAttributes) {
+            $sizeMatch = true;
+            if ($vSize !== '-' && !empty($vSize)) {
+                $sizeMatch = preg_match('/\b' . preg_quote($vSize, '/') . '\b/i', $note) === 1;
+            }
+            $colorMatch = true;
+            if ($vColor !== '-' && !empty($vColor)) {
+                $colorMatch = preg_match('/\b' . preg_quote($vColor, '/') . '\b/i', $note) === 1;
+            }
+            return $sizeMatch && $colorMatch;
+        }
+
+        // 3. If variant has no size and no color, check if the variant name appears in the note
+        if (!empty($vName)) {
+            return preg_match('/\b' . preg_quote($vName, '/') . '\b/i', $note) === 1;
+        }
+
+        return false;
     }
 }

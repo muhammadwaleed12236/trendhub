@@ -418,7 +418,7 @@ $(document).ready(function() {
             totalValue += parseFloat(row.stock_value) || 0;
 
             let historyBtn = `
-                <button type="button" class="btn btn-outline-primary btn-sm view-history-btn" data-id="${row.id}" data-name="${row.item_name}" style="padding:2px 7px; font-size:.75rem;">
+                <button type="button" class="btn btn-outline-primary btn-sm view-history-btn" data-id="${row.id}" data-name="${row.item_name}" data-initial="${row.initial_stock}" style="padding:2px 7px; font-size:.75rem;">
                     <i class="fas fa-history"></i>
                 </button>
             `;
@@ -500,14 +500,23 @@ $(document).ready(function() {
     $(document).on('click', '.view-history-btn', function () {
         let productId = $(this).data('id');
         let productName = $(this).data('name');
+        let initialStock = $(this).data('initial');
 
         $('#productHistoryModalLabel').html('<i class="fas fa-history text-primary me-2"></i>Movement Timeline: ' + productName);
         let tbody = $('#historyModalBody');
         tbody.html('<tr><td colspan="5" class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading movement history...</td></tr>');
         $('#productHistoryModal').modal('show');
 
+        let url = "/report/item-stock-history/" + productId;
+        let params = [];
+        if (productName) params.push('variant_name=' + encodeURIComponent(productName));
+        if (initialStock !== undefined && initialStock !== null && initialStock !== '') {
+            params.push('initial_stock=' + encodeURIComponent(initialStock));
+        }
+        if (params.length > 0) url += '?' + params.join('&');
+
         $.ajax({
-            url: "/report/item-stock-history/" + productId,
+            url: url,
             type: "GET",
             success: function (res) {
                 tbody.empty();

@@ -179,7 +179,8 @@ class ReportingController extends Controller
                 // Fetch Stock Adjustments
                 $adjQuery = DB::table('stock_movements')
                     ->where('product_id', $product->id)
-                    ->where('type', 'adjustment');
+                    ->where('type', 'adjustment')
+                    ->whereNotIn('ref_type', ['INIT']);
                 if ($warehouseId && $warehouseId !== 'all') {
                     $adjQuery->where('note', 'like', "%Warehouse #{$warehouseId}%");
                 }
@@ -388,7 +389,8 @@ class ReportingController extends Controller
                 // Stock Adjustments
                 $adjQuery = DB::table('stock_movements')
                     ->where('product_id', $product->id)
-                    ->where('type', 'adjustment');
+                    ->where('type', 'adjustment')
+                    ->whereNotIn('ref_type', ['INIT']);
                 if ($warehouseId && $warehouseId !== 'all') {
                     $adjQuery->where('note', 'like', "%Warehouse #{$warehouseId}%");
                 }
@@ -478,15 +480,66 @@ class ReportingController extends Controller
     public function fetchProductHistory(Request $request, $productId)
     {
         $product = Product::findOrFail($productId);
+        $variantParam = trim($request->query('variant_name', ''));
+        $initialStockParam = $request->query('initial_stock');
+
+        $variants = json_decode($product->color, true) ?: [];
+        $hasVariants = count($variants) > 0;
+
+        // Extract clean variant name without (size | color)
+        $cleanVariantName = $variantParam;
+        if (preg_match('/^([^(]+)/', $variantParam, $vm)) {
+            $cleanVariantName = trim($vm[1]);
+        }
+
+        $matchedVariantStock = null;
+        if ($hasVariants && !empty($cleanVariantName)) {
+            foreach ($variants as $v) {
+                $vName = $v['name'] ?? $product->item_name;
+                $vSize = $v['size'] ?? '-';
+                $vColor = $v['color'] ?? '-';
+                $full = $vName . ' (' . $vSize . ' | ' . $vColor . ')';
+                if (strtolower($full) === strtolower($variantParam) || strtolower($vName) === strtolower($cleanVariantName)) {
+                    $matchedVariantStock = (float)($v['stock'] ?? 0);
+                    break;
+                }
+            }
+        }
+        if ($matchedVariantStock === null && $initialStockParam !== null && $initialStockParam !== '') {
+            $matchedVariantStock = (float)$initialStockParam;
+        }
 
         $movements = DB::table('stock_movements')
             ->where('product_id', $productId)
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($m) {
+            ->filter(function ($m) use ($hasVariants, $cleanVariantName) {
+                if (!$hasVariants || empty($cleanVariantName)) {
+                    return true;
+                }
+                $note = strtolower($m->note ?? '');
+                if (preg_match('/variant:\s*([^|\(]+)/i', $note, $matches)) {
+                    $noteVar = strtolower(trim($matches[1]));
+                    if (!empty($noteVar) && stripos($cleanVariantName, $noteVar) === false && stripos($noteVar, $cleanVariantName) === false) {
+                        return false;
+                    }
+                }
+                return true;
+            })
+            ->map(function ($m) use ($hasVariants, $matchedVariantStock) {
                 $typeBadge = 'info';
                 $typeLabel = strtoupper($m->type);
-                if ($m->type === 'in' || $m->type === 'assembly_in') {
+                $qty = (float) $m->qty;
+                $note = $m->note ?: 'N/A';
+
+                if ($m->ref_type === 'INIT') {
+                    $typeBadge = 'primary';
+                    $typeLabel = 'INITIAL STOCK (+)';
+                    if ($hasVariants && $matchedVariantStock !== null) {
+                        $note = "Initial Stock (Variant: " . (float)$matchedVariantStock . " Units | Total Product: " . (float)$qty . " Units)";
+                        $qty = (float)$matchedVariantStock;
+                    }
+                } elseif ($m->type === 'in' || $m->type === 'assembly_in') {
                     $typeBadge = 'success';
                     $typeLabel = 'INWARD (+)';
                 } elseif ($m->type === 'out' || $m->type === 'assembly_out') {
@@ -502,15 +555,16 @@ class ReportingController extends Controller
                     'date'        => date('d M Y h:i A', strtotime($m->created_at)),
                     'type'        => $typeLabel,
                     'type_badge'  => $typeBadge,
-                    'qty'         => (float) $m->qty,
+                    'qty'         => $qty,
                     'ref_type'    => $m->ref_type ?: 'GENERAL',
-                    'note'        => $m->note ?: 'N/A',
+                    'note'        => $note,
                 ];
-            });
+            })
+            ->values();
 
         return response()->json([
             'success'      => true,
-            'product_name' => $product->item_name,
+            'product_name' => !empty($variantParam) ? $variantParam : $product->item_name,
             'item_code'    => $product->item_code,
             'history'      => $movements
         ]);
@@ -2507,7 +2561,7 @@ class ReportingController extends Controller
     }
 
     /**
-     * Match a stock adjustment note to a specific variant based on size and color.
+     * Match a stock adjustment note to a specific variant based on variant name, size, and color.
      */
     private function matchAdjustmentToVariant($adjItem, $variant)
     {
@@ -2516,23 +2570,49 @@ class ReportingController extends Controller
             return false;
         }
 
+        $vName  = strtolower(trim($variant['name'] ?? ''));
         $vSize  = strtolower(trim($variant['size'] ?? '-'));
         $vColor = strtolower(trim($variant['color'] ?? '-'));
-        $vName  = strtolower(trim($variant['name'] ?? ''));
 
-        $sizeMatch = true;
-        if ($vSize !== '-' && !empty($vSize)) {
-            $pattern = '/\b' . preg_quote($vSize, '/') . '\b/i';
-            $sizeMatch = preg_match($pattern, $note) === 1;
+        // 1. If note contains explicit Variant name: "Variant: <name>"
+        if (preg_match('/variant:\s*([^|\(]+)/i', $note, $matches)) {
+            $noteVariantName = strtolower(trim($matches[1]));
+            if (!empty($vName) && $noteVariantName !== $vName) {
+                return false;
+            }
+            if (!empty($vName) && $noteVariantName === $vName) {
+                $sizeMatch = true;
+                if ($vSize !== '-' && !empty($vSize)) {
+                    $sizeMatch = preg_match('/\b' . preg_quote($vSize, '/') . '\b/i', $note) === 1;
+                }
+                $colorMatch = true;
+                if ($vColor !== '-' && !empty($vColor)) {
+                    $colorMatch = preg_match('/\b' . preg_quote($vColor, '/') . '\b/i', $note) === 1;
+                }
+                return $sizeMatch && $colorMatch;
+            }
         }
 
-        $colorMatch = true;
-        if ($vColor !== '-' && !empty($vColor)) {
-            $pattern = '/\b' . preg_quote($vColor, '/') . '\b/i';
-            $colorMatch = preg_match($pattern, $note) === 1;
+        // 2. If size or color is specified on variant, match against note
+        $hasSpecificAttributes = ($vSize !== '-' && !empty($vSize)) || ($vColor !== '-' && !empty($vColor));
+        if ($hasSpecificAttributes) {
+            $sizeMatch = true;
+            if ($vSize !== '-' && !empty($vSize)) {
+                $sizeMatch = preg_match('/\b' . preg_quote($vSize, '/') . '\b/i', $note) === 1;
+            }
+            $colorMatch = true;
+            if ($vColor !== '-' && !empty($vColor)) {
+                $colorMatch = preg_match('/\b' . preg_quote($vColor, '/') . '\b/i', $note) === 1;
+            }
+            return $sizeMatch && $colorMatch;
         }
 
-        return $sizeMatch && $colorMatch;
+        // 3. If variant has no size and no color, check if the variant name appears in the note
+        if (!empty($vName)) {
+            return preg_match('/\b' . preg_quote($vName, '/') . '\b/i', $note) === 1;
+        }
+
+        return false;
     }
 
     /**
