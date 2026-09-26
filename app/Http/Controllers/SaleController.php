@@ -175,6 +175,194 @@ class SaleController extends Controller
         return response()->json($products);
     }
 
+    public function scanBarcode(Request $request)
+    {
+        $barcode = trim($request->get('barcode', ''));
+        if ($barcode === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please provide a barcode.'
+            ], 422);
+        }
+
+        $warehouseId = $request->get('warehouse_id', 1);
+
+        // Find active products matching barcode in variant color JSON, barcode_path, or item_code
+        $products = Product::where('is_active', true)
+            ->where(function ($q) use ($barcode) {
+                $q->where('color', 'like', "%{$barcode}%")
+                    ->orWhere('barcode_path', $barcode)
+                    ->orWhere('item_code', $barcode);
+            })
+            ->with(['unit'])
+            ->withSum('warehouseStocks', 'total_pieces')
+            ->get();
+
+        if ($products->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => "Barcode [{$barcode}] not found in database."
+            ]);
+        }
+
+        $matchedProduct = null;
+        $matchedVariant = null;
+
+        // 1. First priority: Check exact variant barcode match
+        foreach ($products as $p) {
+            $variants = [];
+            if ($p->color) {
+                try {
+                    $parsed = is_string($p->color) ? json_decode($p->color, true) : $p->color;
+                    if (is_array($parsed) && count($parsed) > 0 && isset($parsed[0]['name'])) {
+                        $variants = $parsed;
+                    }
+                } catch (\Exception $e) {}
+            }
+
+            if (!empty($variants)) {
+                foreach ($variants as $v) {
+                    if (isset($v['barcode']) && trim((string)$v['barcode']) !== '' && trim((string)$v['barcode']) === (string)$barcode) {
+                        $matchedProduct = $p;
+                        $matchedVariant = $v;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        // 2. Second priority: If no specific variant barcode matched, check product barcode_path or item_code
+        if (!$matchedProduct) {
+            foreach ($products as $p) {
+                if ((string)$p->barcode_path === (string)$barcode || (string)$p->item_code === (string)$barcode) {
+                    $matchedProduct = $p;
+                    $variants = [];
+                    if ($p->color) {
+                        try {
+                            $parsed = is_string($p->color) ? json_decode($p->color, true) : $p->color;
+                            if (is_array($parsed) && count($parsed) > 0 && isset($parsed[0]['name'])) {
+                                $variants = $parsed;
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                    if (!empty($variants)) {
+                        foreach ($variants as $v) {
+                            if (!empty($v['is_base_variant'])) {
+                                $matchedVariant = $v;
+                                break;
+                            }
+                        }
+                        if (!$matchedVariant) {
+                            $matchedVariant = $variants[0];
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (!$matchedProduct) {
+            return response()->json([
+                'success' => false,
+                'message' => "No exact product match found for barcode [{$barcode}]."
+            ]);
+        }
+
+        $stockPieces = (float) ($matchedProduct->warehouse_stocks_sum_total_pieces ?? 0);
+        $ppb = $matchedProduct->pieces_per_box > 0 ? (float)$matchedProduct->pieces_per_box : 1;
+
+        $unitName = $matchedProduct->unit->name ?? match($matchedProduct->size_mode) {
+            'by_kg' => 'Kg',
+            'by_gm' => 'Gm',
+            'by_ton' => 'Ton',
+            'by_meter' => 'Meter',
+            'by_feet' => 'Ft',
+            'by_cartons' => 'Carton',
+            'by_size' => 'M²',
+            default => 'Pcs',
+        };
+
+        if ($matchedVariant) {
+            // Live variant stock computation
+            $computedList = app(ProductController::class)->computeVariantsWithAvailableStock($matchedProduct, [$matchedVariant]);
+            $computedV = $computedList[0] ?? $matchedVariant;
+
+            $vStockDisplay = $computedV['available_stock'] ?? ($computedV['stock'] ?? 0);
+            $vBalance = (float)($computedV['stock'] ?? 0);
+            $vUnitName = $computedV['unit'] ?? $unitName;
+
+            $size = (isset($computedV['size']) && $computedV['size'] !== '-') ? " {$computedV['size']}" : '';
+            $color = (isset($computedV['color']) && $computedV['color'] !== '-') ? " ({$computedV['color']})" : '';
+            $vName = ($computedV['name'] ?? $matchedProduct->item_name) . $size . $color;
+
+            $computedV['current_stock'] = $vStockDisplay;
+            $variantJson = json_encode($computedV);
+            $variantData = base64_encode($variantJson);
+
+            return response()->json([
+                'success' => true,
+                'is_variant' => true,
+                'id' => $matchedProduct->id . '|variant|' . $variantData,
+                'product_id' => $matchedProduct->id,
+                'text' => $vName . " (SKU: {$matchedProduct->item_code})",
+                'sku' => $matchedProduct->item_code ?? '',
+                'name' => $vName,
+                'stock' => $vStockDisplay,
+                'stock_pieces' => $vBalance,
+                'size_mode' => $matchedProduct->size_mode,
+                'unit_name' => $vUnitName,
+                'pieces_per_box' => $ppb,
+                'ppb' => $ppb,
+                'trade_price' => (float)($computedV['purch_price'] ?? ($matchedProduct->purchase_price_per_piece ?? 0)),
+                'retail_price' => (float)($computedV['sale_price'] ?? ($matchedProduct->sale_price_per_piece ?? 0)),
+                'wholesale_price' => (float)($computedV['wholesale_price'] ?? ($matchedProduct->wholesale_price ?? 0)),
+                'weight_per_piece' => (float)($computedV['weight_per_piece'] ?? ($matchedProduct->weight_per_piece ?? 0)),
+                'height' => $matchedProduct->height ?? '-',
+                'width' => $matchedProduct->width ?? '-',
+                'sale_discount_percent' => (float)($matchedProduct->sale_discount_percent ?? 0),
+                'variant_data' => $variantData,
+                'variant_size' => (isset($computedV['size']) && $computedV['size'] !== '-') ? $computedV['size'] : '-',
+                'variant_color' => (isset($computedV['color']) && $computedV['color'] !== '-') ? $computedV['color'] : '-',
+                'variant_stock' => $vStockDisplay,
+            ]);
+        }
+
+        // Simple product without variants
+        $stockDisplay = $stockPieces;
+        if (($matchedProduct->size_mode === 'by_cartons' || $matchedProduct->size_mode === 'by_size') && $ppb > 1) {
+            $boxes = floor($stockPieces / $ppb);
+            $loose = $stockPieces % $ppb;
+            $stockDisplay = $loose > 0 ? "$boxes.$loose" : (string)$boxes;
+        }
+
+        return response()->json([
+            'success' => true,
+            'is_variant' => false,
+            'id' => (string)$matchedProduct->id,
+            'product_id' => $matchedProduct->id,
+            'text' => $matchedProduct->item_name . " (SKU: {$matchedProduct->item_code})",
+            'sku' => $matchedProduct->item_code ?? '',
+            'name' => $matchedProduct->item_name,
+            'stock' => $stockDisplay,
+            'stock_pieces' => $stockPieces,
+            'size_mode' => $matchedProduct->size_mode,
+            'unit_name' => $unitName,
+            'pieces_per_box' => $ppb,
+            'ppb' => $ppb,
+            'trade_price' => (float)($matchedProduct->purchase_price_per_piece ?? 0),
+            'retail_price' => (float)($matchedProduct->sale_price_per_piece ?? 0),
+            'wholesale_price' => (float)($matchedProduct->wholesale_price ?? 0),
+            'weight_per_piece' => (float)($matchedProduct->weight_per_piece ?? 0),
+            'height' => $matchedProduct->height ?? '-',
+            'width' => $matchedProduct->width ?? '-',
+            'sale_discount_percent' => (float)($matchedProduct->sale_discount_percent ?? 0),
+            'variant_data' => '',
+            'variant_size' => '-',
+            'variant_color' => '-',
+            'variant_stock' => $stockDisplay,
+        ]);
+    }
+
     public function store(Request $request)
     {
         return $this->processSale($request, new Sale);

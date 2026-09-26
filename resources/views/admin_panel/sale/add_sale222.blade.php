@@ -629,6 +629,20 @@
                                         <i class="fas fa-th me-1"></i>Quick Products Panel
                                     </button>
                                 </div>
+
+                                <!-- BARCODE SCANNER INPUT -->
+                                <div class="d-flex align-items-center" style="min-width: 260px; max-width: 380px; flex: 1;">
+                                    <div class="input-group input-group-sm shadow-sm" style="border-radius: 20px; overflow: hidden; border: 1.5px solid #2563eb;">
+                                        <span class="input-group-text bg-primary text-white border-0 px-2" title="Barcode Scanner Active">
+                                            <i class="fas fa-barcode"></i>
+                                        </span>
+                                        <input type="text" id="barcodeScannerInput" class="form-control border-0 fw-bold text-dark px-2" placeholder="Scan Barcode (Variant / SKU)..." autocomplete="off" autofocus style="font-size: 0.82rem; background: #f8fafc;">
+                                        <button class="btn btn-light border-0 text-muted px-2" type="button" id="btnClearBarcode" title="Clear Barcode Input">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <div class="d-flex gap-1">
                                     <button type="button" class="btn btn-outline-success btn-sm py-1 px-3 rounded-pill fw-bold" data-bs-toggle="modal" data-bs-target="#quickAddProductModal" style="font-size:0.75rem;">
                                         <i class="fas fa-bolt text-warning me-1"></i>Create Product

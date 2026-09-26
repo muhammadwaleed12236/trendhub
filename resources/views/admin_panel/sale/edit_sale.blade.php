@@ -683,9 +683,25 @@
 
                 <!-- Items Section full width -->
                 <div class="p-1 border bg-white mt-1" style="border-radius:3px;">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-2">
                         <div class="section-title mb-0" style="font-size:0.7rem;">Items</div>
-                        <button type="button" class="btn btn-primary py-0 px-1" id="btnAdd" style="font-size:0.7rem; height:20px; line-height:18px;">+Row</button>
+
+                        <!-- BARCODE SCANNER INPUT -->
+                        <div class="d-flex align-items-center" style="min-width: 250px; max-width: 350px; flex: 1;">
+                            <div class="input-group input-group-sm shadow-sm" style="border-radius: 20px; overflow: hidden; border: 1.5px solid #2563eb;">
+                                <span class="input-group-text bg-primary text-white border-0 px-2" title="Barcode Scanner Active" style="font-size: 0.75rem;">
+                                    <i class="fas fa-barcode"></i>
+                                </span>
+                                <input type="text" id="barcodeScannerInput" class="form-control border-0 fw-bold text-dark px-2" placeholder="Scan Barcode (Variant / SKU)..." autocomplete="off" autofocus style="font-size: 0.78rem; height: 26px; background: #f8fafc;">
+                                <button class="btn btn-light border-0 text-muted px-2" type="button" id="btnClearBarcode" title="Clear Barcode Input" style="height: 26px;">
+                                    <i class="fas fa-times" style="font-size: 0.7rem;"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-primary py-0 px-2 fw-bold" id="btnAdd" style="font-size:0.72rem; height:24px; line-height:22px; border-radius: 4px;">
+                            <i class="fas fa-plus me-1"></i>Row
+                        </button>
                     </div>
 
                         <div class="table-responsive">

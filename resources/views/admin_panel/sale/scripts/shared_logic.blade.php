@@ -1444,6 +1444,242 @@
             }
         });
 
+        /* =========================================
+           BARCODE SCANNER INTEGRATION (Variant / Product)
+           ========================================= */
+        function playScanBeep(type = 'success') {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const audioCtx = new AudioContext();
+
+                if (type === 'success') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.12);
+                } else {
+                    // Double low-frequency beep for error
+                    [0, 0.14].forEach(delay => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(320, audioCtx.currentTime + delay);
+                        gain.gain.setValueAtTime(0.2, audioCtx.currentTime + delay);
+                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + 0.12);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(audioCtx.currentTime + delay);
+                        osc.stop(audioCtx.currentTime + delay + 0.12);
+                    });
+                }
+            } catch (e) {
+                // AudioContext not permitted or supported
+            }
+        }
+
+        function flashRowHighlight($row) {
+            $row.addClass('table-success');
+            $row.css('transition', 'background-color 0.4s ease');
+            setTimeout(() => {
+                $row.removeClass('table-success');
+            }, 1000);
+        }
+
+        function showScanToast(msg, type = 'success') {
+            if (typeof Swal !== 'undefined') {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2200,
+                    timerProgressBar: true
+                });
+                Toast.fire({
+                    icon: type,
+                    title: msg
+                });
+            } else if (typeof showAlert === 'function') {
+                showAlert(type === 'success' ? 'success' : 'error', msg);
+            }
+        }
+
+        function addProductDataToCart(item) {
+            if (!item || !item.product_id) return;
+
+            // 1. Check if this exact variant or product is already in the cart table
+            let $existingRow = null;
+            $('#salesTableBody tr').each(function() {
+                const $r = $(this);
+                const pid = $r.find('.product-id-hidden').val();
+                const vdata = $r.find('.variant-data-hidden').val();
+
+                if (item.is_variant) {
+                    if (pid == item.product_id && vdata == item.variant_data) {
+                        $existingRow = $r;
+                        return false;
+                    }
+                } else {
+                    if (pid == item.product_id && (!vdata || vdata === '')) {
+                        $existingRow = $r;
+                        return false;
+                    }
+                }
+            });
+
+            // 2. If row exists, simply increment quantity (+1)
+            if ($existingRow && $existingRow.length) {
+                let curQty = parseFloat($existingRow.find('.carton-qty').val()) || 0;
+                curQty += 1;
+                $existingRow.find('.carton-qty').val(curQty);
+                computeRow($existingRow);
+                flashRowHighlight($existingRow);
+                playScanBeep('success');
+                showScanToast((item.name || 'Item') + ' (Qty: ' + curQty + ')', 'success');
+                return;
+            }
+
+            // 3. If row does not exist, find an empty row or append a new row
+            let $targetRow = null;
+            const $lastRow = $('#salesTableBody tr:last');
+            if ($lastRow.length && !$lastRow.find('.product-id-hidden').val() && !$lastRow.find('.product').val()) {
+                $targetRow = $lastRow;
+            } else {
+                addNewRow();
+                $targetRow = $('#salesTableBody tr:last');
+            }
+
+            // Set Select2 option and trigger
+            const $select = $targetRow.find('.product');
+            if ($select.find(`option[value="${item.id}"]`).length === 0) {
+                $select.append(new Option(item.text, item.id, true, true));
+            } else {
+                $select.val(item.id);
+            }
+            $select.trigger('change.select2');
+
+            // Set hidden and display values
+            $targetRow.find('.product-id-hidden').val(item.product_id);
+            $targetRow.find('.variant-data-hidden').val(item.variant_data || '');
+            $targetRow.find('.size-display').val(item.variant_size || '-');
+            $targetRow.find('.color-display').val(item.variant_color || '-');
+
+            if (item.variant_stock !== null && item.variant_stock !== undefined) {
+                $targetRow.find('.variant-stock-value').val(item.variant_stock);
+                $targetRow.find('.stock').val(item.variant_stock);
+            } else {
+                $targetRow.find('.variant-stock-value').val('');
+                $targetRow.find('.stock').val(item.stock || 0);
+            }
+
+            loadWarehousesForProduct($targetRow, item.product_id);
+
+            $targetRow.find('.item-code-display').val(item.sku || '');
+            $targetRow.find('.retail-price').val(item.retail_price || 0);
+            $targetRow.find('.wholesale-price').val(item.wholesale_price || 0);
+            $targetRow.find('.weight-per-piece').val(item.weight_per_piece || 0);
+
+            let rowMode = $targetRow.find('.price-mode-row-toggle').attr('data-mode') || lastSelectedPriceMode || 'retail';
+            let wsPrice = parseFloat(item.wholesale_price) || 0;
+            let rate = (rowMode === 'wholesale' && wsPrice > 0) ? wsPrice : (item.retail_price || 0);
+
+            $targetRow.find('.visible-price').val(rate);
+            $targetRow.find('.pack-qty').val(item.pieces_per_box || 1);
+            $targetRow.find('.price-per-piece').val(rate);
+
+            $targetRow.find('.size-h').val(item.height || '-');
+            $targetRow.find('.size-w').val(item.width || '-');
+            $targetRow.find('.size-mode-text').val(item.size_mode || '-');
+            $targetRow.find('.discount-value').val(item.sale_discount_percent || 0);
+
+            $targetRow.data('size_mode', item.size_mode);
+            $targetRow.data('pieces_per_box', item.pieces_per_box || 1);
+
+            setupRowQtyToggle($targetRow, item.size_mode);
+
+            // Default Qty = 1
+            $targetRow.find('.carton-qty').val(1);
+
+            computeRow($targetRow);
+            flashRowHighlight($targetRow);
+            playScanBeep('success');
+            showScanToast((item.name || 'Item') + ' Added to Cart', 'success');
+        }
+
+        let isBarcodeScanning = false;
+        function executeBarcodeScan(code) {
+            code = (code || '').trim();
+            if (!code || isBarcodeScanning) return;
+
+            isBarcodeScanning = true;
+            const $input = $('#barcodeScannerInput');
+            $input.prop('disabled', true);
+
+            const currentWarehouse = $('#warehouseSelect').val() || $('select[name="warehouse_id"]').val() || 1;
+
+            $.ajax({
+                url: '{{ route('sales.scan_barcode') }}',
+                type: 'POST',
+                data: {
+                    barcode: code,
+                    warehouse_id: currentWarehouse
+                },
+                success: function(res) {
+                    if (res && res.success) {
+                        addProductDataToCart(res);
+                        $input.val('');
+                    } else {
+                        playScanBeep('error');
+                        showScanToast(res.message || ('Barcode [' + code + '] not found!'), 'error');
+                        $input.select();
+                    }
+                },
+                error: function(xhr) {
+                    playScanBeep('error');
+                    const errMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error scanning barcode';
+                    showScanToast(errMsg, 'error');
+                    $input.select();
+                },
+                complete: function() {
+                    isBarcodeScanning = false;
+                    $input.prop('disabled', false).focus();
+                }
+            });
+        }
+
+        // Listener on Enter key from Scanner
+        $(document).on('keydown', '#barcodeScannerInput', function(e) {
+            if (e.which === 13 || e.keyCode === 13) {
+                e.preventDefault();
+                executeBarcodeScan($(this).val());
+            }
+        });
+
+        $(document).on('click', '#btnClearBarcode', function() {
+            $('#barcodeScannerInput').val('').focus();
+        });
+
+        // F2 Keyboard Shortcut to quickly focus Barcode input
+        $(document).on('keydown', function(e) {
+            if (e.key === 'F2') {
+                e.preventDefault();
+                $('#barcodeScannerInput').focus().select();
+            }
+        });
+
+        // Auto-focus barcode input on initial page load
+        setTimeout(function() {
+            if ($('#barcodeScannerInput').length) {
+                $('#barcodeScannerInput').focus();
+            }
+        }, 400);
+
         // Initialize Posted Button State
         refreshPostedState();
     }); // Close $(document).ready

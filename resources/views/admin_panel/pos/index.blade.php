@@ -565,9 +565,26 @@
             
             <!-- LEFT PANEL: Products Grid -->
             <div class="pos-products-panel">
-                <div class="pos-search-box">
-                    <input type="text" id="posSearch" placeholder="Search base product by name or code...">
-                    <i class="fas fa-search pos-search-icon"></i>
+                <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+                    <!-- Fast Barcode Scanner Input -->
+                    <div style="flex: 1.2; min-width: 280px;">
+                        <div class="input-group shadow-sm" style="border-radius: 999px; overflow: hidden; border: 2px solid #4f46e5;">
+                            <span class="input-group-text bg-primary text-white border-0 px-3" title="Barcode Scanner Active">
+                                <i class="fas fa-barcode fs-5"></i>
+                            </span>
+                            <input type="text" id="posBarcodeScannerInput" class="form-control border-0 fw-bold px-2 py-2" placeholder="Scan Barcode (Variant / Product)..." autocomplete="off" autofocus style="background: #f8fafc; font-size: 14px;">
+                            <button class="btn btn-light border-0 text-muted px-3" type="button" id="btnClearPosBarcode" title="Clear Barcode">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Search base product by name or code -->
+                    <div style="flex: 1; min-width: 220px;">
+                        <div class="pos-search-box mb-0">
+                            <input type="text" id="posSearch" placeholder="Search grid by name/code...">
+                            <i class="fas fa-search pos-search-icon"></i>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="pos-grid-container">
@@ -908,9 +925,37 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- REPLACEMENT PRODUCT SCANNER SECTION -->
+                <div class="mt-3 p-2 px-3 rounded-3 border" style="background-color: #f0fdf4 !important; border-color: #22c55e !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label fw-bold text-success mb-0 d-flex align-items-center" style="font-size: 13px;">
+                            <i class="fas fa-barcode me-2 fs-5"></i> Scan Replacement / New Product Barcode:
+                        </label>
+                        <span class="badge bg-success text-white px-2 py-1" style="font-size: 10px;">Replacement Scanner</span>
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-success text-white border-success">
+                            <i class="fas fa-barcode"></i>
+                        </span>
+                        <input type="text" id="exchangeModalBarcodeScanner" class="form-control border-success fw-bold text-dark" placeholder="Scan replacement product barcode here..." autocomplete="off">
+                        <button class="btn btn-success fw-bold px-3" type="button" id="btnExchangeModalScanAdd">
+                            <i class="fas fa-plus me-1"></i> Add New Item
+                        </button>
+                    </div>
+                    <small class="text-muted d-block mt-1" style="font-size: 11px;">
+                        <i class="fas fa-info-circle text-success me-1"></i> New product ka barcode scan karein, wo foran cart mein replacement item ke tor par add ho jayega.
+                    </small>
+                </div>
             </div>
-            <div class="modal-footer py-2">
-                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+            <div class="modal-footer py-2 d-flex justify-content-between align-items-center">
+                <span class="text-muted small"><i class="fas fa-keyboard me-1"></i> Press <strong>F2</strong> to focus scanner</span>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success btn-sm px-3 fw-bold" id="btnExchangeDoneScanNew">
+                        <i class="fas fa-barcode me-1"></i> Done & Scan Replacement Item
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -2138,6 +2183,31 @@
                 },
                 error: function(err) {
                     $btn.prop('disabled', false).html('<i class="fas fa-search"></i> Search');
+                    let enteredVal = invNo.trim();
+                    // If user scanned a product barcode instead of invoice number:
+                    if (/^\d{5,18}$/.test(enteredVal)) {
+                        $.post('{{ route("sales.scan_barcode") }}', { barcode: enteredVal, _token: '{{ csrf_token() }}' }, function(pRes) {
+                            if (pRes && pRes.success) {
+                                $('#posExchangeModal').modal('hide');
+                                executePosBarcodeScan(enteredVal);
+                                return;
+                            } else {
+                                let msg = 'Invoice details could not be loaded.';
+                                if (err.responseJSON && err.responseJSON.error) {
+                                    msg = err.responseJSON.error;
+                                }
+                                Swal.fire('Error', msg, 'error');
+                            }
+                        }).fail(function() {
+                            let msg = 'Invoice details could not be loaded.';
+                            if (err.responseJSON && err.responseJSON.error) {
+                                msg = err.responseJSON.error;
+                            }
+                            Swal.fire('Error', msg, 'error');
+                        });
+                        return;
+                    }
+
                     let msg = 'Invoice details could not be loaded.';
                     if (err.responseJSON && err.responseJSON.error) {
                         msg = err.responseJSON.error;
@@ -2204,6 +2274,20 @@
             }, 1000);
 
             renderCart();
+
+            // Auto-focus the replacement barcode scanner input
+            setTimeout(() => {
+                $('#exchangeModalBarcodeScanner').focus();
+            }, 200);
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Return item added! Ab replacement item ka barcode scan karein.',
+                showConfirmButton: false,
+                timer: 3000
+            });
         });
 
         // Auto-load Edit Sale data if present
@@ -2255,6 +2339,199 @@
                 });
             }
         @endif
+
+        /* =========================================
+           POS BARCODE SCANNER INTEGRATION
+           ========================================= */
+        function playPosScanBeep(type = 'success') {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const audioCtx = new AudioContext();
+
+                if (type === 'success') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.12);
+                } else {
+                    [0, 0.14].forEach(delay => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(320, audioCtx.currentTime + delay);
+                        gain.gain.setValueAtTime(0.2, audioCtx.currentTime + delay);
+                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + 0.12);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(audioCtx.currentTime + delay);
+                        osc.stop(audioCtx.currentTime + delay + 0.12);
+                    });
+                }
+            } catch (e) {}
+        }
+
+        let isPosBarcodeScanning = false;
+        function executePosBarcodeScan(code) {
+            code = (code || '').trim();
+            if (!code || isPosBarcodeScanning) return;
+
+            isPosBarcodeScanning = true;
+            const $input = $('#posBarcodeScannerInput');
+            $input.prop('disabled', true);
+
+            $.ajax({
+                url: '{{ route('sales.scan_barcode') }}',
+                type: 'POST',
+                data: {
+                    barcode: code,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(res) {
+                    if (res && res.success) {
+                        let activePriceMode = $('input[name="pos_price_mode"]:checked').val() || 'retail';
+                        let price = (activePriceMode === 'wholesale' && res.wholesale_price > 0) ? res.wholesale_price : res.retail_price;
+
+                        let stockPieces = parseFloat(res.stock_pieces) || 0;
+                        if (stockPieces <= 0) {
+                            playPosScanBeep('error');
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'warning',
+                                title: `${res.name} is Out of Stock!`,
+                                showConfirmButton: false,
+                                timer: 2500
+                            });
+                            $input.select();
+                            return;
+                        }
+
+                        // Add to cart directly
+                        addToCart(
+                            res.id,
+                            res.name,
+                            price,
+                            stockPieces,
+                            1,
+                            res.size_mode,
+                            res.pieces_per_box || 1,
+                            res.variant_data || '',
+                            res.retail_price || price,
+                            res.wholesale_price || 0,
+                            res.weight_per_piece || 0
+                        );
+
+                        playPosScanBeep('success');
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: `${res.name} added to cart`,
+                            showConfirmButton: false,
+                            timer: 2000
+                        });
+                        $input.val('');
+                    } else {
+                        playPosScanBeep('error');
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'error',
+                            title: res.message || `Barcode [${code}] not found!`,
+                            showConfirmButton: false,
+                            timer: 2500
+                        });
+                        $input.select();
+                    }
+                },
+                error: function(xhr) {
+                    playPosScanBeep('error');
+                    let errMsg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error scanning barcode';
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: errMsg,
+                        showConfirmButton: false,
+                        timer: 2500
+                    });
+                    $input.select();
+                },
+                complete: function() {
+                    isPosBarcodeScanning = false;
+                    $input.prop('disabled', false).focus();
+                }
+            });
+        }
+
+        // Enter key press from physical barcode scanner
+        $(document).on('keydown', '#posBarcodeScannerInput', function(e) {
+            if (e.which === 13 || e.keyCode === 13) {
+                e.preventDefault();
+                executePosBarcodeScan($(this).val());
+            }
+        });
+
+        $(document).on('click', '#btnClearPosBarcode', function() {
+            $('#posBarcodeScannerInput').val('').focus();
+        });
+
+        // F2 Shortcut for POS Barcode Scanner
+        $(document).on('keydown', function(e) {
+            if (e.key === 'F2') {
+                e.preventDefault();
+                $('#posBarcodeScannerInput').focus().select();
+            }
+        });
+
+        // Auto-focus barcode scanner on POS load
+        setTimeout(function() {
+            if ($('#posBarcodeScannerInput').length) {
+                $('#posBarcodeScannerInput').focus();
+            }
+        }, 400);
+
+        /* =========================================
+           EXCHANGE MODAL REPLACEMENT SCANNER
+           ========================================= */
+        $(document).on('keydown', '#exchangeModalBarcodeScanner', function(e) {
+            if (e.which === 13 || e.keyCode === 13) {
+                e.preventDefault();
+                let code = $(this).val().trim();
+                if (!code) return;
+
+                $(this).val('');
+                $('#posExchangeModal').modal('hide');
+                executePosBarcodeScan(code);
+            }
+        });
+
+        $(document).on('click', '#btnExchangeModalScanAdd', function() {
+            let code = $('#exchangeModalBarcodeScanner').val().trim();
+            if (!code) return;
+
+            $('#exchangeModalBarcodeScanner').val('');
+            $('#posExchangeModal').modal('hide');
+            executePosBarcodeScan(code);
+        });
+
+        $(document).on('click', '#btnExchangeDoneScanNew', function() {
+            $('#posExchangeModal').modal('hide');
+        });
+
+        // When Exchange Modal is closed, always re-focus the main POS barcode input
+        $('#posExchangeModal').on('hidden.bs.modal', function() {
+            setTimeout(function() {
+                $('#posBarcodeScannerInput').focus();
+            }, 300);
+        });
 
     });
 </script>

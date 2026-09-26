@@ -675,7 +675,37 @@
                                         @if($product->brand)
                                             <span class="meta-chip"><i class="fas fa-trademark" style="font-size:.6rem;"></i> {{ $product->brand->name }}</span>
                                         @endif
+                                        @if($product->barcode_path)
+                                            <span class="meta-chip" title="Main Barcode"><i class="fas fa-barcode" style="font-size:.6rem;"></i> {{ $product->barcode_path }}</span>
+                                        @endif
                                     </div>
+                                    @if(request('search'))
+                                        @php
+                                            $searchQ = trim(request('search'));
+                                            $matchedVariants = [];
+                                            if ($product->color) {
+                                                $parsedCol = is_string($product->color) ? json_decode($product->color, true) : $product->color;
+                                                if (is_array($parsedCol)) {
+                                                    foreach ($parsedCol as $colItem) {
+                                                        if (is_array($colItem)) {
+                                                            $vb = (string)($colItem['barcode'] ?? '');
+                                                            $vn = (string)($colItem['name'] ?? '');
+                                                            if (($vb !== '' && stripos($vb, $searchQ) !== false) || ($vn !== '' && stripos($vn, $searchQ) !== false)) {
+                                                                $matchedVariants[] = ($colItem['name'] ?? 'Variant') . ($vb ? " (Barcode: {$vb})" : '');
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        @endphp
+                                        @if(!empty($matchedVariants))
+                                            <div class="mt-1">
+                                                <span class="badge" style="background:#eef2ff; color:#4f46e5; border:1px solid #c7d2fe; font-size:0.7rem; font-weight:600;">
+                                                    <i class="fas fa-barcode me-1"></i> Matched Variant: {{ implode(', ', $matchedVariants) }}
+                                                </span>
+                                            </div>
+                                        @endif
+                                    @endif
                                 </td>
                                 <td>
                                     <span class="stock-badge {{ $stockClass }}">
