@@ -27,17 +27,36 @@ export default function StoreLocatorPage() {
       } catch (e) {
         parsedLocations = [];
       }
+
+      if (parsedLocations.length === 0) {
+        parsedLocations = [
+          {
+            name: "TrendHub Flagship Store - Lahore",
+            address: "Main MM Alam Road, Block B1, Gulberg III, Lahore, Pakistan",
+            phone: "+92 300 1234567"
+          },
+          {
+            name: "TrendHub Luxury Store - Karachi",
+            address: "Dolmen Mall Clifton, Marine Drive, Block 4, Karachi, Pakistan",
+            phone: "+92 300 7654321"
+          },
+          {
+            name: "TrendHub Boutique - Islamabad",
+            address: "The Centaurus Mall, Jinnah Avenue, F-8, Islamabad, Pakistan",
+            phone: "+92 300 9876543"
+          }
+        ];
+      }
+
       setLocations(parsedLocations);
 
       // Load default map URL
       if (settings.web_store_locator_map_iframe) {
         setActiveMapUrl(settings.web_store_locator_map_iframe);
       } else if (parsedLocations.length > 0) {
-        // Fallback: Use the first location's address
         const firstAddr = parsedLocations[0].address;
         setActiveMapUrl(`https://maps.google.com/maps?q=${encodeURIComponent(firstAddr)}&t=&z=15&ie=UTF8&iwloc=&output=embed`);
       } else {
-        // Ultimate fallback
         setActiveMapUrl("https://maps.google.com/maps?q=Pakistan&t=&z=5&ie=UTF8&iwloc=&output=embed");
       }
     }

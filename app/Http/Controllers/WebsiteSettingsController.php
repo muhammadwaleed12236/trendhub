@@ -59,7 +59,13 @@ class WebsiteSettingsController extends Controller
             'facebook_link', 'instagram_link', 'tiktok_link', 'whatsapp_number',
             'shipping_policy', 'return_policy', 'about_us', 'home_banner_text',
             'easypaisa_account_title', 'easypaisa_mobile_number',
-            'home_hero_media_type', 'store_locator_map_iframe', 'store_locator_locations'
+            'home_hero_media_type', 'store_locator_map_iframe', 'store_locator_locations',
+            'hero_title', 'hero_subtitle', 'hero_tagline',
+            'hero_btn1_text', 'hero_btn1_link', 'hero_btn2_text', 'hero_btn2_link',
+            'card1_badge', 'card1_title', 'card1_subtext', 'card1_detail', 'card1_link',
+            'card2_badge', 'card2_title', 'card2_subtext', 'card2_detail', 'card2_link',
+            'card3_badge', 'card3_title', 'card3_subtext', 'card3_detail', 'card3_link',
+            'card4_badge', 'card4_title', 'card4_subtext', 'card4_detail', 'card4_link'
         ];
 
         // 3. Check Create and Delete Permissions for text keys

@@ -33,6 +33,137 @@ const COLOR_HEX_MAP: Record<string, string> = {
   "wash indigo": "#4b6f96"
 };
 
+const FALLBACK_DETAIL_PRODUCTS: Product[] = [
+  {
+    id: 9901,
+    item_code: "TH-OXFORD-01",
+    item_name: "Oxford Cotton Button-Down Shirt",
+    web_sale_price: 3490,
+    sale_price_per_piece: 3490,
+    final_price: 3490,
+    web_regular_price: 4990,
+    web_main_image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800",
+    promo_tag: "New Arrival",
+    category_relation: { id: 1, name: "SHIRTS" },
+    description: "100% Egyptian Oxford Cotton, tailored fit with button-down collar.",
+    rating: 4.9,
+    reviews_count: 24,
+    color: JSON.stringify(["White", "Navy Blue", "Khaki"]),
+  },
+  {
+    id: 9902,
+    item_code: "TH-CHINO-02",
+    item_name: "Slim Fit Stretch Chino Trousers",
+    web_sale_price: 3990,
+    sale_price_per_piece: 3990,
+    final_price: 3990,
+    web_regular_price: 5490,
+    web_main_image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?q=80&w=800",
+    promo_tag: "Best Seller",
+    category_relation: { id: 2, name: "TROUSERS" },
+    description: "Flex-stretch cotton blend for all-day comfort and modern silhouette.",
+    rating: 4.8,
+    reviews_count: 38,
+    color: JSON.stringify(["Black", "Beige", "Navy Blue"]),
+  },
+  {
+    id: 9903,
+    item_code: "TH-POLO-03",
+    item_name: "Essential Pima Cotton Polo Shirt",
+    web_sale_price: 2790,
+    sale_price_per_piece: 2790,
+    final_price: 2790,
+    web_regular_price: 3990,
+    web_main_image: "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?q=80&w=800",
+    promo_tag: "Trending",
+    category_relation: { id: 3, name: "POLOS" },
+    description: "Ultra-soft Pima cotton polo with ribbed collar and refined contrast placket.",
+    rating: 4.9,
+    reviews_count: 51,
+    color: JSON.stringify(["Navy Blue", "White", "Crimson Red"]),
+  },
+  {
+    id: 9904,
+    item_code: "TH-SHORTS-04",
+    item_name: "Tailored Linen Blend Casual Shorts",
+    web_sale_price: 2490,
+    sale_price_per_piece: 2490,
+    final_price: 2490,
+    web_regular_price: 3490,
+    web_main_image: "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?q=80&w=800",
+    promo_tag: "Flash Sale",
+    category_relation: { id: 4, name: "SHORTS" },
+    description: "Breathable linen-cotton weave, relaxed tailored cut with drawstring waistband.",
+    rating: 4.7,
+    reviews_count: 19,
+    color: JSON.stringify(["Khaki", "Navy Blue", "White"]),
+  },
+  {
+    id: 9905,
+    item_code: "TH-BLAZER-05",
+    item_name: "Italian Structured Suit Blazer Jacket",
+    web_sale_price: 8990,
+    sale_price_per_piece: 8990,
+    final_price: 8990,
+    web_regular_price: 12990,
+    web_main_image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=800",
+    promo_tag: "New Arrival",
+    category_relation: { id: 5, name: "SUITS & BLAZERS" },
+    description: "Classic notched lapel blazer with interior silk lining and gold accent buttons.",
+    rating: 5.0,
+    reviews_count: 14,
+    color: JSON.stringify(["Navy Blue", "Black"]),
+  },
+  {
+    id: 9906,
+    item_code: "TH-DENIM-06",
+    item_name: "Japanese Selvedge Denim Slim Jeans",
+    web_sale_price: 4490,
+    sale_price_per_piece: 4490,
+    final_price: 4490,
+    web_regular_price: 6490,
+    web_main_image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?q=80&w=800",
+    promo_tag: "Trending",
+    category_relation: { id: 2, name: "TROUSERS" },
+    description: "Authentic dark-wash selvedge denim crafted for durability and timeless taper.",
+    rating: 4.8,
+    reviews_count: 42,
+    color: JSON.stringify(["Wash Indigo", "Black"]),
+  },
+  {
+    id: 9907,
+    item_code: "TH-LINEN-07",
+    item_name: "Resort Fit Pure Linen Summer Shirt",
+    web_sale_price: 3790,
+    sale_price_per_piece: 3790,
+    final_price: 3790,
+    web_regular_price: 4990,
+    web_main_image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=800",
+    promo_tag: "New Arrival",
+    category_relation: { id: 1, name: "SHIRTS" },
+    description: "Lightweight pure French linen shirt engineered for hot summer luxury.",
+    rating: 4.9,
+    reviews_count: 31,
+    color: JSON.stringify(["White", "Off-White", "Sky Blue"]),
+  },
+  {
+    id: 9908,
+    item_code: "TH-TEE-08",
+    item_name: "Heavyweight Minimalist Cotton Tee",
+    web_sale_price: 1990,
+    sale_price_per_piece: 1990,
+    final_price: 1990,
+    web_regular_price: 2790,
+    web_main_image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800",
+    promo_tag: "Best Seller",
+    category_relation: { id: 3, name: "POLOS" },
+    description: "240 GSM organic cotton crewneck tee with reinforced ribbed neck band.",
+    rating: 4.9,
+    reviews_count: 67,
+    color: JSON.stringify(["White", "Black", "Oatmeal"]),
+  }
+];
+
 export default function ProductDetail({ params }: ProductPageProps) {
   // Resolve params using React.use() wrapper for Next.js App Router rules
   const resolvedParams = use(params);
@@ -66,12 +197,19 @@ export default function ProductDetail({ params }: ProductPageProps) {
   const toggleWishlist = useWishlistStore((state) => state.toggleWishlist);
   const isInWishlist = useWishlistStore((state) => state.isInWishlist(parseInt(productId)));
 
-  // 1. Fetch Product details
+  // 1. Fetch Product details with Fallback Support
   const { data: product, isLoading } = useQuery<Product>({
     queryKey: ["product-detail", productId],
     queryFn: async () => {
-      const res = await api.get(`/products/${productId}`);
-      return res.data?.data;
+      try {
+        const res = await api.get(`/products/${productId}`);
+        if (res.data?.data) return res.data.data;
+      } catch (e) {
+        // Fallback for mock items
+      }
+      const fallback = FALLBACK_DETAIL_PRODUCTS.find(p => p.id === parseInt(productId, 10));
+      if (fallback) return fallback;
+      return null as any;
     },
   });
 

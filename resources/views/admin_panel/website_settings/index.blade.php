@@ -506,6 +506,157 @@
             </div>
         </div>
 
+        {{-- Hero Section Text & Bottom Dock Cards Customization --}}
+        <div class="section-card-custom">
+            <div class="card-header-pro-custom text-primary"><i class="fas fa-heading"></i>Hero Section & Bottom Featured Cards Customization</div>
+            <div class="card-body-pro-custom">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <label class="form-label-custom">Hero Main Title</label>
+                        <input type="text" name="hero_title" class="form-control-custom" value="{{ $settings['web_hero_title'] ?? '' }}" placeholder="e.g. TrendHub Menswear" {{ ((empty($settings['web_hero_title']) && !$canCreate) || (!empty($settings['web_hero_title']) && !$canEdit)) ? 'disabled' : '' }}>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label-custom">Hero Subtitle</label>
+                        <input type="text" name="hero_subtitle" class="form-control-custom" value="{{ $settings['web_hero_subtitle'] ?? '' }}" placeholder="e.g. Elevated Men's Apparel — Shirts, Trousers, Polos & Tailored Shorts" {{ ((empty($settings['web_hero_subtitle']) && !$canCreate) || (!empty($settings['web_hero_subtitle']) && !$canEdit)) ? 'disabled' : '' }}>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-custom">Hero Tagline / Metadata</label>
+                        <input type="text" name="hero_tagline" class="form-control-custom" value="{{ $settings['web_hero_tagline'] ?? '' }}" placeholder="e.g. FALL / WINTER 2026 COLLECTION" {{ ((empty($settings['web_hero_tagline']) && !$canCreate) || (!empty($settings['web_hero_tagline']) && !$canEdit)) ? 'disabled' : '' }}>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-custom">Button 1 Text</label>
+                        <input type="text" name="hero_btn1_text" class="form-control-custom" value="{{ $settings['web_hero_btn1_text'] ?? '' }}" placeholder="e.g. SHOP COLLECTION">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-custom">Button 1 Link URL</label>
+                        <input type="text" name="hero_btn1_link" class="form-control-custom" value="{{ $settings['web_hero_btn1_link'] ?? '' }}" placeholder="e.g. /shop">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-custom">Button 2 Text</label>
+                        <input type="text" name="hero_btn2_text" class="form-control-custom" value="{{ $settings['web_hero_btn2_text'] ?? '' }}" placeholder="e.g. EXPLORE MENSWEAR">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-custom">Button 2 Link URL</label>
+                        <input type="text" name="hero_btn2_link" class="form-control-custom" value="{{ $settings['web_hero_btn2_link'] ?? '' }}" placeholder="e.g. /shop?promo_tag=Featured">
+                    </div>
+
+                    <div class="col-md-12"><hr class="my-2"></div>
+                    <div class="col-md-12">
+                        <h6 class="fw-bold text-dark mb-3"><i class="fas fa-th-large me-2"></i>Bottom Hero 4 Featured Cards Customization</h6>
+                    </div>
+
+                    {{-- Card 1 --}}
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <h6 class="fw-bold text-primary mb-2">Card 1 (Leftmost)</h6>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Badge Tag</label>
+                                <input type="text" name="card1_badge" class="form-control-custom" value="{{ $settings['web_card1_badge'] ?? '' }}" placeholder="FORMAL SHIRTS">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Title</label>
+                                <input type="text" name="card1_title" class="form-control-custom" value="{{ $settings['web_card1_title'] ?? '' }}" placeholder="Formal & Oxford Shirts">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Subtext</label>
+                                <input type="text" name="card1_subtext" class="form-control-custom" value="{{ $settings['web_card1_subtext'] ?? '' }}" placeholder="100% Egyptian Cotton">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Bottom Detail</label>
+                                <input type="text" name="card1_detail" class="form-control-custom" value="{{ $settings['web_card1_detail'] ?? '' }}" placeholder="PREMIUM COTTON">
+                            </div>
+                            <div>
+                                <label class="form-label-custom">Target Link URL</label>
+                                <input type="text" name="card1_link" class="form-control-custom" value="{{ $settings['web_card1_link'] ?? '' }}" placeholder="/shop">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Card 2 --}}
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <h6 class="fw-bold text-danger mb-2">Card 2 (Live / Sale)</h6>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Badge Tag</label>
+                                <input type="text" name="card2_badge" class="form-control-custom" value="{{ $settings['web_card2_badge'] ?? '' }}" placeholder="FLASH SALE">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Title</label>
+                                <input type="text" name="card2_title" class="form-control-custom" value="{{ $settings['web_card2_title'] ?? '' }}" placeholder="Chino Trousers & Pants">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Subtext</label>
+                                <input type="text" name="card2_subtext" class="form-control-custom" value="{{ $settings['web_card2_subtext'] ?? '' }}" placeholder="Flexible Stretch Cotton">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Bottom Detail</label>
+                                <input type="text" name="card2_detail" class="form-control-custom" value="{{ $settings['web_card2_detail'] ?? '' }}" placeholder="UP TO 30% OFF">
+                            </div>
+                            <div>
+                                <label class="form-label-custom">Target Link URL</label>
+                                <input type="text" name="card2_link" class="form-control-custom" value="{{ $settings['web_card2_link'] ?? '' }}" placeholder="/shop">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Card 3 --}}
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <h6 class="fw-bold text-purple mb-2" style="color: #9333ea;">Card 3</h6>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Badge Tag</label>
+                                <input type="text" name="card3_badge" class="form-control-custom" value="{{ $settings['web_card3_badge'] ?? '' }}" placeholder="POLO SHIRTS">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Title</label>
+                                <input type="text" name="card3_title" class="form-control-custom" value="{{ $settings['web_card3_title'] ?? '' }}" placeholder="Essential Polos & Tees">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Subtext</label>
+                                <input type="text" name="card3_subtext" class="form-control-custom" value="{{ $settings['web_card3_subtext'] ?? '' }}" placeholder="Breathable Pima Fabric">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Bottom Detail</label>
+                                <input type="text" name="card3_detail" class="form-control-custom" value="{{ $settings['web_card3_detail'] ?? '' }}" placeholder="BEST SELLER">
+                            </div>
+                            <div>
+                                <label class="form-label-custom">Target Link URL</label>
+                                <input type="text" name="card3_link" class="form-control-custom" value="{{ $settings['web_card3_link'] ?? '' }}" placeholder="/shop">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Card 4 --}}
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <h6 class="fw-bold text-success mb-2">Card 4 (Rightmost)</h6>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Badge Tag</label>
+                                <input type="text" name="card4_badge" class="form-control-custom" value="{{ $settings['web_card4_badge'] ?? '' }}" placeholder="CASUAL SHORTS">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Title</label>
+                                <input type="text" name="card4_title" class="form-control-custom" value="{{ $settings['web_card4_title'] ?? '' }}" placeholder="Tailored Casual Shorts">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Subtext</label>
+                                <input type="text" name="card4_subtext" class="form-control-custom" value="{{ $settings['web_card4_subtext'] ?? '' }}" placeholder="Relaxed Tailoring">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label-custom">Bottom Detail</label>
+                                <input type="text" name="card4_detail" class="form-control-custom" value="{{ $settings['web_card4_detail'] ?? '' }}" placeholder="NEW RELEASE">
+                            </div>
+                            <div>
+                                <label class="form-label-custom">Target Link URL</label>
+                                <input type="text" name="card4_link" class="form-control-custom" value="{{ $settings['web_card4_link'] ?? '' }}" placeholder="/shop">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
         {{-- Easypaisa Payment Settings --}}
         <div class="section-card-custom">
             <div class="card-header-pro-custom text-emerald-600"><i class="fas fa-wallet"></i>Easypaisa Payment Details</div>

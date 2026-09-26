@@ -2,6 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 
 export interface WebsiteSettings {
+  company_logo?: string;
+  logo_url?: string;
+  site_logo?: string;
+  logo?: string;
   web_site_name?: string;
   web_contact_email?: string;
   web_contact_phone?: string;
@@ -28,7 +32,7 @@ export interface WebsiteSettings {
 
 export const useSettings = () => {
   return useQuery({
-    queryKey: ["websiteSettings", "v2"],
+    queryKey: ["websiteSettings", "v3"],
     queryFn: async (): Promise<WebsiteSettings> => {
       try {
         const response = await api.get("/settings");

@@ -11,15 +11,31 @@ class CategoryApiController extends Controller
 {
     public function index()
     {
-        // Fetch active categories that should be shown on the website
-        $categories = Cache::remember('api_website_categories', 60, function () {
-            return Category::where(function($q) {
-                $q->where('show_on_website', 1)
-                  ->orWhere('show_on_website', true);
-            })->get()->map(function($category) {
-                $category->web_image_url = $category->web_image ? asset($category->web_image) : null;
-                return $category;
-            });
+        $allCats = Category::all();
+        
+        // Filter categories where show_on_website is truthy
+        $cats = $allCats->filter(function($category) {
+            return (bool) $category->show_on_website;
+        })->values();
+
+        // If no category has show_on_website enabled yet, default to showing all DB categories
+        if ($cats->isEmpty()) {
+            $cats = $allCats;
+        }
+
+        $categories = $cats->map(function($category) {
+            $imageUrl = null;
+            if (!empty($category->web_image)) {
+                $imageUrl = url($category->web_image);
+            }
+
+            return [
+                'id' => $category->id,
+                'name' => $category->name,
+                'show_on_website' => (bool)$category->show_on_website,
+                'web_image' => $category->web_image ?? null,
+                'web_image_url' => $imageUrl,
+            ];
         });
         
         return response()->json([

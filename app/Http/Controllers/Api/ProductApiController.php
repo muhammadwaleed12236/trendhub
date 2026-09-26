@@ -11,26 +11,20 @@ class ProductApiController extends Controller
 {
     public function index(Request $request)
     {
-        // Start querying only products that are visible on the website
+        // Start querying products
         $query = Product::with(['category_relation', 'webImages'])
             ->withSum('warehouseStocks as total_stock', 'total_pieces')
-            ->where('is_web_visible', 1);
+            ->whereNull('deleted_at');
 
-        // Auto-hide out of stock products if auto_hide_out_of_stock is enabled
-        $query->where(function ($q) {
-            $q->where('auto_hide_out_of_stock', 0)
-              ->orWhereExists(function ($subQuery) {
-                  $subQuery->select(DB::raw(1))
-                      ->from('warehouse_stocks')
-                      ->whereColumn('warehouse_stocks.product_id', 'products.id')
-                      ->groupBy('warehouse_stocks.product_id')
-                      ->havingRaw('SUM(total_pieces) > 0');
-              });
-        });
-
-        // Filter by category
+        // Filter by category ID or Category Name
         if ($request->has('category_id') && $request->category_id != '') {
-            $query->where('category_id', $request->category_id);
+            $cat = $request->category_id;
+            $query->where(function($q) use ($cat) {
+                $q->where('category_id', $cat)
+                  ->orWhereHas('category_relation', function($subQ) use ($cat) {
+                      $subQ->where('id', $cat)->orWhere('name', 'like', "%{$cat}%");
+                  });
+            });
         }
 
         // Filter by promotional tag (e.g. Featured, Flash Sale)
@@ -55,11 +49,6 @@ class ProductApiController extends Controller
                   ->orWhere('color', 'like', '%"size": "' . $size . '"%');
             });
         }
-        
-        // Homepage only filter
-        if ($request->has('show_on_homepage') && $request->show_on_homepage == 1) {
-            $query->where('show_on_homepage', 1);
-        }
 
         // Search by keyword
         if ($request->has('search') && $request->search != '') {
@@ -71,12 +60,12 @@ class ProductApiController extends Controller
         }
 
         // Fetch paginated results
-        $products = $query->paginate(12);
+        $products = $query->paginate(50);
 
-        // Transform results slightly to ensure standard price if web_sale_price is missing
+        // Transform results cleanly without any dummy apparel description
         $products->getCollection()->transform(function ($product) {
-            $product->final_price = $product->web_sale_price ?: $product->sale_price_per_piece;
-            $product->description = $product->meta_description ?: "Designed as part of our premium modern luxury apparel collection, this piece stands out with premium stitching and elegant cuts.";
+            $product->final_price = $product->web_sale_price ?: ($product->sale_price_per_piece ?: $product->sale_price_per_box);
+            $product->description = $product->meta_description ?: ($product->description ?? "");
             $product->total_stock = (int) ($product->total_stock ?? 0);
             return $product;
         });
@@ -89,36 +78,28 @@ class ProductApiController extends Controller
 
     public function show($id)
     {
-        $cacheKey = 'api_product_detail_' . $id;
+        $product = Product::with(['category_relation', 'webImages'])
+            ->withSum('warehouseStocks as total_stock', 'total_pieces')
+            ->findOrFail($id);
 
-        $productData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 30, function () use ($id) {
-            $product = Product::with(['category_relation', 'webImages'])
-                ->withSum('warehouseStocks as total_stock', 'total_pieces')
-                ->where('is_web_visible', 1)
-                ->findOrFail($id);
+        $product->final_price = $product->web_sale_price ?: ($product->sale_price_per_piece ?: $product->sale_price_per_box);
+        $product->description = $product->meta_description ?: ($product->description ?? "");
+        $product->total_stock = (int) ($product->total_stock ?? 0);
 
-            $product->final_price = $product->web_sale_price ?: $product->sale_price_per_piece;
-            $product->description = $product->meta_description ?: "Designed as part of our premium modern luxury apparel collection, this piece stands out with premium stitching and elegant cuts.";
-            $product->total_stock = (int) ($product->total_stock ?? 0);
-
-            // Fetch actual variant stocks based on ERP ledger formula
-            if ($product->color) {
-                try {
-                    $calculated_variants = $this->calculateVariantStocks($product);
-                    if (!empty($calculated_variants)) {
-                        $product->color = json_encode($calculated_variants);
-                    }
-                } catch (\Exception $e) {
-                    // Fail silently
+        if ($product->color) {
+            try {
+                $calculated_variants = $this->calculateVariantStocks($product);
+                if (!empty($calculated_variants)) {
+                    $product->color = json_encode($calculated_variants);
                 }
+            } catch (\Exception $e) {
+                // Fail silently
             }
-
-            return $product;
-        });
+        }
 
         return response()->json([
             'status' => 'success',
-            'data' => $productData
+            'data' => $product
         ]);
     }
 

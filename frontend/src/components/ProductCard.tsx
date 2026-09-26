@@ -6,7 +6,7 @@ import { Heart, ShoppingBag, Eye, X, ChevronLeft, ChevronRight, ArrowRight, Plus
 import { useWishlistStore } from "@/store/wishlistStore";
 import { useCartStore } from "@/store/cartStore";
 import Link from "next/link";
-import { getProductFallbackImage, getAssetUrl } from "@/lib/imageHelper";
+import { resolveProductImageUrl, getAssetUrl } from "@/lib/imageHelper";
 import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
@@ -28,23 +28,23 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [modalActiveImg, setModalActiveImg] = useState("");
 
   // Compute Primary and Secondary Image urls
-  const mainImage = product.web_main_image
-    ? getAssetUrl(`uploads/products/${product.web_main_image}`)
-    : product.image
-    ? getAssetUrl(`uploads/products/${product.image}`)
-    : getProductFallbackImage(product.id);
+  const mainImage = resolveProductImageUrl(product.web_main_image) || resolveProductImageUrl(product.image);
 
   // Use first gallery image as secondary/hover image if available
   let hoverImage = mainImage;
   if (product.web_images && product.web_images.length > 0) {
-    hoverImage = getAssetUrl(`uploads/products/${product.web_images[0].image_path}`);
+    const galImg = resolveProductImageUrl(product.web_images[0].image_path);
+    if (galImg) hoverImage = galImg;
   }
 
   // Pre-calculate image list for Quick View Modal
-  const allImages = [mainImage];
+  const allImages = mainImage ? [mainImage] : [];
   if (product.web_images) {
     product.web_images.forEach(img => {
-      allImages.push(getAssetUrl(`uploads/products/${img.image_path}`));
+      const gUrl = resolveProductImageUrl(img.image_path);
+      if (gUrl && !allImages.includes(gUrl)) {
+        allImages.push(gUrl);
+      }
     });
   }
 
@@ -227,7 +227,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div
-      className="group w-full flex flex-col relative overflow-hidden bg-white select-none"
+      className="group w-full flex flex-col relative overflow-hidden bg-white select-none transition-all duration-500 hover:-translate-y-1 hover:shadow-xl rounded-[2px]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -252,15 +252,22 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
 
         <Link href={`/product/${product.id}`} className="w-full h-full block">
-          <img
-            src={isHovered ? hoverImage : mainImage}
-            alt={product.item_name}
-            loading="lazy"
-            decoding="async"
-            className={`w-full h-full object-cover transition-all duration-700 ease-out ${
-              product.total_stock !== undefined && product.total_stock <= 0 ? "opacity-60 grayscale-[40%]" : ""
-            }`}
-          />
+          {mainImage ? (
+            <img
+              src={isHovered && hoverImage ? hoverImage : mainImage}
+              alt={product.item_name}
+              loading="lazy"
+              decoding="async"
+              className={`w-full h-full object-cover transition-all duration-700 ease-out ${
+                product.total_stock !== undefined && product.total_stock <= 0 ? "opacity-60 grayscale-[40%]" : ""
+              }`}
+            />
+          ) : (
+            <div className="w-full h-full bg-neutral-100 flex flex-col items-center justify-center p-4 text-neutral-400 select-none">
+              <ShoppingBag className="w-10 h-10 text-neutral-300 stroke-[1.5] mb-2" />
+              <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-neutral-400">No Image</span>
+            </div>
+          )}
         </Link>
 
         {/* Hover Actions Bar */}

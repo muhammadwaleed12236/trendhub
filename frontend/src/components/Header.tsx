@@ -13,7 +13,7 @@ import AnnouncementBar from "./AnnouncementBar";
 import { useSettings } from "@/hooks/useSettings";
 import { Product, Category } from "@/types";
 import api from "@/lib/api";
-import { getProductFallbackImage } from "@/lib/imageHelper";
+import { getProductFallbackImage, getAssetUrl } from "@/lib/imageHelper";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Header() {
@@ -128,6 +128,7 @@ export default function Header() {
   }, []);
 
   const isHome = pathname === "/";
+  const logoUrl = settings?.company_logo || settings?.web_site_logo || settings?.site_logo || settings?.logo_url || settings?.logo;
 
   return (
     <>
@@ -139,97 +140,115 @@ export default function Header() {
           className={`w-full transition-all duration-300 transform ${
             isVisible ? "translate-y-0" : "-translate-y-full"
           } ${
-            isHome
-              ? isScrolled
-                ? "fixed top-0 bg-white/95 backdrop-blur-md shadow-sm text-black border-b border-gray-100"
-                : "absolute bg-transparent text-white border-transparent"
-              : "sticky top-0 bg-white/95 backdrop-blur-md shadow-sm text-black border-b border-gray-100"
+            isScrolled || !isHome
+              ? "fixed top-0 left-0 w-full bg-neutral-950/95 backdrop-blur-md shadow-2xl text-white border-b border-white/10 z-50"
+              : "absolute top-0 left-0 w-full bg-transparent text-white border-b border-white/15 z-50"
           }`}
         >
-          <div className="w-full mx-auto px-4 sm:px-8 h-12 sm:h-14 flex items-center justify-between">
-            {/* Left: Hamburger menu + Menu text */}
-            <div className="flex items-center">
+          <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-2.5 flex items-center justify-between">
+            {/* Left Nav Links (Garments Store Style) */}
+            <div className="hidden lg:flex items-center gap-4 text-[10px] sm:text-xs font-sans font-bold tracking-[0.2em] uppercase border-y border-white/20 py-1.5 px-5">
+              <Link href="/shop" className="hover:text-indigo-400 transition-colors duration-200">
+                Shop Men
+              </Link>
+              <span className="text-white/30 font-light">|</span>
+              <Link href="/shop?promo_tag=New Arrival" className="hover:text-indigo-400 transition-colors duration-200">
+                New Arrivals
+              </Link>
+              <span className="text-white/30 font-light">|</span>
+              <Link href="/shop?promo_tag=Trending" className="hover:text-indigo-400 transition-colors duration-200">
+                Best Sellers
+              </Link>
+            </div>
+
+            {/* Mobile Hamburger Menu Button */}
+            <div className="flex lg:hidden items-center">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="flex items-center gap-1.5 cursor-pointer focus:outline-none transition-opacity hover:opacity-80"
+                className="flex items-center gap-1.5 cursor-pointer focus:outline-none hover:opacity-80 p-2 text-white"
                 aria-label="Open menu"
               >
-                <Menu size={18} strokeWidth={1.5} />
-                <span className="text-[10px] uppercase tracking-[0.2em] font-sans font-semibold hidden sm:inline">Menu</span>
+                <Menu size={20} />
+                <span className="text-[10px] uppercase tracking-[0.2em] font-sans font-semibold">Menu</span>
               </button>
             </div>
 
-            {/* Center: Brand Logo */}
-            <div className="absolute left-1/2 -translate-x-1/2 z-10 max-w-[50%] sm:max-w-[60%] flex items-center justify-center">
-              <Link
-                href="/"
-                className="font-sans text-[11px] min-[375px]:text-sm sm:text-2xl tracking-[0.2em] sm:tracking-[0.35em] font-medium text-inherit uppercase flex items-center justify-center hover:opacity-85 transition-all duration-300"
-              >
-                {settings?.web_site_logo ? (
-                  <img
-                    src={getAssetUrl(settings.web_site_logo)}
-                    alt={settings?.web_site_name || "TrendHub"}
-                    className={`h-7 sm:h-12 w-auto max-w-[130px] min-[375px]:max-w-[160px] sm:max-w-[240px] object-contain transition-all duration-300 ${
-                      isHome && !isScrolled ? "invert" : ""
-                    }`}
-                  />
-                ) : (
-                  settings?.web_site_name || "TrendHub"
-                )}
-              </Link>
+            {/* Center Framed Brand Box (Sleek Refined Design with Logo Support) */}
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative border border-white/35 bg-black/70 backdrop-blur-md px-5 sm:px-7 py-1 text-center flex flex-col items-center rounded-[2px] hover:border-white/70 transition-all duration-300 shadow-xl group">
+                {/* Subtle top corner accent lines */}
+                <span className="absolute -top-0.5 left-2 w-2.5 h-[1px] bg-white/70" />
+                <span className="absolute -top-0.5 right-2 w-2.5 h-[1px] bg-white/70" />
+                
+                <Link
+                  href="/"
+                  className="flex items-center justify-center font-serif text-xs sm:text-sm md:text-base tracking-[0.3em] font-semibold uppercase text-white hover:opacity-90 transition-opacity"
+                >
+                  {logoUrl ? (
+                    <img
+                      src={getAssetUrl(logoUrl)}
+                      alt={settings?.web_site_name || "TRENDHUB STORE"}
+                      className="h-6 sm:h-7 w-auto max-w-[170px] object-contain py-0.5 filter brightness-100 group-hover:scale-[1.02] transition-transform duration-300"
+                    />
+                  ) : (
+                    <span className="font-serif tracking-[0.3em] font-bold text-white text-xs sm:text-sm md:text-base">
+                      {settings?.web_site_name || "TRENDHUB STORE"}
+                    </span>
+                  )}
+                </Link>
+                <div className="w-full border-t border-white/20 mt-0.5 pt-0.5 flex items-center justify-center gap-2 text-[7.5px] sm:text-[8px] uppercase tracking-[0.2em] font-sans text-white/80">
+                  <Link href={user ? "/dashboard" : "/login"} className="hover:text-indigo-300 transition-colors duration-200">
+                    {user ? "MY ACCOUNT" : "LOG IN / REGISTER"}
+                  </Link>
+                  <span className="text-white/40">•</span>
+                  <button onClick={() => setIsCartOpen(true)} className="hover:text-indigo-300 transition-colors duration-200 cursor-pointer">
+                    SHOPPING BAG ({isMounted ? cartItemsCount : 0})
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* Right: Actions */}
-            <div className="flex items-center gap-1 sm:gap-2">
-              {/* Search Icon */}
-              <button
-                onClick={() => setIsSearchOpen(true)}
-                className="p-1.5 hover:opacity-80 transition-opacity cursor-pointer"
-                aria-label="Search products"
-              >
-                <Search size={18} strokeWidth={1.5} />
-              </button>
-
-              {/* User Account Icon */}
-              <Link
-                href={user ? "/dashboard" : "/login"}
-                className="p-1.5 hover:opacity-80 transition-opacity hidden sm:inline-block"
-                aria-label="User account"
-              >
-                <User size={18} strokeWidth={1.5} />
+            {/* Right Nav Links (Garments Store Style) */}
+            <div className="hidden lg:flex items-center gap-4 text-[10px] sm:text-xs font-sans font-bold tracking-[0.2em] uppercase border-y border-white/20 py-1.5 px-5">
+              <Link href="/store-locator" className="hover:text-indigo-400 transition-colors duration-200">
+                Store Locator
               </Link>
-
-              {/* Wishlist Icon */}
-              <Link
-                href="/wishlist"
-                className="p-1.5 hover:opacity-80 transition-opacity relative hidden sm:inline-block"
-                aria-label="Wishlist"
-              >
-                <Heart size={18} strokeWidth={1.5} />
+              <span className="text-white/30 font-light">|</span>
+              <Link href="/wishlist" className="hover:text-indigo-400 transition-colors duration-200 relative">
+                Wishlist
                 {isMounted && wishlistItemsCount > 0 && (
-                  <span className={`absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-sans font-bold shadow-sm transition-all duration-300 ${
-                    isHome && !isScrolled
-                      ? "bg-white text-black"
-                      : "bg-black text-white"
-                  }`}>
+                  <span className="ml-1.5 bg-indigo-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">
                     {wishlistItemsCount}
                   </span>
                 )}
               </Link>
+              <span className="text-white/30 font-light">|</span>
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="flex items-center gap-1.5 hover:text-indigo-400 transition-colors duration-200 cursor-pointer"
+              >
+                <Search size={14} />
+                <span>Search</span>
+              </button>
+            </div>
 
-              {/* Cart Icon */}
+            {/* Mobile Action Buttons */}
+            <div className="flex lg:hidden items-center gap-2">
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="p-1.5 hover:opacity-80 cursor-pointer"
+                aria-label="Search"
+              >
+                <Search size={18} />
+              </button>
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="p-1.5 hover:opacity-80 transition-opacity relative cursor-pointer"
-                aria-label="Open cart"
+                className="p-1.5 hover:opacity-80 relative cursor-pointer"
+                aria-label="Cart"
               >
-                <ShoppingBag size={18} strokeWidth={1.5} />
+                <ShoppingBag size={18} />
                 {isMounted && cartItemsCount > 0 && (
-                  <span className={`absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-sans font-bold shadow-sm transition-all duration-300 ${
-                    isHome && !isScrolled
-                      ? "bg-white text-black"
-                      : "bg-black text-white"
-                  }`}>
+                  <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
                     {cartItemsCount}
                   </span>
                 )}

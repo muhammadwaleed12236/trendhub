@@ -12,8 +12,10 @@ class WebsiteSettingsApiController extends Controller
     public function index()
     {
         // Cache website settings for 10 minutes for lightning-fast loading
-        $settings = Cache::remember('api_website_settings_group', 600, function () {
-            return Setting::where('group', 'website')->get();
+        $settings = Cache::remember('api_website_settings_group_v3', 600, function () {
+            return Setting::whereIn('group', ['website', 'company', 'general', 'system'])
+                ->orWhereIn('key', ['company_logo', 'web_site_logo', 'site_logo', 'logo', 'logo_url'])
+                ->get();
         });
 
         return response()->json([
