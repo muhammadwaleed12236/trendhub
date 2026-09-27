@@ -268,12 +268,13 @@
                             <table class="table premium-table mb-0" id="variantsTable">
                                 <thead>
                                     <tr>
-                                        <th style="width: 18%;">Size <span class="text-danger">*</span></th>
-                                        <th style="width: 18%;">Color <span class="text-danger">*</span></th>
-                                        <th style="width: 12%;">QTY <span class="text-danger">*</span></th>
-                                        <th style="width: 15%;">Purchase Price <span class="text-danger">*</span></th>
-                                        <th style="width: 15%;">Sale Price <span class="text-danger">*</span></th>
-                                        <th style="width: 15%;">Line Total</th>
+                                        <th style="width: 15%;">Size <span class="text-danger">*</span></th>
+                                        <th style="width: 15%;">Color <span class="text-danger">*</span></th>
+                                        <th style="width: 10%;">QTY <span class="text-danger">*</span></th>
+                                        <th style="width: 13%;">Purchase Price <span class="text-danger">*</span></th>
+                                        <th style="width: 13%;">Sale Price <span class="text-danger">*</span></th>
+                                        <th style="width: 13%;">Line Total</th>
+                                        <th style="width: 14%;">Barcode</th>
                                         <th style="width: 7%; text-align: center;">Actions</th>
                                     </tr>
                                 </thead>
@@ -285,6 +286,7 @@
                                         <td><input type="number" step="0.01" class="form-control form-control-sm calc-pprice text-end" name="purchase_price[]" placeholder="0.00" required></td>
                                         <td><input type="number" step="0.01" class="form-control form-control-sm text-end" name="sale_price[]" placeholder="0.00" required></td>
                                         <td><input type="text" class="form-control form-control-sm calc-line-total bg-light text-end fw-bold" readonly value="0.00"></td>
+                                        <td><input type="text" class="form-control form-control-sm" name="variant_barcode[]" placeholder="Barcode"></td>
                                         <td class="text-center align-middle">
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-sm btn-light duplicate-row-btn border text-primary" title="Duplicate"><i class="fas fa-copy"></i></button>
@@ -406,6 +408,18 @@ $(document).ready(function() {
         }
     });
 
+    function generateRandomBarcode() {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    // Ensure initial rows have a generated barcode
+    $('#variantsTable tbody tr').each(function() {
+        var $bc = $(this).find('input[name="variant_barcode[]"]');
+        if (!$bc.val()) {
+            $bc.val(generateRandomBarcode());
+        }
+    });
+
     // ── Apply Existing Product ──────────────────────────────────
     window.applyExistingProduct = function(p) {
         $('#product_id').val(p.id);
@@ -444,6 +458,7 @@ $(document).ready(function() {
                 var color = v.color || '';
                 var pPrice = v.purch_price || p.purchase_price || 0;
                 var sPrice = v.sale_price || p.sale_price || 0;
+                var barcode = v.barcode || v.variant_barcode || generateRandomBarcode();
 
                 var rowHtml = `
                     <tr class="variant-row">
@@ -453,6 +468,7 @@ $(document).ready(function() {
                         <td><input type="number" step="0.01" class="form-control form-control-sm calc-pprice text-end" name="purchase_price[]" value="${pPrice}" placeholder="0.00" required></td>
                         <td><input type="number" step="0.01" class="form-control form-control-sm text-end" name="sale_price[]" value="${sPrice}" placeholder="0.00" required></td>
                         <td><input type="text" class="form-control form-control-sm calc-line-total bg-light text-end fw-bold" readonly value="0.00"></td>
+                        <td><input type="text" class="form-control form-control-sm" name="variant_barcode[]" value="${barcode}" placeholder="Barcode"></td>
                         <td class="text-center align-middle">
                             <div class="btn-group" role="group">
                                 <button type="button" class="btn btn-sm btn-light duplicate-row-btn border text-primary" title="Duplicate"><i class="fas fa-copy"></i></button>
@@ -469,6 +485,7 @@ $(document).ready(function() {
             if ($firstRow.length) {
                 if (p.purchase_price) $firstRow.find('input[name="purchase_price[]"]').val(p.purchase_price);
                 if (p.sale_price) $firstRow.find('input[name="sale_price[]"]').val(p.sale_price);
+                if (p.barcode_path) $firstRow.find('input[name="variant_barcode[]"]').val(p.barcode_path);
                 updateSummary();
             }
         }
@@ -548,7 +565,7 @@ $(document).ready(function() {
                                 <div class="product-suggest-item d-flex justify-content-between align-items-center select-suggestion-btn" data-id="${item.id}">
                                     <div>
                                         <div class="fw-bold text-dark" style="font-size: 0.9rem;">
-                                            [${item.item_code}] ${item.item_name} ${exactBadge}
+                                             [${item.item_code}] ${item.item_name} ${exactBadge}
                                         </div>
                                         <div class="text-muted" style="font-size: 0.78rem;">
                                             Cat: ${item.category_name || '-'} | Price: Rs ${item.purchase_price || 0} ${varBadge}
@@ -661,6 +678,7 @@ $(document).ready(function() {
 
     // Add Row
     $('#addRowBtn').on('click', function() {
+        var randBarcode = generateRandomBarcode();
         var newRow = `
             <tr class="variant-row">
                 <td><input type="text" class="form-control form-control-sm" name="variant_size[]" placeholder="M, L, XL" required></td>
@@ -669,6 +687,7 @@ $(document).ready(function() {
                 <td><input type="number" step="0.01" class="form-control form-control-sm calc-pprice text-end" name="purchase_price[]" placeholder="0.00" required></td>
                 <td><input type="number" step="0.01" class="form-control form-control-sm text-end" name="sale_price[]" placeholder="0.00" required></td>
                 <td><input type="text" class="form-control form-control-sm calc-line-total bg-light text-end fw-bold" readonly value="0.00"></td>
+                <td><input type="text" class="form-control form-control-sm" name="variant_barcode[]" value="${randBarcode}" placeholder="Barcode"></td>
                 <td class="text-center align-middle">
                     <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-light duplicate-row-btn border text-primary" title="Duplicate"><i class="fas fa-copy"></i></button>
@@ -692,6 +711,7 @@ $(document).ready(function() {
         $newRow.find('input[name="purchase_price[]"]').val($currentRow.find('input[name="purchase_price[]"]').val());
         $newRow.find('input[name="sale_price[]"]').val($currentRow.find('input[name="sale_price[]"]').val());
         $newRow.find('.calc-line-total').val('0.00');
+        $newRow.find('input[name="variant_barcode[]"]').val(generateRandomBarcode());
         
         $currentRow.after($newRow);
         updateSummary();

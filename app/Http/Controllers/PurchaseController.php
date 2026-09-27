@@ -246,6 +246,7 @@ class PurchaseController extends Controller
                 
                 'variant_size' => 'required|array|min:1',
                 'variant_color' => 'required|array|min:1',
+                'variant_barcode' => 'nullable|array',
                 'qty' => 'required|array|min:1',
                 'qty.*' => 'required|numeric|min:0',
                 'purchase_price' => 'required|array',
@@ -326,6 +327,7 @@ class PurchaseController extends Controller
             $baseName = $validated['base_product_name'];
             $sizes = $request->variant_size;
             $colors = $request->variant_color;
+            $barcodes = $request->variant_barcode ?? [];
             $qtys = $validated['qty'];
             $pPrices = $validated['purchase_price'];
             $sPrices = $validated['sale_price'];
@@ -337,6 +339,11 @@ class PurchaseController extends Controller
                 $colorVal = trim($colors[$i] ?? '');
                 if ($sizeVal === '' && $colorVal === '') continue;
 
+                $barcodeVal = trim($barcodes[$i] ?? '');
+                if (empty($barcodeVal)) {
+                    $barcodeVal = (string) rand(100000, 999999);
+                }
+
                 $catalogVariants[] = [
                     'name' => $baseName, // Ensure name is set for POS display
                     'size' => $sizeVal,
@@ -345,7 +352,11 @@ class PurchaseController extends Controller
                     'wholesale_price' => (float) ($sPrices[$i] ?? 0),
                     'purch_price' => (float) ($pPrices[$i] ?? 0),
                     'weight_per_piece' => 0,
-                    'stock' => 0
+                    'stock' => 0,
+                    'barcode' => $barcodeVal,
+                    'conv_factor' => 1,
+                    'is_base_variant' => ($i === 0 ? 1 : 0),
+                    'unit' => 'Pcs',
                 ];
             }
 
@@ -370,6 +381,9 @@ class PurchaseController extends Controller
                         if (strcasecmp(trim($exSize), trim($inVar['size'])) === 0 && strcasecmp(trim($exColor), trim($inVar['color'])) === 0) {
                             $exVar['sale_price'] = $inVar['sale_price'];
                             $exVar['purch_price'] = $inVar['purch_price'];
+                            if (!empty($inVar['barcode'])) {
+                                $exVar['barcode'] = $inVar['barcode'];
+                            }
                             $matched = true;
                             break;
                         }
@@ -393,6 +407,9 @@ class PurchaseController extends Controller
                 // Create ONE master Product
                 $lastProduct = Product::orderBy('id', 'desc')->first();
                 $nextCode = $lastProduct ? ('ITEM-'.str_pad($lastProduct->id + 1, 4, '0', STR_PAD_LEFT)) : 'ITEM-0001';
+                $masterBarcode = (!empty($catalogVariants) && !empty($catalogVariants[0]['barcode']))
+                    ? $catalogVariants[0]['barcode']
+                    : (string) rand(100000000000, 999999999999);
 
                 $product = Product::create([
                     'item_name' => $baseName,
@@ -400,6 +417,7 @@ class PurchaseController extends Controller
                     'sub_category_id' => $validated['sub_category_id'] ?? null,
                     'color' => json_encode($catalogVariants), // Store all defined variants in catalog!
                     'item_code' => $nextCode,
+                    'barcode_path' => $masterBarcode,
                     'purchase_price_per_piece' => (float) ($pPrices[0] ?? 0),
                     'sale_price_per_piece' => (float) ($sPrices[0] ?? 0),
                     'size_mode' => 'pieces',
@@ -415,6 +433,7 @@ class PurchaseController extends Controller
                 if ($qty <= 0) continue;
 
                 $colorStr = $colors[$i];
+                $barcodeStr = $barcodes[$i] ?? ($catalogVariants[$i]['barcode'] ?? '');
                 $lineTotal = $qty * $pPrice;
 
                 // Create Purchase Item
@@ -425,7 +444,11 @@ class PurchaseController extends Controller
                     'qty' => $qty,
                     'line_total' => $lineTotal,
                     // Store variant info in color field for the PurchaseItem as JSON
-                    'color' => json_encode(['size' => $sizeStr, 'color' => $colorStr]), 
+                    'color' => json_encode([
+                        'size' => $sizeStr,
+                        'color' => $colorStr,
+                        'barcode' => $barcodeStr
+                    ]), 
                     'size_mode' => 'pieces',
                     'pieces_per_box' => 1,
                 ]);
