@@ -299,7 +299,7 @@
                 @endif
             </div>
             <div class="barcode-number">{{ $variant['barcode'] ?? '—' }}</div>
-            <div class="price">PKR: {{ number_format((float)($variant['sale_price'] ?? 0)) }}</div>
+            <!-- <div class="price">PKR: {{ number_format((float)($variant['sale_price'] ?? 0)) }}</div> -->
         </div>
         <div class="card-btns">
             <label class="card-select-wrap">
@@ -325,7 +325,7 @@
                 @endif
             </div>
             <div class="barcode-number">{{ $product->barcode_path ?? $product->item_code }}</div>
-            <div class="price">PKR: {{ number_format((float)($product->sale_price_per_piece ?: $product->sale_price_per_box ?: 0)) }}</div>
+            <!-- <div class="price">PKR: {{ number_format((float)($product->sale_price_per_piece ?: $product->sale_price_per_box ?: 0)) }}</div> -->
         </div>
         <div class="card-btns">
             <label class="card-select-wrap">
