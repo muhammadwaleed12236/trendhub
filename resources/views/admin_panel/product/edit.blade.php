@@ -298,7 +298,13 @@
 
                                 <div class="col-12 mt-3 pt-3 border-top">
                                     <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                                        <h6 class="form-label-pro text-primary mb-0"><i class="fas fa-cubes me-1"></i>Product Variants & Units</h6>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <h6 class="form-label-pro text-primary mb-0"><i class="fas fa-cubes me-1"></i>Product Variants & Units</h6>
+                                            <div class="bg-light px-2 py-1 rounded border d-flex gap-2 text-nowrap align-items-center" style="font-size: 0.75rem;">
+                                                <span class="text-muted fw-bold">Overall Stock:</span>
+                                                <strong class="text-primary fs-6" id="overall_stock_display">0</strong>
+                                            </div>
+                                        </div>
                                         <button type="button" class="btn btn-sm btn-primary" id="enableVariantsBtn"><i class="fas fa-plus me-1"></i>Add Variant Row</button>
                                     </div>
                                     <div id="variantsContainer">
@@ -983,8 +989,9 @@
                     <td class="p-1"><input type="number" class="form-control-pro form-control-sm base-purch-input" name="variant_purchase_price[]" step="any" value="${purchVal}" placeholder="0.00" required></td>
                     <td class="p-1"><input type="number" class="form-control-pro form-control-sm" name="variant_alert_qty[]" value="${alertVal}" placeholder="0"></td>
                     <td class="p-1"><input type="text" class="form-control-pro form-control-sm" name="variant_barcode[]" value="${barcodeVal}"></td>
-                    <td class="p-1 text-center">
+                    <td class="p-1 text-center text-nowrap">
                         <span class="badge bg-primary px-2 py-1">Base</span>
+                        <button type="button" class="btn btn-sm btn-outline-info duplicate-var-btn p-1 px-2 ms-1" title="Duplicate"><i class="fas fa-copy"></i></button>
                     </td>
                 `;
                 variantsBody.appendChild(tr);
@@ -1030,6 +1037,7 @@
                         stockInp.value = calcPcs;
                     }
                 });
+                if (typeof calculateOverallStock === 'function') calculateOverallStock();
             }
 
             function updatePriceSuggestions() {
@@ -1158,7 +1166,8 @@
                     <td class="p-1"><input type="number" class="form-control-pro form-control-sm purch-price-input" name="variant_purchase_price[]" step="any" value="${suggPurch}" placeholder="0.00" required></td>
                     <td class="p-1"><input type="number" class="form-control-pro form-control-sm" name="variant_alert_qty[]" value="${alertVal}" placeholder="0"></td>
                     <td class="p-1"><input type="text" class="form-control-pro form-control-sm" name="variant_barcode[]" value="${barcodeVal}"></td>
-                    <td class="p-1 text-center">
+                    <td class="p-1 text-center text-nowrap">
+                        <button type="button" class="btn btn-sm btn-outline-info duplicate-var-btn p-1 px-2 me-1" title="Duplicate"><i class="fas fa-copy"></i></button>
                         <button type="button" class="btn btn-sm btn-outline-danger remove-var-btn p-1 px-2" title="Remove"><i class="fas fa-trash"></i></button>
                     </td>
                 `;
@@ -1275,13 +1284,63 @@
             enableVariantsBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Add Variant Row';
             enableVariantsBtn.className = 'btn btn-sm btn-primary';
 
+            function duplicateVariantRow(sourceRow) {
+                addVariantRow();
+                const newRow = variantsBody.lastElementChild;
+                
+                const sourceName = sourceRow.querySelector('input[name="variant_name[]"]')?.value || '';
+                const sourceUnit = sourceRow.querySelector('select[name="variant_unit[]"]')?.value || '';
+                const sourceConv = sourceRow.querySelector('input[name="variant_conv_factor[]"]')?.value || '';
+                const sourcePieceWt = sourceRow.querySelector('input[name="variant_weight_per_piece[]"]')?.value || '';
+                const sourceSale = sourceRow.querySelector('input[name="variant_sale_price[]"]')?.value || '';
+                const sourceWholesale = sourceRow.querySelector('input[name="variant_wholesale_price[]"]')?.value || '';
+                const sourcePurch = sourceRow.querySelector('input[name="variant_purchase_price[]"]')?.value || '';
+                const sourceAlert = sourceRow.querySelector('input[name="variant_alert_qty[]"]')?.value || '0';
+                const sourceStock = sourceRow.querySelector('input[name="variant_stock[]"]')?.value || '0';
+                
+                if(newRow.querySelector('input[name="variant_name[]"]')) newRow.querySelector('input[name="variant_name[]"]').value = sourceName;
+                if(newRow.querySelector('select[name="variant_unit[]"]')) newRow.querySelector('select[name="variant_unit[]"]').value = sourceUnit;
+                if(newRow.querySelector('input[name="variant_conv_factor[]"]')) newRow.querySelector('input[name="variant_conv_factor[]"]').value = sourceConv;
+                if(newRow.querySelector('input[name="variant_weight_per_piece[]"]')) newRow.querySelector('input[name="variant_weight_per_piece[]"]').value = sourcePieceWt;
+                if(newRow.querySelector('input[name="variant_sale_price[]"]')) newRow.querySelector('input[name="variant_sale_price[]"]').value = sourceSale;
+                if(newRow.querySelector('input[name="variant_wholesale_price[]"]')) newRow.querySelector('input[name="variant_wholesale_price[]"]').value = sourceWholesale;
+                if(newRow.querySelector('input[name="variant_purchase_price[]"]')) newRow.querySelector('input[name="variant_purchase_price[]"]').value = sourcePurch;
+                if(newRow.querySelector('input[name="variant_alert_qty[]"]')) newRow.querySelector('input[name="variant_alert_qty[]"]').value = sourceAlert;
+                if(newRow.querySelector('input[name="variant_stock[]"]')) newRow.querySelector('input[name="variant_stock[]"]').value = sourceStock;
+                
+                const vid = newRow.dataset.vid;
+                manualPrices[vid + '_sale'] = true;
+                manualPrices[vid + '_purch'] = true;
+                manualPrices[vid + '_wholesale'] = true;
+            }
+
+            function calculateOverallStock() {
+                let total = 0;
+                document.querySelectorAll('input[name="variant_stock[]"]').forEach(inp => {
+                    total += (parseFloat(inp.value) || 0);
+                });
+                const display = document.getElementById('overall_stock_display');
+                if (display) display.innerText = total;
+            }
+
+            variantsBody.addEventListener('input', function(e) {
+                if (e.target.name === 'variant_stock[]') {
+                    calculateOverallStock();
+                }
+            });
+
             variantsBody.addEventListener('click', function(e) {
                 const addBtn = e.target.closest('.add-var-btn');
                 const remBtn = e.target.closest('.remove-var-btn');
                 const genBtn = e.target.closest('.gen-var-barcode');
+                const dupBtn = e.target.closest('.duplicate-var-btn');
 
-                if (addBtn) {
+                if (dupBtn) {
+                    duplicateVariantRow(dupBtn.closest('tr'));
+                    calculateOverallStock();
+                } else if (addBtn) {
                     addVariantRow();
+                    calculateOverallStock();
                 } else if (remBtn) {
                     const row = remBtn.closest('tr');
                     if (row.querySelector('.base-name-input')) {
@@ -1296,6 +1355,7 @@
                         const bc = row.querySelector('input[name="variant_barcode[]"]');
                         if (bc) bc.value = generateRandomBarcode();
                     }
+                    calculateOverallStock();
                 } else if (genBtn) {
                     const input = genBtn.closest('td').querySelector('input');
                     input.value = generateRandomBarcode();
@@ -1349,7 +1409,8 @@
  
             // Call updateMode to set initial visible states
             updateMode();
- 
+
+            if (typeof calculateOverallStock === 'function') calculateOverallStock();
         });
 
         // ============================================================
