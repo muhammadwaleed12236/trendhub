@@ -174,9 +174,9 @@
         }
         #variantsTable .form-control-pro, 
         #variantsTable .form-select {
-            height: 30px;
-            padding: 2px 6px;
-            font-size: 12px;
+            height: 38px;
+            padding: 6px 10px;
+            font-size: 13px;
             border-radius: 4px;
             border: 1px solid #ced4da;
             background-color: #ffffff;
@@ -192,9 +192,9 @@
             border-bottom-right-radius: 0;
         }
         #variantsTable .input-group-sm > .input-group-text {
-            height: 30px;
-            font-size: 11px;
-            padding: 0 5px;
+            height: 38px;
+            font-size: 12px;
+            padding: 0 8px;
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
             border-color: #ced4da;
@@ -205,13 +205,13 @@
             background-color: #f1f5f9 !important;
             color: #334155;
             font-weight: 600;
-            font-size: 11px !important;
-            padding: 6px 4px !important;
+            font-size: 12px !important;
+            padding: 10px 6px !important;
             vertical-align: middle;
             white-space: nowrap;
         }
         #variantsTable td {
-            padding: 4px 3px !important;
+            padding: 6px 4px !important;
             vertical-align: middle;
         }
 
@@ -635,19 +635,19 @@
                                             <table class="table table-bordered table-sm align-middle mb-1" id="variantsTable">
                                                 <thead class="table-light">
                                                     <tr>
-                                                        <th class="text-uppercase text-muted p-1" style="min-width: 140px; font-size: 10px;">Variant Name</th>
-                                                        <th class="text-uppercase text-muted p-1" style="width: 80px; font-size: 10px;">Size</th>
-                                                        <th class="text-uppercase text-muted p-1" style="width: 80px; font-size: 10px;">Color</th>
-                                                        <th class="text-uppercase text-muted p-1" style="width: 75px; font-size: 10px;">Unit</th>
-                                                        <th class="text-uppercase text-muted p-1 text-center" style="width: 90px; font-size: 10px;">Initial Stock</th>
-                                                        <th class="text-uppercase text-muted p-1 text-center conv-col" id="convFactorHeader" style="width: 95px; font-size: 10px;">Pcs / Carton</th>
-                                                        <th class="text-uppercase text-muted p-1 text-center piece-wt-only-col" style="width: 90px; font-size: 10px;">Piece Wt (g)</th>
-                                                        <th class="text-uppercase text-muted p-1" style="width: 90px; font-size: 10px;">Sale Price</th>
-                                                        <th class="text-uppercase text-muted p-1" style="width: 90px; font-size: 10px;">Wholesale</th>
-                                                        <th class="text-uppercase text-muted p-1" style="width: 90px; font-size: 10px;">Purch Price</th>
-                                                        <th class="text-uppercase text-muted p-1" style="width: 55px; font-size: 10px;">Alert</th>
-                                                        <th class="text-uppercase text-muted p-1" style="width: 100px; font-size: 10px;">Barcode</th>
-                                                        <th class="text-uppercase text-muted p-1 text-center" style="width: 50px; font-size: 10px;">Action</th>
+                                                        <th class="text-uppercase text-muted p-1" style="min-width: 180px; width: 250px; font-size: 11px;">Variant Name</th>
+                                                        <th class="text-uppercase text-muted p-1" style="width: 100px; font-size: 11px;">Size</th>
+                                                        <th class="text-uppercase text-muted p-1" style="width: 100px; font-size: 11px;">Color</th>
+                                                        <th class="text-uppercase text-muted p-1" style="width: 90px; font-size: 11px;">Unit</th>
+                                                        <th class="text-uppercase text-muted p-1 text-center" style="width: 110px; font-size: 11px;">Initial Stock</th>
+                                                        <th class="text-uppercase text-muted p-1 text-center conv-col" id="convFactorHeader" style="width: 110px; font-size: 11px;">Pcs / Carton</th>
+                                                        <th class="text-uppercase text-muted p-1 text-center piece-wt-only-col" style="width: 110px; font-size: 11px;">Piece Wt (g)</th>
+                                                        <th class="text-uppercase text-muted p-1" style="width: 110px; font-size: 11px;">Sale Price</th>
+                                                        <th class="text-uppercase text-muted p-1" style="width: 110px; font-size: 11px;">Wholesale</th>
+                                                        <th class="text-uppercase text-muted p-1" style="width: 110px; font-size: 11px;">Purch Price</th>
+                                                        <th class="text-uppercase text-muted p-1" style="width: 70px; font-size: 11px;">Alert</th>
+                                                        <th class="text-uppercase text-muted p-1" style="width: 120px; font-size: 11px;">Barcode</th>
+                                                        <th class="text-uppercase text-muted p-1 text-center" style="width: 60px; font-size: 11px;">Action</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="variantsBody">
