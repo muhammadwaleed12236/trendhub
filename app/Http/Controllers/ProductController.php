@@ -1301,7 +1301,7 @@ class ProductController extends Controller
                         }
 
                         $hasPrev = isset($prevStocks[$i]);
-                        $pRaw = (string)($prevStocks[$i] ?? $sRaw);
+                        $pRaw = $hasPrev ? (string)$prevStocks[$i] : '0';
                         if ($isCarton && $vConvFactor > 1) {
                             if (strpos($pRaw, '.') !== false) {
                                 $p = explode('.', $pRaw);
@@ -1552,22 +1552,40 @@ class ProductController extends Controller
                     }
                 } else {
                     // Product has variants
-                    if (!$hasHistory || (float)$warehouseStock->total_pieces <= 0) {
-                        $warehouseStock->total_pieces = $initialPieces;
-                        $warehouseStock->quantity = $ppb > 0 ? round($initialPieces / $ppb, 2) : $initialPieces;
-                        $warehouseStock->save();
+                    $correctTotalPieces = 0;
+                    for ($i = 0; $i < count($names); $i++) {
+                        if (!empty($names[$i])) {
+                            $vConvFactor = (float)($conv_factors[$i] ?? 0);
+                            if ($vConvFactor <= 0) $vConvFactor = 1;
+                            $vUnit = $units[$i] ?? 'Pcs';
+                            $isCarton = ($mode === 'by_cartons' || strtolower($vUnit) === 'carton');
+                            $sRaw = (string)($stocks[$i] ?? '0');
+                            if ($isCarton && $vConvFactor > 1) {
+                                if (strpos($sRaw, '.') !== false) {
+                                    $p = explode('.', $sRaw);
+                                    $correctTotalPieces += ((int)($p[0] ?? 0) * $vConvFactor) + (int)($p[1] ?? 0);
+                                } else {
+                                    $correctTotalPieces += (float)$sRaw * $vConvFactor;
+                                }
+                            } else {
+                                $correctTotalPieces += (float)$sRaw;
+                            }
+                        }
+                    }
 
+                    $warehouseStock->total_pieces = $correctTotalPieces;
+                    $warehouseStock->quantity = $ppb > 0 ? round($correctTotalPieces / $ppb, 2) : $correctTotalPieces;
+                    $warehouseStock->save();
+
+                    if (!$hasHistory) {
                         StockMovement::updateOrCreate(
                             ['product_id' => $id, 'ref_type' => 'INIT'],
                             [
                                 'type' => 'adjustment',
-                                'qty' => $initialPieces,
+                                'qty' => $correctTotalPieces,
                                 'note' => 'Initial Stock',
                             ]
                         );
-                    } else {
-                        $warehouseStock->quantity = round($warehouseStock->total_pieces / $ppb, 2);
-                        $warehouseStock->save();
                     }
                 }
             } else {

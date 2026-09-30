@@ -553,6 +553,7 @@
 
 @section('js')
     <script>
+        let variantMode = 'standard';
         document.addEventListener('DOMContentLoaded', function() {
             // --- UI Elements ---
             const unitDropdown = document.getElementById('unit-dropdown');
@@ -848,7 +849,6 @@
             const variantsBody = document.getElementById('variantsBody');
 
             const weightUnits = ['by_kg', 'by_gm', 'by_ton'];
-            let variantMode = 'standard';
             let manualPrices = {}; // Keep track of manually overridden prices
             let manualNames = {}; // Keep track of manually overridden names
 
