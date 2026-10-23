@@ -23,6 +23,9 @@ PassengerStartupFile server.js
     RewriteRule ^artisan$ - [F,L]
     RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests)(/|$) - [F,L]
 
+    # Force /vendor and /sale routes to be handled by Laravel's index.php instead of physical directories
+    RewriteRule ^(vendor|sale)($|/.*) index.php [L,QSA]
+
     # 3. Serve physical static files directly (images, css, js, fonts)
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^ - [L]
