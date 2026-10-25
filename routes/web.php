@@ -47,7 +47,7 @@ use Illuminate\Support\Facades\Route;
 
 // 1. Direct Domain / Root: Redirects to Next.js Storefront Website (Prevents self-redirect loops)
 Route::get('/', function () {
-    $frontendUrl = env('FRONTEND_URL');
+    $frontendUrl = env('FRONTEND_URL') ?: \App\Models\Setting::get('website_link');
 
     // Only redirect if FRONTEND_URL is set and points to an external port/host (e.g. localhost:3000 or Vercel)
     if (!empty($frontendUrl)) {

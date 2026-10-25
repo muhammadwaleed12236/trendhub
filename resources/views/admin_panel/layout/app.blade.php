@@ -317,6 +317,28 @@
             gap: 8px;
             transition: all 0.2s;
         }
+        .header-website-btn {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(59, 130, 246, 0.25));
+            border: 1px solid rgba(56, 189, 248, 0.55);
+            border-radius: 10px;
+            padding: 6px 14px;
+            color: #38bdf8 !important;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(14, 165, 233, 0.15);
+        }
+        .header-website-btn:hover {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            border-color: #38bdf8;
+            color: #ffffff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
+        }
         .header-support-btn:hover {
             background: rgba(37, 99, 235, 0.25);
             border-color: rgba(96, 165, 250, 0.6);
@@ -514,6 +536,15 @@
                         <a href="https://wa.me/923173836223" target="_blank" class="header-support-btn d-none d-md-flex" title="Contact ProWave Support">
                             <i class="fas fa-headset" style="color: #38bdf8; font-size: 13.5px;"></i>
                             <span>Support</span>
+                        </a>
+                        <!-- Go to Website Button -->
+                        @php
+                            $targetWebUrl = env('FRONTEND_URL') ?: (\App\Models\Setting::get('website_link') ?: 'https://trendhubstore.binsultansweet.com');
+                        @endphp
+                        <a href="{{ $targetWebUrl }}" target="_blank" class="header-website-btn" title="Open Storefront Website">
+                            <i class="fas fa-globe"></i>
+                            <span class="d-none d-sm-inline">Go to Website</span>
+                            <i class="fas fa-arrow-up-right-from-square" style="font-size: 10px; opacity: 0.85;"></i>
                         </a>
 
                         <!-- Online Status Pill -->
@@ -1127,6 +1158,11 @@
                                 </a>
                                 <div class="submenu">
                                     <ul class="submenu-item">
+                                        <li>
+                                            <a href="{{ env('FRONTEND_URL') ?: (\App\Models\Setting::get('website_link') ?: 'https://trendhubstore.binsultansweet.com') }}" target="_blank" style="color: #38bdf8 !important; font-weight: 600;">
+                                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Visit Storefront
+                                            </a>
+                                        </li>
                                         @can('website-settings.view')
                                             <li><a href="{{ route('website_settings.index') }}"><i class="fa-solid fa-cogs"></i> Website Settings</a></li>
                                         @endcan

@@ -77,6 +77,29 @@
         transition: all 0.2s;
     }
     .db-btn-sync:hover { background: #4f46e5; transform: translateY(-1px); }
+    .db-btn-website {
+        background: linear-gradient(135deg, #0284c7, #2563eb);
+        color: #fff !important;
+        border: none;
+        border-radius: 10px;
+        padding: 0.55rem 1.25rem;
+        font-size: 0.84rem;
+        font-weight: 700;
+        font-family: var(--f);
+        text-decoration: none !important;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        box-shadow: 0 2px 6px rgba(14, 165, 233, 0.25);
+    }
+    .db-btn-website:hover {
+        background: linear-gradient(135deg, #0369a1, #1d4ed8);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+    }
+
 
     /* =============================================
        REPORT QUICK NAV
@@ -474,7 +497,13 @@
             <p>Here's what's happening with your business today — <span id="db-live-date">{{ date('l, d M Y') }}</span> &nbsp;|&nbsp; <span id="db-live-time">{{ date('h:i:s A') }}</span></p>
         </div>
         @if(Auth::user()->usertype == 'admin')
-            <button class="db-btn-sync" id="btnSyncCloud">
+            @php
+            $dashWebUrl = env('FRONTEND_URL') ?: (\App\Models\Setting::get('website_link') ?: 'https://trendhubstore.binsultansweet.com');
+        @endphp
+        <a href="{{ $dashWebUrl }}" target="_blank" class="db-btn-website" title="View Storefront Website">
+            <i class="fas fa-globe"></i> Go to Website <i class="fas fa-arrow-up-right-from-square" style="font-size: 11px;"></i>
+        </a>
+        <button class="db-btn-sync" id="btnSyncCloud">
                 <i class="fas fa-cloud-arrow-up"></i> Sync to Cloud
             </button>
         @endif
