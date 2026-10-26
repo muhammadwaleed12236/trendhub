@@ -973,6 +973,7 @@
                     <td class="p-1">
                         <input type="number" class="form-control-pro form-control-sm text-center fw-bold text-primary" name="variant_stock[]" step="any" value="${stockVal}" placeholder="0" title="${isCartonMode ? 'Available Stock (Cartons)' : 'Available Stock'}">
                         <input type="hidden" name="variant_prev_stock[]" value="${stockVal}">
+                        <input type="hidden" name="variant_uncapped_stock[]" value="${v ? (v.uncapped_stock ?? stockVal) : stockVal}">
                         <input type="hidden" name="variant_orig_initial[]" value="${v ? (v.orig_initial_stock ?? v.stock ?? 0) : stockVal}">
                     </td>
                     <td class="p-0 conv-col">
@@ -1150,6 +1151,7 @@
                     <td class="p-1">
                         <input type="number" class="form-control-pro form-control-sm text-center fw-bold text-primary stock-input" name="variant_stock[]" step="any" value="${stockVal}" placeholder="0" title="${isCartonMode ? 'Available Stock (Cartons)' : 'Available Stock'}" ${variantMode === 'weight' ? 'readonly style="background:#f8f9ff;color:#0d6efd;font-weight:bold;"' : ''}>
                         <input type="hidden" name="variant_prev_stock[]" value="${stockVal}">
+                        <input type="hidden" name="variant_uncapped_stock[]" value="${v ? (v.uncapped_stock ?? stockVal) : stockVal}">
                         <input type="hidden" name="variant_orig_initial[]" value="${v ? (v.orig_initial_stock ?? v.stock ?? 0) : stockVal}">
                     </td>
                     <td class="p-0 conv-col">

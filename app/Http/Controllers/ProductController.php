@@ -1282,6 +1282,7 @@ class ProductController extends Controller
                     || DB::table('stock_movements')->where('product_id', $id)->whereNotIn('ref_type', ['INIT'])->exists();
 
                 $prevStocks   = $request->variant_prev_stock ?? [];
+                $uncappedStocks = $request->variant_uncapped_stock ?? [];
                 $origInitials = $request->variant_orig_initial ?? [];
                 $defaultWhId  = \App\Models\Warehouse::first()->id ?? 1;
                 $warehouseStock = \App\Models\WarehouseStock::where('product_id', $id)->first();
@@ -1328,6 +1329,10 @@ class ProductController extends Controller
                         }
 
                         $deltaPieces = $newPieces - $oldPieces;
+                        $uRaw = isset($uncappedStocks[$i]) ? (float)$uncappedStocks[$i] : $oldPieces;
+                        if ($hasPrev && $uRaw < 0 && $newPieces >= $oldPieces) {
+                            $deltaPieces = $newPieces - $uRaw;
+                        }
                         $origInitial = isset($origInitials[$i]) ? (float)$origInitials[$i] : $newPieces;
 
                         if ($hasHistory) {
@@ -2097,7 +2102,8 @@ class ProductController extends Controller
                 }
             }
 
-            $vBalance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned + $adjustments);
+            $vUncapped = $initial + $purchased - $sold + $returnedQty - $pReturned + $adjustments;
+            $vBalance = max(0, $vUncapped);
 
             if ($vCarton && $vConv > 1) {
                 $cartons = (int)floor($vBalance / $vConv);
@@ -2111,6 +2117,7 @@ class ProductController extends Controller
             $v['orig_initial_stock'] = $origInitial;
             $v['available_stock'] = $stockDisplay;
             $v['stock'] = $stockDisplay;
+            $v['uncapped_stock'] = $vUncapped;
 
             $results[] = $v;
         }

@@ -128,7 +128,7 @@ class StockAdjustmentController extends Controller
         $brands     = Brand::all();
 
         // Fetch products with variant details
-        $products = Product::with(['category_relation', 'brand'])
+        $products = Product::with(['category_relation', 'brand', 'warehouseStocks'])
             ->select('id', 'item_name', 'item_code', 'barcode_path', 'image', 'category_id', 'brand_id', 'color', 'size_mode', 'pieces_per_box')
             ->get();
 
@@ -557,21 +557,25 @@ class StockAdjustmentController extends Controller
             $oldUncapped = $targetVariant ? (float) $targetVariant['uncapped_stock'] : 0;
 
             if ($data['type'] === 'add') {
-                $deltaQty = $inputQty;
-                $newStock = $oldStock + $deltaQty;
+                $newStock = $oldStock + $inputQty;
+                // If ledger was in negative deficit, delta must cover deficit + new stock so new uncapped stock equals newStock
+                $deltaQty = $newStock - $oldUncapped;
+                $whDelta  = $inputQty;
             } elseif ($data['type'] === 'subtract') {
-                $deltaQty = -1 * min($oldStock, $inputQty);
-                $newStock = max(0, $oldStock + $deltaQty);
+                $newStock = max(0, $oldStock - $inputQty);
+                $deltaQty = $newStock - $oldStock;
+                $whDelta  = $deltaQty;
             } else { // 'set'
-                $deltaQty = $inputQty - $oldStock;
                 $newStock = max(0, $inputQty);
+                $deltaQty = $newStock - $oldUncapped;
+                $whDelta  = $newStock - $oldStock;
             }
 
-// Note: Stock movement records adjustment delta in stock_movements ledger,
+            // Note: Stock movement records adjustment delta in stock_movements ledger,
             // preserving original initial stock in product->color without double-counting.
 
             // Update WarehouseStock
-            $warehouseStock->total_pieces = max(0, (float)$warehouseStock->total_pieces + $deltaQty);
+            $warehouseStock->total_pieces = max(0, (float)$warehouseStock->total_pieces + $whDelta);
             $ppb = $product->pieces_per_box > 0 ? $product->pieces_per_box : 1;
             if ($ppb > 1 && in_array($product->size_mode, ['by_cartons', 'by_size'])) {
                 $warehouseStock->boxes_quantity = floor($warehouseStock->total_pieces / $ppb);

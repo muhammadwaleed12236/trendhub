@@ -332,8 +332,16 @@
                             @endif
                         </div>
 
-                        <div class="product-card-stock">
-                            <i class="fa fa-hand-pointer me-1"></i> Click to Adjust
+                        @php
+                            $pStock = $p->warehouseStocks ? (float) $p->warehouseStocks->sum('total_pieces') : 0;
+                        @endphp
+                        <div class="d-flex align-items-center justify-content-between mt-2 pt-1 border-top">
+                            <span class="badge {{ $pStock > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle' }}" style="font-size:.70rem;">
+                                Stock: {{ $pStock }}
+                            </span>
+                            <div class="product-card-stock m-0 py-1 px-2" style="font-size:.68rem !important;">
+                                <i class="fa fa-hand-pointer me-1"></i> Adjust
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -611,7 +619,7 @@ $(document).ready(function () {
                                     <div class="text-muted small font-monospace">Size: ${v.size} | Color: ${v.color}</div>
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge bg-primary px-2 py-1" style="font-size:.78rem;">
+                                    <span class="badge ${v.current_stock > 0 ? 'bg-success' : 'bg-danger'} px-2 py-1" style="font-size:.78rem;">
                                         ${v.current_stock} Pcs
                                     </span>
                                 </td>
