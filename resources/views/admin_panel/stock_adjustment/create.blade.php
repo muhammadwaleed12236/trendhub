@@ -605,7 +605,7 @@ $(document).ready(function () {
                     if (res.has_variants && res.variants.length > 0) {
                         $.each(res.variants, function (i, v) {
                             let row = `
-                            <tr data-pid="${productId}" data-pname="${productName}" data-pcode="${productCode}" data-vkey="${v.variant_key}" data-vname="${v.name}" data-stock="${v.current_stock}">
+                            <tr data-pid="${productId}" data-pname="${productName}" data-pcode="${productCode}" data-vkey="${v.variant_key}" data-vname="${v.display_label || v.name}" data-stock="${v.current_stock}">
                                 <td class="ps-4 fw-bold">
                                     ${v.name}
                                     <div class="text-muted small font-monospace">Size: ${v.size} | Color: ${v.color}</div>

@@ -343,6 +343,14 @@ class StockAdjustmentController extends Controller
                 ->select('pri.qty', 'pri.color')
                 ->get();
 
+            // Fetch Stock Adjustments
+            $adjList = DB::table('stock_movements')
+                ->where('product_id', $product->id)
+                ->where('type', 'adjustment')
+                ->whereNotIn('ref_type', ['INIT'])
+                ->select('qty', 'note')
+                ->get();
+
             foreach ($parsed as $v) {
                 $vName = $v['name'] ?? $product->item_name;
                 $vSize = $v['size'] ?? '-';
@@ -386,7 +394,14 @@ class StockAdjustmentController extends Controller
                     }
                 }
 
-                $vUncappedStock = $vInitial + $purchased - $sold + $returnedQty - $pReturned;
+                $adjustments = 0;
+                foreach ($adjList as $adjItem) {
+                    if ($this->matchAdjustmentToVariant($adjItem, $v)) {
+                        $adjustments += (float) $adjItem->qty;
+                    }
+                }
+
+                $vUncappedStock = $vInitial + $purchased - $sold + $returnedQty - $pReturned + $adjustments;
                 $vCurrentStock = max(0, $vUncappedStock);
 
                 $variants[] = [
@@ -449,6 +464,61 @@ class StockAdjustmentController extends Controller
     }
 
     /**
+     * Match a stock adjustment note to a specific variant based on variant name, size, and color.
+     */
+    private function matchAdjustmentToVariant($adjItem, $variant)
+    {
+        $note = strtolower($adjItem->note ?? '');
+        if (empty($note)) {
+            return false;
+        }
+
+        $vName  = strtolower(trim($variant['name'] ?? ''));
+        $vSize  = strtolower(trim($variant['size'] ?? '-'));
+        $vColor = strtolower(trim($variant['color'] ?? '-'));
+
+        // 1. If note contains explicit Variant name: "Variant: <name>"
+        if (preg_match('/variant:\s*([^|\(]+)/i', $note, $matches)) {
+            $noteVariantName = strtolower(trim($matches[1]));
+            if (!empty($vName) && $noteVariantName !== $vName) {
+                return false;
+            }
+            if (!empty($vName) && $noteVariantName === $vName) {
+                $sizeMatch = true;
+                if ($vSize !== '-' && !empty($vSize)) {
+                    $sizeMatch = preg_match('/\b' . preg_quote($vSize, '/') . '\b/i', $note) === 1;
+                }
+                $colorMatch = true;
+                if ($vColor !== '-' && !empty($vColor)) {
+                    $colorMatch = preg_match('/\b' . preg_quote($vColor, '/') . '\b/i', $note) === 1;
+                }
+                return $sizeMatch && $colorMatch;
+            }
+        }
+
+        // 2. If size or color is specified on variant, match against note
+        $hasSpecificAttributes = ($vSize !== '-' && !empty($vSize)) || ($vColor !== '-' && !empty($vColor));
+        if ($hasSpecificAttributes) {
+            $sizeMatch = true;
+            if ($vSize !== '-' && !empty($vSize)) {
+                $sizeMatch = preg_match('/\b' . preg_quote($vSize, '/') . '\b/i', $note) === 1;
+            }
+            $colorMatch = true;
+            if ($vColor !== '-' && !empty($vColor)) {
+                $colorMatch = preg_match('/\b' . preg_quote($vColor, '/') . '\b/i', $note) === 1;
+            }
+            return $sizeMatch && $colorMatch;
+        }
+
+        // 3. If variant has no size and no color, check if the variant name appears in the note
+        if (!empty($vName)) {
+            return preg_match('/\b' . preg_quote($vName, '/') . '\b/i', $note) === 1;
+        }
+
+        return false;
+    }
+
+    /**
      * Private helper to execute a single stock adjustment
      */
     private function processSingleAdjustment(array $data)
@@ -477,7 +547,7 @@ class StockAdjustmentController extends Controller
             $variants = $this->getCalculatedVariants($product);
             $targetVariant = null;
             foreach ($variants as $v) {
-                if ($variantKey ? ($v['variant_key'] === $variantKey) : ($variantName && $v['name'] === $variantName)) {
+                if ($variantKey ? ($v['variant_key'] === $variantKey) : ($variantName && ($v['name'] === $variantName || ($v['display_label'] ?? '') === $variantName))) {
                     $targetVariant = $v;
                     break;
                 }
@@ -497,22 +567,8 @@ class StockAdjustmentController extends Controller
                 $newStock = max(0, $inputQty);
             }
 
-            try {
-                $parsed = is_string($product->color) ? json_decode($product->color, true) : $product->color;
-                if (is_array($parsed)) {
-                    foreach ($parsed as &$v) {
-                        $vKey = ($v['name'] ?? $product->item_name) . '|' . ($v['size'] ?? '-') . '|' . ($v['color'] ?? '-');
-                        if ($variantKey ? ($vKey === $variantKey) : ($variantName && ($v['name'] ?? '') === $variantName)) {
-                            $vOld = (float)($v['stock'] ?? 0);
-                            $v['stock'] = $vOld + ($newStock - $oldUncapped);
-                            break;
-                        }
-                    }
-                    unset($v);
-                    $product->color = json_encode($parsed);
-                    $product->save();
-                }
-            } catch (\Exception $e) {}
+// Note: Stock movement records adjustment delta in stock_movements ledger,
+            // preserving original initial stock in product->color without double-counting.
 
             // Update WarehouseStock
             $warehouseStock->total_pieces = max(0, (float)$warehouseStock->total_pieces + $deltaQty);
@@ -553,6 +609,7 @@ class StockAdjustmentController extends Controller
             $warehouseStock->save();
         }
 
+        $variantLabel = $targetVariant ? $targetVariant['display_label'] : ($variantName ?: null);
         // Log Stock Movement
         DB::table('stock_movements')->insert([
             'product_id'   => $product->id,
@@ -560,7 +617,7 @@ class StockAdjustmentController extends Controller
             'qty'          => $deltaQty,
             'ref_type'     => 'STOCK_ADJUSTMENT',
             'ref_id'       => null,
-            'note'         => "Warehouse #{$data['warehouse_id']} | " . ($variantName ? "Variant: {$variantName} | " : '') . "Reason: " . $data['reason'],
+            'note'         => "Warehouse #{$data['warehouse_id']} | " . ($variantLabel ? "Variant: {$variantLabel} | " : '') . "Reason: " . $data['reason'],
             'created_at'   => now(),
             'updated_at'   => now(),
         ]);

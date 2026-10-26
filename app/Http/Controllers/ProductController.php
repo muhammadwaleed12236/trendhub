@@ -587,6 +587,13 @@ class ProductController extends Controller
                     ->select('pri.qty', 'pri.color')
                     ->get();
 
+                $adjList = DB::table('stock_movements')
+                    ->where('product_id', $product->id)
+                    ->where('type', 'adjustment')
+                    ->whereNotIn('ref_type', ['INIT'])
+                    ->select('qty', 'note')
+                    ->get();
+
                 foreach ($variants as &$v) {
                     $initial = (float) ($v['stock'] ?? 0);
 
@@ -636,7 +643,14 @@ class ProductController extends Controller
                             }
                         }
 
-                        $vBalance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned);
+                        $adjustments = 0;
+                        foreach ($adjList as $adjItem) {
+                            if ($this->matchAdjustmentToVariant($adjItem, $v)) {
+                                $adjustments += (float) $adjItem->qty;
+                            }
+                        }
+
+                        $vBalance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned + $adjustments);
                     }
 
                     $vStockDisplay = ((float)$vBalance == (int)$vBalance) ? (int)$vBalance : round($vBalance, 2);
