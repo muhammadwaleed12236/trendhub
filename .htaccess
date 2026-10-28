@@ -1,3 +1,11 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home3/binsult1/domains/trendhubstore.binsultansweet.com/public_html/frontend"
+PassengerBaseURI "/"
+PassengerNodejs "/home3/binsult1/nodevenv/domains/trendhubstore.binsultansweet.com/public_html/frontend/20/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
