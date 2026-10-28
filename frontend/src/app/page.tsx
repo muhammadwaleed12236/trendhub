@@ -301,7 +301,7 @@ export default function Home() {
         </div>
 
         {/* Hero Bottom Dock / 4 Featured Cards (Fully Dynamic via Admin Settings) */}
-        <div className="relative z-20 w-full border-t border-white/20 bg-black/50 backdrop-blur-md">
+        <div className="hidden lg:block relative z-20 w-full border-t border-white/20 bg-black/50 backdrop-blur-md">
           <div className="max-w-[1400px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/15">
             
             {/* Card 1 */}
