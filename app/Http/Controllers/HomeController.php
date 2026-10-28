@@ -73,40 +73,47 @@ class HomeController extends Controller
             // ===== SALES REPORT CHARTS =====
             $salesChartStats = ['daily' => ['series' => [], 'categories' => []]];
             if ($canAllSales || $canOwnSales) {
-                // DAILY (last 7 days)
+                // DAILY (last 7 days in 1 fast query)
                 $dailyLabels = collect(range(6, 0))->map(fn($i) => \Carbon\Carbon::today()->subDays($i)->format('Y-m-d'));
-                $dailyData = $dailyLabels->map(function ($date) use ($canAllSales, $userId) {
-                    $q = DB::table('sales')->whereDate('created_at', $date);
-                    if (!$canAllSales) {
-                        $q->where('user_id', $userId);
-                    }
-                    return $q->sum('total_net');
-                });
+                $sevenDaysAgo = \Carbon\Carbon::today()->subDays(6)->startOfDay();
 
-                // WEEKLY (This + Last 2 weeks)
+                $salesByDay = DB::table('sales')
+                    ->selectRaw('DATE(created_at) as date_val, SUM(total_net) as total')
+                    ->where('created_at', '>=', $sevenDaysAgo)
+                    ->when(!$canAllSales, fn($q) => $q->where('user_id', $userId))
+                    ->groupBy('date_val')
+                    ->pluck('total', 'date_val');
+
+                $dailyData = $dailyLabels->map(fn($date) => (float)($salesByDay[$date] ?? 0));
+
+                // WEEKLY (This + Last 2 weeks in 1 fast query)
                 $weeklyLabels = ['This Week', 'Last Week', '2 Weeks Ago'];
-                $weeklyData = collect([0, 1, 2])->map(function ($i) use ($canAllSales, $userId) {
+                $twoWeeksAgo = \Carbon\Carbon::now()->startOfWeek()->subWeeks(2);
+                $weeklySalesRaw = DB::table('sales')
+                    ->selectRaw('created_at, total_net')
+                    ->where('created_at', '>=', $twoWeeksAgo)
+                    ->when(!$canAllSales, fn($q) => $q->where('user_id', $userId))
+                    ->get();
+
+                $weeklyData = collect([0, 1, 2])->map(function ($i) use ($weeklySalesRaw) {
                     $start = \Carbon\Carbon::now()->startOfWeek()->subWeeks($i);
                     $end = $start->copy()->endOfWeek();
-                    $q = DB::table('sales')->whereBetween('created_at', [$start, $end]);
-                    if (!$canAllSales) {
-                        $q->where('user_id', $userId);
-                    }
-                    return $q->sum('total_net');
+                    return (float) $weeklySalesRaw->whereBetween('created_at', [$start, $end])->sum('total_net');
                 })->reverse()->values();
 
-                // MONTHLY (Jan → Current month)
+                // MONTHLY (Jan → Current month in 1 fast query)
                 $months = range(1, \Carbon\Carbon::now()->month);
                 $monthLabels = collect($months)->map(fn($m) => \Carbon\Carbon::create()->month($m)->format('F'));
-                $monthlyData = collect($months)->map(function ($month) use ($canAllSales, $userId) {
-                    $q = DB::table('sales')
-                        ->whereMonth('created_at', $month)
-                        ->whereYear('created_at', \Carbon\Carbon::now()->year);
-                    if (!$canAllSales) {
-                        $q->where('user_id', $userId);
-                    }
-                    return $q->sum('total_net');
-                });
+                $yearStart = \Carbon\Carbon::now()->startOfYear();
+
+                $salesByMonth = DB::table('sales')
+                    ->selectRaw('MONTH(created_at) as month_val, SUM(total_net) as total')
+                    ->where('created_at', '>=', $yearStart)
+                    ->when(!$canAllSales, fn($q) => $q->where('user_id', $userId))
+                    ->groupBy('month_val')
+                    ->pluck('total', 'month_val');
+
+                $monthlyData = collect($months)->map(fn($month) => (float)($salesByMonth[$month] ?? 0));
 
                 $salesChartStats = [
                     'daily' => [
@@ -127,41 +134,52 @@ class HomeController extends Controller
             // ===== PURCHASE CHARTS =====
             $purchaseChartStats = ['daily' => ['series' => [], 'categories' => []]];
             if (Auth::user()->can('purchases.view')) {
-                // DAILY
+                // DAILY in 1 fast query
                 $purchaseDailyLabels = collect(range(6, 0))->map(fn($i) => Carbon::today()->subDays($i)->format('Y-m-d'));
+                $sevenDaysAgo = Carbon::today()->subDays(6)->startOfDay();
+
+                $purchasesByDay = DB::table('purchases')
+                    ->selectRaw('DATE(created_at) as date_val, SUM(net_amount) as total')
+                    ->where('created_at', '>=', $sevenDaysAgo)
+                    ->groupBy('date_val')
+                    ->pluck('total', 'date_val');
+
                 $purchaseDailySeries = [[
                     'name' => 'Purchases',
-                    'data' => $purchaseDailyLabels->map(function ($date) {
-                        return DB::table('purchases')
-                            ->whereDate('created_at', $date)
-                            ->sum('net_amount');
-                    })
+                    'data' => $purchaseDailyLabels->map(fn($date) => (float)($purchasesByDay[$date] ?? 0))
                 ]];
 
-                // WEEKLY
+                // WEEKLY in 1 fast query
                 $purchaseWeeklyLabels = ['This Week', 'Last Week', '2 Weeks Ago'];
+                $twoWeeksAgo = Carbon::now()->startOfWeek()->subWeeks(2);
+                $weeklyPurchasesRaw = DB::table('purchases')
+                    ->selectRaw('created_at, net_amount')
+                    ->where('created_at', '>=', $twoWeeksAgo)
+                    ->get();
+
                 $purchaseWeeklySeries = [[
                     'name' => 'Purchases',
-                    'data' => collect([0, 1, 2])->map(function ($i) {
+                    'data' => collect([0, 1, 2])->map(function ($i) use ($weeklyPurchasesRaw) {
                         $start = Carbon::now()->startOfWeek()->subWeeks($i);
                         $end = $start->copy()->endOfWeek();
-                        return DB::table('purchases')
-                            ->whereBetween('created_at', [$start, $end])
-                            ->sum('net_amount');
+                        return (float) $weeklyPurchasesRaw->whereBetween('created_at', [$start, $end])->sum('net_amount');
                     })->reverse()->values()
                 ]];
 
-                // MONTHLY
+                // MONTHLY in 1 fast query
                 $months = range(1, Carbon::now()->month);
                 $purchaseMonthLabels = collect($months)->map(fn($m) => Carbon::create()->month($m)->format('F'));
+                $yearStart = Carbon::now()->startOfYear();
+
+                $purchasesByMonth = DB::table('purchases')
+                    ->selectRaw('MONTH(created_at) as month_val, SUM(net_amount) as total')
+                    ->where('created_at', '>=', $yearStart)
+                    ->groupBy('month_val')
+                    ->pluck('total', 'month_val');
+
                 $purchaseMonthlySeries = [[
                     'name' => 'Purchases',
-                    'data' => collect($months)->map(function ($month) {
-                        return DB::table('purchases')
-                            ->whereMonth('created_at', $month)
-                            ->whereYear('created_at', Carbon::now()->year)
-                            ->sum('net_amount');
-                    })
+                    'data' => collect($months)->map(fn($month) => (float)($purchasesByMonth[$month] ?? 0))
                 ]];
 
                 $purchaseChartStats = [

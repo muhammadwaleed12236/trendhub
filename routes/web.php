@@ -80,6 +80,13 @@ Route::get('/software', function () {
 })->name('software');
 
 Route::post('/software', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'store'])->name('software.login');
+Route::match(['get', 'head'], '/software/', function () {
+    if (auth()->check()) {
+        return redirect()->route('home');
+    }
+    return view('auth.login');
+});
+Route::post('/software/', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'store']);
 
 Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name('home');
 Route::post('/admin/sync-to-cloud', [SyncController::class, 'syncToCloud'])->middleware('auth')->name('admin.sync_to_cloud');
