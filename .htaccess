@@ -56,9 +56,15 @@ PassengerStartupFile server.js
     RewriteRule ^ index.php [L,QSA]
 </IfModule>
 
-# Disable Passenger for Laravel's index.php so PHP handles it
+# Disable Passenger for Laravel PHP entry and all ERP/admin routes
+<FilesMatch "\.(php)$">
+    PassengerEnabled off
+</FilesMatch>
+
 <Files "index.php">
-    <IfModule mod_passenger.c>
-        PassengerEnabled off
-    </IfModule>
+    PassengerEnabled off
 </Files>
+
+<If "%{REQUEST_URI} =~ m#^/(api|software|sanctum|home|dashboard|pos|sale|sales|Purchase|purchases|product|customer|vendor|warehouse|stock|branch|role|user|zone|voucher|print|report|setting|modules|admin|logout)#">
+    PassengerEnabled off
+</If>
