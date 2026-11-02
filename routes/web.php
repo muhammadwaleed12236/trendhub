@@ -524,10 +524,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/web-users', [App\Http\Controllers\WebUserController::class, 'index'])->middleware('permission:web_users.view|web_users.read')->name('web_users.index');
     Route::delete('/web-users/{id}', [App\Http\Controllers\WebUserController::class, 'destroy'])->middleware('permission:web_users.delete')->name('web_users.destroy');
 
-    // Website Tutorials & Video Training Center
-    Route::get('/website-tutorials', [App\Http\Controllers\WebsiteTutorialController::class, 'index'])->name('website.tutorials');
-    Route::post('/website-tutorials/save-video', [App\Http\Controllers\WebsiteTutorialController::class, 'saveVideo'])->name('website.tutorials.save_video');
-
     // Return Policy Settings
     Route::get('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'returnSettings'])->middleware('permission:settings.view|settings.read')->name('settings.return-policy');
     Route::post('/settings/return-policy', [App\Http\Controllers\SettingsController::class, 'updateReturnSettings'])->middleware('permission:settings.edit|settings.update')->name('settings.return-policy.update');

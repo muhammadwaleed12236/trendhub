@@ -539,7 +539,7 @@
                         </a>
                         <!-- Go to Website Button -->
                         @php
-                            $targetWebUrl = env('FRONTEND_URL') ?: (\App\Models\Setting::get('website_link') ?: 'https://trendhubstore.pk');
+                            $targetWebUrl = env('FRONTEND_URL') ?: (\App\Models\Setting::get('website_link') ?: 'https://trendhubstore.binsultansweet.com');
                         @endphp
                         <a href="{{ $targetWebUrl }}" target="_blank" class="header-website-btn" title="Open Storefront Website">
                             <i class="fas fa-globe"></i>
@@ -1159,13 +1159,8 @@
                                 <div class="submenu">
                                     <ul class="submenu-item">
                                         <li>
-                                            <a href="{{ env('FRONTEND_URL') ?: (\App\Models\Setting::get('website_link') ?: 'https://trendhubstore.pk') }}" target="_blank" style="color: #38bdf8 !important; font-weight: 600;">
+                                            <a href="{{ env('FRONTEND_URL') ?: (\App\Models\Setting::get('website_link') ?: 'https://trendhubstore.binsultansweet.com') }}" target="_blank" style="color: #38bdf8 !important; font-weight: 600;">
                                                 <i class="fa-solid fa-arrow-up-right-from-square"></i> Visit Storefront
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="{{ route('website.tutorials') }}" style="color: #10b981 !important; font-weight: 600;">
-                                                <i class="fa-solid fa-circle-play"></i> Video Guide & Training
                                             </a>
                                         </li>
                                         @can('website-settings.view')
