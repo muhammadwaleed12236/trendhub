@@ -257,6 +257,11 @@ export default function Header() {
           </div>
         </nav>
 
+        {/* Spacer for non-home pages so fixed navbar does not overlap page headings */}
+        {!isHome && (
+          <div className="h-20 sm:h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />
+        )}
+
         {/* Animated Drawer Menu */}
         <AnimatePresence>
           {isMobileMenuOpen && (
