@@ -14,7 +14,8 @@ export const getAssetUrl = (path: string | undefined | null): string => {
     const httpIdx = clean.indexOf("http");
     return clean.substring(httpIdx);
   }
-  const base = (process.env.NEXT_PUBLIC_ASSET_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+  const defaultBase = typeof window !== "undefined" ? "" : "http://127.0.0.1:8000";
+  const base = (process.env.NEXT_PUBLIC_ASSET_URL || defaultBase).replace(/\/$/, "");
   const cleanPath = clean.startsWith("/") ? clean : `/${clean}`;
   return base ? `${base}${cleanPath}` : cleanPath;
 };
