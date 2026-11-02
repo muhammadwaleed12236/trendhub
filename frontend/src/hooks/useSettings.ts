@@ -28,6 +28,7 @@ export interface WebsiteSettings {
   web_store_locator_banner_image?: string;
   web_store_locator_locations?: string;
   web_store_locator_map_iframe?: string;
+  [key: string]: any;
 }
 
 export const useSettings = () => {
@@ -52,11 +53,10 @@ export const useSettings = () => {
         }
         return settings;
       } catch (error) {
-        console.error("Failed to fetch website settings", error);
+        console.error("Failed to fetch settings", error);
         return {};
       }
     },
-    staleTime: 1000 * 60 * 60, // 1 hour
-    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
   });
 };

@@ -42,6 +42,30 @@ export const resolveProductImageUrl = (imagePath: string | null | undefined): st
   return getAssetUrl(`uploads/products/${path}`);
 };
 
+export const FALLBACK_PRESET_IMAGES = [
+  "/uploads/products/product_1_main.jpg",
+  "/uploads/products/product_2_main.jpg",
+  "/uploads/products/product_3_main.jpg",
+  "/uploads/products/product_4_main.jpg",
+  "/uploads/products/product_5_main.jpg",
+  "/uploads/products/product_6_main.jpg",
+  "/uploads/products/product_7_main.jpg",
+  "/uploads/products/product_8_main.jpg",
+  "/uploads/products/outfitter_prod_1.jpg",
+  "/uploads/products/outfitter_prod_2.jpg",
+  "/uploads/products/outfitter_prod_3.jpg",
+  "/uploads/products/outfitter_prod_4.jpg",
+  "/uploads/products/outfitter_prod_5.jpg",
+  "/uploads/products/outfitter_prod_6.jpg",
+  "/uploads/products/outfitter_prod_7.jpg",
+  "/uploads/products/outfitter_prod_8.jpg",
+];
+
 export const getProductFallbackImage = (_productId?: number | string): string => {
-  return "";
+  if (_productId === undefined || _productId === null) {
+    return getAssetUrl(FALLBACK_PRESET_IMAGES[0]);
+  }
+  const num = typeof _productId === "number" ? _productId : parseInt(String(_productId).replace(/\D/g, "")) || 0;
+  const index = Math.abs(num) % FALLBACK_PRESET_IMAGES.length;
+  return getAssetUrl(FALLBACK_PRESET_IMAGES[index]);
 };

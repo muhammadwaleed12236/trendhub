@@ -6,7 +6,7 @@ import { Heart, ShoppingBag, Eye, X, ChevronLeft, ChevronRight, ArrowRight, Plus
 import { useWishlistStore } from "@/store/wishlistStore";
 import { useCartStore } from "@/store/cartStore";
 import Link from "next/link";
-import { resolveProductImageUrl, getAssetUrl } from "@/lib/imageHelper";
+import { resolveProductImageUrl, getAssetUrl, getProductFallbackImage } from "@/lib/imageHelper";
 import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
@@ -28,24 +28,32 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [modalActiveImg, setModalActiveImg] = useState("");
 
   // Compute Primary and Secondary Image urls
-  const mainImage = resolveProductImageUrl(product.web_main_image) || resolveProductImageUrl(product.image);
+  const fallbackImg = getProductFallbackImage(product.id);
+  const mainImage = resolveProductImageUrl(product.web_main_image) || resolveProductImageUrl(product.image) || fallbackImg;
 
   // Use first gallery image as secondary/hover image if available
   let hoverImage = mainImage;
   if (product.web_images && product.web_images.length > 0) {
     const galImg = resolveProductImageUrl(product.web_images[0].image_path);
     if (galImg) hoverImage = galImg;
+  } else {
+    const nextFallback = getProductFallbackImage((Number(product.id) || 1) + 1);
+    if (nextFallback && nextFallback !== mainImage) {
+      hoverImage = nextFallback;
+    }
   }
 
   // Pre-calculate image list for Quick View Modal
   const allImages = mainImage ? [mainImage] : [];
-  if (product.web_images) {
+  if (product.web_images && product.web_images.length > 0) {
     product.web_images.forEach(img => {
       const gUrl = resolveProductImageUrl(img.image_path);
       if (gUrl && !allImages.includes(gUrl)) {
         allImages.push(gUrl);
       }
     });
+  } else if (hoverImage && !allImages.includes(hoverImage)) {
+    allImages.push(hoverImage);
   }
 
   const currentModalImg = modalActiveImg || mainImage;
@@ -258,6 +266,12 @@ export default function ProductCard({ product }: ProductCardProps) {
               alt={product.item_name}
               loading="lazy"
               decoding="async"
+              onError={(e) => {
+                const fb = getProductFallbackImage(product.id);
+                if (fb && e.currentTarget.src !== fb) {
+                  e.currentTarget.src = fb;
+                }
+              }}
               className={`w-full h-full object-cover transition-all duration-700 ease-out ${
                 product.total_stock !== undefined && product.total_stock <= 0 ? "opacity-60 grayscale-[40%]" : ""
               }`}
