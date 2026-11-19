@@ -8,29 +8,58 @@
     <style>
         /* Base Print Styles */
         @media print {
-            body {
-                width: 100%;
-                margin: 0;
-                padding: 0;
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            html, body {
+                width: 80mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+                color: #000 !important;
+            }
+            body * {
+                color: #000 !important;
+                background: transparent !important;
             }
             .no-print {
-                display: none;
+                display: none !important;
             }
             .receipt-container {
                 box-shadow: none !important;
                 border: none !important;
                 margin: 0 !important;
-                padding: 0 !important;
-                width: 100% !important;
+                padding: 5px !important;
+                width: 80mm !important;
+                max-width: 80mm !important;
+            }
+            .items-table, .items-table th, .items-table td {
+                border-color: #000 !important;
+                color: #000 !important;
+            }
+            .divider, .divider-thick {
+                border-color: #000 !important;
+            }
+            .sign-line {
+                border-color: #000 !important;
+            }
+            .footer, .footer p, .company-info, .meta-info, .item-meta {
+                color: #000 !important;
+            }
+            @page {
+                margin: 0;
+                size: 80mm auto;
             }
         }
 
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-family: 'Courier New', Courier, monospace;
             background: #f1f5f9;
             margin: 0;
             padding: 20px 0;
-            color: #000;
+            color: #000 !important;
         }
 
         .receipt-container {
@@ -323,5 +352,18 @@
     </div>
 
 </body>
+
+<script>
+    // Auto-print when page loads (for thermal printer workflow)
+    window.addEventListener('load', function() {
+        // Small delay to ensure styles are applied
+        setTimeout(function() {
+            // Only auto-print if ?autoprint=1 is in URL
+            if (window.location.search.includes('autoprint=1')) {
+                window.print();
+            }
+        }, 400);
+    });
+</script>
 
 </html>
