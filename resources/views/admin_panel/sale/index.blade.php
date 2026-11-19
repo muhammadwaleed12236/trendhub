@@ -451,6 +451,10 @@
                                 </tbody>
                             </table>
                         </div>
+                        {{-- Pagination --}}
+                        <div id="salesPaginationWrapper">
+                            @include('admin_panel.sale.partials.sales_pagination')
+                        </div>
                     </div>
                 </div>
 
@@ -463,22 +467,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
-            // Function to initialize DataTable
+            // Function to initialize DataTable (disabled - using server-side pagination now)
             function initDataTable() {
-                if ($.fn.DataTable.isDataTable('.datanew')) {
-                    $('.datanew').DataTable().destroy();
-                }
-                $('.datanew').DataTable({
-                    "pageLength": 10,
-                    "order": [],
-                    "language": {
-                        "search": "",
-                        "searchPlaceholder": "Search sales..."
-                    },
-                    "dom": "<'row mb-3 align-items-center'<'col-12 col-md-6 mb-2 mb-md-0'l><'col-12 col-md-6'f>>" +
-                        "<'row'<'col-12'tr>>" +
-                        "<'row mt-3 align-items-center'<'col-12 col-md-5 mb-2 mb-md-0'i><'col-12 col-md-7'p>>",
-                });
+                // DataTable removed: server-side pagination is active
             }
 
             // Initial call
@@ -563,6 +554,11 @@
                         }
                         
                         $('#salesTableBody').html(response.html);
+                        
+                        // Update pagination
+                        if (response.pagination !== undefined) {
+                            $('#salesPaginationWrapper').html(response.pagination);
+                        }
                         
                         // Update Stat Cards dynamically if present
                         if (response.stats) {

@@ -24,6 +24,67 @@ class SaleController extends Controller
         $user = auth()->user();
         $isOwnOnly = $user && !$user->can('sales.view') && $user->can('sales.view_own');
 
+        // --- Stats Query (lightweight, no eager loading) ---
+        $statsQuery = Sale::whereIn('sale_status', ['draft', 'booked', 'posted', 'returned']);
+
+        // Apply User / Cashier Filter or Enforce Own-Only
+        if ($isOwnOnly) {
+            $statsQuery->where('user_id', $user->id);
+        } elseif ($request->filled('user_id')) {
+            $statsQuery->where('user_id', $request->user_id);
+        }
+
+        // Apply Date and Time Filters (stats)
+        if ($request->filled('from_date')) {
+            $fromDate = $request->from_date;
+            if ($request->filled('from_time')) {
+                $fromDateTime = \Carbon\Carbon::parse($fromDate . ' ' . $request->from_time)->format('Y-m-d H:i:s');
+                $statsQuery->where('created_at', '>=', $fromDateTime);
+            } else {
+                $statsQuery->whereDate('created_at', '>=', $fromDate);
+            }
+        }
+        if ($request->filled('to_date')) {
+            $toDate = $request->to_date;
+            if ($request->filled('to_time')) {
+                $toDateTime = \Carbon\Carbon::parse($toDate . ' ' . $request->to_time)->format('Y-m-d H:i:s');
+                $statsQuery->where('created_at', '<=', $toDateTime);
+            } else {
+                $statsQuery->whereDate('created_at', '<=', $toDate);
+            }
+        }
+        if ($request->filled('mobile_no')) {
+            $statsQuery->whereHas('customer_relation', function ($q) use ($request) {
+                $q->where('mobile', 'like', "%{$request->mobile_no}%");
+            });
+        }
+        if ($request->filled('bill_no')) {
+            $statsQuery->where(function ($q) use ($request) {
+                $q->where('invoice_no', 'like', "%{$request->bill_no}%")
+                  ->orWhere('id', 'like', "%{$request->bill_no}%");
+            });
+        }
+        if ($request->filled('reference')) {
+            $statsQuery->where('reference', 'like', "%{$request->reference}%");
+        }
+        if ($request->filled('customer_id')) {
+            $statsQuery->where('customer_id', $request->customer_id);
+        }
+        if ($request->has('status') && $request->status != 'all') {
+            $statsQuery->where('sale_status', $request->status);
+        }
+
+        $stats = [
+            'total_count'    => (clone $statsQuery)->count(),
+            'total_net'      => (float) (clone $statsQuery)->sum('total_net'),
+            'total_discount' => (float) (clone $statsQuery)->sum('total_extradiscount'),
+            'posted_count'   => (clone $statsQuery)->where('sale_status', 'posted')->count(),
+            'draft_count'    => (clone $statsQuery)->where('sale_status', 'draft')->count(),
+            'booked_count'   => (clone $statsQuery)->where('sale_status', 'booked')->count(),
+            'returned_count' => (clone $statsQuery)->where('sale_status', 'returned')->count(),
+        ];
+
+        // --- Main Data Query (with eager loading + pagination) ---
         $query = Sale::with(['user', 'customer_relation', 'items.product', 'returns'])
             ->whereIn('sale_status', ['draft', 'booked', 'posted', 'returned']);
 
@@ -92,23 +153,16 @@ class SaleController extends Controller
             $query->orderBy('created_at', 'desc');
         }
 
-        $sales = $query->get();
-
-        $stats = [
-            'total_count' => $sales->count(),
-            'total_net' => (float) $sales->sum('total_net'),
-            'total_discount' => (float) $sales->sum('total_extradiscount'),
-            'posted_count' => $sales->where('sale_status', 'posted')->count(),
-            'draft_count' => $sales->where('sale_status', 'draft')->count(),
-            'booked_count' => $sales->where('sale_status', 'booked')->count(),
-            'returned_count' => $sales->whereIn('sale_status', ['returned', 1])->count(),
-        ];
+        // Paginate to prevent memory exhaustion (100 records per page)
+        $perPage = 100;
+        $sales = $query->paginate($perPage)->withQueryString();
 
         // If AJAX request, return only table rows partial & stats
         if ($request->ajax()) {
             return response()->json([
-                'html' => view('admin_panel.sale.partials.sales_table_body', compact('sales'))->render(),
-                'stats' => $stats
+                'html'  => view('admin_panel.sale.partials.sales_table_body', compact('sales'))->render(),
+                'stats' => $stats,
+                'pagination' => view('admin_panel.sale.partials.sales_pagination', compact('sales'))->render(),
             ]);
         }
 
