@@ -7,11 +7,18 @@
     <title>Thermal Receipt - {{ $sale->invoice_no }}</title>
     <style>
         @media print {
-            @page {
-                margin: 2mm 3mm 2mm 2mm !important;
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                color: #000 !important;
             }
-            body {
-                width: 100% !important;
+            @page {
+                margin: 0 !important;
+                size: 80mm auto !important;
+            }
+            html, body {
+                width: 80mm !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 background: #fff !important;
@@ -23,10 +30,17 @@
             .receipt-container {
                 box-shadow: none !important;
                 border: none !important;
-                margin: 0 !important;
-                padding: 0 4px 0 0 !important;
-                width: 96% !important;
-                max-width: 96% !important;
+                margin: 0 auto !important;
+                padding: 4px 6px !important;
+                width: 80mm !important;
+                max-width: 80mm !important;
+            }
+            .policy-banner {
+                background-color: #000 !important;
+                color: #fff !important;
+            }
+            .policy-banner * {
+                color: #fff !important;
             }
         }
 
