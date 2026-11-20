@@ -1,3 +1,4 @@
+<IfModule mod_passenger.c>
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
 PassengerAppRoot "/home3/binsult1/domains/trendhubstore.binsultansweet.com/public_html/frontend"
 PassengerBaseURI "/"
@@ -5,6 +6,7 @@ PassengerNodejs "/home3/binsult1/nodevenv/domains/trendhubstore.binsultansweet.c
 PassengerAppType node
 PassengerStartupFile server.js
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+</IfModule>
 
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
@@ -56,6 +58,7 @@ PassengerStartupFile server.js
     RewriteRule ^ index.php [L,QSA]
 </IfModule>
 
+<IfModule mod_passenger.c>
 # Disable Passenger for Laravel PHP entry and all ERP/admin routes
 <FilesMatch "\.(php)$">
     PassengerEnabled off
@@ -68,3 +71,4 @@ PassengerStartupFile server.js
 <If "%{REQUEST_URI} =~ m#^/(api|software|sanctum|home|dashboard|pos|sale|sales|Purchase|purchases?|purchase-pos|add/Purchase|InwardGatepass|inward-gatepass|add/InwardGatepass|product-catalog|products-list|productget|productview|create_prodcut|store-product|generate-barcode-image|customers?|salecustomers|customer-payments|vendor|vendors?|vendors-ledger|warehouses?|warehouse_stocks|warehouse-stock.*|stock_transfers|stock-adjustments|stock|stocks|branch|roles|permissions|users|zone|zones|sales-officers|bookings?|booking|vouchers|all_recepit_vochers|all_Payment_vochers|all_expense_vochers|recepit_vochers|Payment_vochers|expense_vochers|store_rec_vochers|store_Pay_vochers|store_expense_vochers|print|Paymentprint|expenseprint|report|reports|website-settings|web-orders|web-products|coupons|web-users|checkbook|day-closing|drawer-transaction|notifications|discount|category|categories|subcategory|subcategories|Brand|brands|Unit|units|expense-categories|profile|accounts|accounts-head|view_all|narrations|party-list|receipt-vouchers|invoice-series|search-products|search-product-name|get-.*|getOpeningBalance|hr|my-attendance|debug-perms|confirm-password|forgot-password|reset-password|settings|modules|admin|logout|verify-email|index\.php)#i">
     PassengerEnabled off
 </If>
+</IfModule>

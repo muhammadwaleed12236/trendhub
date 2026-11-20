@@ -84,6 +84,8 @@ Route::post('/software', [\App\Http\Controllers\Auth\AuthenticatedSessionControl
 
 Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name('home');
 Route::post('/admin/sync-to-cloud', [SyncController::class, 'syncToCloud'])->middleware('auth')->name('admin.sync_to_cloud');
+Route::get('/admin/sync-status', [SyncController::class, 'syncStatus'])->middleware('auth')->name('admin.sync_status');
+Route::post('/admin/sync-pull-products', [SyncController::class, 'pullProductsFromCloud'])->middleware('auth')->name('admin.sync_pull_products');
 
 // Route::get('/adminpage', [HomeController::class, 'adminpage'])->middleware(['auth','admin'])->name('adminpage');
 

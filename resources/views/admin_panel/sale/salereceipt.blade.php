@@ -588,6 +588,19 @@
     </div>
 
     <script>
+        // Silent Background Cloud Sync (Runs without blocking receipt or cashier)
+        if (navigator.onLine) {
+            try {
+                fetch('{{ route("admin.sync_to_cloud") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                }).catch(() => {});
+            } catch(e) {}
+        }
+
         let countdown = 3;
         let countdownInterval = null;
         let isPaused = false;

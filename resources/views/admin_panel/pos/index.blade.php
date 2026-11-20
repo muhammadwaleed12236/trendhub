@@ -551,11 +551,24 @@
                 </h4>
                 <small class="text-muted fw-medium">Process new sales, returns, and product exchanges in one place</small>
             </div>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn d-flex align-items-center gap-2 px-4 py-2 fw-bold text-white shadow-sm transition-all" id="btnManualProductModal" data-toggle="modal" data-target="#manualProductModal" style="border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <!-- POS Cloud Sync Widget -->
+                <div class="d-flex align-items-center bg-white px-2 py-1 rounded-3 border shadow-sm" id="posSyncWidget" style="font-size: 13px;">
+                    <span id="posSyncIndicator" class="badge rounded-pill bg-success me-2" style="padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                        <i class="fas fa-check-circle me-1" id="posSyncStatusIcon"></i> <span id="posSyncStatusText">Online (Synced)</span>
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 fw-bold" id="btnPosSyncNow" title="Sync local invoices with live cloud">
+                        <i class="fas fa-cloud-arrow-up me-1" id="btnPosSyncIcon"></i> Sync Now
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 ms-1 fw-bold" id="btnPosPullProducts" title="Pull latest products and prices from cloud">
+                        <i class="fas fa-download me-1" id="btnPosPullIcon"></i> Pull Cloud
+                    </button>
+                </div>
+
+                <button type="button" class="btn d-flex align-items-center gap-2 px-3 py-2 fw-bold text-white shadow-sm transition-all" id="btnManualProductModal" data-toggle="modal" data-target="#manualProductModal" style="border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); border: none;">
                     <i class="fas fa-plus"></i> Manual Product
                 </button>
-                <button type="button" class="btn d-flex align-items-center gap-2 px-4 py-2 fw-bold text-white shadow-sm transition-all" id="btnPOSExchangeHeader" style="border-radius: 10px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none;">
+                <button type="button" class="btn d-flex align-items-center gap-2 px-3 py-2 fw-bold text-white shadow-sm transition-all" id="btnPOSExchangeHeader" style="border-radius: 10px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none;">
                     <i class="fas fa-exchange-alt"></i> Exchange / Return Item
                 </button>
             </div>
@@ -2532,6 +2545,204 @@
                 $('#posBarcodeScannerInput').focus();
             }, 300);
         });
+
+        // ═════════════════════════════════════════════════════════════════════
+        // CLOUD & OFFLINE AUTO-SYNC CONTROLLER
+        // ═════════════════════════════════════════════════════════════════════
+        let isSyncing = false;
+
+        function updateSyncBadge(data) {
+            const $indicator = $('#posSyncIndicator');
+            const $text = $('#posSyncStatusText');
+            const $icon = $('#posSyncStatusIcon');
+
+            if (!data.is_online) {
+                $indicator.removeClass('bg-success bg-warning text-dark').addClass('bg-secondary text-white');
+                $icon.removeClass('fa-check-circle fa-cloud-arrow-up fa-spinner fa-spin').addClass('fa-circle-pause');
+                let countTxt = (data.pending_sales && data.pending_sales > 0) ? ` (${data.pending_sales} Pending)` : '';
+                $text.text(`Offline Mode${countTxt}`);
+                return;
+            }
+
+            if (data.pending_sales && data.pending_sales > 0) {
+                $indicator.removeClass('bg-success bg-secondary text-white').addClass('bg-warning text-dark');
+                $icon.removeClass('fa-check-circle fa-circle-pause fa-spinner fa-spin').addClass('fa-cloud-arrow-up');
+                $text.text(`${data.pending_sales} Invoices Pending Sync`);
+            } else {
+                $indicator.removeClass('bg-warning bg-secondary text-dark').addClass('bg-success text-white');
+                $icon.removeClass('fa-cloud-arrow-up fa-circle-pause fa-spinner fa-spin').addClass('fa-check-circle');
+                $text.text('Online (All Synced)');
+            }
+        }
+
+        function checkPosSyncStatus(autoSync = true) {
+            if (!navigator.onLine) {
+                updateSyncBadge({ is_online: false, pending_sales: 0 });
+                return;
+            }
+
+            fetch('{{ route("admin.sync_status") }}')
+                .then(res => res.json())
+                .then(data => {
+                    updateSyncBadge(data);
+                    if (autoSync && data.is_online && data.pending_sales > 0 && !isSyncing) {
+                        syncPosToCloud(true);
+                    }
+                })
+                .catch(() => {
+                    updateSyncBadge({ is_online: false, pending_sales: 0 });
+                });
+        }
+
+        function syncPosToCloud(isSilent = false) {
+            if (isSyncing) return;
+            isSyncing = true;
+
+            const $btn = $('#btnPosSyncNow');
+            const $btnIcon = $('#btnPosSyncIcon');
+            $btn.prop('disabled', true);
+            $btnIcon.removeClass('fa-cloud-arrow-up').addClass('fa-sync-alt fa-spin');
+
+            if (!isSilent && typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Syncing to Cloud...',
+                    text: 'Pushing local sales and customer data to live server',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+            }
+
+            fetch('{{ route("admin.sync_to_cloud") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(res => res.json())
+            .then(res => {
+                isSyncing = false;
+                $btn.prop('disabled', false);
+                $btnIcon.removeClass('fa-sync-alt fa-spin').addClass('fa-cloud-arrow-up');
+
+                if (res.status === 'success') {
+                    checkPosSyncStatus(false);
+                    if (!isSilent && typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sync Complete',
+                            text: res.message || 'All invoices are now live on cloud!',
+                            timer: 2500,
+                            showConfirmButton: false,
+                            toast: true,
+                            position: 'top-end'
+                        });
+                    }
+                } else {
+                    if (!isSilent && typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Sync Warning',
+                            text: res.message || 'Could not complete cloud sync.',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                    }
+                }
+            })
+            .catch(err => {
+                isSyncing = false;
+                $btn.prop('disabled', false);
+                $btnIcon.removeClass('fa-sync-alt fa-spin').addClass('fa-cloud-arrow-up');
+                if (!isSilent && typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Connection Offline',
+                        text: 'Cloud server is currently unreachable. Local sales will sync automatically when internet restores.',
+                        confirmButtonColor: '#4f46e5'
+                    });
+                }
+            });
+        }
+
+        // Manual sync button
+        $('#btnPosSyncNow').on('click', function() {
+            syncPosToCloud(false);
+        });
+
+        // Pull Products from Cloud button
+        $('#btnPosPullProducts').on('click', function() {
+            const $btn = $(this);
+            const $icon = $('#btnPosPullIcon');
+            $btn.prop('disabled', true);
+            $icon.removeClass('fa-download').addClass('fa-spinner fa-spin');
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Pulling from Cloud...',
+                    text: 'Updating product prices and catalog from live server',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+            }
+
+            fetch('{{ route("admin.sync_pull_products") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(res => res.json())
+            .then(res => {
+                $btn.prop('disabled', false);
+                $icon.removeClass('fa-spinner fa-spin').addClass('fa-download');
+                if (res.status === 'success') {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Catalog Updated',
+                            text: res.message,
+                            confirmButtonColor: '#4f46e5'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Pull Failed',
+                            text: res.message || 'Could not pull products from cloud.',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                    }
+                }
+            })
+            .catch(() => {
+                $btn.prop('disabled', false);
+                $icon.removeClass('fa-spinner fa-spin').addClass('fa-download');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Offline',
+                        text: 'Cannot reach cloud server. Please check internet connection.',
+                        confirmButtonColor: '#4f46e5'
+                    });
+                }
+            });
+        });
+
+        // Event listeners for online/offline events
+        window.addEventListener('online', function() {
+            checkPosSyncStatus(true);
+        });
+        window.addEventListener('offline', function() {
+            updateSyncBadge({ is_online: false, pending_sales: 0 });
+        });
+
+        // Initial check and periodic heartbeat every 45s
+        setTimeout(() => checkPosSyncStatus(true), 1500);
+        setInterval(() => checkPosSyncStatus(true), 45000);
 
     });
 </script>
