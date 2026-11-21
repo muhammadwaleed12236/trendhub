@@ -82,8 +82,129 @@
             color: #1d4ed8;
         }
 
-        /* Desktop Mega Menu Positioning */
-        @media (min-width: 768px) {
+        /* Desktop Mega Menu & Single-Line Navigation */
+        @media (min-width: 992px) {
+            .rt_nav_header.horizontal-layout {
+                position: relative !important;
+                z-index: 1020 !important;
+                width: 100% !important;
+                margin-bottom: 0 !important;
+                padding-bottom: 0 !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom,
+            .rt_nav_header.horizontal-layout.fixed-on-scroll .nav-bottom {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                right: auto !important;
+                z-index: 1020 !important;
+                width: 100% !important;
+                background: #ffffff !important;
+                border-bottom: 1px solid #eef2f6 !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+                height: 48px !important;
+                padding: 0 !important;
+            }
+
+            .rt_nav_header.horizontal-layout.fixed-on-scroll {
+                padding-bottom: 0 !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .container-fluid {
+                padding: 0 16px !important;
+                max-width: 100% !important;
+                height: 48px !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation {
+                display: flex !important;
+                flex-wrap: nowrap !important; /* STRICT SINGLE LINE: Never wrap to second line */
+                align-items: center !important;
+                justify-content: center !important;
+                margin: 0 auto !important;
+                padding: 0 !important;
+                list-style: none !important;
+                width: 100% !important;
+                height: 48px !important;
+            }
+
+            /* HIDE mobile profile and logout on desktop completely */
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item.d-lg-none {
+                display: none !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none) {
+                flex: 0 0 auto !important;
+                white-space: nowrap !important;
+                position: relative !important;
+                border: none !important;
+                height: 48px !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none) > .nav-link {
+                display: inline-flex !important;
+                align-items: center !important;
+                padding: 0 10px !important;
+                height: 48px !important;
+                font-size: 13.5px !important;
+                font-weight: 600 !important;
+                color: #334155 !important;
+                line-height: 48px !important;
+                white-space: nowrap !important;
+                text-decoration: none !important;
+                transition: color 0.15s ease, background 0.15s ease !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none) > .nav-link:hover {
+                color: #2563eb !important;
+                background: rgba(37, 99, 235, 0.04) !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none) > .nav-link .menu_icon {
+                margin-right: 6px !important;
+                font-size: 13.5px !important;
+                color: #64748b !important;
+                min-width: 15px !important;
+                text-align: center !important;
+                transition: color 0.15s ease !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none):hover > .nav-link .menu_icon {
+                color: #2563eb !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none) > .nav-link .menu-title {
+                font-size: 13.5px !important;
+                font-weight: 600 !important;
+                white-space: nowrap !important;
+                letter-spacing: -0.1px !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none) > .nav-link .menu-arrow {
+                margin-left: 5px !important;
+                font-size: 10px !important;
+                color: #94a3b8 !important;
+                display: inline-block !important;
+                transition: transform 0.2s ease, color 0.15s ease !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none):hover > .nav-link .menu-arrow {
+                color: #2563eb !important;
+                transform: rotate(-180deg) !important;
+            }
+
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none):hover > .submenu {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+            }
+
             .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item.mega-menu {
                 position: static !important;
             }
@@ -125,9 +246,28 @@
             }
 
             /* Regular Submenu Right Alignment for last items to prevent screen overflow */
-            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:nth-last-child(-n+3):not(.mega-menu) .submenu {
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:nth-last-child(-n+4):not(.mega-menu) .submenu {
                 left: auto !important;
                 right: 0 !important;
+            }
+        }
+
+        /* Compact screens (992px to 1320px): tighter spacing so all 8 items fit comfortably on 1 line */
+        @media (min-width: 992px) and (max-width: 1320px) {
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none) > .nav-link {
+                padding: 0 6.5px !important;
+                font-size: 12.5px !important;
+            }
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none) > .nav-link .menu_icon {
+                margin-right: 4px !important;
+                font-size: 12px !important;
+            }
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none) > .nav-link .menu-title {
+                font-size: 12.5px !important;
+            }
+            .rt_nav_header.horizontal-layout .nav-bottom .page-navigation > .nav-item:not(.d-lg-none) > .nav-link .menu-arrow {
+                margin-left: 3px !important;
+                font-size: 9px !important;
             }
         }
 
@@ -223,7 +363,7 @@
 
     <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/favicon.png') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}?v={{ time() }}">
 
     <link rel="stylesheet" href="{{ asset('assets/css/owl.carousel.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/owl.theme.default.min.css') }}">
@@ -403,35 +543,26 @@
             margin-bottom: 0 !important;
             width: 100% !important;
         }
-        .rt_nav_header.horizontal-layout .nav-bottom,
-        .rt_nav_header.horizontal-layout.fixed-on-scroll .nav-bottom {
-            position: relative !important;
-            top: auto !important;
-            left: auto !important;
-            right: auto !important;
-            z-index: 1020 !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
-        }
 
-        /* Universal App Page Body - Generous Top Clearance */
+        /* Universal App Page Body - Generous Top Clearance Without Overlap */
         .app-page-body {
             position: relative;
             width: 100%;
-            min-height: calc(100vh - 140px);
-            padding-top: 55px !important;
-            padding-bottom: 60px !important;
+            min-height: calc(100vh - 120px);
+            padding-top: 50px !important;
+            padding-bottom: 40px !important;
             box-sizing: border-box;
         }
 
         .main-content {
             position: relative !important;
             width: 100% !important;
-            padding-top: 15px !important;
-            padding-bottom: 40px !important;
+            padding-top: 0 !important;
+            padding-bottom: 30px !important;
             min-height: auto !important;
         }
         .main-content-inner {
-            padding: 10px 0 30px 0 !important;
+            padding: 12px 0 25px 0 !important;
         }
         .sale-report-container,
         .report-page-container,
@@ -444,11 +575,11 @@
         .app-page-body > .container:first-child,
         .app-page-body > .container-fluid:first-child,
         .app-page-body > form:first-child {
-            margin-top: 10px;
+            margin-top: 15px;
         }
         .page-header {
             margin-top: 5px !important;
-            margin-bottom: 25px !important;
+            margin-bottom: 20px !important;
         }
 
         /* Modal & Backdrop Stacking Fix */
@@ -467,10 +598,10 @@
                 position: relative !important;
             }
             .app-page-body {
-                padding-top: 35px !important;
+                padding-top: 10px !important;
             }
             .main-content {
-                padding-top: 15px !important;
+                padding-top: 5px !important;
             }
         }
     </style>
@@ -767,7 +898,7 @@
                 }
             </script>
             <div class="nav-bottom">
-                <div class="container-fluid" style="padding: 0 20px;">
+                <div class="container-fluid px-3">
                     <ul class="nav page-navigation justify-content-center">
                         <!--=========================*
                               Home

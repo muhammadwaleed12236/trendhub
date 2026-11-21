@@ -2605,14 +2605,14 @@
 
             if (!isSilent && typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Syncing to Cloud...',
-                    text: 'Pushing local sales and customer data to live server',
+                    title: 'Syncing with Cloud...',
+                    text: 'Two-way syncing sales, stock, and catalog with live server',
                     allowOutsideClick: false,
                     didOpen: () => Swal.showLoading()
                 });
             }
 
-            fetch('{{ route("admin.sync_to_cloud") }}', {
+            fetch('{{ route("admin.sync_two_way") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

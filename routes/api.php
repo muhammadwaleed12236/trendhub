@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 Route::post('/receive-sync', [SyncController::class, 'receiveSync'])->name('api.receive_sync');
+Route::post('/pull-sales', [SyncController::class, 'exportSales'])->name('api.pull_sales');
 
 // ---------------------------------------------------------
 // FRONTEND HEADLESS API ROUTES

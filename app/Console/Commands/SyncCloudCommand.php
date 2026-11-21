@@ -13,39 +13,38 @@ class SyncCloudCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'sync:cloud {--pull : Also pull latest products from cloud}';
+    protected $signature = 'sync:cloud {--push-only : Only push local sales without pulling} {--pull : Also pull latest products from cloud}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Synchronize local sales and customers to the live cloud server';
+    protected $description = 'Two-way synchronization of sales, products, and inventory between local and cloud';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Starting Cloud Synchronization...');
+        $this->info('Starting Two-Way Cloud Synchronization...');
         $syncController = app(SyncController::class);
 
-        // 1. Push local sales to cloud
-        $res = $syncController->syncToCloud(new Request());
+        if ($this->option('push-only')) {
+            $res = $syncController->syncToCloud(new Request());
+            $data = $res->getData(true);
+            $this->info('Push Result: ' . ($data['message'] ?? 'Done'));
+            return Command::SUCCESS;
+        }
+
+        // Run full two-way sync
+        $res = $syncController->syncTwoWay(new Request());
         $data = $res->getData(true);
 
         if (($data['status'] ?? '') === 'success') {
-            $this->info('Push Result: ' . ($data['message'] ?? 'Done'));
+            $this->info($data['message'] ?? 'Synchronization completed successfully!');
         } else {
-            $this->error('Push Error: ' . ($data['message'] ?? 'Failed'));
-        }
-
-        // 2. Optionally pull products
-        if ($this->option('pull')) {
-            $this->info('Pulling products from cloud...');
-            $pullRes = $syncController->pullProductsFromCloud(new Request());
-            $pullData = $pullRes->getData(true);
-            $this->info('Pull Result: ' . ($pullData['message'] ?? 'Done'));
+            $this->error('Sync Error: ' . ($data['message'] ?? 'Failed'));
         }
 
         return Command::SUCCESS;

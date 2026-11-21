@@ -86,6 +86,8 @@ Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name(
 Route::post('/admin/sync-to-cloud', [SyncController::class, 'syncToCloud'])->middleware('auth')->name('admin.sync_to_cloud');
 Route::get('/admin/sync-status', [SyncController::class, 'syncStatus'])->middleware('auth')->name('admin.sync_status');
 Route::post('/admin/sync-pull-products', [SyncController::class, 'pullProductsFromCloud'])->middleware('auth')->name('admin.sync_pull_products');
+Route::post('/admin/sync-pull-sales', [SyncController::class, 'pullSalesFromCloud'])->middleware('auth')->name('admin.sync_pull_sales');
+Route::post('/admin/sync-two-way', [SyncController::class, 'syncTwoWay'])->middleware('auth')->name('admin.sync_two_way');
 
 // Route::get('/adminpage', [HomeController::class, 'adminpage'])->middleware(['auth','admin'])->name('adminpage');
 
