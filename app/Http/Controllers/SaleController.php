@@ -1420,8 +1420,11 @@ class SaleController extends Controller
 
             $sale->save(); // Save first to get ID
 
-            // Increment Invoice Series counter if matching series prefix
-            \App\Models\InvoiceSeries::incrementCounterForInvoice($sale->invoice_no);
+            // Note: incrementCounterForInvoice is now handled inside generateNextNo() via DB lock
+            // Only call it here for manual invoice numbers (non-auto-generated)
+            if (!empty($invInput)) {
+                \App\Models\InvoiceSeries::incrementCounterForInvoice($sale->invoice_no);
+            }
 
             // 3. Process Items
             // Delete old items if updating

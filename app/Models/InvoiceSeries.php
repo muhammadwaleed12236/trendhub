@@ -18,38 +18,47 @@ class InvoiceSeries extends Model
      */
     public static function generateNextNo($prefix = null)
     {
-        $series = null;
+        // Wrap in transaction with DB lock to prevent race condition / duplicate invoice_no
+        return \DB::transaction(function () use ($prefix) {
 
-        if ($prefix) {
-            $series = self::where('prefix', strtoupper(trim($prefix)))->first();
-        }
+            $series = null;
 
-        if (!$series) {
-            $series = self::where('is_default', 1)->first() ?: self::first();
-        }
-
-        if (!$series) {
-            return 'INV-0001';
-        }
-
-        $pref = strtoupper($series->prefix);
-        $padding = $series->padding ?: 4;
-
-        // Find highest existing invoice number in sales table for this prefix
-        $lastSale = Sale::where('invoice_no', 'LIKE', $pref . '-%')
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $numFromSale = 0;
-        if ($lastSale && $lastSale->invoice_no) {
-            if (preg_match('/' . preg_quote($pref, '/') . '-(\d+)/i', $lastSale->invoice_no, $matches)) {
-                $numFromSale = (int) $matches[1];
+            if ($prefix) {
+                $series = self::where('prefix', strtoupper(trim($prefix)))->lockForUpdate()->first();
             }
-        }
 
-        $nextNum = max((int) $series->next_number, $numFromSale + 1);
+            if (!$series) {
+                $series = self::where('is_default', 1)->lockForUpdate()->first()
+                    ?: self::lockForUpdate()->first();
+            }
 
-        return $pref . '-' . str_pad($nextNum, $padding, '0', STR_PAD_LEFT);
+            if (!$series) {
+                return 'INV-0001';
+            }
+
+            $pref = strtoupper($series->prefix);
+            $padding = $series->padding ?: 4;
+
+            // Find highest existing invoice number in sales table for this prefix
+            $lastSale = Sale::where('invoice_no', 'LIKE', $pref . '-%')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $numFromSale = 0;
+            if ($lastSale && $lastSale->invoice_no) {
+                if (preg_match('/' . preg_quote($pref, '/') . '-(\d+)/i', $lastSale->invoice_no, $matches)) {
+                    $numFromSale = (int) $matches[1];
+                }
+            }
+
+            $nextNum = max((int) $series->next_number, $numFromSale + 1);
+
+            // Immediately increment & save to block next concurrent request
+            $series->next_number = $nextNum + 1;
+            $series->save();
+
+            return $pref . '-' . str_pad($nextNum, $padding, '0', STR_PAD_LEFT);
+        });
     }
 
     /**
