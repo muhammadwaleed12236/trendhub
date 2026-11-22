@@ -634,12 +634,11 @@
         </div>
     </div>
 
-  <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
-    <script src="{{ asset('assets/vendors/select2/js/select2.min.js') }}"></script>
-
     {{-- Quick Add Product Modal --}}
     @include('admin_panel.partials.quick_add_product_modal')
+@endsection
 
+@push('scripts')
     <script>
         $(document).ready(function() {
             // Init Select2
@@ -968,7 +967,7 @@
                         delay: 250,
                         data: function(params) {
                             return {
-                                term: params.term,
+                                term: params.term || '',
                                 page: params.page || 1
                             };
                         },
@@ -1037,6 +1036,7 @@
 
             function formatProduct(repo) {
                 if (repo.loading) return repo.text;
+                if (!repo.id) return repo.text;
                 let stock = repo.stock !== undefined ? repo.stock : 0;
                 let sku = repo.sku || 'N/A';
                 let unit = repo.unit_name || 'Pcs';
@@ -1164,4 +1164,4 @@
             }
         });
     </script>
-@endsection
+@endpush
