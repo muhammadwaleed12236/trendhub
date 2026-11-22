@@ -476,6 +476,12 @@ class SyncController extends Controller
                     'is_web_visible' => $pItem['is_web_visible'] ?? 0,
                     'size_mode' => $pItem['size_mode'] ?? 'by_size',
                     'total_stock_qty' => $pItem['total_stock_qty'] ?? ($pItem['total_stock'] ?? 0),
+                    'total_m2' => $pItem['total_m2'] ?? 0,
+                    'pieces_per_box' => $pItem['pieces_per_box'] ?? 0,
+                    'pieces_per_m2' => $pItem['pieces_per_m2'] ?? 0,
+                    'price_per_m2' => $pItem['price_per_m2'] ?? 0,
+                    'purchase_price_per_piece' => $pItem['purchase_price_per_piece'] ?? 0,
+                    'purchase_price_per_m2' => $pItem['purchase_price_per_m2'] ?? 0,
                 ];
 
                 if ($localProduct) {
