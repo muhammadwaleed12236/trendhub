@@ -59,8 +59,9 @@ class ProductApiController extends Controller
             });
         }
 
-        // Fetch paginated results
-        $products = $query->paginate(50);
+        // Fetch paginated results with dynamic per_page support (up to 1000)
+        $perPage = min(1000, max(1, (int) $request->input('per_page', 50)));
+        $products = $query->paginate($perPage);
 
         // Transform results cleanly without any dummy apparel description
         $products->getCollection()->transform(function ($product) {

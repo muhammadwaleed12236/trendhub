@@ -479,8 +479,12 @@ class SyncController extends Controller
                 ];
 
                 if ($localProduct) {
-                    $localProduct->update($fields);
-                    $updated++;
+                    $localProduct->fill($fields);
+                    // Only save and increment if actual product data (price, stock, etc.) has changed
+                    if ($localProduct->isDirty()) {
+                        $localProduct->save();
+                        $updated++;
+                    }
                 } else {
                     $fields['item_code'] = $pItem['item_code'] ?? ('ITEM-' . str_pad(rand(100, 9999), 4, '0', STR_PAD_LEFT));
                     Product::create($fields);
@@ -489,9 +493,19 @@ class SyncController extends Controller
             }
             DB::commit();
 
+            $msg = "Products sync complete: ";
+            if ($updated > 0 || $created > 0) {
+                $parts = [];
+                if ($updated > 0) $parts[] = "{$updated} updated";
+                if ($created > 0) $parts[] = "{$created} created";
+                $msg .= implode(', ', $parts) . ".";
+            } else {
+                $msg .= "All local products are already identical to cloud.";
+            }
+
             return response()->json([
                 'status' => 'success',
-                'message' => "Products synchronized! Updated: {$updated}, Created: {$created}.",
+                'message' => $msg,
                 'updated_count' => $updated,
                 'created_count' => $created
             ]);
