@@ -2627,16 +2627,31 @@
 
                 if (res.status === 'success') {
                     checkPosSyncStatus(false);
+                    const hasStockChanges = (res.pulled_sales && res.pulled_sales > 0) || (res.updated_products && res.updated_products > 0);
                     if (!isSilent && typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Sync Complete',
-                            text: res.message || 'All invoices are now live on cloud!',
-                            timer: 2500,
-                            showConfirmButton: false,
-                            toast: true,
-                            position: 'top-end'
-                        });
+                        if (hasStockChanges) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Sync Complete',
+                                text: (res.message || 'Data synced.') + ' Reloading POS to update stock...',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Sync Complete',
+                                text: res.message || 'All invoices are now live on cloud!',
+                                timer: 2500,
+                                showConfirmButton: false,
+                                toast: true,
+                                position: 'top-end'
+                            });
+                        }
+                    } else if (hasStockChanges) {
+                        location.reload();
                     }
                 } else {
                     if (!isSilent && typeof Swal !== 'undefined') {

@@ -425,6 +425,16 @@ class SyncController extends Controller
     {
         $cloudSyncUrl = $this->getCloudSyncUrl();
 
+        // 1. Pull latest sales from cloud first so local stock deductions stay completely in sync
+        $pulledSalesCount = 0;
+        try {
+            $pullSalesRes = $this->pullSalesFromCloud($request);
+            $pullSalesData = $pullSalesRes->getData(true);
+            $pulledSalesCount = $pullSalesData['pulled_count'] ?? 0;
+        } catch (\Throwable $t) {
+            \Illuminate\Support\Facades\Log::warning('pullProducts: sales pull skipped: ' . $t->getMessage());
+        }
+
         try {
             $resp = Http::timeout(45)
                 ->withoutVerifying()
@@ -524,19 +534,19 @@ class SyncController extends Controller
             }
             DB::commit();
 
-            $msg = "Products sync complete: ";
-            if ($updated > 0 || $created > 0) {
-                $parts = [];
-                if ($updated > 0) $parts[] = "{$updated} updated";
-                if ($created > 0) $parts[] = "{$created} created";
-                $msg .= implode(', ', $parts) . ".";
-            } else {
-                $msg .= "All local products are already identical to cloud.";
-            }
+            $msgParts = [];
+            if ($pulledSalesCount > 0) $msgParts[] = "{$pulledSalesCount} cloud sales pulled & stock deducted";
+            if ($updated > 0) $msgParts[] = "{$updated} products updated";
+            if ($created > 0) $msgParts[] = "{$created} new products created";
+
+            $msg = !empty($msgParts)
+                ? "Pull Complete: " . implode(', ', $msgParts) . "."
+                : "All local products and sales are already identical to cloud.";
 
             return response()->json([
                 'status' => 'success',
                 'message' => $msg,
+                'pulled_sales' => $pulledSalesCount,
                 'updated_count' => $updated,
                 'created_count' => $created
             ]);
