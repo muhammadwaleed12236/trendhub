@@ -493,8 +493,33 @@ class SyncController extends Controller
                     }
                 } else {
                     $fields['item_code'] = $pItem['item_code'] ?? ('ITEM-' . str_pad(rand(100, 9999), 4, '0', STR_PAD_LEFT));
-                    Product::create($fields);
+                    $localProduct = Product::create($fields);
                     $created++;
+                }
+
+                // ALSO SYNC WAREHOUSE STOCK SO LOCAL POS CAN IMMEDIATELY SELL IT
+                $defaultWarehouse = \App\Models\Warehouse::first();
+                if ($defaultWarehouse && $localProduct) {
+                    $stockQty = floatval($pItem['total_stock'] ?? ($pItem['total_stock_qty'] ?? 0));
+                    if ($stockQty <= 0 && !empty($pItem['color'])) {
+                        $vList = is_string($pItem['color']) ? json_decode($pItem['color'], true) : $pItem['color'];
+                        if (is_array($vList)) {
+                            foreach ($vList as $v) {
+                                $sVal = floatval($v['stock'] ?? 0);
+                                if ($sVal > 0) $stockQty += $sVal;
+                            }
+                        }
+                    }
+
+                    $whStock = \App\Models\WarehouseStock::firstOrNew([
+                        'warehouse_id' => $defaultWarehouse->id,
+                        'product_id' => $localProduct->id
+                    ]);
+                    $whStock->total_pieces = $stockQty;
+                    $ppb = $localProduct->pieces_per_box > 0 ? $localProduct->pieces_per_box : 1;
+                    $whStock->quantity = round($stockQty / $ppb, 2);
+                    $whStock->remarks = 'Synced from Cloud';
+                    $whStock->save();
                 }
             }
             DB::commit();
@@ -686,7 +711,7 @@ class SyncController extends Controller
         $limit = min(100, max(1, (int) $request->input('limit', 50)));
 
         $query = Sale::with(['customer_relation'])
-            ->orderBy('id', 'asc');
+            ->orderBy('id', 'desc');
 
         if (!empty($excludeUuids) && is_array($excludeUuids)) {
             $query->whereNotIn('uuid', $excludeUuids);
@@ -700,9 +725,9 @@ class SyncController extends Controller
             $sData['customer_uuid'] = $cust ? $cust->uuid : null;
             if ($cust) {
                 $sData['customer_data'] = [
-                    'name' => $cust->name,
-                    'phone' => $cust->phone,
-                    'address' => $cust->address,
+                    'name' => $cust->customer_name ?? ($cust->name ?? 'Walking Customer'),
+                    'phone' => $cust->mobile ?? ($cust->phone ?? null),
+                    'address' => $cust->address ?? null,
                     'city' => $cust->city ?? null,
                 ];
             }
