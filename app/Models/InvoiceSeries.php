@@ -53,11 +53,24 @@ class InvoiceSeries extends Model
 
             $nextNum = max((int) $series->next_number, $numFromSale + 1);
 
+            // FOOLPROOF DUPLICATE PREVENTION:
+            // Ensure the candidate invoice number does NOT already exist in sales table.
+            // If it exists (e.g. from prior syncs or manual entries), loop forward to the next available number.
+            do {
+                $candidate = $pref . '-' . str_pad($nextNum, $padding, '0', STR_PAD_LEFT);
+                $exists = Sale::where('invoice_no', $candidate)
+                    ->orWhere('invoice_no', $candidate . '-LOC')
+                    ->exists();
+                if ($exists) {
+                    $nextNum++;
+                }
+            } while ($exists);
+
             // Immediately increment & save to block next concurrent request
             $series->next_number = $nextNum + 1;
             $series->save();
 
-            return $pref . '-' . str_pad($nextNum, $padding, '0', STR_PAD_LEFT);
+            return $candidate;
         });
     }
 
@@ -68,11 +81,12 @@ class InvoiceSeries extends Model
     {
         if (empty($invoiceNo)) return;
 
-        if (preg_match('/^([A-Z0-9]+)-(\d+)$/i', trim($invoiceNo), $matches)) {
+        // Support standard 'INV-2838' and synced suffix 'INV-2838-LOC'
+        if (preg_match('/^([A-Z0-9]+)-(\d+)(?:-[A-Za-z0-9]+)?$/i', trim($invoiceNo), $matches)) {
             $prefix = strtoupper($matches[1]);
             $number = (int) $matches[2];
 
-            $series = self::where('prefix', $prefix)->first();
+            $series = self::where('prefix', $prefix)->lockForUpdate()->first();
             if ($series) {
                 if ($number >= $series->next_number) {
                     $series->next_number = $number + 1;

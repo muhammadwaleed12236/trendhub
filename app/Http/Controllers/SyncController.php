@@ -579,6 +579,9 @@ class SyncController extends Controller
                     $sale->is_synced = 1;
                     $sale->save();
 
+                    // Advance cloud invoice series counter to prevent collisions with local invoices
+                    \App\Models\InvoiceSeries::incrementCounterForInvoice($sale->invoice_no);
+
                     // Create sale items
                     foreach ($items as $iData) {
                         unset($iData['id']);

@@ -1388,12 +1388,10 @@ class SaleController extends Controller
                 if (!empty($invInput)) {
                     $manualInvoice = trim($invInput);
 
-                    // Check for duplicates
+                    // Check for duplicates - if already taken, auto-generate guaranteed unique free number
                     $exists = Sale::where('invoice_no', $manualInvoice)->exists();
                     if ($exists) {
-                        throw \Illuminate\Validation\ValidationException::withMessages([
-                            'invoice_no' => "Invoice number '{$manualInvoice}' already exists. Please use a different number or click refresh.",
-                        ]);
+                        $manualInvoice = Sale::generateInvoiceNo();
                     }
 
                     $sale->invoice_no = $manualInvoice;
