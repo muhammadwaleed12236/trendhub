@@ -419,6 +419,103 @@ class SyncController extends Controller
     }
 
     /**
+     * Pulls latest approved purchases from cloud server to update local purchase items & stock.
+     */
+    public function pullPurchasesFromCloud(Request $request = null)
+    {
+        $cloudSyncUrl = $this->getCloudSyncUrl();
+        $syncToken = $this->getSyncToken();
+
+        $localInvoices = \App\Models\Purchase::orderBy('id', 'desc')->limit(500)->pluck('invoice_no')->toArray();
+
+        try {
+            $response = Http::timeout(45)
+                ->withoutVerifying()
+                ->withHeaders([
+                    'X-Sync-Token' => $syncToken,
+                    'Accept' => 'application/json'
+                ])
+                ->post($cloudSyncUrl . '/api/pull-purchases', [
+                    'exclude_invoices' => $localInvoices,
+                    'limit' => 50
+                ]);
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'status' => 'warning',
+                    'message' => 'Cloud purchases pull skipped: endpoint not available or status ' . $response->status(),
+                    'pulled_count' => 0
+                ]);
+            }
+
+            $data = $response->json();
+            $cloudPurchases = $data['purchases'] ?? [];
+
+            if (empty($cloudPurchases)) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Local database is already up to date with cloud purchases.',
+                    'pulled_count' => 0
+                ]);
+            }
+
+            $pulled = 0;
+            DB::beginTransaction();
+            foreach ($cloudPurchases as $pData) {
+                $invNo = $pData['invoice_no'] ?? null;
+                if (!$invNo) continue;
+
+                if (\App\Models\Purchase::where('invoice_no', $invNo)->exists()) {
+                    continue;
+                }
+
+                $items = $pData['items'] ?? [];
+                $vendorName = $pData['vendor_name'] ?? null;
+                unset($pData['id'], $pData['items'], $pData['vendor_name'], $pData['vendor']);
+
+                // Vendor resolution
+                if (!empty($vendorName)) {
+                    $vendor = \App\Models\Vendor::where('name', $vendorName)->first();
+                    if (!$vendor) {
+                        $vendor = \App\Models\Vendor::create(['name' => $vendorName]);
+                    }
+                    $pData['vendor_id'] = $vendor->id;
+                }
+
+                $purchase = \App\Models\Purchase::create($pData);
+
+                foreach ($items as $iData) {
+                    unset($iData['id'], $iData['purchase_id']);
+                    $pCode = $iData['product_code'] ?? null;
+                    if ($pCode) {
+                        $localProd = Product::where('item_code', $pCode)->first();
+                        if ($localProd) {
+                            $iData['product_id'] = $localProd->id;
+                        }
+                    }
+                    unset($iData['product_code'], $iData['product_name']);
+                    $iData['purchase_id'] = $purchase->id;
+                    \App\Models\PurchaseItem::create($iData);
+                }
+                $pulled++;
+            }
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "Successfully pulled {$pulled} purchases from cloud!",
+                'pulled_count' => $pulled
+            ]);
+        } catch (\Throwable $t) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to pull purchases: ' . $t->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Pulls latest products, prices and stock from cloud to keep local POS updated.
      */
     public function pullProductsFromCloud(Request $request = null)
@@ -433,6 +530,16 @@ class SyncController extends Controller
             $pulledSalesCount = $pullSalesData['pulled_count'] ?? 0;
         } catch (\Throwable $t) {
             \Illuminate\Support\Facades\Log::warning('pullProducts: sales pull skipped: ' . $t->getMessage());
+        }
+
+        // 2. Pull latest purchases from cloud so local purchases & variant stocks stay in sync
+        $pulledPurchasesCount = 0;
+        try {
+            $pullPurRes = $this->pullPurchasesFromCloud($request);
+            $pullPurData = $pullPurRes->getData(true);
+            $pulledPurchasesCount = $pullPurData['pulled_count'] ?? 0;
+        } catch (\Throwable $t) {
+            \Illuminate\Support\Facades\Log::warning('pullProducts: purchases pull skipped: ' . $t->getMessage());
         }
 
         try {
@@ -757,6 +864,51 @@ class SyncController extends Controller
             'status' => 'success',
             'count' => count($sales),
             'sales' => $sales
+        ]);
+    }
+
+    /**
+     * Runs on the cloud server to export purchases created on cloud down to local.
+     */
+    public function exportPurchases(Request $request)
+    {
+        $token = $request->header('X-Sync-Token') ?? $request->input('sync_token');
+        if ($token !== $this->getSyncToken()) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized sync request.'], 401);
+        }
+
+        $excludeInvoices = $request->input('exclude_invoices', []);
+        $limit = min(100, max(1, (int) $request->input('limit', 50)));
+
+        $query = \App\Models\Purchase::with(['vendor'])
+            ->orderBy('id', 'desc');
+
+        if (!empty($excludeInvoices) && is_array($excludeInvoices)) {
+            $query->whereNotIn('invoice_no', $excludeInvoices);
+        }
+
+        $purchasesModels = $query->limit($limit)->get();
+
+        $purchases = $purchasesModels->map(function ($p) {
+            $pData = $p->toArray();
+            $vendor = $p->vendor ?? \App\Models\Vendor::find($p->vendor_id);
+            $pData['vendor_name'] = $vendor ? $vendor->name : null;
+
+            $pData['items'] = \App\Models\PurchaseItem::where('purchase_id', $p->id)->get()->map(function ($item) {
+                $iData = $item->toArray();
+                $prod = Product::find($item->product_id);
+                $iData['product_code'] = $prod ? $prod->item_code : null;
+                $iData['product_name'] = $prod ? $prod->item_name : null;
+                return $iData;
+            })->toArray();
+
+            return $pData;
+        })->toArray();
+
+        return response()->json([
+            'status' => 'success',
+            'count' => count($purchases),
+            'purchases' => $purchases
         ]);
     }
 }

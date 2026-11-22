@@ -232,6 +232,8 @@ class ProductController extends Controller
                         } else {
                             $vBalance = (int) floor(max(0, $stockPieces) / $factor);
                         }
+                    } elseif (count($variants) === 1) {
+                        $vBalance = max(0, $stockPieces);
                     } else {
                         // Calculate Purchased variant qty
                         $purchased = 0;

@@ -155,7 +155,11 @@ class PurchasePOSController extends Controller
                         }
                     }
 
-                    $vBalance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned + $adjustments);
+                    if (count($variants) === 1) {
+                        $vBalance = max(0, (float) $p->warehouseStocks->sum('total_pieces'));
+                    } else {
+                        $vBalance = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned + $adjustments);
+                    }
                     $totalStockPieces += $vBalance;
 
                     $vStockDisplay = $vBalance;
