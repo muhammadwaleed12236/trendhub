@@ -3,30 +3,49 @@
 @section('content')
     <div class="main-content">
         <div class="main-content-inner">
-            <div class="container">
+            <div class="container-fluid py-4">
                 <div class="row">
                     <div class="col-lg-12">
 
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h3>Sale Returns</h3>
-                            <a class="btn btn-primary" href="{{ route('sale.index') }}">Back to Purchases</a>
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                            <div>
+                                <h4 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                    <i class="fas fa-undo text-danger"></i> Sales Returns History
+                                </h4>
+                                <p class="text-muted mb-0 small">View and manage customer returns, credits and refund history</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a class="btn btn-warning px-3 shadow-sm fw-bold d-inline-flex align-items-center gap-1" href="{{ route('sale.return.create') }}" style="border-radius: 8px;">
+                                    <i class="fas fa-undo-alt"></i> Sale Return
+                                </a>
+                                <a class="btn btn-outline-secondary px-3 shadow-sm fw-medium d-inline-flex align-items-center gap-1" href="{{ route('sale.index') }}" style="border-radius: 8px;">
+                                    <i class="fas fa-arrow-left"></i> Back to Sales
+                                </a>
+                            </div>
                         </div>
 
-                        <div class="border mt-1 shadow rounded bg-white">
-                            <div class="table-responsive mt-4 mb-5 p-3">
-                                <table id="return-table" class="table table-bordered text-center">
-                                    <thead class="bg-info text-white">
+                        {{-- Flash Message --}}
+                        @if (session('success'))
+                            <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+                                <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
+
+                        <div class="border mt-1 shadow-sm rounded-3 bg-white">
+                            <div class="table-responsive p-3">
+                                <table id="return-table" class="table table-bordered table-hover text-center align-middle" style="font-size: 13px;">
+                                    <thead class="table-dark">
                                         <tr>
-                                            <th>ID</th>
-                                            <th>Invoice #</th>
-                                            <th>customer</th>
+                                            <th>#</th>
+                                            <th>Return Invoice</th>
+                                            <th>Customer</th>
                                             <th>Warehouse</th>
                                             <th>Return Date</th>
                                             <th>Return Amount</th>
-                                            <th>Original Purchase</th>
+                                            <th>Original Invoice</th>
                                             <th>Total Returned</th>
-                                            <th>New Net Amount</th>
-                                            <th>New Due</th>
+                                            <th>Refund Type</th>
                                             <th>Status</th>
                                             <th>Action</th>
                                         </tr>
@@ -44,25 +63,29 @@
                                             <tr>
                                                 <td>{{ $return->id }}</td>
                                                 <td>
-                                                    <strong>{{ $return->return_invoice }}</strong>
+                                                    <strong class="text-primary">{{ $return->return_invoice }}</strong>
                                                     @if ($return->sale)
-                                                        <br><small class="text-muted">Orig:
-                                                            {{ $return->sale->invoice_no }}</small>
+                                                        <br><small class="text-muted">Orig: {{ $return->sale->invoice_no }}</small>
                                                     @endif
                                                 </td>
-                                                <td>{{ $return->customer->customer_name ?? 'N/A' }}</td>
-                                                <td>{{ $return->warehouse->warehouse_name ?? 'N/A' }}</td>
+                                                <td class="text-start">
+                                                    <strong>{{ $return->customer->customer_name ?? 'Walking Customer' }}</strong>
+                                                    @if (!empty($return->customer->mobile))
+                                                        <br><small class="text-muted">{{ $return->customer->mobile }}</small>
+                                                    @endif
+                                                </td>
+                                                <td>{{ $return->warehouse->warehouse_name ?? 'Default' }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($return->return_date)->format('d/m/Y') }}</td>
 
                                                 {{-- Return Amount --}}
-                                                <td class="text-danger">
-                                                    <strong>-{{ number_format($return->net_amount, 2) }}</strong>
+                                                <td class="text-danger fw-bold">
+                                                    Rs. {{ number_format($return->net_amount, 2) }}
                                                 </td>
 
-                                                {{-- Original Purchase Amount --}}
+                                                {{-- Original Sale Amount --}}
                                                 <td>
                                                     @if ($return->sale)
-                                                        {{ number_format($return->original_net_amount, 2) }}
+                                                        Rs. {{ number_format($return->original_net_amount, 2) }}
                                                     @else
                                                         <span class="text-muted">N/A</span>
                                                     @endif
@@ -71,27 +94,20 @@
                                                 {{-- Total Returned --}}
                                                 <td class="text-danger">
                                                     @if ($return->sale)
-                                                        <strong>{{ number_format($return->total_returned, 2) }}</strong>
+                                                        <strong>Rs. {{ number_format($return->total_returned, 2) }}</strong>
                                                     @else
                                                         <span class="text-muted">N/A</span>
                                                     @endif
                                                 </td>
 
-                                                {{-- New Net Amount --}}
-                                                <td class="text-success">
-                                                    @if ($return->sale)
-                                                        <strong>{{ number_format($return->new_net_amount, 2) }}</strong>
+                                                {{-- Refund Type --}}
+                                                <td>
+                                                    @if ($return->refund_type === 'cash')
+                                                        <span class="badge bg-success">Cash Refund</span>
+                                                    @elseif ($return->refund_type === 'bank')
+                                                        <span class="badge bg-info text-dark">Bank Refund</span>
                                                     @else
-                                                        <span class="text-muted">N/A</span>
-                                                    @endif
-                                                </td>
-
-                                                {{-- New Due Amount --}}
-                                                <td class="text-warning">
-                                                    @if ($return->sale)
-                                                        <strong>{{ number_format($return->new_due_amount, 2) }}</strong>
-                                                    @else
-                                                        <span class="text-muted">N/A</span>
+                                                        <span class="badge bg-primary">Ledger Credit</span>
                                                     @endif
                                                 </td>
 
@@ -100,15 +116,23 @@
                                                     @if ($isFullReturn)
                                                         <span class="badge bg-danger">Full Return</span>
                                                     @elseif($isPartialReturn)
-                                                        <span class="badge bg-warning">Partial Return</span>
+                                                        <span class="badge bg-warning text-dark">Partial Return</span>
                                                     @else
-                                                        <span class="badge bg-secondary">Standalone</span>
+                                                        <span class="badge bg-secondary">Posted</span>
                                                     @endif
                                                 </td>
 
                                                 <td>
-                                                    <a href="{{ route('sale.return.view', $return->id) }}"
-                                                        class="btn btn-sm btn-primary">View</a>
+                                                    <div class="d-inline-flex gap-1">
+                                                        <a href="{{ route('sale.return.view', $return->id) }}"
+                                                            class="btn btn-sm btn-primary" title="View Details">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="{{ route('sale.return.print', $return->id) }}"
+                                                            class="btn btn-sm btn-dark" title="Print Voucher" target="_blank">
+                                                            <i class="fas fa-print"></i>
+                                                        </a>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -145,4 +169,3 @@
         </div>
     </div>
 @endsection
-

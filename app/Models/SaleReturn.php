@@ -24,6 +24,8 @@ class SaleReturn extends Model
         'paid',
         'balance',
         'remarks',
+        'return_reason',
+        'refund_type',
         'status',
     ];
 

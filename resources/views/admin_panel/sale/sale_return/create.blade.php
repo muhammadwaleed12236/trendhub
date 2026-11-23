@@ -1,878 +1,973 @@
 @extends('admin_panel.layout.app')
 
 @section('content')
+    <link href="{{ asset('assets/vendors/select2/css/select2.min.css') }}" rel="stylesheet" />
     <style>
-        /* Professional ERP Styling */
-        :root {
-            --erp-primary: #4a69bd;
-            /* Professional Blue */
-            --erp-bg: #f5f6fa;
-            --erp-border: #dcdde1;
-            --erp-text: #2f3640;
-            --erp-muted: #7f8fa6;
+        .sr-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
         }
 
-        body {
-            background-color: var(--erp-bg);
-            color: var(--erp-text);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        }
-
-        .erp-card {
-            background: white;
-            border: 1px solid var(--erp-border);
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-            margin-bottom: 1.5rem;
-        }
-
-        .erp-header {
-            background: white;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--erp-border);
+        .sr-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 10px 10px 0 0;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            border-radius: 8px 8px 0 0;
+            justify-content: space-between;
         }
 
-        .erp-header h5 {
+        .sr-header h5 {
             margin: 0;
-            font-weight: 600;
-            color: var(--erp-primary);
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .form-label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--erp-muted);
+        .sr-section-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
             text-transform: uppercase;
-            margin-bottom: 0.3rem;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 4px;
         }
 
         .form-control,
         .form-select {
-            border-radius: 4px;
-            border: 1px solid var(--erp-border);
-            padding: 0.4rem 0.75rem;
-            font-size: 0.9rem;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            padding: 6px 10px;
+            height: 38px;
+            transition: all 0.2s;
         }
 
-        .form-control:focus {
-            border-color: var(--erp-primary);
-            box-shadow: 0 0 0 2px rgba(74, 105, 189, 0.2);
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
 
         .form-control[readonly] {
-            background-color: #f9fafb;
-            /* Minimalist light gray */
-            color: var(--erp-muted);
-            font-weight: 500;
+            background-color: #f1f5f9;
             cursor: not-allowed;
-            pointer-events: none;
-            border-color: var(--erp-border);
-            /* Standard border, no pattern */
-            opacity: 1;
-            /* Full opacity for clarity */
-        }
-
-        .form-control[readonly]:focus {
-            box-shadow: none;
-            border-color: #dee2e6;
-        }
-
-        /* Table Styles */
-        .erp-table-container {
-            border: 1px solid var(--erp-border);
-            border-radius: 6px;
-            overflow: hidden;
-        }
-
-        .table-erp {
-            width: 100%;
-            margin-bottom: 0;
-        }
-
-        .table-erp thead th {
-            background-color: #f1f2f6;
-            color: var(--erp-text);
+            color: #334155;
             font-weight: 600;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            padding: 0.75rem;
-            border-bottom: 2px solid var(--erp-border);
-            white-space: nowrap;
         }
 
-        .table-erp tbody td {
-            vertical-align: middle;
-            padding: 0.5rem;
-            border-bottom: 1px solid #f1f2f6;
-        }
-
-        .table-erp input.form-control {
-            border: 1px solid transparent;
-            background: transparent;
-            padding: 0.25rem 0.5rem;
-            height: auto;
-        }
-
-        .table-erp input.form-control:focus,
-        .table-erp input.form-control:hover {
-            border-color: var(--erp-border);
-            background: white;
-        }
-
-        /* Read-only inputs in table */
-        .table-erp input.form-control[readonly] {
-            cursor: not-allowed;
-            pointer-events: none;
-            background-color: transparent;
-            /* Seamless integration */
-            color: #adb5bd;
-            /* Muted text */
-            font-weight: 400;
-            border-color: transparent;
-        }
-
-        .table-erp input.form-control[readonly]:hover,
-        .table-erp input.form-control[readonly]:focus {
-            background-color: #f8f9fa;
-            border-color: transparent;
-            box-shadow: none;
-            cursor: not-allowed;
-        }
-
-        .summary-card {
-            background: #f8f9fa;
-            border-radius: 6px;
-            padding: 1.5rem;
-            border: 1px solid var(--erp-border);
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .summary-row.total {
-            border-top: 1px solid var(--erp-border);
-            padding-top: 0.5rem;
-            margin-top: 0.5rem;
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: var(--erp-primary);
-        }
-
-        .btn-erp-primary {
-            background-color: var(--erp-primary);
-            color: white;
-            padding: 0.6rem 1.5rem;
-            font-weight: 500;
-            border: none;
-            border-radius: 4px;
-            transition: all 0.2s;
-        }
-
-        .btn-erp-primary:hover {
-            background-color: #3c5aa6;
-            color: white;
-            transform: translateY(-1px);
-        }
-
-        /* Select2 Tweaks */
         .select2-container .select2-selection--single {
-            height: 36px;
-            border-color: var(--erp-border);
+            height: 38px !important;
+            border: 1.5px solid #cbd5e1 !important;
+            border-radius: 6px !important;
         }
 
         .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 36px;
+            line-height: 36px !important;
+            font-size: 13px !important;
+            padding-left: 10px !important;
+            color: #1e293b !important;
         }
 
         .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 36px;
+            height: 36px !important;
         }
 
-        .select2-container--default .select2-selection--multiple {
-            border-color: var(--erp-border);
+        /* Items Table */
+        .sr-table-container {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        /* Editable Field Highlighting */
-        /* Editable Field Highlighting - Minimal */
-        .quantity-box:not([readonly]),
-        #extraDiscount {
-            background-color: #fff;
+        .sr-table {
+            margin-bottom: 0;
+            font-size: 13px;
+        }
+
+        .sr-table thead th {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 10px 8px;
+            border-bottom: 2px solid #cbd5e1;
+            vertical-align: middle;
+        }
+
+        .sr-table tbody td {
+            padding: 8px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .sr-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .input-qty {
+            width: 85px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .input-rate {
+            width: 90px;
             font-weight: 600;
-            color: var(--erp-text);
+            text-align: right;
+        }
+
+        /* Refund Option Box */
+        .refund-card {
+            background-color: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .refund-pill {
+            cursor: pointer;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 2px solid #cbd5e1;
+            background: #ffffff;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 8px;
         }
 
-        /* Only show focus ring when active */
-        .quantity-box:not([readonly]):focus,
-        #extraDiscount:focus {
-            border-color: var(--erp-primary) !important;
-            box-shadow: 0 0 0 3px rgba(74, 105, 189, 0.1) !important;
+        .refund-pill:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
         }
 
-        .quantity-box:not([readonly]):hover {
-            border-color: #b0bdd1;
+        .refund-pill.active {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #1d4ed8;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
         }
 
-        /* Visual indicator for editable vs read-only */
-        .form-label .fa-lock {
-            color: #dee2e6;
-            /* Very subtle lock icon */
+        .refund-pill input[type="radio"] {
+            margin: 0;
+            accent-color: #2563eb;
+            transform: scale(1.15);
+        }
+
+        /* Summary Card */
+        .summary-card {
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .summary-line.total {
+            border-top: 2px dashed #cbd5e1;
+            padding-top: 12px;
+            margin-top: 12px;
+            font-size: 17px;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        /* Condition badge */
+        .badge-good {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .badge-damaged {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        /* Loading spinner */
+        #invoiceLoadingSpinner {
+            display: none;
         }
     </style>
 
+    <div class="main-content">
+        <div class="main-content-inner">
+            <div class="container-fluid py-4">
 
-    <!-- Structure Wrapper -->
-    <div class="container-fluid py-4">
-        <div class="erp-card">
-            <div class="erp-header">
-                <h5><i class="fas fa-undo-alt me-2"></i> Sale Return</h5>
-                <div class="d-flex align-items-center gap-3">
-                    <span class="badge bg-light text-dark border"><i class="fas fa-file-invoice me-1"></i> Original Invoice #
-                        {{ $sale->invoice_no }}</span>
-                    <a href="{{ route('sale.index') }}" class="btn btn-sm btn-outline-secondary">Back to List</a>
+                {{-- Page Header --}}
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <div>
+                        <h4 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                            <i class="fas fa-undo-alt text-warning"></i> Sales Return Entry
+                        </h4>
+                        <p class="text-muted mb-0 small">Create customer sales return with real-time stock & ledger adjustment</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('sale.return.index') }}" class="btn btn-outline-danger px-3 fw-medium d-inline-flex align-items-center gap-1" style="border-radius: 8px;">
+                            <i class="fas fa-history"></i> Return History
+                        </a>
+                        <a href="{{ route('sale.index') }}" class="btn btn-outline-secondary px-3 fw-medium d-inline-flex align-items-center gap-1" style="border-radius: 8px;">
+                            <i class="fas fa-arrow-left"></i> Back to Sales
+                        </a>
+                    </div>
                 </div>
-            </div>
 
-            <div class="card-body p-4">
-                <form action="{{ route('sale.return.store') }}" method="POST">
+                {{-- Flash Alerts --}}
+                @if (session('success'))
+                    <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+                        <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+                @if (session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i> {{ session('error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+                @if (isset($errors) && $errors->any())
+                    <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+                        <ul class="mb-0 ps-3">
+                            @foreach ($errors->all() as $err)
+                                <li>{{ $err }}</li>
+                            @endforeach
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
+                <form id="saleReturnForm" action="{{ route('sale.return.store') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="sale_id" value="{{ $sale->id }}">
-                    {{-- Assuming Single Branch/Warehouse for now or derived from Purchase --}}
-                    <input type="hidden" name="warehouse_id" value="{{ $sale->warehouse_id ?? 1 }}">
+                    <input type="hidden" name="form_token" value="{{ uniqid('sr_tok_', true) }}">
 
-                    <!-- Alert Section -->
-                    @if (session('success'))
-                        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert">
-                            <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    {{-- CARD 1: Header Information --}}
+                    <div class="sr-card">
+                        <div class="sr-header">
+                            <h5><i class="fas fa-file-invoice text-primary me-2"></i> Return Information & Source Invoice</h5>
+                            <span class="badge bg-primary px-3 py-2 text-uppercase fw-bold" style="font-size: 11px; letter-spacing: 0.5px;">
+                                Return # <span id="displayReturnNo">{{ $nextReturnNumber }}</span>
+                            </span>
                         </div>
-                    @endif
-                    @if (session('error'))
-                        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0" role="alert">
-                            <i class="fas fa-exclamation-circle me-2"></i> {{ session('error') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    @endif
+                        <div class="p-4">
+                            <div class="row g-3">
+                                {{-- Return Number --}}
+                                <div class="col-md-2 col-sm-6">
+                                    <label class="form-label">Return No <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="return_invoice" value="{{ $nextReturnNumber }}" readonly>
+                                </div>
 
-                    <!-- Top Section: customer & Reference -->
+                                {{-- Return Date --}}
+                                <div class="col-md-2 col-sm-6">
+                                    <label class="form-label">Return Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" name="return_date" id="return_date" value="{{ date('Y-m-d') }}" required>
+                                </div>
+
+                                {{-- Warehouse --}}
+                                <div class="col-md-2 col-sm-6">
+                                    <label class="form-label">Warehouse <span class="text-danger">*</span></label>
+                                    <select class="form-select" name="warehouse_id" id="warehouse_id" required>
+                                        @foreach ($warehouses as $wh)
+                                            <option value="{{ $wh->id }}">{{ $wh->warehouse_name ?? $wh->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                {{-- Customer Selection --}}
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="form-label">Customer Selection</label>
+                                    <select class="form-select select2-customer" name="customer_id" id="customer_id">
+                                        <option value="all">-- All Customers (Search Any) --</option>
+                                        @foreach ($customers as $c)
+                                            <option value="{{ $c->id }}" data-balance="{{ (float)($c->previous_balance ?? 0) }}">
+                                                {{ $c->customer_name }} ({{ $c->mobile ?? 'No phone' }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                {{-- Original Invoice Selection --}}
+                                <div class="col-md-3 col-sm-12">
+                                    <label class="form-label">Original Sales Invoice <span class="text-danger">*</span></label>
+                                    <select class="form-select select2-invoice" name="sale_id" id="sale_id" required>
+                                        <option value="">-- Select Sales Invoice --</option>
+                                        @foreach ($recentSales as $s)
+                                            <option value="{{ $s->id }}" {{ (isset($selectedSaleId) && $selectedSaleId == $s->id) ? 'selected' : '' }}>
+                                                {{ $s->invoice_no }} - {{ $s->created_at ? $s->created_at->format('d/m/Y') : '' }} (Rs. {{ number_format($s->total_net, 2) }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            {{-- Invoice Info Banner --}}
+                            <div id="invoiceInfoBanner" class="mt-3 p-3 bg-light border rounded-3 d-none">
+                                <div class="row align-items-center g-2">
+                                    <div class="col-md-3 col-6">
+                                        <small class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Invoice No</small>
+                                        <div class="fw-bold text-dark fs-6" id="bannerInvoiceNo">-</div>
+                                    </div>
+                                    <div class="col-md-3 col-6">
+                                        <small class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Invoice Date</small>
+                                        <div class="fw-semibold text-dark" id="bannerInvoiceDate">-</div>
+                                    </div>
+                                    <div class="col-md-3 col-6">
+                                        <small class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Customer</small>
+                                        <div class="fw-semibold text-dark" id="bannerCustomerName">-</div>
+                                        <small class="text-primary fw-bold" id="bannerCustomerBalance">Balance: Rs. 0.00</small>
+                                    </div>
+                                    <div class="col-md-3 col-6">
+                                        <small class="text-muted text-uppercase fw-bold" style="font-size: 11px;">Original Total Net</small>
+                                        <div class="fw-bold text-success fs-6" id="bannerInvoiceNet">Rs. 0.00</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Invoice loading indicator --}}
+                            <div id="invoiceLoadingSpinner" class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                <span class="ms-2 text-muted fw-semibold">Loading sold products from invoice...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- CARD 2: Sold Products & Return Details Table --}}
+                    <div class="sr-card">
+                        <div class="sr-header">
+                            <h5><i class="fas fa-boxes text-info me-2"></i> Sold Products & Return Details</h5>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary fw-bold" id="btnReturnAll" disabled>
+                                    <i class="fas fa-check-double me-1"></i> Return All Available
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearReturn" disabled>
+                                    <i class="fas fa-eraser me-1"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-3">
+                            <div class="table-responsive sr-table-container">
+                                <table class="table sr-table align-middle" id="returnItemsTable">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40px;" class="text-center">#</th>
+                                            <th style="min-width: 220px;">Product & Details</th>
+                                            <th style="width: 100px;" class="text-center">Sold (Pcs)</th>
+                                            <th style="width: 100px;" class="text-center">Returned</th>
+                                            <th style="width: 100px;" class="text-center">Available</th>
+                                            <th style="width: 120px;" class="text-center">Return Qty <span class="text-danger">*</span></th>
+                                            <th style="width: 100px;" class="text-end">Rate (Rs)</th>
+                                            <th style="width: 80px;" class="text-end">Disc</th>
+                                            <th style="min-width: 150px;">Return Reason</th>
+                                            <th style="min-width: 160px;">Stock Condition</th>
+                                            <th style="width: 120px;" class="text-end">Line Total (Rs)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemsTableBody">
+                                        <tr id="emptyTableMessage">
+                                            <td colspan="11" class="text-center py-5 text-muted">
+                                                <i class="fas fa-shopping-bag fa-3x mb-3 text-secondary opacity-50"></i>
+                                                <p class="mb-0 fw-semibold">Please select an Original Sales Invoice above to load sold products.</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- CARD 3: Refund Options, Accounting & Financial Summary --}}
                     <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <label class="form-label"><i class="fas fa-lock text-muted me-1"
-                                    style="font-size: 0.7rem;"></i>customer</label>
-                            {{-- Read-Only customer Name --}}
-                            <input type="text" class="form-control form-control-sm"
-                                value="{{ optional($sale->customer)->name ?? 'Unknown customer' }}" readonly
-                                style="background-color: #e9ecef; border-color: #dee2e6;">
-                            {{-- Hidden ID for Form Submission --}}
-                            <input type="hidden" name="customer_id" value="{{ $sale->customer_id }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label"><i class="fas fa-lock text-muted me-1"
-                                    style="font-size: 0.7rem;"></i>Reference / PO #</label>
-                            <input type="text" name="reference" class="form-control form-control-sm"
-                                value="{{ $sale->invoice_no ?? '' }}" readonly>
-                        </div>
-                        <div class="col-md-5 text-end align-self-end">
-                            <div class="p-2 bg-light rounded d-inline-block border">
-                                <small class="text-muted d-block text-start" style="font-size: 0.7rem;">ORIGINAL PURCHASE
-                                    DATE</small>
-                                <strong class="text-dark"><i class="far fa-calendar-alt me-1"></i>
-                                    {{ $sale->created_at->format('d/m/Y h:i A') }}</strong>
-                            </div>
-                        </div>
-                    </div>
+                        {{-- Left Column: Refund Option & Remarks --}}
+                        <div class="col-lg-7">
+                            <div class="sr-card h-100 mb-0">
+                                <div class="sr-header">
+                                    <h5><i class="fas fa-hand-holding-usd text-success me-2"></i> Refund Option & Stock Adjustment</h5>
+                                </div>
+                                <div class="p-4">
+                                    {{-- General Return Reason --}}
+                                    <div class="mb-4">
+                                        <label class="form-label">General Return Reason</label>
+                                        <select class="form-select" name="return_reason" id="general_return_reason">
+                                            <option value="">-- Select Reason --</option>
+                                            <option value="Damaged Goods">Damaged Goods</option>
+                                            <option value="Wrong Item Delivered">Wrong Item Delivered</option>
+                                            <option value="Quality Issue">Quality Issue</option>
+                                            <option value="Customer Change of Mind">Customer Change of Mind</option>
+                                            <option value="Expired / Nearing Expiry">Expired / Nearing Expiry</option>
+                                            <option value="Other">Other Reason</option>
+                                        </select>
+                                    </div>
 
-                    <!-- Return Info -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <label class="form-label">Return Date <span class="text-danger">*</span></label>
-                            <input type="date" name="return_date" class="form-control" value="{{ date('Y-m-d') }}"
-                                required>
-                        </div>
-                        <div class="col-md-8">
-                            <label class="form-label">Return Reason / Notes</label>
-                            <input type="text" name="return_reason" class="form-control"
-                                placeholder="e.g., Damaged goods, Wrong item sent">
-                        </div>
-                    </div>
+                                    {{-- Refund Options --}}
+                                    <div class="refund-card mb-4">
+                                        <div class="sr-section-title">
+                                            <i class="fas fa-wallet text-primary"></i> Select Refund Method <span class="text-danger">*</span>
+                                        </div>
 
-                    <!-- Items Table -->
-                    <div class="d-flex justify-content-end mb-2">
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnReturnAll">
-                            <i class="fas fa-check-double me-1"></i> Return All
-                        </button>
-                    </div>
-                    <div class="table-responsive erp-table-container mb-4">
-                        <table class="table table-erp table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th style="width: 20%;"><i class="fas fa-lock me-1"
-                                            style="font-size: 0.65rem; opacity: 0.6;"></i>Product</th>
-                                    <th style="width: 8%;">Size</th>
-                                    <th style="width: 8%;">Color</th>
-                                    <th style="width: 8%;"><i class="fas fa-lock me-1"
-                                            style="font-size: 0.65rem; opacity: 0.6;"></i>Item Code</th>
-                                    <th style="width: 12%;"><i class="fas fa-lock me-1"
-                                            style="font-size: 0.65rem; opacity: 0.6;"></i>PC per box</th>
-                                    <th style="width: 10%;"><i class="fas fa-lock me-1"
-                                            style="font-size: 0.65rem; opacity: 0.6;"></i>Purchased Price</th>
-                                    <th style="width: 10%;"><i class="fas fa-lock me-1"
-                                            style="font-size: 0.65rem; opacity: 0.6;"></i>Purchased Qty PC</th>
-                                    <th style="width: 10%;">Return Qty (Box.Piece)</th>
-                                    <th style="width: 12%;">Total Return Pieces</th>
-                                    <th style="width: 12%;">Total Amount</th>
-                                    <th style="width: 5%;" class="text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="returnItems">
-                                @foreach ($sale->items as $index => $item)
-                                    <tr>
-                                        <input type="hidden" name="product_id[]" value="{{ $item['product_id'] }}">
-                                        <input type="hidden" name="color[]" value="{{ $item['color'] ?? '' }}">
-                                        {{-- Hidden Discount to preserve refund math if needed --}}
-                                        <input type="hidden" name="item_disc[]" class="item_disc"
-                                            value="{{ $item['discount'] ?? 0 }}">
-                                        <input type="hidden" name="unit[]" value="{{ $item['unit'] ?? 'pc' }}">
-                                        <input type="hidden" name="size_mode[]" class="size-mode"
-                                            value="{{ $item['size_mode'] ?? 'by_pieces' }}">
-                                        <input type="hidden" name="pieces_per_m2[]" class="pieces-per-m2"
-                                            value="{{ $item['pieces_per_m2'] ?? 0 }}">
-
-                                        <td>
-                                            <input type="text" class="form-control fw-bold"
-                                                value="{{ $item['item_name'] }}" readonly>
-                                            <small class="text-muted d-block ms-2"
-                                                style="font-size: 0.75rem;">{{ $item['brand'] ?? '' }}</small>
-                                        </td>
-
-                                        {{-- Size --}}
-                                        <td>
-                                            <input type="text" class="form-control text-center"
-                                                value="{{ $item['size_val'] ?? '-' }}" readonly>
-                                        </td>
-
-                                        {{-- Color --}}
-                                        <td>
-                                            <input type="text" class="form-control text-center"
-                                                value="{{ $item['color_val'] ?? '-' }}" readonly>
-                                        </td>
-
-                                        <td><input type="text" class="form-control text-center"
-                                                value="{{ $item['item_code'] }}" readonly></td>
-
-                                        {{-- PC per box --}}
-                                        <td>
-                                            <input type="number" class="form-control text-center pieces-per-box"
-                                                value="{{ $item['pieces_per_box'] ?? 1 }}" readonly>
-                                        </td>
-
-
-                                        {{-- Purchased Price Per Pc --}}
-                                        <td><input type="number" name="price[]" step="0.01"
-                                                class="form-control text-end price" value="{{ (float) $item['price'] }}"
-                                                readonly>
-                                            <small class="text-muted d-block text-end" style="font-size: 0.65rem;">
-                                                @if (($item['size_mode'] ?? '') == 'by_size')
-                                                    Per M²
-                                                @elseif(($item['size_mode'] ?? '') == 'by_cartons')
-                                                    Per Box
-                                                @else
-                                                    Per Pc
-                                                @endif
-                                            </small>
-                                        </td>
-
-                                        {{-- Purchased Qty (Read Only) --}}
-                                        <td>
-                                            @php
-                                                $original = $item['original_qty'] ?? $item['qty'];
-                                                $returned = $item['returned_qty'] ?? 0;
-                                                $netRemaining = $item['max_returnable'] ?? ($original - $returned);
-                                                $ppb = $item['pieces_per_box'] ?? 1;
-                                                
-                                                // Format remaining pieces to Box.Piece
-                                                if ($ppb > 1) {
-                                                    $remBoxes = floor($netRemaining / $ppb);
-                                                    $remPcs = $netRemaining % $ppb;
-                                                    $remDisplay = $remBoxes . ($remPcs > 0 ? '.'.$remPcs : '');
-                                                } else {
-                                                    $remDisplay = $netRemaining;
-                                                }
-                                            @endphp
-                                            <div class="text-center">
-                                                <span class="fw-bold text-dark fs-6">{{ $remDisplay }}</span>
-                                                <small class="text-muted d-block" style="font-size: 0.65rem;">Remaining Pieces: {{ $netRemaining }}</small>
+                                        {{-- 1. Customer Ledger Adjustment --}}
+                                        <label class="refund-pill active" id="pillLedger">
+                                            <input type="radio" name="refund_type" value="ledger" checked>
+                                            <div>
+                                                <div>Customer Ledger Adjustment <span class="badge bg-primary ms-1">Recommended</span></div>
+                                                <small class="text-muted fw-normal d-block">Credits return amount directly to customer ledger. Customer debt is reduced.</small>
                                             </div>
-                                            @if ($returned > 0)
-                                                <div class="mt-1 pt-1 border-top" style="font-size: 0.65rem;">
-                                                    <span class="text-danger">Returned: {{ $returned }}</span>
-                                                    <span class="text-muted ms-1">/ {{ $original }}</span>
-                                                </div>
-                                            @endif
-                                        </td>
+                                        </label>
 
-
-                                        {{-- Return Qty (Box.Piece) --}}
-                                        <td>
-                                            <input type="text" name="qty_box[]"
-                                                class="form-control text-center quantity-box" value="0"
-                                                placeholder="0.0" {{ $netRemaining <= 0 ? 'readonly' : '' }}>
-                                            <small class="text-muted" style="font-size: 0.7rem;">Format: Box.Piece</small>
-                                        </td>
-
-                                        {{-- Total Return Pieces (Read Only, Calculated) --}}
-                                        <td>
-                                            <input type="number" name="qty[]"
-                                                class="form-control text-center fw-bold text-primary quantity"
-                                                value="0" readonly min="0" max="{{ $netRemaining }}"
-                                                data-max="{{ $netRemaining }}" data-original="{{ $original }}"
-                                                data-returned="{{ $returned }}">
-                                        </td>
-
-                                        <td><input type="text" name="total[]"
-                                                class="form-control text-end fw-bold row-total" value="0.00" readonly>
-                                        </td>
-                                        <td class="text-center">
-                                            <button type="button"
-                                                class="btn btn-sm btn-outline-danger border-0 remove-row rounded-circle"
-                                                title="Remove Item"><i class="fas fa-times"></i></button>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Footer Summary -->
-                    <div class="row mt-4">
-                        <div class="col-md-7">
-                            <div class="p-4 bg-light rounded border h-100">
-                                <label class="form-label text-muted small">AMOUNT IN WORDS</label>
-                                <input type="text" name="total_amount_Words"
-                                    class="form-control border-0 bg-transparent fw-bold text-primary fs-5 fst-italic"
-                                    id="amountInWords" readonly placeholder="...">
-
-                                <div class="mt-4 pt-4 border-top">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="fas fa-cubes text-muted"></i>
-                                        <span class="text-muted small">Total Pieces Returned:</span>
-                                        <strong id="totalPieces" class="text-dark fs-5">0</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Partial Return Status Indicator -->
-                        <div class="col-md-12 mb-3">
-                            <div class="partial-return-indicator shadow-sm border-0 p-3 rounded"
-                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6 class="mb-0 text-white">
-                                        <i class="fas fa-chart-pie me-2"></i>Return Status
-                                    </h6>
-                                    <span id="returnTypeBadge" class="badge bg-light text-dark">
-                                        <i class="fas fa-spinner fa-spin me-1"></i>Calculating...
-                                    </span>
-                                </div>
-                                <div class="progress" style="height: 25px; background: rgba(255,255,255,0.2);">
-                                    <div id="returnProgressBar"
-                                        class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-                                        style="width: 0%; background: #10ac84;" aria-valuenow="0" aria-valuemin="0"
-                                        aria-valuemax="100">
-                                        <strong id="returnPercentage">0%</strong>
-                                    </div>
-                                </div>
-                                <div class="mt-2 text-white small" id="returnStatusText">
-                                    <i class="fas fa-info-circle me-1"></i>Select items to return
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-5">
-                            <div class="summary-card shadow-sm border-0">
-                                <h6 class="mb-3 text-uppercase fw-bold text-muted"
-                                    style="font-size: 0.8rem; letter-spacing: 1px;">Refund Summary</h6>
-                                <div class="summary-row">
-                                    <span class="text-muted">Subtotal</span>
-                                    <input type="text" name="total_subtotal" id="billAmount"
-                                        class="form-control form-control-sm w-50 text-end border-0 bg-transparent p-0"
-                                        readonly value="0.00">
-                                </div>
-                                <div class="summary-row">
-                                    <span class="text-muted">Less: Item Discount</span>
-                                    <input type="text" name="total_discount" id="itemDiscount"
-                                        class="form-control form-control-sm w-50 text-end border-0 bg-transparent p-0 text-danger"
-                                        readonly value="0.00">
-                                </div>
-                                <div class="summary-row align-items-center mt-2">
-                                    <span class="text-dark fw-medium">Less: Extra Deductions</span>
-                                    <input type="number" name="extra_discount" id="extraDiscount"
-                                        class="form-control form-control-sm w-50 text-end bg-white" value="0">
-                                </div>
-                                <hr class="my-3">
-                                <div class="summary-row total">
-                                    <span>NET REFUND AMOUNT</span>
-                                    <input type="text" name="net_amount" id="netAmount"
-                                        class="form-control form-control-lg w-50 text-end border-0 bg-transparent p-0 fw-bold text-primary"
-                                        readonly value="0.00">
-                                </div>
-
-                                <!-- Payment Voucher Section -->
-                                <div class="mt-4 pt-4 border-top">
-                                    <h6 class="mb-3 text-uppercase fw-bold text-muted"
-                                        style="font-size: 0.8rem; letter-spacing: 1px;">
-                                        <i class="fas fa-money-bill-wave me-2"></i>Refund Received (Optional)
-                                    </h6>
-
-                                    <div class="alert alert-light border small text-muted">
-                                        <i class="fas fa-info-circle me-1"></i> If you received cash/bank refund, enter
-                                        details. Otherwise, amount will be credited to customer Ledger.
-                                    </div>
-
-                                    <div class="payment-voucher-rows">
-                                        <div class="payment-row mb-2">
-                                            <div class="row g-2">
-                                                <div class="col-7">
-                                                    <select name="payment_account_id[]"
-                                                        class="form-select form-select-sm payment-account">
-                                                        <option value="">Select Account (Cash/Bank)</option>
-                                                        @foreach ($accounts as $acc)
-                                                            <option value="{{ $acc->id }}">{{ $acc->title }}
-                                                                ({{ $acc->account_code }})
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-5">
-                                                    <input type="number" name="payment_amount[]" step="0.01"
-                                                        class="form-control form-control-sm text-end payment-amount"
-                                                        placeholder="Amount">
-                                                </div>
+                                        {{-- 2. Cash Refund --}}
+                                        <label class="refund-pill" id="pillCash">
+                                            <input type="radio" name="refund_type" value="cash">
+                                            <div>
+                                                <div>Cash Refund</div>
+                                                <small class="text-muted fw-normal d-block">Cash is paid immediately to customer from Cash Account.</small>
                                             </div>
+                                        </label>
+
+                                        {{-- 3. Bank Refund --}}
+                                        <label class="refund-pill" id="pillBank">
+                                            <input type="radio" name="refund_type" value="bank">
+                                            <div>
+                                                <div>Bank Refund</div>
+                                                <small class="text-muted fw-normal d-block">Refund is processed via Bank account transfer / cheque.</small>
+                                            </div>
+                                        </label>
+
+                                        {{-- Account Selection (Shown only when Cash or Bank is selected) --}}
+                                        <div id="accountSelectWrapper" class="mt-3 p-3 bg-white border rounded d-none">
+                                            <label class="form-label" id="accountSelectLabel">Select Payment Account <span class="text-danger">*</span></label>
+                                            <select class="form-select" name="refund_account_id" id="refund_account_id">
+                                                @foreach ($accounts as $acc)
+                                                    @php
+                                                        $isCash = stripos($acc->title, 'Cash') !== false || ($acc->account_code === 'CASH');
+                                                        $isBank = stripos($acc->title, 'Bank') !== false || ($acc->account_code === 'BANK');
+                                                        $type = $isBank ? 'bank' : ($isCash ? 'cash' : 'other');
+                                                    @endphp
+                                                    <option value="{{ $acc->id }}" data-type="{{ $type }}">
+                                                        {{ $acc->title }} ({{ $acc->account_code ?? 'Acc #'.$acc->id }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                     </div>
+
+                                    {{-- Stock Adjustment Summary Indicator --}}
+                                    <div class="p-3 bg-light border rounded mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-bold small text-muted text-uppercase">Stock Adjustment Preview:</span>
+                                        </div>
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <span class="badge badge-good px-3 py-2 fw-semibold">
+                                                <i class="fas fa-boxes me-1"></i> Good Stock (Restocked): <span id="summaryGoodPieces">0</span> pcs
+                                            </span>
+                                            <span class="badge badge-damaged px-3 py-2 fw-semibold">
+                                                <i class="fas fa-tools me-1"></i> Damaged Stock (Segregated): <span id="summaryDamagedPieces">0</span> pcs
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {{-- Remarks --}}
+                                    <div>
+                                        <label class="form-label">Remarks / Additional Notes</label>
+                                        <textarea class="form-control" name="remarks" id="remarks" rows="2" placeholder="Enter remarks or notes about this return..."></textarea>
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
 
+                        {{-- Right Column: Financial Calculations Summary --}}
+                        <div class="col-lg-5">
+                            <div class="sr-card h-100 mb-0">
+                                <div class="sr-header">
+                                    <h5><i class="fas fa-calculator text-primary me-2"></i> Return Calculations</h5>
+                                </div>
+                                <div class="p-4">
+                                    <div class="summary-card">
+                                        <div class="summary-line">
+                                            <span>Items Gross Amount:</span>
+                                            <strong class="text-dark" id="calcGrossSubtotal">Rs. 0.00</strong>
+                                        </div>
+                                        <div class="summary-line">
+                                            <span>Item Discounts:</span>
+                                            <strong class="text-danger" id="calcItemDiscount">- Rs. 0.00</strong>
+                                        </div>
+                                        <div class="summary-line">
+                                            <span>Items Net Subtotal:</span>
+                                            <strong class="text-dark" id="calcNetSubtotal">Rs. 0.00</strong>
+                                        </div>
+                                        <div class="summary-line align-items-center">
+                                            <span>Extra Return Discount:</span>
+                                            <div style="width: 140px;">
+                                                <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end fw-bold" name="extra_discount" id="extra_discount" value="0.00">
+                                            </div>
+                                        </div>
+                                        <div class="summary-line total">
+                                            <span>Net Return Amount:</span>
+                                            <span class="text-primary" id="calcNetAmount">Rs. 0.00</span>
+                                        </div>
+                                    </div>
 
-                                <div class="mt-4 d-grid gap-2">
-                                    <button type="submit" class="btn btn-erp-primary btn-lg shadow-sm">
-                                        <i class="fas fa-check-circle me-2"></i> Process Sale Return
-                                    </button>
+                                    {{-- Customer Balance Impact Preview --}}
+                                    <div id="customerBalancePreview" class="mt-3 p-3 bg-light border rounded">
+                                        <div class="small fw-bold text-muted text-uppercase mb-2">Customer Balance Impact</div>
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span class="text-muted">Current Balance:</span>
+                                            <strong id="impactCurrentBal">Rs. 0.00</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span class="text-muted" id="impactMethodLabel">Ledger Credit:</span>
+                                            <strong class="text-success" id="impactCredit">- Rs. 0.00</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between small pt-1 border-top">
+                                            <span class="fw-bold text-dark">New Balance:</span>
+                                            <strong class="fw-bold text-dark" id="impactNewBal">Rs. 0.00</strong>
+                                        </div>
+                                    </div>
 
+                                    {{-- Action Buttons --}}
+                                    <div class="mt-4 d-grid gap-2">
+                                        <button type="submit" name="action" value="save_and_print" class="btn btn-success py-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm" style="border-radius: 8px;">
+                                            <i class="fas fa-print"></i> Save Return & Print Voucher
+                                        </button>
+                                        <button type="submit" name="action" value="save" class="btn btn-primary py-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm" style="border-radius: 8px;">
+                                            <i class="fas fa-save"></i> Save Return Only
+                                        </button>
+                                        <a href="{{ route('sale.index') }}" class="btn btn-outline-secondary py-2 fw-medium" style="border-radius: 8px;">
+                                            Cancel
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </form>
+
             </div>
         </div>
     </div>
-@endsection
 
-@section('js')
+    {{-- Scripts --}}
+    <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/vendors/select2/js/select2.min.js') }}"></script>
+
     <script>
         $(document).ready(function() {
-
             // Initialize Select2
-            // Initialize Select2
-            if ($.fn.select2) {
-                $('.payment-account').select2();
-            } else {
-                console.warn('Select2 not loaded');
-            }
-
-            function num(n) {
-                return isNaN(parseFloat(n)) ? 0 : parseFloat(n);
-            }
-
-            function numberToWords(num) {
-                const a = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
-                    "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen",
-                    "Eighteen", "Nineteen"
-                ];
-                const b = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
-                if ((num = num.toString()).length > 9) return "Overflow";
-                const n = ("000000000" + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{3})$/);
-                if (!n) return;
-                let str = "";
-                str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + " " + a[n[1][1]]) + " Crore " : "";
-                str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + " " + a[n[2][1]]) + " Lakh " : "";
-                str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + " " + a[n[3][1]]) + " Thousand " : "";
-                str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + " " + a[n[4][1]]) + " " : "";
-                return str.trim() + " Rupees Only";
-            }
-
-            function recalcRow($row) {
-                const qty = num($row.find('.quantity').val()); // Pieces (Total)
-                const price = num($row.find('.price').val()); // Price (Unit Price)
-                const sizeMode = $row.find('.size-mode').val();
-                const ppm2 = num($row.find('.pieces-per-m2').val());
-                const ppb = num($row.find('.pieces-per-box').val()) || 1;
-
-                let total = 0;
-
-                if (sizeMode === 'by_size') {
-                    // Price is per M2. Total M2 = Qty * PPM2 (Wait, check logic)
-                    // usually pieces_per_m2 is M2 per Piece?
-                    // Price is per M2. Total M2 = Qty * PPM2
-                    total = qty * ppm2 * price;
-                } else if (sizeMode === 'by_cartons' || sizeMode === 'by_carton') {
-                    // Price is Per Piece, qty is Total Pieces
-                    total = qty * price;
-                } else {
-                    // Price is Per Piece
-                    total = qty * price;
-                }
-
-                $row.find('.row-total').val(total.toFixed(2));
-            }
-
-            function recalcSummary() {
-                let billAmount = 0;
-                let totalQty = 0;
-
-                $('#returnItems tr').each(function() {
-                    const qty = num($(this).find('.quantity').val());
-                    const rowTotal = num($(this).find('.row-total').val());
-
-                    billAmount += rowTotal;
-                    totalQty += qty;
-                });
-
-                const extraDiscount = num($('#extraDiscount').val()); // Deduction
-
-                const net = billAmount - extraDiscount;
-
-                $('#billAmount').val(billAmount.toFixed(2));
-                $('#netAmount').val(net.toFixed(2));
-
-                if (net > 0) {
-                    $('#amountInWords').val(numberToWords(Math.round(net)));
-                } else {
-                    $('#amountInWords').val('Zero Rupees');
-                }
-
-                $('#totalPieces').text(totalQty);
-
-                // Update visual indicators
-                updatePartialReturnIndicator();
-            }
-
-            // Return All Button Logic
-            $('#btnReturnAll').click(function() {
-                $('#returnItems tr').each(function() {
-                    const $row = $(this);
-                    const maxQty = parseFloat($row.find('.quantity').attr('data-max')) || 0;
-                    const ppb = parseFloat($row.find('.pieces-per-box').val()) || 1;
-
-                    // Set Total Pieces
-                    $row.find('.quantity').val(maxQty);
-
-                    // Calculate Box.Piece representation
-                    let boxDisplay = '';
-                    if (ppb > 1) {
-                        const boxes = Math.floor(maxQty / ppb);
-                        const pieces = maxQty % ppb;
-                        if (pieces > 0) {
-                            boxDisplay = boxes + '.' + pieces;
-                        } else {
-                            boxDisplay = boxes;
-                        }
-                    } else {
-                        boxDisplay = maxQty; // If no box size, just show total pieces
-                    }
-
-                    // Update Box Input
-                    $row.find('.quantity-box').val(boxDisplay);
-
-                    // Trigger recalc
-                    recalcRow($row);
-                });
-                recalcSummary();
+            $('.select2-customer').select2({
+                placeholder: "-- All Customers --",
+                width: '100%'
             });
 
-            // Auto-fill Max on Click/Focus if 0
-            $(document).on('click focus', '.quantity-box', function() {
-                const val = $(this).val();
-                // Check if 0, 0.0, or empty
-                if (parseFloat(val) === 0 || val === '') {
-                    const $row = $(this).closest('tr');
-                    const maxQty = parseFloat($row.find('.quantity').attr('data-max')) || 0;
-                    const ppb = parseFloat($row.find('.pieces-per-box').val()) || 1;
-
-                    // Calculate Box.Piece representation
-                    let boxDisplay = '';
-                    if (ppb > 1) {
-                        const boxes = Math.floor(maxQty / ppb);
-                        const pieces = maxQty % ppb;
-                        if (pieces > 0) {
-                            boxDisplay = boxes + '.' + pieces;
-                        } else {
-                            boxDisplay = boxes;
-                        }
-                    } else {
-                        boxDisplay = maxQty;
-                    }
-
-                    $(this).val(boxDisplay);
-                    $(this).trigger('input'); // Update totals
-                    $(this).select(); // Select text for easy overwrite
-                }
+            $('.select2-invoice').select2({
+                placeholder: "-- Select Sales Invoice --",
+                width: '100%'
             });
 
-            // Box.Piece Input Logic
-            $(document).on('input', '.quantity-box', function() {
-                const $row = $(this).closest('tr');
-                const val = $(this).val();
-                const ppb = num($row.find('.pieces-per-box').val());
+            let currentSaleData = null;
+            let currentItems = [];
+            let isSyncingFromInvoice = false;
 
-                // Parse Box.Piece format
-                // Example: 1.2 => 1 Box, 2 Pieces (NOT 1.2 Boxes)
-                // Logic: Integer part = Box. Decimal part = Pieces.
+            // 1. Customer Selection Changed -> Filter Invoice Dropdown
+            $('#customer_id').on('change', function() {
+                if (isSyncingFromInvoice) return;
 
-                let boxes = 0;
-                let pieces = 0;
+                const customerId = $(this).val();
+                if (!customerId) return;
 
-                if (val.includes('.')) {
-                    const parts = val.split('.');
-                    boxes = num(parts[0]);
-
-                    // STRICT LOGIC: "10.1" -> 1 piece. "10.01" -> 1 piece. "10.10" -> 10 pieces.
-                    // We treat the part after dot as an integer "Piece Count" directly.
-                    const decimalPart = parts[1];
-                    if (decimalPart) {
-                        // User explicitly said "10.1 means 10 box and 1 piece".
-                        // Standard float would treat 10.1 as 10.10 (10 pieces if ppb=100) or similar.
-                        // Here we take the string value literally as integer pieces.
-                        pieces = parseInt(decimalPart);
-                    }
-                } else {
-                    boxes = num(val);
-                }
-
-                // Validation: If pieces >= ppb, just allow it but it might look weird.
-                // Or auto-convert? User said "apply it everything... accucsry".
-                // If I have 12 pieces/box and write 0.12, that is 12 pieces => 1 box.
-                // Let's just sum it up.
-
-                let totalPieces = 0;
-                if (ppb > 0) {
-                    totalPieces = (boxes * ppb) + pieces;
-                } else {
-                    totalPieces = boxes; // If no box size, inputs are pieces
-                }
-
-                // Update Read-Only Total Pieces
-                $row.find('.quantity').val(totalPieces);
-
-                // Trigger validations and recalc
-                $row.find('.quantity').trigger('input');
-            });
-
-
-            // Events
-            $(document).on('input', '.quantity, .price, #extraDiscount', function() {
-                const $row = $(this).closest('tr');
-
-                // Validate max returnable quantity
-                if ($(this).hasClass('quantity')) {
-                    const qtyPc = num($(this).val());
-                    const maxReturnable = num($(this).attr('data-max'));
-
-                    if (qtyPc > maxReturnable) {
-                        $(this).val(maxReturnable);
-                        $(this).addClass('border-danger');
-
-                        // Show warning
-                        if (!$(this).next('.text-danger').length) {
-                            $(this).after('<small class="text-danger d-block">Max: ' + maxReturnable +
-                                ' pieces (Purchased Qty)</small>');
-                        }
-
-                        setTimeout(() => {
-                            $(this).removeClass('border-danger');
-                            $(this).next('.text-danger').fadeOut(300, function() {
-                                $(this).remove();
+                const url = "{{ url('sale/return/get-invoices-by-customer') }}/" + customerId;
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    beforeSend: function() {
+                        $('#sale_id').prop('disabled', true);
+                    },
+                    success: function(res) {
+                        $('#sale_id').prop('disabled', false).empty().append('<option value="">-- Select Sales Invoice --</option>');
+                        if (res.status && res.sales) {
+                            res.sales.forEach(function(s) {
+                                $('#sale_id').append(
+                                    $('<option>', {
+                                        value: s.id,
+                                        text: `${s.invoice_no} - ${s.date} (Rs. ${parseFloat(s.total_net).toFixed(2)})`
+                                    })
+                                );
                             });
-                        }, 2000);
+                        }
+                    },
+                    error: function() {
+                        $('#sale_id').prop('disabled', false);
                     }
+                });
+            });
+
+            // 2. Invoice Selection Changed -> Fetch Items & Header Info
+            $('#sale_id').on('change', function() {
+                const saleId = $(this).val();
+                if (!saleId) {
+                    $('#invoiceInfoBanner').addClass('d-none');
+                    renderEmptyTable();
+                    recalculate();
+                    return;
                 }
 
-                if ($row.length) {
-                    recalcRow($row);
+                $('#invoiceLoadingSpinner').show();
+
+                const url = "{{ url('sale/return/get-invoice-items') }}/" + saleId;
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(res) {
+                        $('#invoiceLoadingSpinner').hide();
+                        if (res.status) {
+                            currentSaleData = res.sale;
+                            currentItems = res.items;
+
+                            // Update Banner
+                            $('#bannerInvoiceNo').text(res.sale.invoice_no);
+                            $('#bannerInvoiceDate').text(res.sale.date);
+                            $('#bannerCustomerName').text(res.sale.customer_name);
+                            $('#bannerCustomerBalance').text('Balance: Rs. ' + parseFloat(res.sale.customer_balance).toFixed(2));
+                            $('#bannerInvoiceNet').text('Rs. ' + parseFloat(res.sale.total_net).toFixed(2));
+                            $('#invoiceInfoBanner').removeClass('d-none');
+
+                            // Set Warehouse if provided
+                            if (res.sale.warehouse_id) {
+                                $('#warehouse_id').val(res.sale.warehouse_id);
+                            }
+
+                            // Sync customer dropdown safely without triggering reset of #sale_id
+                            if (res.sale.customer_id && $('#customer_id').val() != res.sale.customer_id) {
+                                isSyncingFromInvoice = true;
+                                $('#customer_id').val(res.sale.customer_id).trigger('change.select2');
+                                isSyncingFromInvoice = false;
+                            }
+
+                            // Render Items
+                            renderItemsTable(res.items);
+
+                            // Enable buttons if items available
+                            if (res.items && res.items.length > 0) {
+                                $('#btnReturnAll, #btnClearReturn').prop('disabled', false);
+                            }
+
+                            recalculate();
+                        } else {
+                            alert(res.message || 'Failed to load sale invoice.');
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#invoiceLoadingSpinner').hide();
+                        alert('Error loading invoice details. Please try again.');
+                    }
+                });
+            });
+
+            // Pre-load if sale_id passed in URL
+            @if (!empty($selectedSaleId))
+                $('#sale_id').val("{{ $selectedSaleId }}").trigger('change');
+            @endif
+
+            // 3. Render Items in Table
+            function renderItemsTable(items) {
+                const $tbody = $('#itemsTableBody');
+                $tbody.empty();
+
+                if (!items || items.length === 0) {
+                    $tbody.html('<tr><td colspan="11" class="text-center py-4 text-muted">No products found in this invoice.</td></tr>');
+                    return;
                 }
-                recalcSummary();
+
+                items.forEach(function(item, idx) {
+                    const rowNum = idx + 1;
+                    const maxReturn = parseFloat(item.remaining_returnable);
+                    const isFullyReturned = maxReturn <= 0;
+
+                    const rowHtml = `
+                        <tr class="${isFullyReturned ? 'table-light opacity-75' : ''}" data-idx="${idx}">
+                            <td class="text-center fw-bold text-muted">${rowNum}</td>
+                            <td>
+                                <input type="hidden" name="product_id[${idx}]" value="${item.product_id}">
+                                <input type="hidden" name="color[${idx}]" value="${item.color || ''}">
+                                <strong>${escapeHtml(item.product_name)}</strong>
+                                ${item.variant_label ? `<br><span class="badge bg-light text-dark border">${escapeHtml(item.variant_label)}</span>` : ''}
+                                ${item.product_code ? `<br><small class="text-muted">Code: ${escapeHtml(item.product_code)}</small>` : ''}
+                            </td>
+                            <td class="text-center fw-semibold">${parseFloat(item.sold_total_pieces).toFixed(0)}</td>
+                            <td class="text-center text-danger fw-semibold">${parseFloat(item.already_returned).toFixed(0)}</td>
+                            <td class="text-center">
+                                ${isFullyReturned 
+                                    ? '<span class="badge bg-secondary">Fully Returned</span>' 
+                                    : `<span class="badge bg-success">${maxReturn.toFixed(0)} Available</span>`
+                                }
+                            </td>
+                            <td class="text-center">
+                                <input type="number" 
+                                    step="1" 
+                                    min="0" 
+                                    max="${maxReturn}" 
+                                    class="form-control form-control-sm input-qty row-qty" 
+                                    name="qty[${idx}]" 
+                                    value="0" 
+                                    data-max="${maxReturn}" 
+                                    ${isFullyReturned ? 'disabled' : ''}>
+                            </td>
+                            <td class="text-end">
+                                <input type="number" 
+                                    step="0.01" 
+                                    min="0" 
+                                    class="form-control form-control-sm input-rate row-rate text-end" 
+                                    name="price[${idx}]" 
+                                    value="${parseFloat(item.price).toFixed(2)}" 
+                                    ${isFullyReturned ? 'disabled' : ''}>
+                            </td>
+                            <td class="text-end">
+                                <input type="number" 
+                                    step="0.01" 
+                                    min="0" 
+                                    class="form-control form-control-sm text-end row-disc" 
+                                    style="width: 75px;" 
+                                    name="item_disc[${idx}]" 
+                                    value="0.00" 
+                                    ${isFullyReturned ? 'disabled' : ''}>
+                            </td>
+                            <td>
+                                <select class="form-select form-select-sm row-reason" name="item_reason[${idx}]" ${isFullyReturned ? 'disabled' : ''}>
+                                    <option value="Damaged Goods">Damaged</option>
+                                    <option value="Wrong Item">Wrong Item</option>
+                                    <option value="Quality Issue">Quality Issue</option>
+                                    <option value="Customer Change of Mind">Change of Mind</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-select form-select-sm row-condition" name="stock_condition[${idx}]" ${isFullyReturned ? 'disabled' : ''}>
+                                    <option value="good" selected>Good Stock (Restock)</option>
+                                    <option value="damaged">Damaged (Quarantine)</option>
+                                </select>
+                            </td>
+                            <td class="text-end fw-bold row-line-total text-dark">Rs. 0.00</td>
+                        </tr>
+                    `;
+                    $tbody.append(rowHtml);
+                });
+            }
+
+            function renderEmptyTable() {
+                $('#itemsTableBody').html(`
+                    <tr id="emptyTableMessage">
+                        <td colspan="11" class="text-center py-5 text-muted">
+                            <i class="fas fa-shopping-bag fa-3x mb-3 text-secondary opacity-50"></i>
+                            <p class="mb-0 fw-semibold">Please select an Original Sales Invoice above to load sold products.</p>
+                        </td>
+                    </tr>
+                `);
+                $('#btnReturnAll, #btnClearReturn').prop('disabled', true);
+            }
+
+            // 4. Return Quantity Input Validation & Dynamic Recalculation
+            $(document).on('input change', '.row-qty', function() {
+                const $input = $(this);
+                let val = parseFloat($input.val()) || 0;
+                const max = parseFloat($input.data('max')) || 0;
+
+                if (val < 0) {
+                    val = 0;
+                    $input.val(0);
+                } else if (val > max) {
+                    alert(`Return quantity cannot exceed remaining returnable quantity of ${max}.`);
+                    val = max;
+                    $input.val(max);
+                }
+
+                recalculate();
             });
 
-            // Initialize
-            $('#returnItems tr').each(function() {
-                recalcRow($(this));
-            });
-            recalcSummary();
-
-            // Remove row
-            $(document).on('click', '.remove-row', function() {
-                $(this).closest('tr').remove();
-                recalcSummary();
+            $(document).on('input change', '.row-rate, .row-disc, #extra_discount, .row-condition', function() {
+                recalculate();
             });
 
-            // Update Partial Return Visual Indicator
-            function updatePartialReturnIndicator() {
-                let totalOriginalPieces = 0;
-                let totalReturningPieces = 0;
+            // Return All Button
+            $('#btnReturnAll').on('click', function() {
+                $('.row-qty').each(function() {
+                    const max = parseFloat($(this).data('max')) || 0;
+                    if (max > 0) {
+                        $(this).val(max);
+                    }
+                });
+                recalculate();
+            });
 
-                $('#returnItems tr').each(function() {
-                    const $qtyInput = $(this).find('.quantity');
-                    const soldQty = num($qtyInput.attr('data-max')); // Max is original
-                    const returningQty = num($qtyInput.val());
+            // Clear Button
+            $('#btnClearReturn').on('click', function() {
+                $('.row-qty').val(0);
+                recalculate();
+            });
 
-                    totalOriginalPieces += soldQty;
-                    totalReturningPieces += returningQty;
+            // 5. Overall Calculation Engine
+            function recalculate() {
+                let grossSubtotal = 0;
+                let totalItemDiscount = 0;
+                let goodPieces = 0;
+                let damagedPieces = 0;
+
+                $('#itemsTableBody tr').each(function() {
+                    const $row = $(this);
+                    const qty = parseFloat($row.find('.row-qty').val()) || 0;
+                    const rate = parseFloat($row.find('.row-rate').val()) || 0;
+                    const disc = parseFloat($row.find('.row-disc').val()) || 0;
+                    const condition = $row.find('.row-condition').val() || 'good';
+
+                    if (qty > 0) {
+                        const itemGross = qty * rate;
+                        const lineTotal = Math.max(0, itemGross - disc);
+                        $row.find('.row-line-total').text('Rs. ' + lineTotal.toFixed(2));
+                        grossSubtotal += itemGross;
+                        totalItemDiscount += disc;
+
+                        if (condition === 'good') {
+                            goodPieces += qty;
+                        } else {
+                            damagedPieces += qty;
+                        }
+                    } else {
+                        $row.find('.row-line-total').text('Rs. 0.00');
+                    }
                 });
 
-                const returnPercentage = totalOriginalPieces > 0 ? (totalReturningPieces / totalOriginalPieces *
-                        100) :
-                    0;
+                const extraDiscount = parseFloat($('#extra_discount').val()) || 0;
+                const netSubtotal = Math.max(0, grossSubtotal - totalItemDiscount);
+                const netAmount = Math.max(0, netSubtotal - extraDiscount);
 
-                // Update progress bar
-                $('#returnProgressBar').css('width', returnPercentage + '%');
-                $('#returnProgressBar').attr('aria-valuenow', returnPercentage);
-                $('#returnPercentage').text(returnPercentage.toFixed(1) + '%');
+                // Update UI Summary
+                $('#calcGrossSubtotal').text('Rs. ' + grossSubtotal.toFixed(2));
+                $('#calcItemDiscount').text('- Rs. ' + totalItemDiscount.toFixed(2));
+                $('#calcNetSubtotal').text('Rs. ' + netSubtotal.toFixed(2));
+                $('#calcNetAmount').text('Rs. ' + netAmount.toFixed(2));
 
-                // Update badge and status text
-                if (totalReturningPieces === 0) {
-                    $('#returnTypeBadge').html('<i class="fas fa-info-circle me-1"></i>No Items Selected');
-                    $('#returnTypeBadge').removeClass().addClass('badge bg-secondary');
-                    $('#returnStatusText').html('<i class="fas fa-info-circle me-1"></i>Select items to return');
-                    $('#returnProgressBar').css('background', '#6c757d');
-                } else if (returnPercentage >= 100) {
-                    $('#returnTypeBadge').html('<i class="fas fa-check-circle me-1"></i>Full Return');
-                    $('#returnTypeBadge').removeClass().addClass('badge bg-success');
-                    $('#returnStatusText').html('<i class="fas fa-check-circle me-1"></i>Returning all ' +
-                        totalOriginalPieces + ' pieces (100% of purchase)');
-                    $('#returnProgressBar').css('background', '#10ac84');
+                $('#summaryGoodPieces').text(goodPieces);
+                $('#summaryDamagedPieces').text(damagedPieces);
+
+                // Update Customer Balance Impact
+                const currentBal = currentSaleData ? parseFloat(currentSaleData.customer_balance) : 0;
+                const refundType = $('input[name="refund_type"]:checked').val();
+
+                $('#impactCurrentBal').text('Rs. ' + currentBal.toFixed(2));
+
+                if (refundType === 'ledger') {
+                    $('#impactMethodLabel').text('Ledger Credit:');
+                    $('#impactCredit').text('- Rs. ' + netAmount.toFixed(2));
+                    const newBal = currentBal - netAmount;
+                    $('#impactNewBal').text('Rs. ' + newBal.toFixed(2));
                 } else {
-                    $('#returnTypeBadge').html('<i class="fas fa-chart-pie me-1"></i>Partial Return');
-                    $('#returnTypeBadge').removeClass().addClass('badge bg-warning text-dark');
-                    $('#returnStatusText').html('<i class="fas fa-chart-pie me-1"></i>Returning ' +
-                        totalReturningPieces + ' of ' + totalOriginalPieces + ' pieces (' + returnPercentage
-                        .toFixed(1) + '%)');
-                    $('#returnProgressBar').css('background', '#f79f1f');
+                    $('#impactMethodLabel').text(`${refundType.toUpperCase()} Paid:`);
+                    $('#impactCredit').text('Rs. 0.00 (Paid in ' + refundType + ')');
+                    $('#impactNewBal').text('Rs. ' + currentBal.toFixed(2) + ' (Unchanged)');
                 }
             }
 
+            // 6. Refund Method Selector
+            function updateAccountDropdown(selectedType) {
+                $('#refund_account_id option').each(function() {
+                    const accType = $(this).data('type');
+                    if (selectedType === 'cash') {
+                        if (accType === 'cash' || accType === 'other') {
+                            $(this).show().prop('disabled', false);
+                        } else {
+                            $(this).hide().prop('disabled', true);
+                        }
+                    } else if (selectedType === 'bank') {
+                        if (accType === 'bank' || accType === 'other') {
+                            $(this).show().prop('disabled', false);
+                        } else {
+                            $(this).hide().prop('disabled', true);
+                        }
+                    }
+                });
 
+                // Pick first enabled option
+                const firstValid = $('#refund_account_id option:not(:disabled):first').val();
+                if (firstValid) {
+                    $('#refund_account_id').val(firstValid);
+                }
+            }
+
+            $('input[name="refund_type"]').on('change', function() {
+                $('.refund-pill').removeClass('active');
+                $(this).closest('.refund-pill').addClass('active');
+
+                const val = $(this).val();
+                if (val === 'cash' || val === 'bank') {
+                    $('#accountSelectWrapper').removeClass('d-none');
+                    $('#accountSelectLabel').text(`Select ${val.toUpperCase()} Account`);
+                    updateAccountDropdown(val);
+                } else {
+                    $('#accountSelectWrapper').addClass('d-none');
+                }
+
+                recalculate();
+            });
+
+            // Sync general reason to all item reasons if changed
+            $('#general_return_reason').on('change', function() {
+                const reason = $(this).val();
+                if (reason) {
+                    $('.row-reason').val(reason);
+                }
+            });
+
+            // Form Submit Validation & Double-click Protection
+            $('#saleReturnForm').on('submit', function(e) {
+                const $submits = $(this).find('button[type="submit"]');
+                let hasReturnQty = false;
+                $('.row-qty').each(function() {
+                    if ((parseFloat($(this).val()) || 0) > 0) {
+                        hasReturnQty = true;
+                    }
+                });
+
+                if (!hasReturnQty) {
+                    e.preventDefault();
+                    alert('Please enter a return quantity greater than 0 for at least one product before saving.');
+                    return false;
+                }
+
+                $submits.prop('disabled', true).addClass('disabled');
+            });
+
+            function escapeHtml(text) {
+                if (!text) return '';
+                return $('<div>').text(text).html();
+            }
         });
     </script>
 @endsection
