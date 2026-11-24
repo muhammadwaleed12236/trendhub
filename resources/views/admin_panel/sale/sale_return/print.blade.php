@@ -280,6 +280,8 @@
                 @if ($return->sale)
                     <p><strong>Original Invoice #:</strong> {{ $return->sale->invoice_no }}</p>
                     <p><strong>Invoice Date:</strong> {{ $return->sale->created_at ? $return->sale->created_at->format('d/m/Y') : 'N/A' }}</p>
+                @else
+                    <p><strong>Return Type:</strong> Direct Return (Without Invoice)</p>
                 @endif
                 <p><strong>Refund Method:</strong> 
                     @if ($return->refund_type === 'cash')

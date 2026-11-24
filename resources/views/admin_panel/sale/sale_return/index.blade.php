@@ -65,7 +65,9 @@
                                                 <td>
                                                     <strong class="text-primary">{{ $return->return_invoice }}</strong>
                                                     @if ($return->sale)
-                                                        <br><small class="text-muted">Orig: {{ $return->sale->invoice_no }}</small>
+                                                        <br><small class="text-muted"><i class="fas fa-file-invoice"></i> {{ $return->sale->invoice_no }}</small>
+                                                    @else
+                                                        <br><span class="badge bg-info text-dark" style="font-size: 10px;"><i class="fas fa-cart-arrow-down"></i> Direct Return</span>
                                                     @endif
                                                 </td>
                                                 <td class="text-start">

@@ -354,6 +354,7 @@ Route::middleware('auth')->group(function () {
     // Sale Return Routes - NEW SYSTEM
     Route::get('sale/return', [App\Http\Controllers\SaleReturnController::class, 'saleReturnIndex'])->middleware('permission:sales.view')->name('sale.return.index');
     Route::get('sale/return/create', [App\Http\Controllers\SaleReturnController::class, 'createReturn'])->middleware('permission:sales.create')->name('sale.return.create');
+    Route::get('sale/return/search-products', [App\Http\Controllers\SaleReturnController::class, 'searchProducts'])->middleware('permission:sales.create')->name('sale.return.search_products');
     Route::get('sale/return/get-invoices-by-customer/{customer_id}', [App\Http\Controllers\SaleReturnController::class, 'getInvoicesByCustomer'])->middleware('permission:sales.create')->name('sale.return.invoices_by_customer');
     Route::get('sale/return/get-invoice-items/{sale_id}', [App\Http\Controllers\SaleReturnController::class, 'getInvoiceItems'])->middleware('permission:sales.create')->name('sale.return.invoice_items');
     Route::get('sale/return/{id}/print', [App\Http\Controllers\SaleReturnController::class, 'printReturn'])->middleware('permission:sales.view')->name('sale.return.print');

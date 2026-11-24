@@ -270,6 +270,7 @@
                 <form id="saleReturnForm" action="{{ route('sale.return.store') }}" method="POST">
                     @csrf
                     <input type="hidden" name="form_token" value="{{ uniqid('sr_tok_', true) }}">
+                    <input type="hidden" name="action" id="formAction" value="save">
 
                     {{-- CARD 1: Header Information --}}
                     <div class="sr-card">
@@ -280,6 +281,24 @@
                             </span>
                         </div>
                         <div class="p-4">
+                            {{-- RETURN MODE SELECTOR --}}
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pb-3 border-bottom">
+                                <div class="fw-bold text-secondary">
+                                    <i class="fas fa-layer-group me-1 text-primary"></i> Select Return Mode:
+                                </div>
+                                <div class="btn-group" role="group" aria-label="Return Type Selector">
+                                    <input type="radio" class="btn-check" name="return_type" id="return_type_invoice" value="invoice" checked autocomplete="off">
+                                    <label class="btn btn-outline-primary px-3 py-2 fw-semibold" for="return_type_invoice">
+                                        <i class="fas fa-file-invoice me-1"></i> Option 1: Return Against Invoice
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="return_type" id="return_type_direct" value="direct" autocomplete="off">
+                                    <label class="btn btn-outline-success px-3 py-2 fw-semibold" for="return_type_direct">
+                                        <i class="fas fa-cart-arrow-down me-1"></i> Option 2: Direct Return (Without Invoice)
+                                    </label>
+                                </div>
+                            </div>
+
                             <div class="row g-3">
                                 {{-- Return Number --}}
                                 <div class="col-md-2 col-sm-6">
@@ -296,9 +315,11 @@
                                 {{-- Warehouse --}}
                                 <div class="col-md-2 col-sm-6">
                                     <label class="form-label">Warehouse <span class="text-danger">*</span></label>
-                                    <select class="form-select" name="warehouse_id" id="warehouse_id" required>
+                                    <select class="form-select" name="warehouse_id" id="warehouse_id" data-default="{{ $defaultWarehouseId ?? 1 }}" required>
                                         @foreach ($warehouses as $wh)
-                                            <option value="{{ $wh->id }}">{{ $wh->warehouse_name ?? $wh->name }}</option>
+                                            <option value="{{ $wh->id }}" {{ (isset($defaultWarehouseId) && $wh->id == $defaultWarehouseId) ? 'selected' : '' }}>
+                                                {{ $wh->warehouse_name ?? $wh->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -308,6 +329,7 @@
                                     <label class="form-label">Customer Selection</label>
                                     <select class="form-select select2-customer" name="customer_id" id="customer_id">
                                         <option value="all">-- All Customers (Search Any) --</option>
+                                        <option value="walkin" data-balance="0">Walk-in Customer</option>
                                         @foreach ($customers as $c)
                                             <option value="{{ $c->id }}" data-balance="{{ (float)($c->previous_balance ?? 0) }}">
                                                 {{ $c->customer_name }} ({{ $c->mobile ?? 'No phone' }})
@@ -316,8 +338,8 @@
                                     </select>
                                 </div>
 
-                                {{-- Original Invoice Selection --}}
-                                <div class="col-md-3 col-sm-12">
+                                {{-- Original Invoice Selection (Invoice Mode) --}}
+                                <div class="col-md-3 col-sm-12" id="invoiceSelectCol">
                                     <label class="form-label">Original Sales Invoice <span class="text-danger">*</span></label>
                                     <select class="form-select select2-invoice" name="sale_id" id="sale_id" required>
                                         <option value="">-- Select Sales Invoice --</option>
@@ -327,6 +349,15 @@
                                             </option>
                                         @endforeach
                                     </select>
+                                </div>
+
+                                {{-- Direct Return Notice Badge (Direct Mode) --}}
+                                <div class="col-md-3 col-sm-12 d-none" id="directReturnBadgeCol">
+                                    <label class="form-label">Return Type</label>
+                                    <div class="p-2 border rounded bg-light text-center">
+                                        <span class="badge bg-success px-2 py-1"><i class="fas fa-check-circle me-1"></i> Direct Sales Return</span>
+                                        <small class="d-block text-muted mt-1" style="font-size: 11px;">No Original Invoice Required</small>
+                                    </div>
                                 </div>
                             </div>
 
@@ -354,7 +385,7 @@
                             </div>
 
                             {{-- Invoice loading indicator --}}
-                            <div id="invoiceLoadingSpinner" class="text-center py-3">
+                            <div id="invoiceLoadingSpinner" class="text-center py-3" style="display: none;">
                                 <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
                                 <span class="ms-2 text-muted fw-semibold">Loading sold products from invoice...</span>
                             </div>
@@ -364,7 +395,7 @@
                     {{-- CARD 2: Sold Products & Return Details Table --}}
                     <div class="sr-card">
                         <div class="sr-header">
-                            <h5><i class="fas fa-boxes text-info me-2"></i> Sold Products & Return Details</h5>
+                            <h5><i class="fas fa-boxes text-info me-2"></i> <span id="card2Title">Sold Products & Return Details</span></h5>
                             <div class="d-flex align-items-center gap-2">
                                 <button type="button" class="btn btn-sm btn-outline-primary fw-bold" id="btnReturnAll" disabled>
                                     <i class="fas fa-check-double me-1"></i> Return All Available
@@ -375,28 +406,46 @@
                             </div>
                         </div>
                         <div class="p-3">
+                            {{-- Direct Mode: Product Search Bar --}}
+                            <div id="directProductSearchSection" class="p-3 bg-light border rounded-3 mb-3 d-none">
+                                <div class="row align-items-center g-2">
+                                    <div class="col-md-9 col-sm-12">
+                                        <label class="form-label fw-bold mb-1"><i class="fas fa-search me-1 text-primary"></i> Search Product to Return (by Name, Item Code or Barcode)</label>
+                                        <select class="form-select select2-product-search" id="direct_product_search" style="width: 100%;">
+                                            <option value="">Type product name or code to search...</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 col-sm-12 pt-md-4">
+                                        <button type="button" class="btn btn-success w-100 fw-bold" id="btnAddDirectProduct">
+                                            <i class="fas fa-plus-circle me-1"></i> Add to Return
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="table-responsive sr-table-container">
                                 <table class="table sr-table align-middle" id="returnItemsTable">
                                     <thead>
                                         <tr>
                                             <th style="width: 40px;" class="text-center">#</th>
                                             <th style="min-width: 220px;">Product & Details</th>
-                                            <th style="width: 100px;" class="text-center">Sold (Pcs)</th>
-                                            <th style="width: 100px;" class="text-center">Returned</th>
-                                            <th style="width: 100px;" class="text-center">Available</th>
-                                            <th style="width: 120px;" class="text-center">Return Qty <span class="text-danger">*</span></th>
+                                            <th style="width: 90px;" class="text-center">Sold (Pcs)</th>
+                                            <th style="width: 90px;" class="text-center">Returned</th>
+                                            <th style="width: 90px;" class="text-center">Available</th>
+                                            <th style="width: 110px;" class="text-center">Return Qty <span class="text-danger">*</span></th>
                                             <th style="width: 100px;" class="text-end">Rate (Rs)</th>
                                             <th style="width: 80px;" class="text-end">Disc</th>
-                                            <th style="min-width: 150px;">Return Reason</th>
-                                            <th style="min-width: 160px;">Stock Condition</th>
-                                            <th style="width: 120px;" class="text-end">Line Total (Rs)</th>
+                                            <th style="min-width: 140px;">Return Reason</th>
+                                            <th style="min-width: 150px;">Stock Condition</th>
+                                            <th style="width: 110px;" class="text-end">Line Total (Rs)</th>
+                                            <th style="width: 50px;" class="text-center">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody id="itemsTableBody">
                                         <tr id="emptyTableMessage">
-                                            <td colspan="11" class="text-center py-5 text-muted">
+                                            <td colspan="12" class="text-center py-5 text-muted">
                                                 <i class="fas fa-shopping-bag fa-3x mb-3 text-secondary opacity-50"></i>
-                                                <p class="mb-0 fw-semibold">Please select an Original Sales Invoice above to load sold products.</p>
+                                                <p class="mb-0 fw-semibold" id="emptyTableText">Please select an Original Sales Invoice above to load sold products.</p>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -554,10 +603,10 @@
 
                                     {{-- Action Buttons --}}
                                     <div class="mt-4 d-grid gap-2">
-                                        <button type="submit" name="action" value="save_and_print" class="btn btn-success py-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm" style="border-radius: 8px;">
+                                        <button type="submit" id="btnSaveAndPrint" name="action_btn" value="save_and_print" class="btn btn-success py-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm" style="border-radius: 8px;">
                                             <i class="fas fa-print"></i> Save Return & Print Voucher
                                         </button>
-                                        <button type="submit" name="action" value="save" class="btn btn-primary py-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm" style="border-radius: 8px;">
+                                        <button type="submit" id="btnSave" name="action_btn" value="save" class="btn btn-primary py-2 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm" style="border-radius: 8px;">
                                             <i class="fas fa-save"></i> Save Return Only
                                         </button>
                                         <a href="{{ route('sale.index') }}" class="btn btn-outline-secondary py-2 fw-medium" style="border-radius: 8px;">
@@ -591,9 +640,66 @@
                 width: '100%'
             });
 
+            // Product Search Select2 for Direct Return
+            $('.select2-product-search').select2({
+                placeholder: "Type product name, item code or barcode...",
+                allowClear: true,
+                width: '100%',
+                ajax: {
+                    url: "{{ route('sale.return.search_products') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { 
+                            q: params.term,
+                            warehouse_id: $('#warehouse_id').val()
+                        };
+                    },
+                    processResults: function (data) {
+                        return { results: data.products };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 1
+            });
+
             let currentSaleData = null;
             let currentItems = [];
             let isSyncingFromInvoice = false;
+            let currentReturnMode = 'invoice'; // 'invoice' or 'direct'
+            let directRowCounter = 100;
+
+            // 0. Return Mode Switcher (Option 1 vs Option 2)
+            $('input[name="return_type"]').on('change', function() {
+                currentReturnMode = $(this).val();
+
+                if (currentReturnMode === 'direct') {
+                    // Switch to Direct Return Mode
+                    $('#invoiceSelectCol').addClass('d-none');
+                    $('#directReturnBadgeCol').removeClass('d-none');
+                    $('#sale_id').prop('required', false).val('').trigger('change.select2');
+                    $('#invoiceInfoBanner').addClass('d-none');
+                    $('#invoiceLoadingSpinner').hide();
+
+                    $('#directProductSearchSection').removeClass('d-none');
+                    $('#card2Title').text('Direct Return Products (Manual Selection)');
+                    $('#btnReturnAll, #btnClearReturn').addClass('d-none');
+
+                    renderDirectEmptyTable();
+                } else {
+                    // Switch to Return Against Invoice Mode
+                    $('#invoiceSelectCol').removeClass('d-none');
+                    $('#directReturnBadgeCol').addClass('d-none');
+                    $('#sale_id').prop('required', true);
+
+                    $('#directProductSearchSection').addClass('d-none');
+                    $('#card2Title').text('Sold Products & Return Details');
+                    $('#btnReturnAll, #btnClearReturn').removeClass('d-none');
+
+                    renderEmptyTable();
+                }
+                recalculate();
+            });
 
             // 1. Customer Selection Changed -> Filter Invoice Dropdown
             $('#customer_id').on('change', function() {
@@ -602,35 +708,50 @@
                 const customerId = $(this).val();
                 if (!customerId) return;
 
-                const url = "{{ url('sale/return/get-invoices-by-customer') }}/" + customerId;
-                $.ajax({
-                    url: url,
-                    type: 'GET',
-                    dataType: 'json',
-                    beforeSend: function() {
-                        $('#sale_id').prop('disabled', true);
-                    },
-                    success: function(res) {
-                        $('#sale_id').prop('disabled', false).empty().append('<option value="">-- Select Sales Invoice --</option>');
-                        if (res.status && res.sales) {
-                            res.sales.forEach(function(s) {
-                                $('#sale_id').append(
-                                    $('<option>', {
-                                        value: s.id,
-                                        text: `${s.invoice_no} - ${s.date} (Rs. ${parseFloat(s.total_net).toFixed(2)})`
-                                    })
-                                );
-                            });
+                if (customerId === 'walkin') {
+                    // Walk-in customer has no customer ledger in ERP: switch to cash refund
+                    $('#pillLedger').addClass('opacity-50').css('pointer-events', 'none');
+                    $('#pillCash').find('input').prop('checked', true).trigger('change');
+                } else {
+                    $('#pillLedger').removeClass('opacity-50').css('pointer-events', 'auto');
+                }
+
+                if (currentReturnMode === 'invoice') {
+                    const url = "{{ url('sale/return/get-invoices-by-customer') }}/" + customerId;
+                    $.ajax({
+                        url: url,
+                        type: 'GET',
+                        dataType: 'json',
+                        beforeSend: function() {
+                            $('#sale_id').prop('disabled', true);
+                        },
+                        success: function(res) {
+                            $('#sale_id').prop('disabled', false).empty().append('<option value="">-- Select Sales Invoice --</option>');
+                            if (res.status && res.sales) {
+                                res.sales.forEach(function(s) {
+                                    $('#sale_id').append(
+                                        $('<option>', {
+                                             value: s.id,
+                                            text: `${s.invoice_no} - ${s.date} (Rs. ${parseFloat(s.total_net).toFixed(2)})`
+                                        })
+                                    );
+                                });
+                            }
+                        },
+                        error: function() {
+                            $('#sale_id').prop('disabled', false);
                         }
-                    },
-                    error: function() {
-                        $('#sale_id').prop('disabled', false);
-                    }
-                });
+                    });
+                } else {
+                    // In Direct Return mode, update customer balance impact
+                    recalculate();
+                }
             });
 
             // 2. Invoice Selection Changed -> Fetch Items & Header Info
             $('#sale_id').on('change', function() {
+                if (currentReturnMode !== 'invoice') return;
+
                 const saleId = $(this).val();
                 if (!saleId) {
                     $('#invoiceInfoBanner').addClass('d-none');
@@ -697,13 +818,13 @@
                 $('#sale_id').val("{{ $selectedSaleId }}").trigger('change');
             @endif
 
-            // 3. Render Items in Table
+            // 3. Render Items in Table (Invoice Mode)
             function renderItemsTable(items) {
                 const $tbody = $('#itemsTableBody');
                 $tbody.empty();
 
                 if (!items || items.length === 0) {
-                    $tbody.html('<tr><td colspan="11" class="text-center py-4 text-muted">No products found in this invoice.</td></tr>');
+                    $tbody.html('<tr><td colspan="12" class="text-center py-4 text-muted">No products found in this invoice.</td></tr>');
                     return;
                 }
 
@@ -764,7 +885,7 @@
                                 <select class="form-select form-select-sm row-reason" name="item_reason[${idx}]" ${isFullyReturned ? 'disabled' : ''}>
                                     <option value="Damaged Goods">Damaged</option>
                                     <option value="Wrong Item">Wrong Item</option>
-                                    <option value="Quality Issue">Quality Issue</option>
+                                    <option value="Quality Issue" selected>Quality Issue</option>
                                     <option value="Customer Change of Mind">Change of Mind</option>
                                     <option value="Other">Other</option>
                                 </select>
@@ -776,6 +897,11 @@
                                 </select>
                             </td>
                             <td class="text-end fw-bold row-line-total text-dark">Rs. 0.00</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-secondary btn-reset-row" title="Reset quantity to 0" ${isFullyReturned ? 'disabled' : ''}>
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                            </td>
                         </tr>
                     `;
                     $tbody.append(rowHtml);
@@ -785,7 +911,7 @@
             function renderEmptyTable() {
                 $('#itemsTableBody').html(`
                     <tr id="emptyTableMessage">
-                        <td colspan="11" class="text-center py-5 text-muted">
+                        <td colspan="12" class="text-center py-5 text-muted">
                             <i class="fas fa-shopping-bag fa-3x mb-3 text-secondary opacity-50"></i>
                             <p class="mb-0 fw-semibold">Please select an Original Sales Invoice above to load sold products.</p>
                         </td>
@@ -794,16 +920,173 @@
                 $('#btnReturnAll, #btnClearReturn').prop('disabled', true);
             }
 
+            function renderDirectEmptyTable() {
+                $('#itemsTableBody').html(`
+                    <tr id="emptyTableMessage">
+                        <td colspan="12" class="text-center py-5 text-muted">
+                            <i class="fas fa-boxes fa-3x mb-3 text-secondary opacity-50"></i>
+                            <p class="mb-0 fw-semibold">No products added yet. Use the product search bar above to add products to return.</p>
+                        </td>
+                    </tr>
+                `);
+            }
+
+            // Direct Mode: Add Product to Table
+            function addDirectProduct(productData) {
+                if (!productData || !productData.product_id) return;
+
+                const rowKey = String(productData.id || productData.product_id);
+
+                // Check if product or exact variant is already added
+                let exists = false;
+                $('#itemsTableBody tr').each(function() {
+                    if ($(this).attr('data-row-key') === rowKey) {
+                        exists = true;
+                        const $qtyInput = $(this).find('.row-qty');
+                        $qtyInput.val((parseFloat($qtyInput.val()) || 0) + 1);
+                        $qtyInput.trigger('input');
+                    }
+                });
+
+                if (exists) {
+                    $('.select2-product-search').val(null).trigger('change');
+                    return;
+                }
+
+                $('#emptyTableMessage').remove();
+
+                const idx = directRowCounter++;
+                const rowNum = $('#itemsTableBody tr').length + 1;
+                const price = parseFloat(productData.price) || 0;
+
+                const variantBadgeHtml = productData.has_variant ? `
+                    <br>
+                    <span class="badge bg-light text-dark border me-1">Variant: ${escapeHtml(productData.variant_name)}</span>
+                    <span class="badge bg-info-subtle text-info-emphasis border me-1">Size: ${escapeHtml(productData.size)}</span>
+                    <span class="badge bg-secondary-subtle text-secondary-emphasis border">Color: ${escapeHtml(productData.color_val)}</span>
+                    <br><small class="text-muted">SKU: ${escapeHtml(productData.sku)} | Barcode: ${escapeHtml(productData.barcode || '-')}</small>
+                ` : `
+                    ${productData.sku ? `<br><small class="text-muted">Code: ${escapeHtml(productData.sku)}</small>` : ''}
+                `;
+
+                const rowHtml = `
+                    <tr data-idx="${idx}" data-row-key="${escapeHtml(rowKey)}">
+                        <td class="text-center fw-bold text-muted row-counter">${rowNum}</td>
+                        <td>
+                            <input type="hidden" class="input-product-id" name="product_id[${idx}]" value="${productData.product_id}">
+                            <input type="hidden" name="color[${idx}]" value="${escapeHtml(productData.variant_data || '')}">
+                            <strong>${escapeHtml(productData.item_name)}</strong>
+                            ${productData.unit ? `<span class="badge bg-light text-secondary border ms-1">${escapeHtml(productData.unit)}</span>` : ''}
+                            ${productData.brand ? `<span class="badge bg-light text-secondary border ms-1">${escapeHtml(productData.brand)}</span>` : ''}
+                            ${variantBadgeHtml}
+                        </td>
+                        <td class="text-center text-muted">-</td>
+                        <td class="text-center text-muted">-</td>
+                        <td class="text-center">
+                            <span class="badge bg-info mb-1">${productData.has_variant ? 'Variant' : 'Direct'}</span>
+                            <br><small class="text-muted">Stock: ${parseFloat(productData.available_stock || 0).toFixed(0)} ${escapeHtml(productData.unit || 'pcs')}</small>
+                        </td>
+                        <td class="text-center">
+                            <input type="number" 
+                                step="1" 
+                                min="1" 
+                                class="form-control form-control-sm input-qty row-qty" 
+                                name="qty[${idx}]" 
+                                value="1">
+                        </td>
+                        <td class="text-end">
+                            <input type="number" 
+                                step="0.01" 
+                                min="0" 
+                                class="form-control form-control-sm input-rate row-rate text-end" 
+                                name="price[${idx}]" 
+                                value="${price.toFixed(2)}">
+                        </td>
+                        <td class="text-end">
+                            <input type="number" 
+                                step="0.01" 
+                                min="0" 
+                                class="form-control form-control-sm text-end row-disc" 
+                                style="width: 75px;" 
+                                name="item_disc[${idx}]" 
+                                value="0.00">
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm row-reason" name="item_reason[${idx}]">
+                                <option value="Damaged Goods">Damaged</option>
+                                <option value="Wrong Item">Wrong Item</option>
+                                <option value="Quality Issue" selected>Quality Issue</option>
+                                <option value="Customer Change of Mind">Change of Mind</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm row-condition" name="stock_condition[${idx}]">
+                                <option value="good" selected>Good Stock (Restock)</option>
+                                <option value="damaged">Damaged (Quarantine)</option>
+                            </select>
+                        </td>
+                        <td class="text-end fw-bold row-line-total text-dark">Rs. ${price.toFixed(2)}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row" title="Remove Item">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+
+                $('#itemsTableBody').append(rowHtml);
+                $('.select2-product-search').val(null).trigger('change');
+                recalculate();
+            }
+
+            // Direct Mode: Add product button
+            $('#btnAddDirectProduct').on('click', function() {
+                const data = $('.select2-product-search').select2('data');
+                if (data && data.length > 0 && data[0].id) {
+                    addDirectProduct(data[0]);
+                } else {
+                    alert('Please search and select a product first.');
+                }
+            });
+
+            // Direct Mode: Select2 selection triggers addition
+            $('.select2-product-search').on('select2:select', function(e) {
+                const data = e.params.data;
+                if (data && data.id) {
+                    addDirectProduct(data);
+                }
+            });
+
+            // Remove Row Button (Direct Mode)
+            $(document).on('click', '.btn-remove-row', function() {
+                $(this).closest('tr').remove();
+                $('#itemsTableBody tr').each(function(i) {
+                    $(this).find('.row-counter').text(i + 1);
+                });
+                if ($('#itemsTableBody tr').length === 0) {
+                    renderDirectEmptyTable();
+                }
+                recalculate();
+            });
+
+            // Reset Row Button (Invoice Mode)
+            $(document).on('click', '.btn-reset-row', function() {
+                const $row = $(this).closest('tr');
+                $row.find('.row-qty').val(0);
+                recalculate();
+            });
+
             // 4. Return Quantity Input Validation & Dynamic Recalculation
             $(document).on('input change', '.row-qty', function() {
                 const $input = $(this);
                 let val = parseFloat($input.val()) || 0;
-                const max = parseFloat($input.data('max')) || 0;
+                const max = parseFloat($input.data('max'));
 
                 if (val < 0) {
                     val = 0;
                     $input.val(0);
-                } else if (val > max) {
+                } else if (currentReturnMode === 'invoice' && max !== undefined && !isNaN(max) && val > max) {
                     alert(`Return quantity cannot exceed remaining returnable quantity of ${max}.`);
                     val = max;
                     $input.val(max);
@@ -878,20 +1161,34 @@
                 $('#summaryDamagedPieces').text(damagedPieces);
 
                 // Update Customer Balance Impact
-                const currentBal = currentSaleData ? parseFloat(currentSaleData.customer_balance) : 0;
+                const isWalkin = (currentReturnMode === 'invoice' && currentSaleData && (!currentSaleData.customer_id || currentSaleData.customer_name === 'Walking Customer')) || ($('#customer_id').val() === 'walkin');
+
+                const currentBal = isWalkin 
+                    ? 0 
+                    : ((currentReturnMode === 'invoice' && currentSaleData)
+                        ? parseFloat(currentSaleData.customer_balance) || 0
+                        : (parseFloat($('#customer_id option:selected').data('balance')) || 0));
+
                 const refundType = $('input[name="refund_type"]:checked').val();
 
-                $('#impactCurrentBal').text('Rs. ' + currentBal.toFixed(2));
-
-                if (refundType === 'ledger') {
-                    $('#impactMethodLabel').text('Ledger Credit:');
-                    $('#impactCredit').text('- Rs. ' + netAmount.toFixed(2));
-                    const newBal = currentBal - netAmount;
-                    $('#impactNewBal').text('Rs. ' + newBal.toFixed(2));
+                if (isWalkin) {
+                    $('#impactCurrentBal').text('Walk-in Customer (Rs. 0.00)');
+                    $('#impactMethodLabel').text('Walk-in Refund:');
+                    $('#impactCredit').text('Rs. ' + netAmount.toFixed(2) + ' (Paid via ' + (refundType || 'cash').toUpperCase() + ')');
+                    $('#impactNewBal').text('Rs. 0.00 (No Customer Account)');
                 } else {
-                    $('#impactMethodLabel').text(`${refundType.toUpperCase()} Paid:`);
-                    $('#impactCredit').text('Rs. 0.00 (Paid in ' + refundType + ')');
-                    $('#impactNewBal').text('Rs. ' + currentBal.toFixed(2) + ' (Unchanged)');
+                    $('#impactCurrentBal').text('Rs. ' + currentBal.toFixed(2));
+
+                    if (refundType === 'ledger') {
+                        $('#impactMethodLabel').text('Ledger Credit:');
+                        $('#impactCredit').text('- Rs. ' + netAmount.toFixed(2));
+                        const newBal = currentBal - netAmount;
+                        $('#impactNewBal').text('Rs. ' + newBal.toFixed(2));
+                    } else {
+                        $('#impactMethodLabel').text(`${(refundType || 'cash').toUpperCase()} Paid:`);
+                        $('#impactCredit').text('Rs. 0.00 (Paid in ' + (refundType || 'cash') + ')');
+                        $('#impactNewBal').text('Rs. ' + currentBal.toFixed(2) + ' (Unchanged)');
+                    }
                 }
             }
 
@@ -945,9 +1242,24 @@
                 }
             });
 
+            // Handle Save vs Save & Print actions
+            let isSubmitting = false;
+
+            $('#btnSaveAndPrint').on('click', function() {
+                $('#formAction').val('save_and_print');
+            });
+
+            $('#btnSave').on('click', function() {
+                $('#formAction').val('save');
+            });
+
             // Form Submit Validation & Double-click Protection
             $('#saleReturnForm').on('submit', function(e) {
-                const $submits = $(this).find('button[type="submit"]');
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return false;
+                }
+
                 let hasReturnQty = false;
                 $('.row-qty').each(function() {
                     if ((parseFloat($(this).val()) || 0) > 0) {
@@ -961,7 +1273,17 @@
                     return false;
                 }
 
-                $submits.prop('disabled', true).addClass('disabled');
+                isSubmitting = true;
+                const act = $('#formAction').val();
+                if (act === 'save_and_print') {
+                    $('#btnSaveAndPrint').html('<span class="spinner-border spinner-border-sm me-2"></span>Saving & Opening Voucher...');
+                } else {
+                    $('#btnSave').html('<span class="spinner-border spinner-border-sm me-2"></span>Saving Return...');
+                }
+
+                setTimeout(function() {
+                    $('#btnSaveAndPrint, #btnSave').prop('disabled', true).addClass('disabled');
+                }, 50);
             });
 
             function escapeHtml(text) {

@@ -150,7 +150,11 @@ class ReportingController extends Controller
 
                 $returnsQuery = DB::table('sale_return_items as sri')
                     ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
-                    ->where('sri.product_id', $product->id);
+                    ->where('sri.product_id', $product->id)
+                    ->where(function ($q) {
+                        $q->where('sri.stock_condition', 'good')
+                          ->orWhereNull('sri.stock_condition');
+                    });
                 if ($warehouseId && $warehouseId !== 'all') {
                     $returnsQuery->where('sri.warehouse_id', $warehouseId);
                 }
@@ -217,8 +221,8 @@ class ReportingController extends Controller
                         if ($vConv > 0) $ppb = $vConv;
                     }
 
-                    // Initial Stock in Pieces
-                    $vRawStock = (string) ($v['stock'] ?? '0');
+                    // Initial Stock in Pieces (Use original initial stock if available to avoid double-counting returns/sales)
+                    $vRawStock = (string) ($v['orig_initial_stock'] ?? $v['initial_stock'] ?? $v['stock'] ?? '0');
                     if ($isCartonMode && $ppb > 1) {
                         if (strpos($vRawStock, '.') !== false) {
                             $parts = explode('.', $vRawStock);
@@ -367,7 +371,12 @@ class ReportingController extends Controller
                 // Returned qty
                 $retQuery = DB::table('stock_movements')
                     ->where('product_id', $product->id)
-                    ->where('type', 'sale_return');
+                    ->where(function ($q) {
+                        $q->where('type', 'sale_return')
+                          ->orWhere(function ($sub) {
+                              $sub->where('type', 'in')->where('ref_type', 'SALE_RETURN');
+                          });
+                    });
                 if ($warehouseId && $warehouseId !== 'all') {
                     $retQuery->where('note', 'like', "%Warehouse #{$warehouseId}%");
                 }
@@ -546,8 +555,13 @@ class ReportingController extends Controller
                     $typeBadge = 'danger';
                     $typeLabel = 'OUTWARD (-)';
                 } elseif ($m->type === 'adjustment') {
-                    $typeBadge = 'warning';
-                    $typeLabel = 'ADJUSTMENT (' . ($m->qty >= 0 ? '+' : '') . ')';
+                    if ($m->ref_type === 'SALE_RETURN_DAMAGED') {
+                        $typeBadge = 'secondary';
+                        $typeLabel = 'DAMAGED RETURN (0)';
+                    } else {
+                        $typeBadge = 'warning';
+                        $typeLabel = 'ADJUSTMENT (' . ($m->qty >= 0 ? '+' : '') . ')';
+                    }
                 }
 
                 return [
@@ -2545,6 +2559,12 @@ class ReportingController extends Controller
             return strtolower(trim($itemColor)) === strtolower(trim($variant['color'] ?? ''));
         }
 
+        $vBarcode = strtolower(trim($variant['barcode'] ?? ''));
+        $itemVBarcode = strtolower(trim($itemVariant['barcode'] ?? ''));
+        if (!empty($vBarcode) && !empty($itemVBarcode) && $vBarcode === $itemVBarcode) {
+            return true;
+        }
+
         // Compare color and size
         $vColor = strtolower(trim($variant['color'] ?? '-'));
         $vSize = strtolower(trim($variant['size'] ?? '-'));
@@ -2557,7 +2577,17 @@ class ReportingController extends Controller
         if ($itemVColor === '') $itemVColor = '-';
         if ($itemVSize === '') $itemVSize = '-';
 
-        return $vColor === $itemVColor && $vSize === $itemVSize;
+        $colorSizeMatch = ($vColor === $itemVColor && $vSize === $itemVSize);
+        if ($colorSizeMatch) {
+            $vName = strtolower(trim($variant['name'] ?? ''));
+            $itemVName = strtolower(trim($itemVariant['name'] ?? ($itemVariant['variant_name'] ?? '')));
+            if (!empty($vName) && !empty($itemVName) && $vName !== '-' && $itemVName !== '-') {
+                return $vName === $itemVName;
+            }
+            return true;
+        }
+
+        return false;
     }
 
     /**

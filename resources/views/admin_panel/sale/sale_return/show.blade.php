@@ -59,6 +59,11 @@
                                                     </a>
                                                 </td>
                                             </tr>
+                                        @else
+                                            <tr>
+                                                <td class="fw-bold text-muted">Return Type:</td>
+                                                <td><span class="badge bg-info text-dark"><i class="fas fa-cart-arrow-down"></i> Direct Sales Return (Without Invoice)</span></td>
+                                            </tr>
                                         @endif
                                         <tr>
                                             <td class="fw-bold text-muted">Refund Method:</td>

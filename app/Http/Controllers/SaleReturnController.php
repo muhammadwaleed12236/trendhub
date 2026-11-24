@@ -44,6 +44,11 @@ class SaleReturnController extends Controller
 
                 $originalDue = max(0, (float)$sale->total_net - ((float)$sale->cash + (float)$sale->card));
                 $return->new_due_amount = max(0, $originalDue - $totalReturned);
+            } else {
+                $return->original_net_amount = 0;
+                $return->total_returned = (float)$return->net_amount;
+                $return->new_net_amount = 0;
+                $return->new_due_amount = 0;
             }
         });
 
@@ -62,8 +67,43 @@ class SaleReturnController extends Controller
         // Fetch active customers
         $customers = Customer::orderBy('customer_name')->get();
 
-        // Warehouses
-        $warehouses = Warehouse::all();
+        // Warehouses: Respect user/branch permissions and determine configured default warehouse
+        $user = auth()->user();
+        $canViewAllWarehouses = $user && (
+            $user->email === 'admin@admin.com' ||
+            $user->hasRole('Super Admin') ||
+            $user->hasRole('Admin') ||
+            $user->can('warehouse.view') ||
+            $user->can('warehouse.stock.view')
+        );
+
+        $warehousesQuery = Warehouse::query();
+        if ($user && !empty($user->branch_id)) {
+            $warehousesQuery->where('branch_id', $user->branch_id);
+        }
+        if (!$canViewAllWarehouses && $user && !empty($user->warehouse_id)) {
+            $warehousesQuery->where('id', $user->warehouse_id);
+        }
+        $warehouses = $warehousesQuery->orderBy('id')->get();
+
+        // Determine configured default warehouse
+        $defaultWarehouseId = null;
+        if ($user && !empty($user->warehouse_id) && $warehouses->contains('id', $user->warehouse_id)) {
+            $defaultWarehouseId = (int)$user->warehouse_id;
+        }
+        if (!$defaultWarehouseId) {
+            $cfgWh = \App\Models\Setting::where('key', 'default_warehouse_id')->value('value')
+                ?? \App\Models\SystemSetting::where('key', 'default_warehouse_id')->value('value');
+            if ($cfgWh && $warehouses->contains('id', (int)$cfgWh)) {
+                $defaultWarehouseId = (int)$cfgWh;
+            }
+        }
+        if (!$defaultWarehouseId && $warehouses->isNotEmpty()) {
+            $defaultWarehouseId = $warehouses->first()->id;
+        }
+        if (!$defaultWarehouseId) {
+            $defaultWarehouseId = 1;
+        }
 
         // Ensure default Cash & Bank accounts exist
         $cashId = app(BalanceService::class)->getCashAccountId();
@@ -104,6 +144,7 @@ class SaleReturnController extends Controller
             'nextReturnNumber',
             'customers',
             'warehouses',
+            'defaultWarehouseId',
             'accounts',
             'recentSales',
             'selectedSaleId'
@@ -123,26 +164,194 @@ class SaleReturnController extends Controller
     }
 
     /**
+     * AJAX endpoint: Search products for Direct Sales Return
+     */
+    public function searchProducts(Request $request)
+    {
+        $term = $request->get('q') ?? $request->get('term') ?? '';
+
+        $query = Product::query();
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'is_active')) {
+            $query->where(function ($q) {
+                $q->where('is_active', 1)->orWhereNull('is_active');
+            });
+        }
+
+        if (!empty($term)) {
+            $query->where(function ($q) use ($term) {
+                $q->where('item_name', 'like', "%{$term}%")
+                    ->orWhere('item_code', 'like', "%{$term}%")
+                    ->orWhere('barcode_path', 'like', "%{$term}%")
+                    ->orWhere('color', 'like', "%{$term}%");
+            });
+        }
+
+        $warehouseId = $request->get('warehouse_id');
+
+        $products = $query->with(['brand', 'unit', 'warehouseStocks'])
+            ->limit(40)
+            ->get();
+
+        $results = [];
+
+        foreach ($products as $p) {
+            $ppb = (int)($p->pieces_per_box > 0 ? $p->pieces_per_box : 1);
+            $basePrice = (float)($p->sale_price_per_piece > 0 
+                ? $p->sale_price_per_piece 
+                : ($p->purchase_price_per_piece > 0 ? $p->purchase_price_per_piece : 0));
+            $brand = $p->brand->name ?? $p->brand_name ?? '';
+            $unit = $p->unit->name ?? 'pc';
+            $pCode = $p->item_code ?? $p->product_code ?? '';
+
+            // Check if product has variants
+            $variants = [];
+            if (!empty($p->color)) {
+                try {
+                    $parsed = is_string($p->color) ? json_decode($p->color, true) : $p->color;
+                    if (is_string($parsed)) {
+                        $parsed = json_decode($parsed, true);
+                    }
+                    if (is_array($parsed) && count($parsed) > 0 && (isset($parsed[0]['name']) || isset($parsed[0]['color']))) {
+                        $variants = $parsed;
+                    }
+                } catch (\Exception $e) {}
+            }
+
+            if (count($variants) > 0) {
+                // Fetch variant stock calculations using ERP transaction calculation logic
+                $variantStocks = $this->calculateProductVariantStocks($p, $variants, $warehouseId);
+
+                foreach ($variants as $vIdx => $v) {
+                    $vName = $v['name'] ?? $p->item_name;
+                    $vSize = (isset($v['size']) && $v['size'] !== '-') ? $v['size'] : '-';
+                    $vColor = (isset($v['color']) && $v['color'] !== '-') ? $v['color'] : '-';
+                    $vBarcode = $v['barcode'] ?? $p->barcode_path ?? '';
+                    $vSku = $v['sku'] ?? $pCode;
+                    $vPrice = (float)($v['sale_price'] ?? ($v['purch_price'] ?? $basePrice));
+                    $vUnit = $v['unit'] ?? $unit;
+                    $vStock = (float)($variantStocks[$vIdx] ?? ($v['stock'] ?? 0));
+
+                    // Filter if term is present
+                    if (!empty($term)) {
+                        $matchesTerm = (
+                            stripos($p->item_name, $term) !== false ||
+                            stripos($pCode, $term) !== false ||
+                            stripos($vName, $term) !== false ||
+                            stripos($vSize, $term) !== false ||
+                            stripos($vColor, $term) !== false ||
+                            stripos($vSku, $term) !== false ||
+                            stripos($vBarcode, $term) !== false
+                        );
+                        if (!$matchesTerm) {
+                            continue;
+                        }
+                    }
+
+                    $variantJson = json_encode($v);
+                    $encodedVariant = base64_encode($variantJson);
+
+                    $displayText = ($vSku ? "[{$vSku}] " : '') . "{$p->item_name} - {$vName} (Size: {$vSize}, Color: {$vColor})" 
+                        . ($vBarcode ? " [Barcode: {$vBarcode}]" : '') 
+                        . " | Stock: {$vStock} {$vUnit} | Rs. " . number_format($vPrice, 2);
+
+                    $results[] = [
+                        'id' => $p->id . '|var|' . $encodedVariant,
+                        'product_id' => $p->id,
+                        'item_name' => $p->item_name,
+                        'variant_name' => $vName,
+                        'size' => $vSize,
+                        'color_val' => $vColor,
+                        'sku' => $vSku,
+                        'barcode' => $vBarcode,
+                        'brand' => $brand,
+                        'price' => $vPrice,
+                        'pieces_per_box' => $ppb,
+                        'unit' => $vUnit,
+                        'available_stock' => $vStock,
+                        'variant_data' => $encodedVariant,
+                        'has_variant' => true,
+                        'text' => $displayText,
+                    ];
+                }
+            } else {
+                // Product has no variants: display base product
+                $whStock = $p->warehouseStocks;
+                if ($warehouseId) {
+                    $whStock = $whStock->where('warehouse_id', $warehouseId);
+                }
+                $availableStock = (float)$whStock->sum('total_pieces');
+
+                $results[] = [
+                    'id' => (string)$p->id,
+                    'product_id' => $p->id,
+                    'item_name' => $p->item_name,
+                    'variant_name' => '',
+                    'size' => '-',
+                    'color_val' => '-',
+                    'sku' => $pCode,
+                    'barcode' => $p->barcode_path ?? '',
+                    'brand' => $brand,
+                    'price' => $basePrice,
+                    'pieces_per_box' => $ppb,
+                    'unit' => $unit,
+                    'available_stock' => $availableStock,
+                    'variant_data' => '',
+                    'has_variant' => false,
+                    'text' => ($pCode ? "[{$pCode}] " : '') . $p->item_name . ($brand ? " ({$brand})" : '') . " | Stock: {$availableStock} {$unit} | Rs. " . number_format($basePrice, 2),
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'products' => $results
+        ]);
+    }
+
+    /**
      * AJAX endpoint: Get sales invoices by Customer ID
      */
-    public function getInvoicesByCustomer($customerId)
+    public function getInvoicesByCustomer($customerId, Request $request)
     {
         $query = Sale::query()->where('sale_status', '!=', 'cancelled');
 
         if ($customerId && $customerId !== 'all') {
-            $cust = Customer::find($customerId);
-            if ($cust && ($cust->customer_type === 'Walking Customer' || $cust->customer_id === 'CUST-WALK')) {
-                $query->where(function ($q) use ($customerId) {
-                    $q->where('customer_id', $customerId)->orWhereNull('customer_id');
+            if ($customerId === 'walkin' || $customerId === 'walk-in' || $customerId === 'walking') {
+                $query->where(function ($q) {
+                    $q->whereNull('customer_id')
+                      ->orWhereNotNull('walkin_name')
+                      ->orWhereHas('customer_relation', function ($cq) {
+                          $cq->where('customer_type', 'Walking Customer')
+                             ->orWhere('customer_id', 'CUST-WALK');
+                      });
                 });
             } else {
-                $query->where('customer_id', $customerId);
+                $cust = Customer::find($customerId);
+                if ($cust && ($cust->customer_type === 'Walking Customer' || $cust->customer_id === 'CUST-WALK')) {
+                    $query->where(function ($q) use ($customerId) {
+                        $q->where('customer_id', $customerId)
+                          ->orWhereNull('customer_id')
+                          ->orWhereNotNull('walkin_name');
+                    });
+                } else {
+                    $query->where('customer_id', $customerId);
+                }
             }
         }
 
+        if ($request->has('q') && !empty($request->q)) {
+            $searchTerm = $request->q;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('invoice_no', 'like', "%{$searchTerm}%")
+                  ->orWhere('total_net', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        // Return all previous sales invoices of the customer
         $sales = $query->latest('id')
-            ->take(100)
-            ->get(['id', 'invoice_no', 'customer_id', 'created_at', 'total_net', 'sale_status']);
+            ->take(500)
+            ->get(['id', 'invoice_no', 'customer_id', 'walkin_name', 'created_at', 'total_net', 'sale_status']);
 
         return response()->json([
             'status' => true,
@@ -273,8 +482,12 @@ class SaleReturnController extends Controller
             }
         }
 
+        $returnType = $request->input('return_type', 'invoice');
+        $isDirect = ($returnType === 'direct');
+
         $validated = $request->validate([
-            'sale_id' => 'nullable|exists:sales,id',
+            'return_type' => 'required|in:invoice,direct',
+            'sale_id' => $isDirect ? 'nullable' : 'required|exists:sales,id',
             'customer_id' => 'nullable',
             'warehouse_id' => 'required|exists:warehouses,id',
             'return_date' => 'required|date',
@@ -308,8 +521,8 @@ class SaleReturnController extends Controller
             return back()->withInput()->with('error', 'Please enter a return quantity greater than 0 for at least one item.');
         }
 
-        // Validate that return quantity does NOT exceed remaining returnable quantity for this invoice
-        $sale = !empty($validated['sale_id']) ? Sale::where('id', $validated['sale_id'])->lockForUpdate()->first() : null;
+        // Validate that return quantity does NOT exceed remaining returnable quantity for this invoice (Only for invoice-based returns)
+        $sale = (!$isDirect && !empty($validated['sale_id'])) ? Sale::where('id', $validated['sale_id'])->lockForUpdate()->first() : null;
         if ($sale) {
             $pastReturns = SaleReturn::where('sale_id', $sale->id)->with('items')->get();
             $returnedQtyMap = [];
@@ -356,37 +569,39 @@ class SaleReturnController extends Controller
                 $nextInvoice = 'SR-' . str_pad($lastReturnId, 4, '0', STR_PAD_LEFT);
             } while (SaleReturn::where('return_invoice', $nextInvoice)->exists());
 
-            // Resolve Customer ID (fallback to sale's customer or Walking Customer)
-            $customerId = $validated['customer_id'] ?? null;
-            if (!$customerId || $customerId === 'all') {
-                $customerId = $sale ? $sale->customer_id : null;
-            }
-            if (!$customerId) {
-                $walkingCustomer = Customer::where('customer_type', 'Walking Customer')->first();
-                if ($walkingCustomer) {
-                    $customerId = $walkingCustomer->id;
+            // Resolve Customer ID (fallback to sale's customer or Walk-in Customer)
+            $rawCustomerId = $validated['customer_id'] ?? null;
+            $isWalkin = false;
+            if ($rawCustomerId === 'walkin' || $rawCustomerId === 'walk-in' || $rawCustomerId === 'walking' || empty($rawCustomerId)) {
+                if (!$sale || empty($sale->customer_id)) {
+                    $isWalkin = true;
+                    $customerId = null;
                 } else {
-                    $walkingCustomer = Customer::create([
-                        'customer_id' => 'CUST-WALK',
-                        'customer_name' => 'Walking Customer',
-                        'customer_type' => 'Walking Customer',
-                        'mobile' => '-',
-                        'status' => 'active',
-                        'opening_balance' => 0,
-                    ]);
-                    $customerId = $walkingCustomer->id;
+                    $customerId = $sale->customer_id;
+                }
+            } else {
+                $customerId = $rawCustomerId;
+            }
+
+            $customer = null;
+            if (!$isWalkin && $customerId && $customerId !== 'all') {
+                $customer = Customer::find($customerId);
+                if ($customer && ($customer->customer_type === 'Walking Customer' || $customer->customer_id === 'CUST-WALK')) {
+                    $isWalkin = true;
+                    $customerId = null;
+                    $customer = null;
                 }
             }
-            $customer = Customer::find($customerId);
 
             // Create Sale Return Header
             $return = SaleReturn::create([
-                'sale_id' => $validated['sale_id'] ?? null,
+                'sale_id' => $isDirect ? null : ($validated['sale_id'] ?? null),
+                'return_type' => $returnType,
                 'return_invoice' => $nextInvoice,
                 'customer_id' => $customerId,
                 'warehouse_id' => $validated['warehouse_id'],
                 'return_date' => $validated['return_date'],
-                'refund_type' => $validated['refund_type'],
+                'refund_type' => $isWalkin ? ($validated['refund_type'] === 'bank' ? 'bank' : 'cash') : $validated['refund_type'],
                 'return_reason' => $validated['return_reason'] ?? null,
                 'remarks' => $validated['remarks'] ?? $validated['return_reason'] ?? null,
                 'status' => 'posted',
@@ -406,6 +621,7 @@ class SaleReturnController extends Controller
                 $itemDisc = (float)($request->item_disc[$idx] ?? 0);
                 $condition = $request->stock_condition[$idx] ?? 'good';
                 $itemReason = $request->item_reason[$idx] ?? $validated['return_reason'] ?? 'Return';
+                $color = $request->color[$idx] ?? null;
 
                 $product = Product::find($productId);
                 $ppb = (int)($product ? ($product->pieces_per_box > 0 ? $product->pieces_per_box : 1) : 1);
@@ -416,11 +632,13 @@ class SaleReturnController extends Controller
                 $boxes = floor($qty / $ppb);
                 $loosePieces = $qty % $ppb;
 
-                // Save Return Item
+                // Save Return Item with variant color
                 SaleReturnItem::create([
                     'sale_return_id' => $return->id,
                     'product_id' => $productId,
-                    'color' => $request->color[$idx] ?? null,
+                    'is_manual' => $isDirect ? 1 : 0,
+                    'product_name' => $product ? ($product->item_name ?? $product->product_name) : null,
+                    'color' => $color,
                     'warehouse_id' => $validated['warehouse_id'],
                     'qty' => $qty,
                     'boxes' => $boxes + ($loosePieces / $ppb),
@@ -433,19 +651,43 @@ class SaleReturnController extends Controller
                     'stock_condition' => $condition,
                 ]);
 
+                // Extract variant info for note and exact variant stock update
+                $variantInfo = [];
+                $variantDesc = '';
+                if (!empty($color)) {
+                    $b64Decoded = base64_decode($color, true);
+                    if ($b64Decoded !== false) {
+                        $variantInfo = json_decode($b64Decoded, true) ?: [];
+                    }
+                    if (empty($variantInfo)) {
+                        $variantInfo = json_decode($color, true) ?: [];
+                    }
+                    if (!empty($variantInfo)) {
+                        $vN = $variantInfo['name'] ?? '';
+                        $vS = $variantInfo['size'] ?? ($variantInfo['size_val'] ?? '');
+                        $vC = $variantInfo['color'] ?? ($variantInfo['color_val'] ?? '');
+                        $variantDesc = trim(($vN ? "$vN " : '') . ($vS || $vC ? "($vS | $vC)" : ''));
+                    }
+                }
+
+                $whNote = "Warehouse #{$validated['warehouse_id']}";
+                $varNote = $variantDesc ? " | Variant: {$variantDesc}" : "";
+                $notePrefix = $isDirect ? "Direct Return #{$nextInvoice}" : "Return #{$nextInvoice}";
+
                 // Inventory Update Logic:
-                // Good Stock: Added back to salable inventory
+                // Good Stock: Added back to salable inventory and warehouse stock
                 // Damaged Stock: Do not add to salable stock; track separately
                 if ($condition === 'good') {
+                    // 1. Warehouse Stock
                     $stock = WarehouseStock::where('warehouse_id', $validated['warehouse_id'])
                         ->where('product_id', $productId)
                         ->lockForUpdate()
                         ->first();
 
                     if ($stock) {
-                        $currentTotalPieces = $stock->total_pieces;
+                        $currentTotalPieces = (float)$stock->total_pieces;
                         if ($currentTotalPieces == 0 && $stock->quantity > 0) {
-                            $currentTotalPieces = $stock->quantity * $ppb;
+                            $currentTotalPieces = (float)$stock->quantity * $ppb;
                         }
                         $newTotalPieces = $currentTotalPieces + $qty;
                         $stock->total_pieces = $newTotalPieces;
@@ -460,25 +702,63 @@ class SaleReturnController extends Controller
                         ]);
                     }
 
+                    // 2. Exact Variant Stock Update (Issue 3 & 4)
+                    if ($product) {
+                        if (!empty($product->color)) {
+                            $parsedVariants = is_string($product->color) ? json_decode($product->color, true) : $product->color;
+                            if (is_array($parsedVariants) && count($parsedVariants) > 0) {
+                                $variantUpdated = false;
+                                foreach ($parsedVariants as &$pv) {
+                                    if ($this->matchVariantToItemColor($pv, $color, $variantInfo)) {
+                                        if (!isset($pv['orig_initial_stock'])) {
+                                            $pv['orig_initial_stock'] = $pv['stock'] ?? 0;
+                                        }
+                                        $oldVarStock = (float)($pv['stock'] ?? 0);
+                                        $pv['stock'] = $oldVarStock + $qty;
+                                        $pv['available_stock'] = $pv['stock'];
+                                        $variantUpdated = true;
+                                        break; // Update exact variant only!
+                                    }
+                                }
+                                unset($pv);
+                                if ($variantUpdated) {
+                                    $product->color = json_encode($parsedVariants);
+                                }
+                            }
+                        }
+
+                        // 3. Update Product Model Stock Totals
+                        $currentWhPieces = (float)WarehouseStock::where('product_id', $productId)->sum('total_pieces');
+                        $product->total_stock_qty = $currentWhPieces;
+                        if ($product->size_mode === 'by_pieces') {
+                            $product->piece_quantity = (int)$currentWhPieces;
+                        } elseif ($product->size_mode === 'by_cartons' || $product->size_mode === 'by_size') {
+                            $product->boxes_quantity = (int)floor($currentWhPieces / $ppb);
+                            $product->loose_pieces = (int)($currentWhPieces % $ppb);
+                        }
+                        $product->save();
+                    }
+
+                    // Inward stock movement for good stock
                     $movements[] = [
                         'product_id' => $productId,
                         'type' => 'in',
                         'qty' => $qty,
                         'ref_type' => 'SALE_RETURN',
                         'ref_id' => $return->id,
-                        'note' => "Return #{$nextInvoice} (Good Stock)",
+                        'note' => "{$notePrefix} (Good Stock) | {$whNote}{$varNote}",
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
                 } else {
-                    // Damaged Stock: Do NOT add to available WarehouseStock
+                    // Damaged Stock: type is 'adjustment' with qty = 0 so it does NOT increase salable stock in v_stock_onhand or warehouse inventory!
                     $movements[] = [
                         'product_id' => $productId,
-                        'type' => 'in',
-                        'qty' => $qty,
+                        'type' => 'adjustment',
+                        'qty' => 0,
                         'ref_type' => 'SALE_RETURN_DAMAGED',
                         'ref_id' => $return->id,
-                        'note' => "Return #{$nextInvoice} (Damaged Stock - Not Restocked)",
+                        'note' => "{$notePrefix} (Damaged Stock: {$qty} pcs - Not Restocked) | {$whNote}{$varNote}",
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
@@ -497,134 +777,195 @@ class SaleReturnController extends Controller
             $netSubtotal = max(0, $grossSubtotal - $totalItemDiscount);
             $netAmount = max(0, $netSubtotal - $extraDiscount);
 
-            $refundType = $validated['refund_type'];
+            $refundType = $isWalkin ? ($validated['refund_type'] === 'bank' ? 'bank' : 'cash') : $validated['refund_type'];
             $totalPaid = 0;
+            $balance = 0;
             $voucherService = app(VoucherService::class);
             $balanceService = app(BalanceService::class);
             $arAccountId = $balanceService->getAccountsReceivableId();
             $salesRevenueId = $balanceService->getSalesRevenueId();
 
-            // 1. Double-Entry Accounting: Create Credit Note Journal Voucher
-            // Dr. Sales Revenue (Reduces Income)
-            // Cr. Accounts Receivable (Customer)
-            $jvLines = [
-                [
-                    'account_id' => $salesRevenueId,
-                    'debit' => $netAmount,
-                    'credit' => 0,
-                    'narration' => "Credit Note for Sale Return #{$nextInvoice}",
-                ],
-                [
-                    'account_id' => $arAccountId,
-                    'debit' => 0,
-                    'credit' => $netAmount,
-                    'narration' => "Sale Return #{$nextInvoice} from Customer",
-                ]
-            ];
-
-            $jvData = [
-                'voucher_type' => VoucherMaster::TYPE_JOURNAL,
-                'date' => $validated['return_date'],
-                'status' => VoucherMaster::STATUS_POSTED,
-                'party_type' => Customer::class,
-                'party_id' => $customerId,
-                'remarks' => "Credit Note for Sale Return #{$nextInvoice}" . ($sale ? " (Invoice #{$sale->invoice_no})" : ""),
-            ];
-
-            $voucherService->createVoucher($jvData, $jvLines, auth()->id());
-
-            // 2. Handle Refund Option:
-            if ($refundType === 'cash' || $refundType === 'bank') {
-                $totalPaid = $netAmount;
-                $balance = 0;
-
-                // Determine Account
+            if ($isWalkin) {
+                // WALK-IN CUSTOMER ACCOUNTING (Matches ERP configuration in TransactionService):
+                // Walk-in customers have no Accounts Receivable or Customer Ledger debt.
+                // Refund is paid out via Cash or Bank Account directly against Sales Revenue.
                 $refundAccId = $validated['refund_account_id'] ?? null;
                 if (!$refundAccId) {
-                    if ($refundType === 'cash') {
-                        $refundAccId = $balanceService->getCashAccountId();
-                    } else {
+                    if ($refundType === 'bank') {
                         $bankAcc = Account::where('title', 'like', '%Bank%')->orWhere('account_code', 'BANK')->first();
                         $refundAccId = $bankAcc ? $bankAcc->id : $balanceService->getCashAccountId();
+                    } else {
+                        $refundAccId = $balanceService->getCashAccountId();
                     }
                 }
 
                 // Payment Voucher (Money Out):
-                // Dr. Accounts Receivable (Customer)
-                // Cr. Cash/Bank Account
-                $pvLines = [
+                // Dr. Sales Revenue (Reduces Income)
+                // Cr. Cash / Bank Account
+                $walkinLines = [
                     [
-                        'account_id' => $arAccountId,
+                        'account_id' => $salesRevenueId,
                         'debit' => $netAmount,
                         'credit' => 0,
-                        'narration' => "Refund to Customer for Return #{$nextInvoice}",
+                        'narration' => "Sales Return Refund for Walk-in Return #{$nextInvoice}",
                     ],
                     [
                         'account_id' => $refundAccId,
                         'debit' => 0,
                         'credit' => $netAmount,
-                        'narration' => "Refund paid via " . ucfirst($refundType) . " for Return #{$nextInvoice}",
+                        'narration' => "Refund paid via " . ucfirst($refundType) . " for Walk-in Return #{$nextInvoice}",
                     ]
                 ];
 
-                $pvData = [
+                $walkinVoucherData = [
                     'voucher_type' => VoucherMaster::TYPE_PAYMENT,
+                    'date' => $validated['return_date'],
+                    'status' => VoucherMaster::STATUS_POSTED,
+                    'party_type' => null,
+                    'party_id' => null,
+                    'payment_from' => 'Walk-in',
+                    'remarks' => "Refund for Walk-in " . ($isDirect ? "Direct " : "") . "Sale Return #{$nextInvoice}",
+                ];
+
+                $voucherService->createVoucher($walkinVoucherData, $walkinLines, auth()->id());
+
+                $totalPaid = $netAmount;
+                $balance = 0;
+            } else {
+                // REGISTERED CUSTOMER ACCOUNTING:
+                // 1. Double-Entry Accounting: Create Credit Note Journal Voucher
+                // Dr. Sales Revenue (Reduces Income)
+                // Cr. Accounts Receivable (Customer)
+                $jvNarration = $isDirect ? "Credit Note for Direct Sale Return #{$nextInvoice}" : "Credit Note for Sale Return #{$nextInvoice}";
+                $jvLines = [
+                    [
+                        'account_id' => $salesRevenueId,
+                        'debit' => $netAmount,
+                        'credit' => 0,
+                        'narration' => $jvNarration,
+                    ],
+                    [
+                        'account_id' => $arAccountId,
+                        'debit' => 0,
+                        'credit' => $netAmount,
+                        'narration' => "Sale Return #{$nextInvoice} from Customer",
+                    ]
+                ];
+
+                $jvData = [
+                    'voucher_type' => VoucherMaster::TYPE_JOURNAL,
                     'date' => $validated['return_date'],
                     'status' => VoucherMaster::STATUS_POSTED,
                     'party_type' => Customer::class,
                     'party_id' => $customerId,
-                    'remarks' => ucfirst($refundType) . " Refund for Sale Return #{$nextInvoice}",
+                    'remarks' => $isDirect 
+                        ? "Credit Note for Direct Sale Return #{$nextInvoice}" 
+                        : "Credit Note for Sale Return #{$nextInvoice}" . ($sale ? " (Invoice #{$sale->invoice_no})" : ""),
                 ];
 
-                $voucherService->createVoucher($pvData, $pvLines, auth()->id());
+                $voucherService->createVoucher($jvData, $jvLines, auth()->id());
 
-                // Customer Ledger audit trail: Credit Note and Refund entries
-                if ($customer) {
-                    $lastEntry = CustomerLedger::where('customer_id', $customerId)->lockForUpdate()->latest('id')->first();
-                    $prevBal = $lastEntry ? (float)$lastEntry->closing_balance : (float)($customer->previous_balance ?? 0);
+                // 2. Handle Refund Option:
+                if ($refundType === 'cash' || $refundType === 'bank') {
+                    $totalPaid = $netAmount;
+                    $balance = 0;
 
-                    // Credit Note entry
-                    CustomerLedger::create([
-                        'customer_id' => $customerId,
-                        'admin_or_user_id' => auth()->id() ?? 1,
-                        'description' => "Credit Note for Return #{$nextInvoice}" . ($sale ? " (Inv #{$sale->invoice_no})" : ""),
-                        'previous_balance' => $prevBal,
-                        'closing_balance' => $prevBal - $netAmount,
-                        'opening_balance' => 0,
-                    ]);
+                    // Determine Account
+                    $refundAccId = $validated['refund_account_id'] ?? null;
+                    if (!$refundAccId) {
+                        if ($refundType === 'cash') {
+                            $refundAccId = $balanceService->getCashAccountId();
+                        } else {
+                            $bankAcc = Account::where('title', 'like', '%Bank%')->orWhere('account_code', 'BANK')->first();
+                            $refundAccId = $bankAcc ? $bankAcc->id : $balanceService->getCashAccountId();
+                        }
+                    }
 
-                    // Refund entry
-                    CustomerLedger::create([
-                        'customer_id' => $customerId,
-                        'admin_or_user_id' => auth()->id() ?? 1,
-                        'description' => ucfirst($refundType) . " Refund for Return #{$nextInvoice}",
-                        'previous_balance' => $prevBal - $netAmount,
-                        'closing_balance' => $prevBal,
-                        'opening_balance' => 0,
-                    ]);
-                }
-            } else {
-                // Customer Ledger Adjustment:
-                // No immediate cash paid out; return amount credited against customer balance
-                $totalPaid = 0;
-                $balance = $netAmount;
+                    // Payment Voucher (Money Out):
+                    // Dr. Accounts Receivable (Customer)
+                    // Cr. Cash/Bank Account
+                    $pvLines = [
+                        [
+                            'account_id' => $arAccountId,
+                            'debit' => $netAmount,
+                            'credit' => 0,
+                            'narration' => "Refund to Customer for Return #{$nextInvoice}",
+                        ],
+                        [
+                            'account_id' => $refundAccId,
+                            'debit' => 0,
+                            'credit' => $netAmount,
+                            'narration' => "Refund paid via " . ucfirst($refundType) . " for Return #{$nextInvoice}",
+                        ]
+                    ];
 
-                if ($customer) {
-                    $lastEntry = CustomerLedger::where('customer_id', $customerId)->lockForUpdate()->latest('id')->first();
-                    $prevBal = $lastEntry ? (float)$lastEntry->closing_balance : (float)($customer->previous_balance ?? 0);
-                    $newBal = $prevBal - $netAmount;
+                    $pvData = [
+                        'voucher_type' => VoucherMaster::TYPE_PAYMENT,
+                        'date' => $validated['return_date'],
+                        'status' => VoucherMaster::STATUS_POSTED,
+                        'party_type' => Customer::class,
+                        'party_id' => $customerId,
+                        'remarks' => ucfirst($refundType) . " Refund for " . ($isDirect ? "Direct " : "") . "Sale Return #{$nextInvoice}",
+                    ];
 
-                    CustomerLedger::create([
-                        'customer_id' => $customerId,
-                        'admin_or_user_id' => auth()->id() ?? 1,
-                        'description' => "Credit Note for Sale Return #{$nextInvoice}" . ($sale ? " (Inv #{$sale->invoice_no})" : ""),
-                        'previous_balance' => $prevBal,
-                        'closing_balance' => $newBal,
-                        'opening_balance' => 0,
-                    ]);
+                    $voucherService->createVoucher($pvData, $pvLines, auth()->id());
 
-                    $customer->previous_balance = $newBal;
-                    $customer->save();
+                    // Customer Ledger audit trail: Credit Note and Refund entries
+                    if ($customer) {
+                        $lastEntry = CustomerLedger::where('customer_id', $customerId)->lockForUpdate()->latest('id')->first();
+                        $prevBal = $lastEntry ? (float)$lastEntry->closing_balance : (float)($customer->previous_balance ?? 0);
+
+                        $creditDesc = $isDirect
+                            ? "Credit Note for Direct Return #{$nextInvoice}"
+                            : "Credit Note for Return #{$nextInvoice}" . ($sale ? " (Inv #{$sale->invoice_no})" : "");
+
+                        // Credit Note entry
+                        CustomerLedger::create([
+                            'customer_id' => $customerId,
+                            'admin_or_user_id' => auth()->id() ?? 1,
+                            'description' => $creditDesc,
+                            'previous_balance' => $prevBal,
+                            'closing_balance' => $prevBal - $netAmount,
+                            'opening_balance' => 0,
+                        ]);
+
+                        // Refund entry
+                        CustomerLedger::create([
+                            'customer_id' => $customerId,
+                            'admin_or_user_id' => auth()->id() ?? 1,
+                            'description' => ucfirst($refundType) . " Refund for " . ($isDirect ? "Direct " : "") . "Return #{$nextInvoice}",
+                            'previous_balance' => $prevBal - $netAmount,
+                            'closing_balance' => $prevBal,
+                            'opening_balance' => 0,
+                        ]);
+                    }
+                } else {
+                    // Customer Ledger Adjustment:
+                    // No immediate cash paid out; return amount credited against customer balance
+                    $totalPaid = 0;
+                    $balance = $netAmount;
+
+                    if ($customer) {
+                        $lastEntry = CustomerLedger::where('customer_id', $customerId)->lockForUpdate()->latest('id')->first();
+                        $prevBal = $lastEntry ? (float)$lastEntry->closing_balance : (float)($customer->previous_balance ?? 0);
+                        $newBal = $prevBal - $netAmount;
+
+                        $creditDesc = $isDirect
+                            ? "Credit Note for Direct Sale Return #{$nextInvoice}"
+                            : "Credit Note for Sale Return #{$nextInvoice}" . ($sale ? " (Inv #{$sale->invoice_no})" : "");
+
+                        CustomerLedger::create([
+                            'customer_id' => $customerId,
+                            'admin_or_user_id' => auth()->id() ?? 1,
+                            'description' => $creditDesc,
+                            'previous_balance' => $prevBal,
+                            'closing_balance' => $newBal,
+                            'opening_balance' => 0,
+                        ]);
+
+                        $customer->previous_balance = $newBal;
+                        $customer->save();
+                    }
                 }
             }
 
@@ -638,8 +979,8 @@ class SaleReturnController extends Controller
                 'balance' => $balance,
             ]);
 
-            // Update Original Sale Status (only if 100% returned)
-            if ($sale) {
+            // Update Original Sale Status (only for invoice-based returns and if 100% returned)
+            if (!$isDirect && $sale) {
                 $totalSold = (float)$sale->items->sum('total_pieces');
                 $totalReturned = (float)SaleReturnItem::join('sale_returns', 'sale_returns.id', '=', 'sale_return_items.sale_return_id')
                     ->where('sale_returns.sale_id', $sale->id)
@@ -656,7 +997,11 @@ class SaleReturnController extends Controller
                 return redirect()->route('sale.return.print', $return->id);
             }
 
-            return redirect()->route('sale.return.index')->with('success', "Sale Return #{$nextInvoice} processed successfully.");
+            $successMsg = $isDirect 
+                ? "Direct Sale Return #{$nextInvoice} processed successfully."
+                : "Sale Return #{$nextInvoice} processed successfully.";
+
+            return redirect()->route('sale.return.index')->with('success', $successMsg);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -680,5 +1025,234 @@ class SaleReturnController extends Controller
     {
         $return = SaleReturn::with(['customer', 'sale', 'warehouse', 'items.product.brand'])->findOrFail($id);
         return view('admin_panel.sale.sale_return.print', compact('return'));
+    }
+
+    /**
+     * Helper to calculate current available stock for each variant of a product
+     */
+    private function calculateProductVariantStocks(Product $product, array $variants, $warehouseId = null): array
+    {
+        $salesQuery = DB::table('sale_items')->where('product_id', $product->id);
+        if ($warehouseId) {
+            $salesQuery->where('warehouse_id', $warehouseId);
+        }
+        $salesList = $salesQuery->select('total_pieces', 'color')->get();
+
+        $returnsQuery = DB::table('sale_return_items as sri')
+            ->join('sale_returns as sr', 'sr.id', '=', 'sri.sale_return_id')
+            ->where('sri.product_id', $product->id)
+            ->where(function ($q) {
+                $q->where('sri.stock_condition', 'good')->orWhereNull('sri.stock_condition');
+            });
+        if ($warehouseId) {
+            $returnsQuery->where('sri.warehouse_id', $warehouseId);
+        }
+        $returnsList = $returnsQuery->select('sri.qty', 'sri.color', 'sr.sale_id')->get();
+
+        $saleIds = $returnsList->pluck('sale_id')->filter()->unique()->toArray();
+        $saleItemsMap = [];
+        if (!empty($saleIds)) {
+            $siList = DB::table('sale_items')
+                ->whereIn('sale_id', $saleIds)
+                ->where('product_id', $product->id)
+                ->select('sale_id', 'color')
+                ->get();
+            foreach ($siList as $si) {
+                $saleItemsMap[$si->sale_id][] = $si->color;
+            }
+        }
+
+        $purchasesQuery = DB::table('purchase_items as pi')
+            ->join('purchases as pur', 'pur.id', '=', 'pi.purchase_id')
+            ->where('pi.product_id', $product->id)
+            ->whereIn('pur.status_purchase', ['approved', 'Returned', 'Partial']);
+        if ($warehouseId) {
+            $purchasesQuery->where('pur.warehouse_id', $warehouseId);
+        }
+        $purchasesList = $purchasesQuery->select('pi.qty as total_pieces', 'pi.color')->get();
+
+        $purchaseReturnsQuery = DB::table('purchase_return_items as pri')
+            ->where('pri.product_id', $product->id);
+        $purchaseReturnsList = $purchaseReturnsQuery->select('pri.qty', 'pri.color')->get();
+
+        $adjQuery = DB::table('stock_movements')
+            ->where('product_id', $product->id)
+            ->where('type', 'adjustment')
+            ->whereNotIn('ref_type', ['INIT']);
+        if ($warehouseId) {
+            $adjQuery->where('note', 'like', "%Warehouse #{$warehouseId}%");
+        }
+        $adjList = $adjQuery->select('qty', 'note')->get();
+
+        $stocks = [];
+        foreach ($variants as $idx => $v) {
+            $initial = (float)($v['orig_initial_stock'] ?? $v['initial_stock'] ?? $v['stock'] ?? 0);
+
+            $purchased = 0;
+            foreach ($purchasesList as $pItem) {
+                if ($this->matchItemToVariant($pItem, $v)) {
+                    $purchased += (float)$pItem->total_pieces;
+                }
+            }
+
+            $pReturned = 0;
+            foreach ($purchaseReturnsList as $prItem) {
+                if ($this->matchItemToVariant($prItem, $v)) {
+                    $pReturned += (float)$prItem->qty;
+                }
+            }
+
+            $sold = 0;
+            foreach ($salesList as $sItem) {
+                if ($this->matchItemToVariant($sItem, $v)) {
+                    $sold += (float)$sItem->total_pieces;
+                }
+            }
+
+            $returnedQty = 0;
+            foreach ($returnsList as $rItem) {
+                $rColor = $rItem->color;
+                if (empty($rColor) && !empty($rItem->sale_id)) {
+                    $saleColors = $saleItemsMap[$rItem->sale_id] ?? [];
+                    $rColor = !empty($saleColors) ? $saleColors[0] : '';
+                }
+                $rItemCopy = (object)['qty' => $rItem->qty, 'color' => $rColor];
+                if ($this->matchItemToVariant($rItemCopy, $v)) {
+                    $returnedQty += (float)$rItem->qty;
+                }
+            }
+
+            $adjustments = 0;
+            foreach ($adjList as $adjItem) {
+                if ($this->matchAdjustmentToVariant($adjItem, $v)) {
+                    $adjustments += (float)$adjItem->qty;
+                }
+            }
+
+            $stocks[$idx] = max(0, $initial + $purchased - $sold + $returnedQty - $pReturned + $adjustments);
+        }
+
+        return $stocks;
+    }
+
+    private function matchItemToVariant($item, $variant): bool
+    {
+        $itemColor = $item->color ?? '';
+        if (empty($itemColor)) return false;
+
+        $itemVariant = [];
+        $b64Decoded = base64_decode($itemColor, true);
+        if ($b64Decoded !== false) {
+            $json = json_decode($b64Decoded, true);
+            if (is_array($json)) $itemVariant = $json;
+        }
+        if (empty($itemVariant)) {
+            $json = json_decode($itemColor, true);
+            if (is_array($json)) $itemVariant = $json;
+        }
+
+        if (empty($itemVariant)) {
+            return strtolower(trim($itemColor)) === strtolower(trim($variant['color'] ?? ''));
+        }
+
+        $vBarcode = strtolower(trim($variant['barcode'] ?? ''));
+        $itemVBarcode = strtolower(trim($itemVariant['barcode'] ?? ''));
+        if (!empty($vBarcode) && !empty($itemVBarcode) && $vBarcode === $itemVBarcode) {
+            return true;
+        }
+
+        $vColor = strtolower(trim($variant['color'] ?? '-'));
+        $vSize = strtolower(trim($variant['size'] ?? '-'));
+        $itemVColor = strtolower(trim($itemVariant['color'] ?? ($itemVariant['color_val'] ?? '-')));
+        $itemVSize = strtolower(trim($itemVariant['size'] ?? ($itemVariant['size_val'] ?? '-')));
+
+        if ($vColor === '') $vColor = '-';
+        if ($vSize === '') $vSize = '-';
+        if ($itemVColor === '') $itemVColor = '-';
+        if ($itemVSize === '') $itemVSize = '-';
+
+        $matchColorSize = ($vColor === $itemVColor && $vSize === $itemVSize);
+        if ($matchColorSize) {
+            $vName = strtolower(trim($variant['name'] ?? ''));
+            $itemVName = strtolower(trim($itemVariant['name'] ?? ($itemVariant['variant_name'] ?? '')));
+            if (!empty($vName) && !empty($itemVName) && $vName !== '-' && $itemVName !== '-') {
+                return $vName === $itemVName;
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    private function matchAdjustmentToVariant($adjItem, $variant): bool
+    {
+        $note = strtolower($adjItem->note ?? '');
+        if (empty($note)) return false;
+
+        $vName  = strtolower(trim($variant['name'] ?? ''));
+        $vSize  = strtolower(trim($variant['size'] ?? '-'));
+        $vColor = strtolower(trim($variant['color'] ?? '-'));
+
+        if (preg_match('/variant:\s*([^|\(]+)/i', $note, $matches)) {
+            $noteVariantName = strtolower(trim($matches[1]));
+            if (!empty($vName) && $noteVariantName !== $vName) return false;
+            if (!empty($vName) && $noteVariantName === $vName) {
+                return true;
+            }
+        }
+
+        $hasSpecificAttributes = ($vSize !== '-' && !empty($vSize)) || ($vColor !== '-' && !empty($vColor));
+        if ($hasSpecificAttributes) {
+            $sizeMatch = true;
+            if ($vSize !== '-' && !empty($vSize)) {
+                $sizeMatch = preg_match('/\b' . preg_quote($vSize, '/') . '\b/i', $note) === 1;
+            }
+            $colorMatch = true;
+            if ($vColor !== '-' && !empty($vColor)) {
+                $colorMatch = preg_match('/\b' . preg_quote($vColor, '/') . '\b/i', $note) === 1;
+            }
+            return $sizeMatch && $colorMatch;
+        }
+
+        if (!empty($vName)) {
+            return preg_match('/\b' . preg_quote($vName, '/') . '\b/i', $note) === 1;
+        }
+
+        return false;
+    }
+
+    private function matchVariantToItemColor(array $variant, $itemColor, array $variantInfo): bool
+    {
+        if (empty($itemColor) && empty($variantInfo)) {
+            return false;
+        }
+
+        $vBarcode = strtolower(trim($variant['barcode'] ?? ''));
+        $infoBarcode = strtolower(trim($variantInfo['barcode'] ?? ''));
+        if (!empty($vBarcode) && !empty($infoBarcode) && $vBarcode === $infoBarcode) {
+            return true;
+        }
+
+        $vColor = strtolower(trim($variant['color'] ?? '-'));
+        $vSize = strtolower(trim($variant['size'] ?? '-'));
+        $infoColor = strtolower(trim($variantInfo['color'] ?? ($variantInfo['color_val'] ?? '-')));
+        $infoSize = strtolower(trim($variantInfo['size'] ?? ($variantInfo['size_val'] ?? '-')));
+
+        if ($vColor === '') $vColor = '-';
+        if ($vSize === '') $vSize = '-';
+        if ($infoColor === '') $infoColor = '-';
+        if ($infoSize === '') $infoSize = '-';
+
+        $colorSizeMatch = ($vColor === $infoColor && $vSize === $infoSize);
+        if ($colorSizeMatch) {
+            $vName = strtolower(trim($variant['name'] ?? ''));
+            $infoName = strtolower(trim($variantInfo['name'] ?? ($variantInfo['variant_name'] ?? '')));
+            if (!empty($vName) && !empty($infoName) && $vName !== '-' && $infoName !== '-') {
+                return $vName === $infoName;
+            }
+            return true;
+        }
+
+        return false;
     }
 }

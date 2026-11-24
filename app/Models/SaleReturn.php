@@ -13,6 +13,7 @@ class SaleReturn extends Model
 
     protected $fillable = [
         'sale_id',
+        'return_type',
         'return_invoice',
         'customer_id',
         'warehouse_id',
